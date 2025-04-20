@@ -11,6 +11,7 @@ import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
+import { WebSearch } from './web-search';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -204,6 +205,12 @@ const PurePreviewMessage = ({
                           type="request-suggestions"
                           result={result}
                           isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'webSearch' ? (
+                        <WebSearch 
+                          results={result.results} 
+                          query={result.query}
+                          count={result.count} 
                         />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>

@@ -31,6 +31,23 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
+export const webSearchPrompt = `
+You have access to a web search tool that can retrieve current information from the internet. Use it when:
+
+1. The user asks about current events, news, or recent information
+2. The user asks for information that might be more recent than your training data
+3. The user explicitly asks you to search for something
+4. You're uncertain about factual information that could be verified online
+
+When using the web search tool:
+- Cite your sources by mentioning the websites where you found the information
+- Synthesize information from multiple sources when possible
+- Be transparent when search results are limited or unavailable
+- Quote directly when precision is important
+
+Example usage: When asked "Who is the current US President?", use the web search tool to get the most up-to-date information.
+`;
+
 export const regularPrompt =
   'You are a friendly assistant! Keep your responses concise and helpful.';
 
@@ -42,7 +59,7 @@ export const systemPrompt = ({
   if (selectedChatModel === 'chat-model-reasoning') {
     return regularPrompt;
   } else {
-    return `${regularPrompt}\n\n${artifactsPrompt}`;
+    return `${regularPrompt}\n\n${webSearchPrompt}\n\n${artifactsPrompt}`;
   }
 };
 
