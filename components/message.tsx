@@ -177,7 +177,7 @@ const PurePreviewMessage = ({
                             <span>Reading webpage <span className="font-medium">{args.url}</span>...</span>
                           </div>
                           <div className="flex items-center justify-center p-4">
-                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                            <div className="animate-spin rounded-full size-6 border-y-2 border-primary"></div>
                           </div>
                         </div>
                       ) : null}

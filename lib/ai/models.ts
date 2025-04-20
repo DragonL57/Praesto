@@ -30,6 +30,6 @@ export const chatModels: Array<ChatModel> = [
   {
     id: 'google-gemini-search',
     name: 'Google Gemini with Search',
-    description: 'Gemini 1.5 Pro with Google Search grounding',
+    description: 'Gemini Gemini 2.5 Flash with Google Search grounding',
   },
 ];

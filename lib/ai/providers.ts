@@ -34,16 +34,10 @@ export const myProvider = isTestEnvironment
         // Google Generative AI models
         'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
         'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
-        'google-gemini-search': google('gemini-2.0-flash', { useSearchGrounding: true }),
+        'google-gemini-search': google('gemini-2.5-flash-preview-04-17', { useSearchGrounding: true }),
       },
       imageModels: {
         // OpenAI's image API (DALL-E)
         'small-model': openai.image('dall-e-3'),
-        // Google Generative AI image model
-        'google-image': google('gemini-2.0-flash', { structuredOutputs: true })
-      },
-      embeddingModels: {
-        // Google Generative AI embedding model
-        'google-embedding': google.textEmbeddingModel('text-embedding-004')
       }
     });
