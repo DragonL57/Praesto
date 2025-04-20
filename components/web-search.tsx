@@ -33,7 +33,7 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
       <div className="flex justify-between items-center">
         <div className="flex gap-2 items-center text-sm text-muted-foreground">
           <SearchIcon size={16} />
-          <span>Search results for <span className="font-medium">"{query}"</span></span>
+          <span>Search results for <span className="font-medium">&quot;{query}&quot;</span></span>
         </div>
         <div className="text-xs text-muted-foreground">
           {count} results
@@ -60,7 +60,7 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
                       href={getFormattedUrl(result.href)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="inline-flex size-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                       <ExternalLinkIcon size={12} />
                     </a>
