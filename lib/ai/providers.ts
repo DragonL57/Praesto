@@ -1,5 +1,6 @@
 import { customProvider } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
 import { isTestEnvironment } from '../constants';
 import {
   artifactModel,
@@ -30,9 +31,19 @@ export const myProvider = isTestEnvironment
         'title-model': openai('gpt-4.1'),
         // 'artifact-model': could be creative or code-related
         'artifact-model': openai('gpt-4.1'),
+        // Google Generative AI models
+        'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
+        'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
+        'google-gemini-search': google('gemini-2.0-flash', { useSearchGrounding: true }),
       },
       imageModels: {
         // OpenAI's image API (DALL-E)
         'small-model': openai.image('dall-e-3'),
+        // Google Generative AI image model
+        'google-image': google('gemini-2.0-flash', { structuredOutputs: true })
       },
+      embeddingModels: {
+        // Google Generative AI embedding model
+        'google-embedding': google.textEmbeddingModel('text-embedding-004')
+      }
     });
