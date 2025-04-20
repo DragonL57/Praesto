@@ -35,7 +35,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
         <div className="flex gap-2 items-center text-sm text-muted-foreground">
           <WebpageIcon size={16} />
           <span>Content from <span className="font-medium">{getDomainName(url)}</span></span>
-          {query && <span className="text-xs text-muted-foreground"> • Search: "{query}"</span>}
+          {query && <span className="text-xs text-muted-foreground"> • Search: &quot;{query}&quot;</span>}
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -57,7 +57,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
       {status === 'loading' ? (
         <div className="flex flex-col w-full space-y-4">
           <div className="flex items-center justify-center py-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full size-8 border-y-2 border-primary"></div>
           </div>
           
           <div className="space-y-3 border p-4 rounded-md bg-muted/30">
