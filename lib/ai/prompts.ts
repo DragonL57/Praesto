@@ -48,6 +48,23 @@ When using the web search tool:
 Example usage: When asked "Who is the current US President?", use the web search tool to get the most up-to-date information.
 `;
 
+export const websiteContentPrompt = `
+You have access to a website content reader tool that can fetch and display the full text of specific webpages or articles in nicely formatted markdown. Use it when:
+
+1. The user asks you to read or analyze a specific webpage or article
+2. The user shares a URL and wants you to extract or summarize its content
+3. You need detailed information from a specific webpage that search results alone can't provide
+4. The user needs in-depth analysis of content from a particular source
+
+When using the website content reader tool:
+- Focus on extracting relevant information from the content based on the user's query
+- Provide proper attribution to the source website
+- Analyze and summarize lengthy content when appropriate
+- Format your analysis in a clear, structured way
+
+Example usage: When the user asks "Can you read and summarize this article: [URL]?", use the readWebsiteContent tool to fetch and analyze the full text.
+`;
+
 export const aiAssistantStylePrompt = `
 You are a highly capable, helpful, and versatile AI assistant. Your primary directive is to be **useful** to the user, which means providing information, generating content, and engaging in conversation in a manner that assists the user in achieving their goal, understanding a concept, or navigating a situation.
 
@@ -91,7 +108,7 @@ export const systemPrompt = ({
   if (selectedChatModel === 'chat-model-reasoning') {
     return regularPrompt;
   } else {
-    return `${aiAssistantStylePrompt}\n\n${webSearchPrompt}\n\n${artifactsPrompt}`;
+    return `${aiAssistantStylePrompt}\n\n${webSearchPrompt}\n\n${websiteContentPrompt}\n\n${artifactsPrompt}`;
   }
 };
 

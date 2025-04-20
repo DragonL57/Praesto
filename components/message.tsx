@@ -6,12 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon } from './icons';
+import { PencilEditIcon, SparklesIcon, WebpageLoadingIcon } from './icons';
 import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import { WebSearch } from './web-search';
+import { WebsiteContent } from './website-content';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -177,6 +178,16 @@ const PurePreviewMessage = ({
                           args={args}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'readWebsiteContent' ? (
+                        <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
+                          <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                            <WebpageLoadingIcon size={16} />
+                            <span>Reading webpage <span className="font-medium">{args.url}</span>...</span>
+                          </div>
+                          <div className="flex items-center justify-center p-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                   );
@@ -211,6 +222,14 @@ const PurePreviewMessage = ({
                           results={result.results} 
                           query={result.query}
                           count={result.count} 
+                        />
+                      ) : toolName === 'readWebsiteContent' ? (
+                        <WebsiteContent
+                          url={result.url}
+                          content={result.content}
+                          query={result.query}
+                          status={result.status}
+                          error={result.error}
                         />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
