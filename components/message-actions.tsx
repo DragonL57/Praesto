@@ -58,6 +58,7 @@ export function PureMessageActions({
               }}
             >
               <CopyIcon />
+              <span className="sr-only">Copy message text</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Copy</TooltipContent>
@@ -111,6 +112,7 @@ export function PureMessageActions({
               }}
             >
               <ThumbUpIcon />
+              <span className="sr-only">Upvote response</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Upvote Response</TooltipContent>
@@ -164,6 +166,7 @@ export function PureMessageActions({
               }}
             >
               <ThumbDownIcon />
+              <span className="sr-only">Downvote response</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Downvote Response</TooltipContent>

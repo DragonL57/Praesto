@@ -93,6 +93,7 @@ const PurePreviewMessage = ({
                               }}
                             >
                               <PencilEditIcon />
+                              <span className="sr-only">Edit message</span>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Edit message</TooltipContent>
