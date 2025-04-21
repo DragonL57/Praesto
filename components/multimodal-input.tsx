@@ -179,6 +179,63 @@ function PureMultimodalInput({
     [setAttachments],
   );
 
+  const handlePaste = useCallback(
+    async (event: React.ClipboardEvent) => {
+      if (status !== 'ready') return;
+
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      const imageItems = Array.from(items).filter((item) =>
+        item.type.startsWith('image/'),
+      );
+
+      if (imageItems.length === 0) return;
+
+      // Prevent default paste behavior for images
+      event.preventDefault();
+
+      const imageFiles: File[] = [];
+
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file) {
+          const timestamp = new Date().getTime();
+          // Create a new file with a more descriptive name
+          const renamedFile = new File(
+            [file],
+            `pasted-image-${timestamp}.${file.name.split('.').pop() || 'png'}`,
+            { type: file.type },
+          );
+          imageFiles.push(renamedFile);
+        }
+      }
+
+      if (imageFiles.length === 0) return;
+
+      setUploadQueue(imageFiles.map((file) => file.name));
+
+      try {
+        const uploadPromises = imageFiles.map((file) => uploadFile(file));
+        const uploadedAttachments = await Promise.all(uploadPromises);
+        const successfullyUploadedAttachments = uploadedAttachments.filter(
+          (attachment) => attachment !== undefined,
+        );
+
+        setAttachments((currentAttachments) => [
+          ...currentAttachments,
+          ...successfullyUploadedAttachments,
+        ]);
+      } catch (error) {
+        console.error('Error uploading pasted images!', error);
+        toast.error('Failed to upload pasted image, please try again!');
+      } finally {
+        setUploadQueue([]);
+      }
+    },
+    [setAttachments, status],
+  );
+
   return (
     <div className="relative w-full flex flex-col gap-4">
       {messages.length === 0 &&
@@ -225,6 +282,7 @@ function PureMultimodalInput({
         placeholder="Send a message..."
         value={input}
         onChange={handleInput}
+        onPaste={handlePaste}
         className={cx(
           'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
           className,
