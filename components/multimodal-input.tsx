@@ -251,6 +251,8 @@ function PureMultimodalInput({
         multiple
         onChange={handleFileChange}
         tabIndex={-1}
+        aria-label="File upload"
+        id="file-upload"
       />
 
       {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -353,8 +355,10 @@ function PureAttachmentsButton({
       }}
       disabled={status !== 'ready'}
       variant="ghost"
+      aria-label="Attach files"
     >
       <PaperclipIcon size={14} />
+      <span className="sr-only">Attach files</span>
     </Button>
   );
 }
@@ -377,8 +381,10 @@ function PureStopButton({
         stop();
         setMessages((messages) => messages);
       }}
+      aria-label="Stop generating"
     >
       <StopIcon size={14} />
+      <span className="sr-only">Stop generating</span>
     </Button>
   );
 }
@@ -403,8 +409,10 @@ function PureSendButton({
         submitForm();
       }}
       disabled={input.length === 0 || uploadQueue.length > 0}
+      aria-label="Send message"
     >
       <ArrowUpIcon size={14} />
+      <span className="sr-only">Send message</span>
     </Button>
   );
 }
