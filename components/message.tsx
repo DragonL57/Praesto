@@ -113,7 +113,7 @@ const PurePreviewMessage = ({
                       <div
                         data-testid="message-content"
                         className={cn('flex flex-col gap-4', {
-                          'bg-primary text-primary-foreground px-3 py-2 rounded-xl':
+                          'dark:bg-zinc-700 bg-zinc-200 dark:text-zinc-100 text-zinc-900 px-3 py-2 rounded-xl':
                             message.role === 'user',
                         })}
                       >
@@ -273,10 +273,7 @@ export const ThinkingMessage = () => {
     >
       <div
         className={cx(
-          'flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl',
-          {
-            'group-data-[role=user]/message:bg-muted': true,
-          },
+          'flex gap-4 w-full',
         )}
       >
         <div className="flex flex-col gap-2 w-full">
