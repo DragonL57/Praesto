@@ -1,6 +1,105 @@
+/* Import highlight.js themes - use standard CSS import */
+@import 'highlight.js/styles/github.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Dark theme for highlight.js */
+.dark {
+    /* This imports the dark theme when .dark class is present */
+    @import 'highlight.js/styles/github-dark.css';
+}
+
+/* Global font rendering optimizations for all screens, especially low resolution */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-smooth: always;
+    font-feature-settings: 'kern', 'liga', 'calt';
+}
+
+/* Better font rendering for low-resolution screens specifically */
+@media screen and (max-width: 1280px),
+(max-height: 720px) {
+    html {
+        -webkit-font-smoothing: subpixel-antialiased;
+        text-rendering: optimizeSpeed;
+        letter-spacing: 0.01em;
+    }
+
+    body {
+        font-feature-settings: 'kern' 1, 'liga' 0;
+        text-shadow: 0px 0px 0.1px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark body {
+        text-shadow: 0px 0px 0.1px rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Optimize monospace font rendering specifically */
+code,
+pre,
+.font-mono,
+[class*='font-mono'] {
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+    font-feature-settings: 'ss01', 'ss02', 'zero';
+}
+
+/* Remove padding from code blocks */
+pre code.hljs,
+code.hljs {
+    padding: 0 !important;
+}
+
+/* Fix code block backgrounds but don't override highlight.js syntax colors */
+pre {
+    background-color: #f6f8fa !important;
+    /* GitHub light mode background */
+}
+
+.dark pre {
+    background-color: #0d1117 !important;
+    /* GitHub Dark background color */
+}
+
+pre code {
+    background-color: transparent !important;
+}
+
+.dark pre code {
+    background-color: transparent !important;
+}
+
+/* Make sure hljs classes take precedence for syntax highlighting */
+pre code .hljs-keyword,
+pre code .hljs-built_in,
+pre code .hljs-type,
+pre code .hljs-literal,
+pre code .hljs-number,
+pre code .hljs-string,
+pre code .hljs-comment,
+pre code .hljs-variable,
+pre code .hljs-tag,
+pre code .hljs-regexp,
+pre code .hljs-title,
+pre code .hljs-attr,
+pre code .hljs-symbol,
+pre code .hljs-bullet,
+pre code .hljs-function,
+pre code .hljs-section,
+pre code .hljs-name {
+    color: inherit;
+    /* Let highlight.js control the colors */
+}
+
+/* Override Tailwind's p-4 class to use 0.75rem instead of 1rem */
+.p-4 {
+    padding: 0.75rem !important;
+}
 
 /* PF Beau Sans Pro Font Family */
 @font-face {
@@ -251,6 +350,18 @@
 }
 
 @layer base {
+
+    /* Style for inline code */
+    :not(pre)>code {
+        @apply text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 py-0.5 px-1.5 border border-zinc-300 dark:border-zinc-700 rounded-md font-mono;
+    }
+
+    /* Ensure code blocks (code inside pre) don't inherit inline styles */
+    pre>code {
+        /* Reset any potentially inherited styles if needed */
+        @apply bg-transparent border-none p-0 rounded-none font-mono;
+    }
+
     * {
         @apply border-border;
     }
