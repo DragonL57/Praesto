@@ -42,7 +42,7 @@ function PureMessages({
       }}
       ref={messagesContainerRef}
     >
-      <div className="flex flex-col min-w-0 gap-6 pt-4 pb-4 px-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
+      <div className="flex flex-col min-w-0 gap-6 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
         {messages.length === 0 && <Greeting />}
 
         {messages.map((message, index) => (
