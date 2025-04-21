@@ -278,6 +278,28 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Custom bullet point styles for nested lists */
+.list-circle {
+    list-style-type: circle;
+}
+
+.list-square {
+    list-style-type: square;
+}
+
+/* Nested bullet styles using CSS selectors */
+.nested-bullets {
+    list-style-type: disc;
+}
+
+.nested-bullets .nested-bullets {
+    list-style-type: circle;
+}
+
+.nested-bullets .nested-bullets .nested-bullets {
+    list-style-type: square;
+}
+
 .skeleton {
     * {
         pointer-events: none !important;
