@@ -6,7 +6,6 @@ import { isTestEnvironment } from '../constants';
 import {
   artifactModel,
   chatModel,
-  reasoningModel,
   titleModel,
 } from './models.test';
 
@@ -29,12 +28,10 @@ export const pollinationsProvider = createOpenAICompatible({
 // Define Pollinations-specific model IDs for better type checking and auto-completion
 type PollinationsChatModelIds =
   | 'openai-xlarge'   // Large model for chat
-  | 'openai-reasoning' // Reasoning model
   | (string & {});     // Allow other string model IDs
 
 type PollinationsCompletionModelIds =
   | 'openai-xlarge'
-  | 'openai-reasoning'
   | (string & {});
 
 type PollinationsEmbeddingModelIds = string & {};
@@ -64,18 +61,14 @@ export const myProvider = isTestEnvironment
       languageModels: {
         // test models from your mocks/stubs
         'chat-model': chatModel,
-        'chat-model-reasoning': reasoningModel,
         'title-model': titleModel,
         'artifact-model': artifactModel,
       },
     })
   : customProvider({
       languageModels: {
-        // Use Pollinations AI openai-xlarge model for chat
+        // GPT-4.1 from OpenAI for chat
         'chat-model': pollinationsProvider.chatModel('openai-xlarge'),
-        
-        // Use Pollinations AI openai-reasoning model for reasoning tasks
-        'chat-model-reasoning': pollinationsProvider.chatModel('openai-reasoning'),
         
         // Use openai-xlarge for title generation
         'title-model': pollinationsProvider.chatModel('openai-xlarge'),
