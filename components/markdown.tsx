@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import React, { memo } from 'react';
+import { memo, forwardRef, Children, isValidElement, type ReactElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import { type PluggableList } from 'unified';
 
 // Define interface for code component props that includes the 'inline' property
 interface ExtendedCodeProps {
@@ -17,9 +18,9 @@ const components: Partial<Components> = {
   pre({ node, className, children, style, ...props }) {
     // Find the <code> child to potentially get the language
     let language = '';
-    const codeChild = React.Children.toArray(children).find(child => 
-      React.isValidElement(child) && child.type === 'code'
-    ) as React.ReactElement | undefined;
+    const codeChild = Children.toArray(children).find(child => 
+      isValidElement(child) && child.type === 'code'
+    ) as ReactElement | undefined;
 
     if (codeChild?.props.className) {
       const match = /language-(\w+)/.exec(codeChild?.props.className || '');
@@ -40,7 +41,7 @@ const components: Partial<Components> = {
     );
   },
   // Use a function with type assertion for the code component
-  code: React.forwardRef<HTMLElement, any>((props, ref) => {
+  code: forwardRef<HTMLElement, any>(function CodeComponent(props, ref) {
     // Safely cast props to our extended type that includes 'inline'
     const { inline, className, children, ...rest } = props as ExtendedCodeProps;
     
@@ -150,18 +151,20 @@ const components: Partial<Components> = {
 };
 
 const remarkPlugins = [remarkGfm];
-// Fix the rehypePlugins configuration format to match the expected TypeScript type
-const rehypePlugins = [[rehypeHighlight, { 
-  detect: true,       // Auto-detect language if not specified
-  ignoreMissing: true, // Don't throw on missing language
-  subset: false        // Use all languages available in highlight.js
-}]];
+// Properly type the rehypePlugins
+const rehypePlugins: PluggableList = [
+  [rehypeHighlight, { 
+    detect: true,       // Auto-detect language if not specified
+    ignoreMissing: true, // Don't throw on missing language
+    subset: false        // Use all languages available in highlight.js
+  }]
+];
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   return (
     <ReactMarkdown
       remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins as any}
+      rehypePlugins={rehypePlugins}
       components={components}
     >
       {children}
