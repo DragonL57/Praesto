@@ -2,6 +2,7 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import localFont from 'next/font/local';
 
 import './globals.css';
 
@@ -25,6 +26,63 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-geist-mono',
+});
+
+const pfBeauSansPro = localFont({
+  src: [
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Italic.ttf',
+      weight: '400',
+      style: 'italic',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Light.ttf',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-LightItalic.ttf',
+      weight: '300',
+      style: 'italic',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-BoldItalic.ttf',
+      weight: '700',
+      style: 'italic',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-SemiBold.ttf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-SemiBoldItalic.ttf',
+      weight: '600',
+      style: 'italic',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Black.ttf',
+      weight: '900',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-BlackItalic.ttf',
+      weight: '900',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-pf-beau-sans-pro',
+  display: 'swap',
 });
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
@@ -60,7 +118,7 @@ export default async function RootLayout({
       // prop is necessary to avoid the React hydration mismatch warning.
       // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} ${pfBeauSansPro.variable}`}
     >
       <head>
         <script
@@ -69,7 +127,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className="antialiased font-pf-beau">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
