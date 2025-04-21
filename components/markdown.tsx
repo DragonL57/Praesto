@@ -3,7 +3,6 @@ import { memo, forwardRef, Children, isValidElement, type ReactElement } from 'r
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { type PluggableList } from 'unified';
 
 // Define interface for code component props that includes the 'inline' property
 interface ExtendedCodeProps {
@@ -151,8 +150,8 @@ const components: Partial<Components> = {
 };
 
 const remarkPlugins = [remarkGfm];
-// Properly type the rehypePlugins
-const rehypePlugins: PluggableList = [
+// Configure rehypeHighlight with options
+const rehypePlugins = [
   [rehypeHighlight, { 
     detect: true,       // Auto-detect language if not specified
     ignoreMissing: true, // Don't throw on missing language
@@ -164,7 +163,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   return (
     <ReactMarkdown
       remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins}
+      // Use type assertion here since ReactMarkdown's types are compatible
+      rehypePlugins={rehypePlugins as any}
       components={components}
     >
       {children}

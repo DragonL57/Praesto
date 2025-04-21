@@ -203,6 +203,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3)))
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
       usehooks-ts:
         specifier: ^3.1.0
         version: 3.1.1(react@19.0.0-rc-45804af1-20241021)
