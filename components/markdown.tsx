@@ -62,6 +62,65 @@ const components: Partial<Components> = {
       </code>
     );
   },
+  // Table container with horizontal scrolling
+  table: ({ node, children, ...props }) => {
+    return (
+      <div className="overflow-x-auto my-4 max-w-full">
+        <table className="min-w-full border-collapse border border-zinc-300 dark:border-zinc-700" {...props}>
+          {children}
+        </table>
+      </div>
+    );
+  },
+  // Table header styling
+  thead: ({ node, children, ...props }) => {
+    return (
+      <thead className="bg-zinc-100 dark:bg-zinc-800" {...props}>
+        {children}
+      </thead>
+    );
+  },
+  // Table body styling
+  tbody: ({ node, children, ...props }) => {
+    return (
+      <tbody className="bg-white dark:bg-zinc-900" {...props}>
+        {children}
+      </tbody>
+    );
+  },
+  // Table row styling
+  tr: ({ node, children, ...props }) => {
+    return (
+      <tr className="border-b border-zinc-300 dark:border-zinc-700" {...props}>
+        {children}
+      </tr>
+    );
+  },
+  // Table header cell styling
+  th: ({ node, children, ...props }) => {
+    return (
+      <th className="px-4 py-2 text-left font-semibold border-r last:border-r-0 border-zinc-300 dark:border-zinc-700" {...props}>
+        {children}
+      </th>
+    );
+  },
+  // Table data cell styling
+  td: ({ node, children, ...props }) => {
+    return (
+      <td className="px-4 py-2 border-r last:border-r-0 border-zinc-300 dark:border-zinc-700" {...props}>
+        {children}
+      </td>
+    );
+  },
+  // Horizontal rule styling with consistent margins
+  hr: ({ node, ...props }) => {
+    return (
+      <hr
+        className="my-4 border-0 border-t border-zinc-300 dark:border-zinc-700"
+        {...props}
+      />
+    );
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>
