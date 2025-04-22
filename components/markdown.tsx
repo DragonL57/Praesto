@@ -3,18 +3,20 @@ import { memo, forwardRef, Children, isValidElement, type ReactElement } from 'r
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import hljs from 'highlight.js';
 
-// Define interface for code component props that includes the 'inline' property
-interface ExtendedCodeProps {
+// Define interface for code component props
+interface CodeProps {
   inline?: boolean;
   className?: string;
   children?: React.ReactNode;
+  node?: any;
   [key: string]: any;
 }
 
 const components: Partial<Components> = {
   // Keep the handler for <pre> elements (code blocks)
-  pre({ node, className, children, style, ...props }) {
+  pre({ node, className, children, ...props }) {
     // Find the <code> child to potentially get the language
     let language = '';
     const codeChild = Children.toArray(children).find(child => 
@@ -30,8 +32,7 @@ const components: Partial<Components> = {
 
     return (
       <pre
-        className={`not-prose text-sm w-full overflow-x-auto dark:bg-zinc-900 p-4 border border-zinc-200 dark:border-zinc-700 rounded-xl dark:text-zinc-50 text-zinc-900 ${className || ''}`}
-        style={style}
+        className={`${className || ''}`}
         {...props}
         data-language={language || undefined}
       >
@@ -39,31 +40,19 @@ const components: Partial<Components> = {
       </pre>
     );
   },
-  // Use a function with type assertion for the code component
-  code: forwardRef<HTMLElement, any>(function CodeComponent(props, ref) {
-    // Safely cast props to our extended type that includes 'inline'
-    const { inline, className, children, ...rest } = props as ExtendedCodeProps;
+  // Enhanced code component with better inline detection
+  code: ({ node, inline, className, children, ...props }: CodeProps) => {
+    // If this code is inside a pre element, it's a code block
+    // Otherwise, it's inline code and we should add our inline-code class
+    const isInline = !props.parent?.tagName?.match(/^pre$/i);
+    const codeClassName = isInline ? `inline-code ${className || ''}` : className || '';
     
-    // Only apply custom styling for inline code
-    if (inline) {
-      return (
-        <code
-          ref={ref}
-          className="text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 py-0.5 px-1.5 border border-zinc-300 dark:border-zinc-700 rounded-md font-mono"
-          {...rest}
-        >
-          {children}
-        </code>
-      );
-    }
-    
-    // For block code, let rehype-highlight handle the syntax highlighting
     return (
-      <code ref={ref} className={className} {...rest}>
+      <code className={codeClassName.trim()} {...props}>
         {children}
       </code>
     );
-  }),
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>

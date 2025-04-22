@@ -1,5 +1,5 @@
-/* Import highlight.js themes - use standard CSS import */
-@import 'highlight.js/styles/github.css';
+/* Import more colorful highlight.js themes */
+@import 'highlight.js/styles/atom-one-light.css';
 
 @tailwind base;
 @tailwind components;
@@ -7,98 +7,151 @@
 
 /* Dark theme for highlight.js */
 .dark {
-    /* This imports the dark theme when .dark class is present */
-    @import 'highlight.js/styles/github-dark.css';
+    /* Use a more vibrant dark theme */
+    @import 'highlight.js/styles/dracula.css';
 }
 
-/* Global font rendering optimizations for all screens, especially low resolution */
-html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    font-smooth: always;
-    font-feature-settings: 'kern', 'liga', 'calt';
-}
-
-/* Better font rendering for low-resolution screens specifically */
-@media screen and (max-width: 1280px),
-(max-height: 720px) {
-    html {
-        -webkit-font-smoothing: subpixel-antialiased;
-        text-rendering: optimizeSpeed;
-        letter-spacing: 0.01em;
-    }
-
-    body {
-        font-feature-settings: 'kern' 1, 'liga' 0;
-        text-shadow: 0px 0px 0.1px rgba(0, 0, 0, 0.1);
-    }
-
-    .dark body {
-        text-shadow: 0px 0px 0.1px rgba(255, 255, 255, 0.1);
-    }
-}
-
-/* Optimize monospace font rendering specifically */
-code,
-pre,
-.font-mono,
-[class*='font-mono'] {
-    -webkit-font-smoothing: auto;
-    -moz-osx-font-smoothing: auto;
-    font-feature-settings: 'ss01', 'ss02', 'zero';
-}
-
-/* Remove padding from code blocks */
-pre code.hljs,
-code.hljs {
-    padding: 0 !important;
-}
-
-/* Fix code block backgrounds but don't override highlight.js syntax colors */
+/* Enhanced code block styling with border and background colors */
 pre {
-    background-color: #f6f8fa !important;
-    /* GitHub light mode background */
+    overflow-x: auto;
+    border-radius: 0.3rem;
+    padding: 0rem !important;
+    margin: 0rem 0 !important;
+    /* Reduced margin from 1rem to 0.5rem */
+    border: 0px solid #b0b0b0 ;
+    /* Light mode border */
+    background-color: #b8b8b8 !important;
+    /* Light gray background in light mode */
 }
 
-.dark pre {
-    background-color: #0d1117 !important;
-    /* GitHub Dark background color */
+/* Dark mode specific styling for code blocks */
+.dark pre,
+.dark pre code,
+.dark .hljs {
+    background-color: #161616 !important;
+    /* VS Code-like dark background */
+    border-color: #333333 !important;
+    /* Darker border for code blocks */
+    color: #a8a8a8 !important;
+    /* Default text color */
 }
 
-pre code {
-    background-color: transparent !important;
-}
-
-.dark pre code {
-    background-color: transparent !important;
-}
-
-/* Make sure hljs classes take precedence for syntax highlighting */
+/* Custom syntax highlighting overrides with VS Code-like colors */
+/* Light mode colors */
 pre code .hljs-keyword,
-pre code .hljs-built_in,
-pre code .hljs-type,
-pre code .hljs-literal,
-pre code .hljs-number,
-pre code .hljs-string,
-pre code .hljs-comment,
-pre code .hljs-variable,
-pre code .hljs-tag,
-pre code .hljs-regexp,
-pre code .hljs-title,
-pre code .hljs-attr,
-pre code .hljs-symbol,
-pre code .hljs-bullet,
-pre code .hljs-function,
-pre code .hljs-section,
-pre code .hljs-name {
-    color: inherit;
-    /* Let highlight.js control the colors */
+code .hljs-keyword {
+    color: #0000ff !important;
+    /* Blue in light mode */
 }
 
-/* Override Tailwind's p-4 class to use 0.75rem instead of 1rem */
-.p-4 {
-    padding: 0.75rem !important;
+pre code .hljs-built_in,
+code .hljs-built_in {
+    color: #0000ff !important;
+    /* Blue in light mode */
+}
+
+pre code .hljs-string,
+code .hljs-string {
+    color: #008000 !important;
+    /* Green in light mode */
+}
+
+pre code .hljs-number,
+code .hljs-number {
+    color: #b5cea8 !important;
+    /* Lighter green in light mode */
+}
+
+pre code .hljs-comment,
+code .hljs-comment {
+    color: #808080 !important;
+    /* Gray */
+}
+
+pre code .hljs-function,
+code .hljs-function {
+    color: #795E26 !important;
+    /* Brown/gold in light mode */
+}
+
+pre code .hljs-title,
+code .hljs-title {
+    color: #795E26 !important;
+    /* Brown/gold in light mode */
+}
+
+pre code .hljs-params,
+code .hljs-params {
+    color: #000000 !important;
+    /* Black in light mode */
+}
+
+/* Dark mode syntax colors (VS Code dark theme) */
+.dark pre code .hljs-keyword,
+.dark code .hljs-keyword {
+    color: #68bbff !important;
+    /* Blue */
+}
+
+.dark pre code .hljs-built_in,
+.dark code .hljs-built_in {
+    color: #61b8ff !important;
+    /* Blue */
+}
+
+.dark pre code .hljs-string,
+.dark code .hljs-string {
+    color: #a8de8b !important;
+    /* Green */
+}
+
+.dark pre code .hljs-number,
+.dark code .hljs-number {
+    color: #D16969 !important;
+    /* Pink/Red */
+}
+
+.dark pre code .hljs-comment,
+.dark code .hljs-comment {
+    color: #808080 !important;
+    /* Gray */
+}
+
+.dark pre code .hljs-function,
+.dark code .hljs-function {
+    color: #DCDCAA !important;
+    /* Yellow/Gold */
+}
+
+.dark pre code .hljs-title,
+.dark code .hljs-title {
+    color: #DCDCAA !important;
+    /* Yellow/Gold */
+}
+
+.dark pre code .hljs-params,
+.dark code .hljs-params {
+    color: #E0E0E0 !important;
+    /* Default text color */
+}
+
+/* Direct styling for inline code */
+code.inline-code {
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    background-color: #f8fafc !important;
+    border: 1px solid #c5c5c5 !important;
+    font-size: 0.8rem !important;
+    color: inherit;
+}
+
+.dark code.inline-code {
+    background-color: #1E1E1E !important;
+    /* Match VS Code dark theme background */
+    border-color: #333333 !important;
+    color: #E0E0E0 !important;
+    /* Default text color */
 }
 
 /* PF Beau Sans Pro Font Family */
@@ -350,18 +403,6 @@ pre code .hljs-name {
 }
 
 @layer base {
-
-    /* Style for inline code */
-    :not(pre)>code {
-        @apply text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 py-0.5 px-1.5 border border-zinc-300 dark:border-zinc-700 rounded-md font-mono;
-    }
-
-    /* Ensure code blocks (code inside pre) don't inherit inline styles */
-    pre>code {
-        /* Reset any potentially inherited styles if needed */
-        @apply bg-transparent border-none p-0 rounded-none font-mono;
-    }
-
     * {
         @apply border-border;
     }
