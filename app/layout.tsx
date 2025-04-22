@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import localFont from 'next/font/local';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 
 import './globals.css';
 
@@ -141,6 +142,7 @@ export default async function RootLayout({
           <AnimatePresence mode="wait">
             {children}
           </AnimatePresence>
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
