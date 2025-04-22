@@ -188,15 +188,15 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   if (isLoading) {
     return (
       <SidebarGroup>
-        <div className="px-2 py-1 text-xs text-sidebar-foreground/75">
+        <div className="px-2 py-2 text-xs text-sidebar-foreground/75 mt-2">
           Today
         </div>
         <SidebarGroupContent>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             {[44, 32, 28, 64, 52].map((item) => (
               <div
                 key={item}
-                className="rounded-md h-8 flex gap-2 px-2 items-center"
+                className="rounded-md h-10 flex gap-2 px-3 items-center"
               >
                 <div
                   className="h-4 rounded-md flex-1 max-w-[--skeleton-width] bg-sidebar-accent-foreground/10"
@@ -228,8 +228,8 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupContent>
+      <SidebarGroup className="px-0">
+        <SidebarGroupContent className="py-0 px-0">
           {paginatedChatHistories &&
             (() => {
               const chatsFromHistory = paginatedChatHistories.flatMap(
@@ -242,13 +242,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                 <>
                   {groupedChats.today.length > 0 && (
                     <>
-                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-1">
                         Today
                       </div>
-                      <SidebarMenu>
-                        <li className="p-0 m-0">
+                      <SidebarMenu className="px-0 gap-0 w-full">
+                        <li className="p-0 m-0 w-full">
                           <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-1"
+                            className="flex w-full min-w-0 flex-col gap-0"
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
@@ -257,7 +257,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               <motion.div 
                                 key={chat.id}
                                 variants={itemVariants}
-                                className="chat-item-container"
+                                className="chat-item-container w-full"
                               >
                                 <ChatItem
                                   chat={chat}
@@ -278,13 +278,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.yesterday.length > 0 && (
                     <>
-                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
                         Yesterday
                       </div>
-                      <SidebarMenu>
-                        <li className="p-0 m-0">
+                      <SidebarMenu className="px-0 gap-0 w-full">
+                        <li className="p-0 m-0 w-full">
                           <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-1"
+                            className="flex w-full min-w-0 flex-col gap-0"
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
@@ -293,7 +293,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               <motion.div 
                                 key={chat.id}
                                 variants={itemVariants}
-                                className="chat-item-container"
+                                className="chat-item-container w-full"
                               >
                                 <ChatItem
                                   chat={chat}
@@ -314,13 +314,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.lastWeek.length > 0 && (
                     <>
-                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
                         Last 7 days
                       </div>
-                      <SidebarMenu>
-                        <li className="p-0 m-0">
+                      <SidebarMenu className="px-0 gap-0 w-full">
+                        <li className="p-0 m-0 w-full">
                           <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-1"
+                            className="flex w-full min-w-0 flex-col gap-0"
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
@@ -329,7 +329,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               <motion.div 
                                 key={chat.id}
                                 variants={itemVariants}
-                                className="chat-item-container"
+                                className="chat-item-container w-full"
                               >
                                 <ChatItem
                                   chat={chat}
@@ -350,13 +350,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.lastMonth.length > 0 && (
                     <>
-                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
                         Last 30 days
                       </div>
-                      <SidebarMenu>
-                        <li className="p-0 m-0">
+                      <SidebarMenu className="px-0 gap-0 w-full">
+                        <li className="p-0 m-0 w-full">
                           <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-1"
+                            className="flex w-full min-w-0 flex-col gap-0"
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
@@ -365,7 +365,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               <motion.div 
                                 key={chat.id}
                                 variants={itemVariants}
-                                className="chat-item-container"
+                                className="chat-item-container w-full"
                               >
                                 <ChatItem
                                   chat={chat}
@@ -386,13 +386,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.older.length > 0 && (
                     <>
-                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
                         Older than last month
                       </div>
-                      <SidebarMenu>
-                        <li className="p-0 m-0">
+                      <SidebarMenu className="px-0 gap-0 w-full">
+                        <li className="p-0 m-0 w-full">
                           <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-1"
+                            className="flex w-full min-w-0 flex-col gap-0"
                             variants={containerVariants}
                             initial="hidden"
                             animate="show"
@@ -401,7 +401,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               <motion.div 
                                 key={chat.id}
                                 variants={itemVariants}
-                                className="chat-item-container"
+                                className="chat-item-container w-full"
                               >
                                 <ChatItem
                                   chat={chat}
