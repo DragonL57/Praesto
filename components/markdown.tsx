@@ -75,7 +75,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     const [isError, setIsError] = useState(false);
     
     return (
-      <div className="my-4 flex justify-center">
+      <div className="my-2 flex justify-center">
         {src && !isError ? (
           <Image
             src={src}
@@ -107,7 +107,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     // Table container with horizontal scrolling
     table: function MarkdownTable({ node, children, ...props }) {
       return (
-        <div className="relative my-4 w-full">
+        <div className="relative my-2 w-full">
           {/* Add visual scroll indicator for mobile */}
           <div className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 pointer-events-none bg-gradient-to-l from-background to-transparent z-10 opacity-75"></div>
           
@@ -168,7 +168,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     hr: function MarkdownHr({ node, ...props }) {
       return (
         <hr
-          className="my-4 border-0 border-t border-zinc-300 dark:border-zinc-700"
+          className="my-2 border-0 border-t border-zinc-300 dark:border-zinc-700"
           {...props}
         />
       );
@@ -176,7 +176,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     ol: function MarkdownOl({ node, children, ...props }) {
       return (
-        <ol className="list-decimal list-outside ml-4 my-4" {...props}>
+        <ol className="list-decimal list-outside ml-4 my-2" {...props}>
           {children}
         </ol>
       );
@@ -192,7 +192,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     ul: function MarkdownUl({ node, children, ...props }) {
       return (
-        <ul className="nested-bullets list-outside ml-4 my-4" {...props}>
+        <ul className="nested-bullets list-outside ml-4 my-2" {...props}>
           {children}
         </ul>
       );
@@ -222,7 +222,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     p: function MarkdownParagraph({ node, children, ...props }) {
       return (
-        <p className="my-4 break-words" {...props}>
+        <p className="my-2 break-words" {...props}>
           {children}
         </p>
       );
