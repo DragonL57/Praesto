@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import localFont from 'next/font/local';
+import { AnimatePresence } from 'framer-motion';
 
 import './globals.css';
 
@@ -137,7 +138,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Toaster position="top-center" />
-          {children}
+          <AnimatePresence mode="wait">
+            {children}
+          </AnimatePresence>
         </ThemeProvider>
       </body>
     </html>
