@@ -246,30 +246,32 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                         Today
                       </div>
                       <SidebarMenu>
-                        <motion.ul 
-                          className="flex w-full min-w-0 flex-col gap-1"
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="show"
-                        >
-                          {groupedChats.today.map((chat) => (
-                            <motion.div 
-                              key={chat.id}
-                              variants={itemVariants}
-                              className="chat-item-container"
-                            >
-                              <ChatItem
-                                chat={chat}
-                                isActive={chat.id === id}
-                                onDelete={(chatId) => {
-                                  setDeleteId(chatId);
-                                  setShowDeleteDialog(true);
-                                }}
-                                setOpenMobile={setOpenMobile}
-                              />
-                            </motion.div>
-                          ))}
-                        </motion.ul>
+                        <li className="p-0 m-0">
+                          <motion.div 
+                            className="flex w-full min-w-0 flex-col gap-1"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                          >
+                            {groupedChats.today.map((chat) => (
+                              <motion.div 
+                                key={chat.id}
+                                variants={itemVariants}
+                                className="chat-item-container"
+                              >
+                                <ChatItem
+                                  chat={chat}
+                                  isActive={chat.id === id}
+                                  onDelete={(chatId) => {
+                                    setDeleteId(chatId);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  setOpenMobile={setOpenMobile}
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </li>
                       </SidebarMenu>
                     </>
                   )}
@@ -280,30 +282,32 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                         Yesterday
                       </div>
                       <SidebarMenu>
-                        <motion.ul 
-                          className="flex w-full min-w-0 flex-col gap-1"
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="show"
-                        >
-                          {groupedChats.yesterday.map((chat) => (
-                            <motion.div 
-                              key={chat.id}
-                              variants={itemVariants}
-                              className="chat-item-container"
-                            >
-                              <ChatItem
-                                chat={chat}
-                                isActive={chat.id === id}
-                                onDelete={(chatId) => {
-                                  setDeleteId(chatId);
-                                  setShowDeleteDialog(true);
-                                }}
-                                setOpenMobile={setOpenMobile}
-                              />
-                            </motion.div>
-                          ))}
-                        </motion.ul>
+                        <li className="p-0 m-0">
+                          <motion.div 
+                            className="flex w-full min-w-0 flex-col gap-1"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                          >
+                            {groupedChats.yesterday.map((chat) => (
+                              <motion.div 
+                                key={chat.id}
+                                variants={itemVariants}
+                                className="chat-item-container"
+                              >
+                                <ChatItem
+                                  chat={chat}
+                                  isActive={chat.id === id}
+                                  onDelete={(chatId) => {
+                                    setDeleteId(chatId);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  setOpenMobile={setOpenMobile}
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </li>
                       </SidebarMenu>
                     </>
                   )}
@@ -314,30 +318,32 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                         Last 7 days
                       </div>
                       <SidebarMenu>
-                        <motion.ul 
-                          className="flex w-full min-w-0 flex-col gap-1"
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="show"
-                        >
-                          {groupedChats.lastWeek.map((chat) => (
-                            <motion.div 
-                              key={chat.id}
-                              variants={itemVariants}
-                              className="chat-item-container"
-                            >
-                              <ChatItem
-                                chat={chat}
-                                isActive={chat.id === id}
-                                onDelete={(chatId) => {
-                                  setDeleteId(chatId);
-                                  setShowDeleteDialog(true);
-                                }}
-                                setOpenMobile={setOpenMobile}
-                              />
-                            </motion.div>
-                          ))}
-                        </motion.ul>
+                        <li className="p-0 m-0">
+                          <motion.div 
+                            className="flex w-full min-w-0 flex-col gap-1"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                          >
+                            {groupedChats.lastWeek.map((chat) => (
+                              <motion.div 
+                                key={chat.id}
+                                variants={itemVariants}
+                                className="chat-item-container"
+                              >
+                                <ChatItem
+                                  chat={chat}
+                                  isActive={chat.id === id}
+                                  onDelete={(chatId) => {
+                                    setDeleteId(chatId);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  setOpenMobile={setOpenMobile}
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </li>
                       </SidebarMenu>
                     </>
                   )}
@@ -348,30 +354,32 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                         Last 30 days
                       </div>
                       <SidebarMenu>
-                        <motion.ul 
-                          className="flex w-full min-w-0 flex-col gap-1"
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="show"
-                        >
-                          {groupedChats.lastMonth.map((chat) => (
-                            <motion.div 
-                              key={chat.id}
-                              variants={itemVariants}
-                              className="chat-item-container"
-                            >
-                              <ChatItem
-                                chat={chat}
-                                isActive={chat.id === id}
-                                onDelete={(chatId) => {
-                                  setDeleteId(chatId);
-                                  setShowDeleteDialog(true);
-                                }}
-                                setOpenMobile={setOpenMobile}
-                              />
-                            </motion.div>
-                          ))}
-                        </motion.ul>
+                        <li className="p-0 m-0">
+                          <motion.div 
+                            className="flex w-full min-w-0 flex-col gap-1"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                          >
+                            {groupedChats.lastMonth.map((chat) => (
+                              <motion.div 
+                                key={chat.id}
+                                variants={itemVariants}
+                                className="chat-item-container"
+                              >
+                                <ChatItem
+                                  chat={chat}
+                                  isActive={chat.id === id}
+                                  onDelete={(chatId) => {
+                                    setDeleteId(chatId);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  setOpenMobile={setOpenMobile}
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </li>
                       </SidebarMenu>
                     </>
                   )}
@@ -382,30 +390,32 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                         Older than last month
                       </div>
                       <SidebarMenu>
-                        <motion.ul 
-                          className="flex w-full min-w-0 flex-col gap-1"
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="show"
-                        >
-                          {groupedChats.older.map((chat) => (
-                            <motion.div 
-                              key={chat.id}
-                              variants={itemVariants}
-                              className="chat-item-container"
-                            >
-                              <ChatItem
-                                chat={chat}
-                                isActive={chat.id === id}
-                                onDelete={(chatId) => {
-                                  setDeleteId(chatId);
-                                  setShowDeleteDialog(true);
-                                }}
-                                setOpenMobile={setOpenMobile}
-                              />
-                            </motion.div>
-                          ))}
-                        </motion.ul>
+                        <li className="p-0 m-0">
+                          <motion.div 
+                            className="flex w-full min-w-0 flex-col gap-1"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                          >
+                            {groupedChats.older.map((chat) => (
+                              <motion.div 
+                                key={chat.id}
+                                variants={itemVariants}
+                                className="chat-item-container"
+                              >
+                                <ChatItem
+                                  chat={chat}
+                                  isActive={chat.id === id}
+                                  onDelete={(chatId) => {
+                                    setDeleteId(chatId);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  setOpenMobile={setOpenMobile}
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </li>
                       </SidebarMenu>
                     </>
                   )}
