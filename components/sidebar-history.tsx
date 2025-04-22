@@ -229,7 +229,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   return (
     <>
       <SidebarGroup className="px-0">
-        <SidebarGroupContent className="py-2 px-0">
+        <SidebarGroupContent className="py-2 px-3">
           {paginatedChatHistories &&
             (() => {
               const chatsFromHistory = paginatedChatHistories.flatMap(
