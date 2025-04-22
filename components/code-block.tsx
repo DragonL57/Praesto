@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import hljs from 'highlight.js';
 import { useTheme } from 'next-themes';
 
@@ -21,10 +21,25 @@ export function CodeBlock({
   const codeRef = useRef<HTMLElement>(null);
   const { theme, resolvedTheme } = useTheme();
   const isDarkTheme = theme === 'dark' || resolvedTheme === 'dark';
+  const [isMobile, setIsMobile] = useState(false);
   
   // Extract language from className if available (e.g. language-python)
   const match = /language-(\w+)/.exec(className || '');
   const language = match ? match[1] : '';
+  
+  useEffect(() => {
+    // Check if viewport is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
   
   useEffect(() => {
     if (!inline && codeRef.current && language) {
@@ -53,16 +68,18 @@ export function CodeBlock({
     return (
       <pre
         {...props}
-        className="not-prose text-sm w-full overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-50"
+        className="not-prose text-sm w-full overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-50 scrollbar-thin scrollbar-thumb-zinc-400 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent"
         style={{
           backgroundColor: isDarkTheme ? 'rgb(13, 17, 23)' : 'white',
           padding: '0.75rem',
           borderRadius: '12px',
+          WebkitOverflowScrolling: 'touch', // Improve mobile scrolling
+          maxWidth: '100%',
         }}
       >
         <code 
           ref={codeRef}
-          className={`whitespace-pre-wrap break-words ${language ? `language-${language}` : ''} hljs`}
+          className={`${language ? `language-${language}` : ''} hljs`}
           style={{
             fontFamily: '"Geist Mono", "Geist Mono Fallback", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
             fontSize: '14px',
@@ -74,6 +91,9 @@ export function CodeBlock({
             MozOsxFontSmoothing: 'auto',
             textRendering: 'geometricPrecision',
             letterSpacing: '0.01em',
+            whiteSpace: isMobile ? 'pre-wrap' : 'pre',
+            wordWrap: isMobile ? 'break-word' : 'normal',
+            overflowWrap: 'anywhere',
           }}
         >
           {String(children).replace(/\n$/, '')}

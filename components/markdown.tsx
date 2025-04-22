@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { memo, Children, isValidElement, type ReactElement, createElement } from 'react';
+import { memo, Children, isValidElement, type ReactElement, createElement, useEffect, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -69,18 +69,52 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
   };
   CodeComponent.displayName = 'MarkdownCode';
 
+  // Custom image component with responsive behavior
+  const ImageComponent = ({ node, src, alt, ...props }: any) => {
+    const [isError, setIsError] = useState(false);
+    
+    return (
+      <div className="my-4 flex justify-center">
+        <img
+          src={src}
+          alt={alt || "Image"}
+          className="rounded-md max-w-full h-auto"
+          style={{ maxWidth: "100%" }}
+          loading="lazy"
+          onError={() => setIsError(true)}
+          {...props}
+        />
+        {isError && (
+          <div className="text-sm text-muted-foreground italic text-center">
+            Failed to load image: {alt || src}
+          </div>
+        )}
+      </div>
+    );
+  };
+  ImageComponent.displayName = 'MarkdownImage';
+
   return {
     pre: PreComponent,
     code: CodeComponent,
+    img: ImageComponent,
 
     // Add display names to the rest of the components
     // Table container with horizontal scrolling
     table: function MarkdownTable({ node, children, ...props }) {
       return (
-        <div className="overflow-x-auto my-4 max-w-full">
-          <table className="min-w-full border-collapse border border-zinc-300 dark:border-zinc-700" {...props}>
-            {children}
-          </table>
+        <div className="relative my-4 w-full">
+          {/* Add visual scroll indicator for mobile */}
+          <div className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 pointer-events-none bg-gradient-to-l from-background to-transparent z-10 opacity-75"></div>
+          
+          {/* Table wrapper with enhanced mobile handling */}
+          <div className="overflow-x-auto w-full max-w-full pb-2 scrollbar-thin scrollbar-thumb-zinc-400 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="w-full border-collapse border border-zinc-300 dark:border-zinc-700" {...props}>
+                {children}
+              </table>
+            </div>
+          </div>
         </div>
       );
     },
@@ -111,7 +145,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     th: function MarkdownTh({ node, children, ...props }) {
       return (
-        <th className="px-4 py-2 text-left font-semibold border-r last:border-r-0 border-zinc-300 dark:border-zinc-700" {...props}>
+        <th className="px-4 py-2 text-left font-semibold border-r last:border-r-0 border-zinc-300 dark:border-zinc-700 break-words" {...props}>
           {children}
         </th>
       );
@@ -119,8 +153,10 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     td: function MarkdownTd({ node, children, ...props }) {
       return (
-        <td className="px-4 py-2 border-r last:border-r-0 border-zinc-300 dark:border-zinc-700" {...props}>
-          {children}
+        <td className="px-4 py-2 border-r last:border-r-0 border-zinc-300 dark:border-zinc-700 break-words min-w-[120px]" {...props}>
+          <div className="line-clamp-5 overflow-hidden text-ellipsis">
+            {children}
+          </div>
         </td>
       );
     },
@@ -136,7 +172,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     ol: function MarkdownOl({ node, children, ...props }) {
       return (
-        <ol className="list-decimal list-outside ml-4" {...props}>
+        <ol className="list-decimal list-outside ml-4 my-4" {...props}>
           {children}
         </ol>
       );
@@ -144,7 +180,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     li: function MarkdownLi({ node, children, ...props }) {
       return (
-        <li className="py-1" {...props}>
+        <li className="py-1 break-words" {...props}>
           {children}
         </li>
       );
@@ -152,7 +188,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     ul: function MarkdownUl({ node, children, ...props }) {
       return (
-        <ul className="nested-bullets list-outside ml-4" {...props}>
+        <ul className="nested-bullets list-outside ml-4 my-4" {...props}>
           {children}
         </ul>
       );
@@ -169,7 +205,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     a: function MarkdownLink({ node, children, href, ...props }) {
       return (
         <Link
-          className="text-blue-500 hover:underline"
+          className="text-blue-500 hover:underline break-words overflow-wrap-anywhere"
           target="_blank"
           rel="noreferrer"
           href={href as any}
@@ -177,6 +213,14 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
         >
           {children}
         </Link>
+      );
+    },
+    
+    p: function MarkdownParagraph({ node, children, ...props }) {
+      return (
+        <p className="my-4 break-words" {...props}>
+          {children}
+        </p>
       );
     },
 
@@ -187,7 +231,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel, 6);
       return createElement(
         `h${level}`,
-        { className: "text-3xl font-semibold mt-6 mb-2", ...props },
+        { className: "text-3xl font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
@@ -196,7 +240,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 1, 6);
       return createElement(
         `h${level}`,
-        { className: "text-2xl font-semibold mt-6 mb-2", ...props },
+        { className: "text-2xl font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
@@ -205,7 +249,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 2, 6);
       return createElement(
         `h${level}`,
-        { className: "text-xl font-semibold mt-6 mb-2", ...props },
+        { className: "text-xl font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
@@ -214,7 +258,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 3, 6);
       return createElement(
         `h${level}`,
-        { className: "text-lg font-semibold mt-6 mb-2", ...props },
+        { className: "text-lg font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
@@ -223,7 +267,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 4, 6);
       return createElement(
         `h${level}`,
-        { className: "text-base font-semibold mt-6 mb-2", ...props },
+        { className: "text-base font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
@@ -232,7 +276,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 5, 6);
       return createElement(
         `h${level}`,
-        { className: "text-sm font-semibold mt-6 mb-2", ...props },
+        { className: "text-sm font-semibold mt-6 mb-2 break-words", ...props },
         children
       );
     },
