@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import type { User } from 'next-auth';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +92,31 @@ export function getChatHistoryPaginationKey(
 
   return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
 }
+
+// Animation variants for container and items
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20
+    }
+  }
+};
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
   const { setOpenMobile } = useSidebar();
@@ -217,113 +242,163 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                 return (
                   <>
                     {groupedChats.today.length > 0 && (
-                      <li className="list-none">
+                      <div className="chat-group" key="today-group">
                         <div className="px-2 py-1 text-xs text-sidebar-foreground">
                           Today
                         </div>
-                        <ul className="list-none p-0 m-0">
+                        <motion.div 
+                          className="p-0 m-0"
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="show"
+                        >
                           {groupedChats.today.map((chat) => (
-                            <ChatItem
+                            <motion.div 
                               key={chat.id}
-                              chat={chat}
-                              isActive={chat.id === id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
-                              setOpenMobile={setOpenMobile}
-                            />
+                              variants={itemVariants}
+                              className="chat-item-container"
+                            >
+                              <ChatItem
+                                chat={chat}
+                                isActive={chat.id === id}
+                                onDelete={(chatId) => {
+                                  setDeleteId(chatId);
+                                  setShowDeleteDialog(true);
+                                }}
+                                setOpenMobile={setOpenMobile}
+                              />
+                            </motion.div>
                           ))}
-                        </ul>
-                      </li>
+                        </motion.div>
+                      </div>
                     )}
 
                     {groupedChats.yesterday.length > 0 && (
-                      <li className="list-none">
+                      <div className="chat-group" key="yesterday-group">
                         <div className="px-2 py-1 text-xs text-sidebar-foreground">
                           Yesterday
                         </div>
-                        <ul className="list-none p-0 m-0">
+                        <motion.div 
+                          className="p-0 m-0"
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="show"
+                        >
                           {groupedChats.yesterday.map((chat) => (
-                            <ChatItem
+                            <motion.div 
                               key={chat.id}
-                              chat={chat}
-                              isActive={chat.id === id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
-                              setOpenMobile={setOpenMobile}
-                            />
+                              variants={itemVariants}
+                              className="chat-item-container"
+                            >
+                              <ChatItem
+                                chat={chat}
+                                isActive={chat.id === id}
+                                onDelete={(chatId) => {
+                                  setDeleteId(chatId);
+                                  setShowDeleteDialog(true);
+                                }}
+                                setOpenMobile={setOpenMobile}
+                              />
+                            </motion.div>
                           ))}
-                        </ul>
-                      </li>
+                        </motion.div>
+                      </div>
                     )}
 
                     {groupedChats.lastWeek.length > 0 && (
-                      <li className="list-none">
+                      <div className="chat-group" key="lastWeek-group">
                         <div className="px-2 py-1 text-xs text-sidebar-foreground">
                           Last 7 days
                         </div>
-                        <ul className="list-none p-0 m-0">
+                        <motion.div 
+                          className="p-0 m-0"
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="show"
+                        >
                           {groupedChats.lastWeek.map((chat) => (
-                            <ChatItem
+                            <motion.div 
                               key={chat.id}
-                              chat={chat}
-                              isActive={chat.id === id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
-                              setOpenMobile={setOpenMobile}
-                            />
+                              variants={itemVariants}
+                              className="chat-item-container"
+                            >
+                              <ChatItem
+                                chat={chat}
+                                isActive={chat.id === id}
+                                onDelete={(chatId) => {
+                                  setDeleteId(chatId);
+                                  setShowDeleteDialog(true);
+                                }}
+                                setOpenMobile={setOpenMobile}
+                              />
+                            </motion.div>
                           ))}
-                        </ul>
-                      </li>
+                        </motion.div>
+                      </div>
                     )}
 
                     {groupedChats.lastMonth.length > 0 && (
-                      <li className="list-none">
+                      <div className="chat-group" key="lastMonth-group">
                         <div className="px-2 py-1 text-xs text-sidebar-foreground">
                           Last 30 days
                         </div>
-                        <ul className="list-none p-0 m-0">
+                        <motion.div 
+                          className="p-0 m-0"
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="show"
+                        >
                           {groupedChats.lastMonth.map((chat) => (
-                            <ChatItem
+                            <motion.div 
                               key={chat.id}
-                              chat={chat}
-                              isActive={chat.id === id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
-                              setOpenMobile={setOpenMobile}
-                            />
+                              variants={itemVariants}
+                              className="chat-item-container"
+                            >
+                              <ChatItem
+                                chat={chat}
+                                isActive={chat.id === id}
+                                onDelete={(chatId) => {
+                                  setDeleteId(chatId);
+                                  setShowDeleteDialog(true);
+                                }}
+                                setOpenMobile={setOpenMobile}
+                              />
+                            </motion.div>
                           ))}
-                        </ul>
-                      </li>
+                        </motion.div>
+                      </div>
                     )}
 
                     {groupedChats.older.length > 0 && (
-                      <li className="list-none">
+                      <div className="chat-group" key="older-group">
                         <div className="px-2 py-1 text-xs text-sidebar-foreground">
                           Older than last month
                         </div>
-                        <ul className="list-none p-0 m-0">
+                        <motion.div 
+                          className="p-0 m-0"
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="show"
+                        >
                           {groupedChats.older.map((chat) => (
-                            <ChatItem
+                            <motion.div 
                               key={chat.id}
-                              chat={chat}
-                              isActive={chat.id === id}
-                              onDelete={(chatId) => {
-                                setDeleteId(chatId);
-                                setShowDeleteDialog(true);
-                              }}
-                              setOpenMobile={setOpenMobile}
-                            />
+                              variants={itemVariants}
+                              className="chat-item-container"
+                            >
+                              <ChatItem
+                                chat={chat}
+                                isActive={chat.id === id}
+                                onDelete={(chatId) => {
+                                  setDeleteId(chatId);
+                                  setShowDeleteDialog(true);
+                                }}
+                                setOpenMobile={setOpenMobile}
+                              />
+                            </motion.div>
                           ))}
-                        </ul>
-                      </li>
+                        </motion.div>
+                      </div>
                     )}
                   </>
                 );

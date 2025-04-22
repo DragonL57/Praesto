@@ -6,6 +6,31 @@ import { memo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Animation variants for messages container and individual messages
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const messageVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 220,
+      damping: 20
+    }
+  }
+};
 
 interface MessagesProps {
   chatId: string;
@@ -42,35 +67,56 @@ function PureMessages({
       }}
       ref={messagesContainerRef}
     >
-      <div className="flex flex-col min-w-0 gap-6 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
+      <motion.div 
+        className="flex flex-col min-w-0 gap-6 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
         {messages.length === 0 && <Greeting />}
 
-        {messages.map((message, index) => (
-          <PreviewMessage
-            key={message.id}
-            chatId={chatId}
-            message={message}
-            isLoading={status === 'streaming' && messages.length - 1 === index}
-            vote={
-              votes
-                ? votes.find((vote) => vote.messageId === message.id)
-                : undefined
-            }
-            setMessages={setMessages}
-            reload={reload}
-            isReadonly={isReadonly}
-          />
-        ))}
+        <AnimatePresence>
+          {messages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              variants={messageVariants}
+              initial="hidden"
+              animate="show"
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            >
+              <PreviewMessage
+                chatId={chatId}
+                message={message}
+                isLoading={status === 'streaming' && messages.length - 1 === index}
+                vote={
+                  votes
+                    ? votes.find((vote) => vote.messageId === message.id)
+                    : undefined
+                }
+                setMessages={setMessages}
+                reload={reload}
+                isReadonly={isReadonly}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {status === 'submitted' &&
           messages.length > 0 &&
-          messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+          messages[messages.length - 1].role === 'user' && 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <ThinkingMessage />
+          </motion.div>}
 
         <div
           ref={messagesEndRef}
           className="shrink-0 min-w-[24px] min-h-[24px]"
         />
-      </div>
+      </motion.div>
     </div>
   );
 }
