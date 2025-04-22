@@ -3,7 +3,7 @@ import { memo, forwardRef, Children, isValidElement, type ReactElement } from 'r
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import hljs from 'highlight.js';
+// highlight.js themes are still imported in globals.css
 
 // Define interface for code component props
 interface CodeProps {
@@ -11,11 +11,13 @@ interface CodeProps {
   className?: string;
   children?: React.ReactNode;
   node?: any;
+  // Add parent prop type based on potential usage by react-markdown
+  parent?: { tagName?: string }; 
   [key: string]: any;
 }
 
 const components: Partial<Components> = {
-  // Keep the handler for <pre> elements (code blocks)
+  // Apply base pre styling directly using Tailwind
   pre({ node, className, children, ...props }) {
     // Find the <code> child to potentially get the language
     let language = '';
@@ -32,7 +34,11 @@ const components: Partial<Components> = {
 
     return (
       <pre
-        className={`${className || ''}`}
+        // Added Tailwind classes for base styling from globals.css
+        // Keep existing className for highlight.js theme compatibility
+        // Note: Specific background colors might still be applied by highlight.js themes imported in globals.css
+        // Added base structural styles here.
+        className={`overflow-x-auto rounded-md p-0 m-0 border-0 bg-zinc-100 dark:bg-[#161616] ${className || ''}`}
         {...props}
         data-language={language || undefined}
       >
@@ -40,12 +46,15 @@ const components: Partial<Components> = {
       </pre>
     );
   },
-  // Enhanced code component with better inline detection
+  // Apply inline code styling directly using Tailwind
   code: ({ node, inline, className, children, ...props }: CodeProps) => {
-    // If this code is inside a pre element, it's a code block
-    // Otherwise, it's inline code and we should add our inline-code class
+    // Determine if inline based on parent element (more reliable than inline prop)
     const isInline = !props.parent?.tagName?.match(/^pre$/i);
-    const codeClassName = isInline ? `inline-code ${className || ''}` : className || '';
+    
+    // Apply Tailwind classes directly for inline code
+    const codeClassName = isInline 
+      ? `inline-code px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 ${className || ''}` 
+      : className || ''; // Keep original className for code blocks (for highlight.js)
     
     return (
       <code className={codeClassName.trim()} {...props}>
