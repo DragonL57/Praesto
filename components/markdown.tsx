@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { memo, Children, isValidElement, type ReactElement, createElement, useEffect, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -75,16 +76,19 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     return (
       <div className="my-4 flex justify-center">
-        <img
-          src={src}
-          alt={alt || "Image"}
-          className="rounded-md max-w-full h-auto"
-          style={{ maxWidth: "100%" }}
-          loading="lazy"
-          onError={() => setIsError(true)}
-          {...props}
-        />
-        {isError && (
+        {src && !isError ? (
+          <Image
+            src={src}
+            alt={alt || "Image"}
+            className="rounded-md max-w-full h-auto"
+            width={700}
+            height={350}
+            style={{ maxWidth: "100%", height: "auto" }}
+            loading="lazy"
+            onError={() => setIsError(true)}
+            {...props}
+          />
+        ) : (
           <div className="text-sm text-muted-foreground italic text-center">
             Failed to load image: {alt || src}
           </div>
