@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { memo, forwardRef, Children, isValidElement, type ReactElement, createElement, Fragment } from 'react';
+import { memo, Children, isValidElement, type ReactElement, createElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -22,6 +22,8 @@ interface MarkdownProps {
   baseHeadingLevel?: number;
 }
 
+// Use a more predictable approach for heading levels
+// Instead of maintaining state, we'll use fixed heading levels from baseHeadingLevel
 const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
   // Create named components for other Markdown elements
   const PreComponent = ({ node, className, children, ...props }: any) => {
@@ -164,13 +166,13 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     
-    a: function MarkdownLink({ node, children, ...props }) {
+    a: function MarkdownLink({ node, children, href, ...props }) {
       return (
-        // @ts-expect-error
         <Link
           className="text-blue-500 hover:underline"
           target="_blank"
           rel="noreferrer"
+          href={href as any}
           {...props}
         >
           {children}
@@ -178,8 +180,10 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
 
-    // Fixed heading components using createElement instead of JSX for dynamic tags
+    // Fixed heading components with deterministic level calculation
+    // For better accessibility without hydration issues, we use a fixed mapping approach
     h1: function MarkdownH1({ node, children, ...props }) {
+      // Always map h1 -> baseHeadingLevel
       const level = Math.min(baseHeadingLevel, 6);
       return createElement(
         `h${level}`,
@@ -188,6 +192,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     h2: function MarkdownH2({ node, children, ...props }) {
+      // Always map h2 -> baseHeadingLevel + 1
       const level = Math.min(baseHeadingLevel + 1, 6);
       return createElement(
         `h${level}`,
@@ -196,6 +201,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     h3: function MarkdownH3({ node, children, ...props }) {
+      // Always map h3 -> baseHeadingLevel + 2
       const level = Math.min(baseHeadingLevel + 2, 6);
       return createElement(
         `h${level}`,
@@ -204,6 +210,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     h4: function MarkdownH4({ node, children, ...props }) {
+      // Always map h4 -> baseHeadingLevel + 3
       const level = Math.min(baseHeadingLevel + 3, 6);
       return createElement(
         `h${level}`,
@@ -212,6 +219,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     h5: function MarkdownH5({ node, children, ...props }) {
+      // Always map h5 -> baseHeadingLevel + 4
       const level = Math.min(baseHeadingLevel + 4, 6);
       return createElement(
         `h${level}`,
@@ -220,6 +228,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
     h6: function MarkdownH6({ node, children, ...props }) {
+      // Always map h6 -> baseHeadingLevel + 5
       const level = Math.min(baseHeadingLevel + 5, 6);
       return createElement(
         `h${level}`,
