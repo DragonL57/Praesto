@@ -168,7 +168,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     hr: function MarkdownHr({ node, ...props }) {
       return (
         <hr
-          className="my-2 border-0 border-t border-zinc-300 dark:border-zinc-700"
+          className="my-8 border-0 border-t border-zinc-300 dark:border-zinc-700"
           {...props}
         />
       );
@@ -235,7 +235,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel, 6);
       return createElement(
         `h${level}`,
-        { className: "text-3xl font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-3xl font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
@@ -244,7 +244,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 1, 6);
       return createElement(
         `h${level}`,
-        { className: "text-2xl font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-2xl font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
@@ -253,7 +253,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 2, 6);
       return createElement(
         `h${level}`,
-        { className: "text-xl font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-xl font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
@@ -262,7 +262,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 3, 6);
       return createElement(
         `h${level}`,
-        { className: "text-lg font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-lg font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
@@ -271,7 +271,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 4, 6);
       return createElement(
         `h${level}`,
-        { className: "text-base font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-base font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
@@ -280,7 +280,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       const level = Math.min(baseHeadingLevel + 5, 6);
       return createElement(
         `h${level}`,
-        { className: "text-sm font-semibold mt-6 mb-2 break-words", ...props },
+        { className: "text-sm font-semibold mt-2 mb-2 break-words", ...props },
         children
       );
     },
