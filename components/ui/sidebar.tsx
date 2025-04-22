@@ -255,6 +255,8 @@ const Sidebar = React.forwardRef<
             className,
           )}
           {...props}
+          // Make entire div unfocusable and hidden from screen readers when collapsed in offcanvas mode
+          aria-hidden={state === 'collapsed' && collapsible === 'offcanvas' ? 'true' : undefined}
         >
           <div
             data-sidebar="sidebar"
@@ -346,6 +348,8 @@ const SidebarInput = React.forwardRef<
   React.ElementRef<typeof Input>,
   React.ComponentProps<typeof Input>
 >(({ className, ...props }, ref) => {
+  const { state } = useSidebar();
+  
   return (
     <Input
       ref={ref}
@@ -354,6 +358,7 @@ const SidebarInput = React.forwardRef<
         'h-8 w-full bg-background shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
         className,
       )}
+      tabIndex={state === 'collapsed' ? -1 : undefined}
       {...props}
     />
   );
@@ -445,6 +450,7 @@ const SidebarGroupLabel = React.forwardRef<
   React.ComponentProps<'div'> & { asChild?: boolean }
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'div';
+  const { state } = useSidebar();
 
   return (
     <Comp
@@ -455,6 +461,7 @@ const SidebarGroupLabel = React.forwardRef<
         'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
         className,
       )}
+      tabIndex={state === 'collapsed' ? -1 : undefined}
       {...props}
     />
   );
@@ -466,6 +473,7 @@ const SidebarGroupAction = React.forwardRef<
   React.ComponentProps<'button'> & { asChild?: boolean }
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button';
+  const { state } = useSidebar();
 
   return (
     <Comp
@@ -478,6 +486,7 @@ const SidebarGroupAction = React.forwardRef<
         'group-data-[collapsible=icon]:hidden',
         className,
       )}
+      tabIndex={state === 'collapsed' ? -1 : undefined}
       {...props}
     />
   );
@@ -575,6 +584,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        tabIndex={state === 'collapsed' && !isMobile ? -1 : undefined}
         {...props}
       />
     );
@@ -612,6 +622,7 @@ const SidebarMenuAction = React.forwardRef<
   }
 >(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button';
+  const { state } = useSidebar();
 
   return (
     <Comp
@@ -629,6 +640,7 @@ const SidebarMenuAction = React.forwardRef<
           'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0',
         className,
       )}
+      tabIndex={state === 'collapsed' ? -1 : undefined}
       {...props}
     />
   );
@@ -697,18 +709,23 @@ SidebarMenuSkeleton.displayName = 'SidebarMenuSkeleton';
 const SidebarMenuSub = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<'ul'>
->(({ className, ...props }, ref) => (
-  <ul
-    ref={ref}
-    data-sidebar="menu-sub"
-    className={cn(
-      'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5',
-      'group-data-[collapsible=icon]:hidden',
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const { state } = useSidebar();
+  
+  return (
+    <ul
+      ref={ref}
+      data-sidebar="menu-sub"
+      className={cn(
+        'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5',
+        'group-data-[collapsible=icon]:hidden',
+        className,
+      )}
+      aria-hidden={state === 'collapsed' ? 'true' : undefined}
+      {...props}
+    />
+  );
+});
 SidebarMenuSub.displayName = 'SidebarMenuSub';
 
 const SidebarMenuSubItem = React.forwardRef<
@@ -726,6 +743,7 @@ const SidebarMenuSubButton = React.forwardRef<
   }
 >(({ asChild = false, size = 'md', isActive, className, ...props }, ref) => {
   const Comp = asChild ? Slot : 'a';
+  const { state } = useSidebar();
 
   return (
     <Comp
@@ -741,6 +759,7 @@ const SidebarMenuSubButton = React.forwardRef<
         'group-data-[collapsible=icon]:hidden',
         className,
       )}
+      tabIndex={state === 'collapsed' ? -1 : undefined}
       {...props}
     />
   );
