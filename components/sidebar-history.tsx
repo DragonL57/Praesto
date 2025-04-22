@@ -230,24 +230,24 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     <>
       <SidebarGroup>
         <SidebarGroupContent>
-          <SidebarMenu>
-            {paginatedChatHistories &&
-              (() => {
-                const chatsFromHistory = paginatedChatHistories.flatMap(
-                  (paginatedChatHistory) => paginatedChatHistory.chats,
-                );
+          {paginatedChatHistories &&
+            (() => {
+              const chatsFromHistory = paginatedChatHistories.flatMap(
+                (paginatedChatHistory) => paginatedChatHistory.chats,
+              );
 
-                const groupedChats = groupChatsByDate(chatsFromHistory);
+              const groupedChats = groupChatsByDate(chatsFromHistory);
 
-                return (
-                  <>
-                    {groupedChats.today.length > 0 && (
-                      <div className="chat-group" key="today-group">
-                        <div className="px-2 py-1 text-xs text-sidebar-foreground">
-                          Today
-                        </div>
-                        <motion.div 
-                          className="p-0 m-0"
+              return (
+                <>
+                  {groupedChats.today.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                        Today
+                      </div>
+                      <SidebarMenu>
+                        <motion.ul 
+                          className="flex w-full min-w-0 flex-col gap-1"
                           variants={containerVariants}
                           initial="hidden"
                           animate="show"
@@ -269,17 +269,19 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               />
                             </motion.div>
                           ))}
-                        </motion.div>
-                      </div>
-                    )}
+                        </motion.ul>
+                      </SidebarMenu>
+                    </>
+                  )}
 
-                    {groupedChats.yesterday.length > 0 && (
-                      <div className="chat-group" key="yesterday-group">
-                        <div className="px-2 py-1 text-xs text-sidebar-foreground">
-                          Yesterday
-                        </div>
-                        <motion.div 
-                          className="p-0 m-0"
+                  {groupedChats.yesterday.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                        Yesterday
+                      </div>
+                      <SidebarMenu>
+                        <motion.ul 
+                          className="flex w-full min-w-0 flex-col gap-1"
                           variants={containerVariants}
                           initial="hidden"
                           animate="show"
@@ -301,17 +303,19 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               />
                             </motion.div>
                           ))}
-                        </motion.div>
-                      </div>
-                    )}
+                        </motion.ul>
+                      </SidebarMenu>
+                    </>
+                  )}
 
-                    {groupedChats.lastWeek.length > 0 && (
-                      <div className="chat-group" key="lastWeek-group">
-                        <div className="px-2 py-1 text-xs text-sidebar-foreground">
-                          Last 7 days
-                        </div>
-                        <motion.div 
-                          className="p-0 m-0"
+                  {groupedChats.lastWeek.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                        Last 7 days
+                      </div>
+                      <SidebarMenu>
+                        <motion.ul 
+                          className="flex w-full min-w-0 flex-col gap-1"
                           variants={containerVariants}
                           initial="hidden"
                           animate="show"
@@ -333,17 +337,19 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               />
                             </motion.div>
                           ))}
-                        </motion.div>
-                      </div>
-                    )}
+                        </motion.ul>
+                      </SidebarMenu>
+                    </>
+                  )}
 
-                    {groupedChats.lastMonth.length > 0 && (
-                      <div className="chat-group" key="lastMonth-group">
-                        <div className="px-2 py-1 text-xs text-sidebar-foreground">
-                          Last 30 days
-                        </div>
-                        <motion.div 
-                          className="p-0 m-0"
+                  {groupedChats.lastMonth.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                        Last 30 days
+                      </div>
+                      <SidebarMenu>
+                        <motion.ul 
+                          className="flex w-full min-w-0 flex-col gap-1"
                           variants={containerVariants}
                           initial="hidden"
                           animate="show"
@@ -365,17 +371,19 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               />
                             </motion.div>
                           ))}
-                        </motion.div>
-                      </div>
-                    )}
+                        </motion.ul>
+                      </SidebarMenu>
+                    </>
+                  )}
 
-                    {groupedChats.older.length > 0 && (
-                      <div className="chat-group" key="older-group">
-                        <div className="px-2 py-1 text-xs text-sidebar-foreground">
-                          Older than last month
-                        </div>
-                        <motion.div 
-                          className="p-0 m-0"
+                  {groupedChats.older.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-sidebar-foreground">
+                        Older than last month
+                      </div>
+                      <SidebarMenu>
+                        <motion.ul 
+                          className="flex w-full min-w-0 flex-col gap-1"
                           variants={containerVariants}
                           initial="hidden"
                           animate="show"
@@ -397,13 +405,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                               />
                             </motion.div>
                           ))}
-                        </motion.div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-          </SidebarMenu>
+                        </motion.ul>
+                      </SidebarMenu>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
           <motion.div
             onViewportEnter={() => {

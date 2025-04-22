@@ -2,7 +2,6 @@ import { Chat } from '@/lib/db/schema';
 import {
   SidebarMenuAction,
   SidebarMenuButton,
-  SidebarMenuItem,
 } from './ui/sidebar';
 import Link from 'next/link';
 import {
@@ -25,6 +24,22 @@ import {
 } from './icons';
 import { memo } from 'react';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import { cn } from '@/lib/utils';
+
+// Create a div version of SidebarMenuItem to avoid nested li elements
+const SidebarMenuItemDiv = ({ 
+  className, 
+  children, 
+  ...props 
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    data-sidebar="menu-item"
+    className={cn('group/menu-item relative', className)}
+    {...props}
+  >
+    {children}
+  </div>
+);
 
 const PureChatItem = ({
   chat,
@@ -43,7 +58,7 @@ const PureChatItem = ({
   });
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItemDiv>
       <SidebarMenuButton asChild isActive={isActive}>
         <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
           <span>{chat.title}</span>
@@ -108,7 +123,7 @@ const PureChatItem = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </SidebarMenuItem>
+    </SidebarMenuItemDiv>
   );
 };
 
