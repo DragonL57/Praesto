@@ -229,7 +229,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   return (
     <>
       <SidebarGroup className="px-0">
-        <SidebarGroupContent className="py-0 px-0">
+        <SidebarGroupContent className="py-2 px-0">
           {paginatedChatHistories &&
             (() => {
               const chatsFromHistory = paginatedChatHistories.flatMap(
@@ -239,187 +239,117 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
               const groupedChats = groupChatsByDate(chatsFromHistory);
 
               return (
-                <>
+                <div className="flex flex-col gap-6">
                   {groupedChats.today.length > 0 && (
-                    <>
-                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-1">
+                    <div>
+                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-1 mb-1">
                         Today
                       </div>
-                      <SidebarMenu className="px-0 gap-0 w-full">
-                        <li className="p-0 m-0 w-full">
-                          <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-0"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="show"
-                          >
-                            {groupedChats.today.map((chat) => (
-                              <motion.div 
-                                key={chat.id}
-                                variants={itemVariants}
-                                className="chat-item-container w-full"
-                              >
-                                <ChatItem
-                                  chat={chat}
-                                  isActive={chat.id === id}
-                                  onDelete={(chatId) => {
-                                    setDeleteId(chatId);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  setOpenMobile={setOpenMobile}
-                                />
-                              </motion.div>
-                            ))}
-                          </motion.div>
-                        </li>
-                      </SidebarMenu>
-                    </>
+                      <div className="flex flex-col gap-1">
+                        {groupedChats.today.map((chat) => (
+                          <ChatItem
+                            key={chat.id}
+                            chat={chat}
+                            isActive={chat.id === id}
+                            onDelete={(chatId) => {
+                              setDeleteId(chatId);
+                              setShowDeleteDialog(true);
+                            }}
+                            setOpenMobile={setOpenMobile}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {groupedChats.yesterday.length > 0 && (
-                    <>
-                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
+                    <div>
+                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Yesterday
                       </div>
-                      <SidebarMenu className="px-0 gap-0 w-full">
-                        <li className="p-0 m-0 w-full">
-                          <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-0"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="show"
-                          >
-                            {groupedChats.yesterday.map((chat) => (
-                              <motion.div 
-                                key={chat.id}
-                                variants={itemVariants}
-                                className="chat-item-container w-full"
-                              >
-                                <ChatItem
-                                  chat={chat}
-                                  isActive={chat.id === id}
-                                  onDelete={(chatId) => {
-                                    setDeleteId(chatId);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  setOpenMobile={setOpenMobile}
-                                />
-                              </motion.div>
-                            ))}
-                          </motion.div>
-                        </li>
-                      </SidebarMenu>
-                    </>
+                      <div className="flex flex-col gap-3">
+                        {groupedChats.yesterday.map((chat) => (
+                          <ChatItem
+                            key={chat.id}
+                            chat={chat}
+                            isActive={chat.id === id}
+                            onDelete={(chatId) => {
+                              setDeleteId(chatId);
+                              setShowDeleteDialog(true);
+                            }}
+                            setOpenMobile={setOpenMobile}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {groupedChats.lastWeek.length > 0 && (
-                    <>
-                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
+                    <div>
+                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 7 days
                       </div>
-                      <SidebarMenu className="px-0 gap-0 w-full">
-                        <li className="p-0 m-0 w-full">
-                          <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-0"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="show"
-                          >
-                            {groupedChats.lastWeek.map((chat) => (
-                              <motion.div 
-                                key={chat.id}
-                                variants={itemVariants}
-                                className="chat-item-container w-full"
-                              >
-                                <ChatItem
-                                  chat={chat}
-                                  isActive={chat.id === id}
-                                  onDelete={(chatId) => {
-                                    setDeleteId(chatId);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  setOpenMobile={setOpenMobile}
-                                />
-                              </motion.div>
-                            ))}
-                          </motion.div>
-                        </li>
-                      </SidebarMenu>
-                    </>
+                      <div className="flex flex-col gap-3">
+                        {groupedChats.lastWeek.map((chat) => (
+                          <ChatItem
+                            key={chat.id}
+                            chat={chat}
+                            isActive={chat.id === id}
+                            onDelete={(chatId) => {
+                              setDeleteId(chatId);
+                              setShowDeleteDialog(true);
+                            }}
+                            setOpenMobile={setOpenMobile}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {groupedChats.lastMonth.length > 0 && (
-                    <>
-                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
+                    <div>
+                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 30 days
                       </div>
-                      <SidebarMenu className="px-0 gap-0 w-full">
-                        <li className="p-0 m-0 w-full">
-                          <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-0"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="show"
-                          >
-                            {groupedChats.lastMonth.map((chat) => (
-                              <motion.div 
-                                key={chat.id}
-                                variants={itemVariants}
-                                className="chat-item-container w-full"
-                              >
-                                <ChatItem
-                                  chat={chat}
-                                  isActive={chat.id === id}
-                                  onDelete={(chatId) => {
-                                    setDeleteId(chatId);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  setOpenMobile={setOpenMobile}
-                                />
-                              </motion.div>
-                            ))}
-                          </motion.div>
-                        </li>
-                      </SidebarMenu>
-                    </>
+                      <div className="flex flex-col gap-3">
+                        {groupedChats.lastMonth.map((chat) => (
+                          <ChatItem
+                            key={chat.id}
+                            chat={chat}
+                            isActive={chat.id === id}
+                            onDelete={(chatId) => {
+                              setDeleteId(chatId);
+                              setShowDeleteDialog(true);
+                            }}
+                            setOpenMobile={setOpenMobile}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {groupedChats.older.length > 0 && (
-                    <>
-                      <div className="px-4 py-2.5 text-sm font-bold text-sidebar-foreground/90 mt-6">
+                    <div>
+                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Older than last month
                       </div>
-                      <SidebarMenu className="px-0 gap-0 w-full">
-                        <li className="p-0 m-0 w-full">
-                          <motion.div 
-                            className="flex w-full min-w-0 flex-col gap-0"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="show"
-                          >
-                            {groupedChats.older.map((chat) => (
-                              <motion.div 
-                                key={chat.id}
-                                variants={itemVariants}
-                                className="chat-item-container w-full"
-                              >
-                                <ChatItem
-                                  chat={chat}
-                                  isActive={chat.id === id}
-                                  onDelete={(chatId) => {
-                                    setDeleteId(chatId);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  setOpenMobile={setOpenMobile}
-                                />
-                              </motion.div>
-                            ))}
-                          </motion.div>
-                        </li>
-                      </SidebarMenu>
-                    </>
+                      <div className="flex flex-col gap-3">
+                        {groupedChats.older.map((chat) => (
+                          <ChatItem
+                            key={chat.id}
+                            chat={chat}
+                            isActive={chat.id === id}
+                            onDelete={(chatId) => {
+                              setDeleteId(chatId);
+                              setShowDeleteDialog(true);
+                            }}
+                            setOpenMobile={setOpenMobile}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </>
+                </div>
               );
             })()}
 

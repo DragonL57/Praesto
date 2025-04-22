@@ -34,7 +34,7 @@ const SidebarMenuItemDiv = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-sidebar="menu-item"
-    className={cn('group/menu-item relative w-full m-0', className)}
+    className={cn('group/menu-item relative', className)}
     {...props}
   >
     {children}
@@ -59,8 +59,8 @@ const PureChatItem = ({
 
   return (
     <SidebarMenuItemDiv>
-      <SidebarMenuButton asChild isActive={isActive} className="px-4 py-3 text-sm rounded-none w-full border-0">
-        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)} className="w-full">
+      <SidebarMenuButton asChild isActive={isActive} className="py-3 h-auto" size="lg">
+        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
           <span>{chat.title}</span>
         </Link>
       </SidebarMenuButton>
@@ -68,7 +68,7 @@ const PureChatItem = ({
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <SidebarMenuAction
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground mr-2 top-2.5"
+            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground mr-0.5"
             showOnHover={!isActive}
           >
             <MoreHorizontalIcon />
