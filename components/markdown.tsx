@@ -23,59 +23,6 @@ interface MarkdownProps {
 }
 
 const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
-  // Helper function to create heading components
-  const createHeadingComponent = (originalLevel: number, className: string) => {
-    // Calculate the actual heading level to use
-    const targetLevel = Math.min(baseHeadingLevel + originalLevel - 1, 6);
-    
-    // Return the appropriate heading component with display name
-    switch (targetLevel) {
-      case 1: {
-        const H1Component = ({ children, ...props }: any) => (
-          <h1 className={className} {...props}>{children}</h1>
-        );
-        H1Component.displayName = 'MarkdownH1';
-        return H1Component;
-      }
-      case 2: {
-        const H2Component = ({ children, ...props }: any) => (
-          <h2 className={className} {...props}>{children}</h2>
-        );
-        H2Component.displayName = 'MarkdownH2';
-        return H2Component;
-      }
-      case 3: {
-        const H3Component = ({ children, ...props }: any) => (
-          <h3 className={className} {...props}>{children}</h3>
-        );
-        H3Component.displayName = 'MarkdownH3';
-        return H3Component;
-      }
-      case 4: {
-        const H4Component = ({ children, ...props }: any) => (
-          <h4 className={className} {...props}>{children}</h4>
-        );
-        H4Component.displayName = 'MarkdownH4';
-        return H4Component;
-      }
-      case 5: {
-        const H5Component = ({ children, ...props }: any) => (
-          <h5 className={className} {...props}>{children}</h5>
-        );
-        H5Component.displayName = 'MarkdownH5';
-        return H5Component;
-      }
-      case 6:
-      default: {
-        const H6Component = ({ children, ...props }: any) => (
-          <h6 className={className} {...props}>{children}</h6>
-        );
-        H6Component.displayName = 'MarkdownH6';
-        return H6Component;
-      }
-    }
-  };
-
   // Create named components for other Markdown elements
   const PreComponent = ({ node, className, children, ...props }: any) => {
     // Find the <code> child to potentially get the language
@@ -119,8 +66,6 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     );
   };
   CodeComponent.displayName = 'MarkdownCode';
-
-  // Continue adding named components for all other markdown elements
 
   return {
     pre: PreComponent,
@@ -233,13 +178,55 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
       );
     },
 
-    // Dynamic heading levels with the proper TypeScript types and display names
-    h1: createHeadingComponent(1, "text-3xl font-semibold mt-6 mb-2"),
-    h2: createHeadingComponent(2, "text-2xl font-semibold mt-6 mb-2"),
-    h3: createHeadingComponent(3, "text-xl font-semibold mt-6 mb-2"),
-    h4: createHeadingComponent(4, "text-lg font-semibold mt-6 mb-2"),
-    h5: createHeadingComponent(5, "text-base font-semibold mt-6 mb-2"),
-    h6: createHeadingComponent(6, "text-sm font-semibold mt-6 mb-2"),
+    // Fixed heading components using createElement instead of JSX for dynamic tags
+    h1: function MarkdownH1({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-3xl font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
+    h2: function MarkdownH2({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel + 1, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-2xl font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
+    h3: function MarkdownH3({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel + 2, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-xl font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
+    h4: function MarkdownH4({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel + 3, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-lg font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
+    h5: function MarkdownH5({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel + 4, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-base font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
+    h6: function MarkdownH6({ node, children, ...props }) {
+      const level = Math.min(baseHeadingLevel + 5, 6);
+      return createElement(
+        `h${level}`,
+        { className: "text-sm font-semibold mt-6 mb-2", ...props },
+        children
+      );
+    },
   };
 };
 
