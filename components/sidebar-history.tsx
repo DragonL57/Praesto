@@ -188,7 +188,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   if (isLoading) {
     return (
       <SidebarGroup>
-        <div className="px-2 py-2 text-xs text-sidebar-foreground/75 mt-2">
+        <div className="p-2 text-xs text-sidebar-foreground/75 mt-2">
           Today
         </div>
         <SidebarGroupContent>
@@ -242,7 +242,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                 <div className="flex flex-col gap-6">
                   {groupedChats.today.length > 0 && (
                     <div>
-                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-1 mb-1">
+                      <div className="p-2 text-sm font-bold text-sidebar-foreground my-1">
                         Today
                       </div>
                       <div className="flex flex-col gap-1">
@@ -265,7 +265,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.yesterday.length > 0 && (
                     <div>
-                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
+                      <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Yesterday
                       </div>
                       <div className="flex flex-col gap-3">
@@ -288,7 +288,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.lastWeek.length > 0 && (
                     <div>
-                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
+                      <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 7 days
                       </div>
                       <div className="flex flex-col gap-3">
@@ -311,7 +311,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.lastMonth.length > 0 && (
                     <div>
-                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
+                      <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 30 days
                       </div>
                       <div className="flex flex-col gap-3">
@@ -334,7 +334,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                   {groupedChats.older.length > 0 && (
                     <div>
-                      <div className="px-2 py-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
+                      <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Older than last month
                       </div>
                       <div className="flex flex-col gap-3">
