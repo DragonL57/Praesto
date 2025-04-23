@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import type { Chat } from '@/lib/db/schema';
 import type { SWRInfiniteKeyedMutator } from 'swr/infinite';
 import type { ChatHistory } from './sidebar-history';
-import { memo } from 'react';
 
 import { SidebarMenuAction, SidebarMenuButton } from './ui/sidebar';
 import {
