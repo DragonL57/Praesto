@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { memo, createElement, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -89,13 +90,17 @@ const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) 
           
           return (
             <div className="my-2 flex justify-center">
-              <img
-                src={src}
-                alt={alt || "Image"}
-                className="rounded-md max-w-full h-auto"
-                loading="lazy"
-                {...props}
-              />
+              <div className="relative max-w-full">
+                <Image
+                  src={src}
+                  alt={alt || "Image"}
+                  width={500} // Fixed width as number
+                  height={300} // Fixed height as number
+                  className="rounded-md object-contain"
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                  unoptimized={!src.startsWith('http')} // For non-HTTP sources
+                />
+              </div>
             </div>
           );
         },

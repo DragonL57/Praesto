@@ -107,7 +107,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
           <p className="text-sm text-center text-muted-foreground">Loading content from {getDomainName(url)}...</p>
         </div>
       ) : status === 'error' || (!content.trim() && status === 'success') ? (
-        <div className="flex flex-col gap-4 text-sm overflow-auto max-h-[15rem] border p-4 rounded-md bg-muted/30">
+        <div className="flex flex-col gap-4 text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
           <div className="text-destructive font-medium">
             {error || "Couldn't extract readable content from this website"}
           </div>
@@ -118,7 +118,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
             <p className="font-medium">Suggestions:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Visit the website directly using the link in the top-right</li>
-              <li>Try asking a specific question about the website's content</li>
+              <li>Try asking a specific question about the website&apos;s content</li>
               <li>If you have access to the content, try copying and pasting relevant sections directly</li>
               {isDynamicOrComplexSite() && (
                 <li>For forum posts or complex pages, try viewing in Reader Mode in your browser first, then share the content</li>
@@ -145,7 +145,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
           )}
         </div>
       ) : (
-        <div className="text-sm overflow-auto max-h-[15rem] border p-4 rounded-md bg-muted/30">
+        <div className="text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
           <Markdown>{content}</Markdown>
         </div>
       )}
