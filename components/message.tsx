@@ -7,7 +7,7 @@ import cx from 'classnames';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon, WebpageLoadingIcon } from './icons';
+import { PencilEditIcon, WebpageLoadingIcon } from './icons';
 import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
@@ -20,20 +20,25 @@ import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 // Helper function to preserve line breaks in user messages
 const UserTextWithLineBreaks = ({ text }: { text: string }) => {
   // Split by newlines and map each line to a paragraph
   const lines = text.split('\n');
-  
+
   return (
     <>
-      {lines.map((line, i) => (
-        <span key={i} className="block whitespace-pre-wrap">
-          {line || ' '} {/* Replace empty lines with a space to maintain height */}
-        </span>
-      ))}
+      {lines.map((line, i) => {
+        // Create a unique key that doesn't rely solely on array index
+        const lineKey = `${text.substring(0, 8)}-line-${i}-${line.substring(0, 8)}`;
+        return (
+          <span key={lineKey} className="block whitespace-pre-wrap">
+            {line || ' '}{' '}
+            {/* Replace empty lines with a space to maintain height */}
+          </span>
+        );
+      })}
     </>
   );
 };
@@ -186,10 +191,13 @@ const PurePreviewMessage = ({
                       <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
                         <div className="flex gap-2 items-center text-sm text-muted-foreground">
                           <WebpageLoadingIcon size={16} />
-                          <span>Reading webpage <span className="font-medium">{args.url}</span>...</span>
+                          <span>
+                            Reading webpage{' '}
+                            <span className="font-medium">{args.url}</span>...
+                          </span>
                         </div>
                         <div className="flex items-center justify-center p-4">
-                          <div className="animate-spin rounded-full size-6 border-y-2 border-primary"></div>
+                          <div className="animate-spin rounded-full size-6 border-y-2 border-primary" />
                         </div>
                       </div>
                     ) : null}
@@ -222,10 +230,10 @@ const PurePreviewMessage = ({
                         isReadonly={isReadonly}
                       />
                     ) : toolName === 'webSearch' ? (
-                      <WebSearch 
-                        results={result.results} 
+                      <WebSearch
+                        results={result.results}
                         query={result.query}
-                        count={result.count} 
+                        count={result.count}
                       />
                     ) : toolName === 'readWebsiteContent' ? (
                       <WebsiteContent

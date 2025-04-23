@@ -1,11 +1,12 @@
 'use client';
 
-import { ChatRequestOptions, Message } from 'ai';
+import type { Message } from 'ai';
 import { Button } from './ui/button';
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Textarea } from './ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 export type MessageEditorProps = {
   message: Message;
@@ -21,27 +22,29 @@ export function MessageEditor({
   reload,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  
+
   // Extract text content from message parts instead of using message.content which might be empty
   const extractMessageText = () => {
     // If message.content has value, use it
     if (message.content && message.content.trim() !== '') {
       return message.content;
     }
-    
+
     // Otherwise extract text from message parts
     if (message.parts && message.parts.length > 0) {
       return message.parts
-        .filter(part => part.type === 'text')
-        .map(part => (part as any).text)
+        .filter((part) => part.type === 'text')
+        .map((part) => (part as any).text)
         .join('\n')
         .trim();
     }
-    
+
     return '';
   };
 
-  const [draftContent, setDraftContent] = useState<string>(extractMessageText());
+  const [draftContent, setDraftContent] = useState<string>(
+    extractMessageText(),
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {

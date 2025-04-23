@@ -100,22 +100,22 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.05,
-      delayChildren: 0.1
-    }
-  }
+      delayChildren: 0.1,
+    },
+  },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
-  show: { 
-    opacity: 1, 
+  show: {
+    opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: 'spring',
       stiffness: 260,
-      damping: 20
-    }
-  }
+      damping: 20,
+    },
+  },
 };
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
@@ -188,9 +188,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   if (isLoading) {
     return (
       <SidebarGroup>
-        <div className="p-2 text-xs text-sidebar-foreground/75 mt-2">
-          Today
-        </div>
+        <div className="p-2 text-xs text-sidebar-foreground/75 mt-2">Today</div>
         <SidebarGroupContent>
           <div className="flex flex-col gap-2">
             {[44, 32, 28, 64, 52].map((item) => (
@@ -268,7 +266,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Yesterday
                       </div>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
                         {groupedChats.yesterday.map((chat) => (
                           <ChatItem
                             key={chat.id}
@@ -291,7 +289,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 7 days
                       </div>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
                         {groupedChats.lastWeek.map((chat) => (
                           <ChatItem
                             key={chat.id}
@@ -314,7 +312,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Last 30 days
                       </div>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
                         {groupedChats.lastMonth.map((chat) => (
                           <ChatItem
                             key={chat.id}
@@ -337,7 +335,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                       <div className="p-2 text-sm font-bold text-sidebar-foreground mt-3 mb-1">
                         Older than last month
                       </div>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
                         {groupedChats.older.map((chat) => (
                           <ChatItem
                             key={chat.id}

@@ -1,6 +1,5 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
-import { useScrollToBottom } from './use-scroll-to-bottom';
 import { Greeting } from './greeting';
 import { memo, useEffect, useRef } from 'react';
 import type { Vote } from '@/lib/db/schema';
@@ -40,13 +39,13 @@ function PureMessages({
   useEffect(() => {
     const container = messagesContainerRef.current;
     const end = messagesEndRef.current;
-    
+
     if (container && end) {
-      const shouldScrollToBottom = 
+      const shouldScrollToBottom =
         messages.length > prevMessagesLengthRef.current || // New message added
         (status === 'streaming' && !isStreamingRef.current) || // Streaming just started
         (status === 'streaming' && isStreamingRef.current); // Continued streaming
-      
+
       if (shouldScrollToBottom) {
         // Use requestAnimationFrame for smoother scrolling
         requestAnimationFrame(() => {
@@ -54,20 +53,20 @@ function PureMessages({
         });
       }
     }
-    
+
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
   }, [messages.length, status]);
 
   return (
-    <div 
+    <div
       className="absolute inset-0 flex flex-col w-full"
-      style={{ 
+      style={{
         overflowY: 'auto',
         overflowX: 'hidden',
         right: '0px',
         scrollbarWidth: 'thin',
-        scrollbarGutter: 'stable'
+        scrollbarGutter: 'stable',
       }}
       ref={messagesContainerRef}
     >
@@ -82,7 +81,9 @@ function PureMessages({
             <PreviewMessage
               chatId={chatId}
               message={message}
-              isLoading={status === 'streaming' && messages.length - 1 === index}
+              isLoading={
+                status === 'streaming' && messages.length - 1 === index
+              }
               vote={
                 votes
                   ? votes.find((vote) => vote.messageId === message.id)
@@ -97,10 +98,11 @@ function PureMessages({
 
         {status === 'submitted' &&
           messages.length > 0 &&
-          messages[messages.length - 1].role === 'user' && 
-          <div className="transition-opacity duration-300 ease-in-out">
-            <ThinkingMessage />
-          </div>}
+          messages[messages.length - 1].role === 'user' && (
+            <div className="transition-opacity duration-300 ease-in-out">
+              <ThinkingMessage />
+            </div>
+          )}
 
         <div
           ref={messagesEndRef}

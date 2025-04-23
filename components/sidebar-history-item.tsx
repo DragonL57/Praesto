@@ -1,9 +1,11 @@
-import { Chat } from '@/lib/db/schema';
-import {
-  SidebarMenuAction,
-  SidebarMenuButton,
-} from './ui/sidebar';
 import Link from 'next/link';
+import { useState } from 'react';
+import type { Chat } from '@/lib/db/schema';
+import type { SWRInfiniteKeyedMutator } from 'swr/infinite';
+import type { ChatHistory } from './sidebar-history';
+import { memo } from 'react';
+
+import { SidebarMenuAction, SidebarMenuButton } from './ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,20 +25,17 @@ import {
   ShareIcon,
   TrashIcon,
 } from './icons';
-import { memo, useState } from 'react';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { cn } from '@/lib/utils';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { SWRInfiniteKeyedMutator } from 'swr/infinite';
-import { ChatHistory } from './sidebar-history';
 
 // Create a div version of SidebarMenuItem to avoid nested li elements
-const SidebarMenuItemDiv = ({ 
-  className, 
-  children, 
-  ...props 
+const SidebarMenuItemDiv = ({
+  className,
+  children,
+  ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-sidebar="menu-item"
@@ -74,9 +73,9 @@ const PureChatItem = ({
       setIsEditing(false);
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
       const response = await fetch('/api/chat/rename', {
         method: 'POST',
@@ -88,26 +87,29 @@ const PureChatItem = ({
           title: title.trim(),
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to rename chat');
       }
-      
+
       // Update the UI immediately
       toast.success('Chat renamed successfully');
-      
+
       // Update data cache to reflect the new title across the app
-      await mutate(data => {
-        if (!data) return data;
-        
-        return data.map(page => ({
-          ...page,
-          chats: page.chats.map(c => 
-            c.id === chat.id ? { ...c, title: title.trim() } : c
-          ),
-        }));
-      }, { populateCache: true, revalidate: false });
-      
+      await mutate(
+        (data) => {
+          if (!data) return data;
+
+          return data.map((page) => ({
+            ...page,
+            chats: page.chats.map((c) =>
+              c.id === chat.id ? { ...c, title: title.trim() } : c,
+            ),
+          }));
+        },
+        { populateCache: true, revalidate: false },
+      );
+
       setIsEditing(false);
     } catch (error) {
       console.error('Error renaming chat:', error);
@@ -137,9 +139,9 @@ const PureChatItem = ({
             }}
           />
           <div className="flex gap-1">
-            <Button 
-              size="sm" 
-              variant="ghost" 
+            <Button
+              size="sm"
+              variant="ghost"
               className="h-8 px-2"
               disabled={isSaving}
               onClick={() => {
@@ -149,8 +151,8 @@ const PureChatItem = ({
             >
               Cancel
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="h-8 px-2"
               onClick={handleRename}
               disabled={isSaving}
@@ -161,8 +163,16 @@ const PureChatItem = ({
         </div>
       ) : (
         <>
-          <SidebarMenuButton asChild isActive={isActive} className="py-3 h-auto" size="lg">
-            <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
+          <SidebarMenuButton
+            asChild
+            isActive={isActive}
+            className="py-3 h-auto"
+            size="lg"
+          >
+            <Link
+              href={`/chat/${chat.id}`}
+              onClick={() => setOpenMobile(false)}
+            >
               <span>{chat.title}</span>
             </Link>
           </SidebarMenuButton>
@@ -189,7 +199,7 @@ const PureChatItem = ({
                 <PencilEditIcon />
                 <span>Rename</span>
               </DropdownMenuItem>
-              
+
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <ShareIcon />
@@ -221,7 +231,9 @@ const PureChatItem = ({
                         <GlobeIcon />
                         <span>Public</span>
                       </div>
-                      {visibilityType === 'public' ? <CheckCircleFillIcon /> : null}
+                      {visibilityType === 'public' ? (
+                        <CheckCircleFillIcon />
+                      ) : null}
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
@@ -242,9 +254,20 @@ const PureChatItem = ({
   );
 };
 
-export const ChatItem = memo(PureChatItem, (prevProps, nextProps) => {
-  // Only re-render if active state or title changes
-  if (prevProps.isActive !== nextProps.isActive) return false;
-  if (prevProps.chat.title !== nextProps.chat.title) return false;
-  return true;
-});
+type ChatItemProps = {
+  chat: Chat;
+  isActive: boolean;
+  onDelete: (chatId: string) => void;
+  setOpenMobile: (open: boolean) => void;
+  mutate: SWRInfiniteKeyedMutator<ChatHistory[]>;
+};
+
+export const ChatItem = memo(
+  PureChatItem,
+  (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
+    // Only re-render if active state or title changes
+    if (prevProps.isActive !== nextProps.isActive) return false;
+    if (prevProps.chat.title !== nextProps.chat.title) return false;
+    return true;
+  },
+);

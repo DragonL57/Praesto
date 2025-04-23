@@ -3,11 +3,11 @@ import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   type Dispatch,
-  memo,
   type SetStateAction,
   useCallback,
   useEffect,
   useState,
+  memo,
 } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
@@ -26,7 +26,7 @@ import { codeArtifact } from '@/artifacts/code/client';
 import { sheetArtifact } from '@/artifacts/sheet/client';
 import { textArtifact } from '@/artifacts/text/client';
 import equal from 'fast-deep-equal';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 export const artifactDefinitions = [
   textArtifact,
@@ -498,11 +498,17 @@ function PureArtifact({
   );
 }
 
-export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
-  if (prevProps.status !== nextProps.status) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
-  if (prevProps.input !== nextProps.input) return false;
-  if (!equal(prevProps.messages, nextProps.messages.length)) return false;
+export const Artifact = memo(
+  PureArtifact,
+  (
+    prevProps: Parameters<typeof PureArtifact>[0],
+    nextProps: Parameters<typeof PureArtifact>[0],
+  ) => {
+    if (prevProps.status !== nextProps.status) return false;
+    if (!equal(prevProps.votes, nextProps.votes)) return false;
+    if (prevProps.input !== nextProps.input) return false;
+    if (!equal(prevProps.messages, nextProps.messages.length)) return false;
 
-  return true;
-});
+    return true;
+  },
+);

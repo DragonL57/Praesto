@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { VariantProps, cva } from 'class-variance-authority';
+import { cva } from 'class-variance-authority';
+import type { VariantProps as CVAProps } from 'class-variance-authority';
 import { PanelLeft } from 'lucide-react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -10,7 +11,12 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
@@ -215,7 +221,9 @@ const Sidebar = React.forwardRef<
             side={side}
           >
             <SheetTitle className="sr-only">Navigation Sidebar</SheetTitle>
-            <SheetDescription className="sr-only">Contains site navigation and options</SheetDescription>
+            <SheetDescription className="sr-only">
+              Contains site navigation and options
+            </SheetDescription>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -329,10 +337,8 @@ const SidebarInset = React.forwardRef<
   React.ComponentProps<'main'>
 >(({ className, ...props }, ref) => {
   return (
-    <main
+    <div
       ref={ref}
-      role="main"
-      aria-label="Chat content"
       className={cn(
         'relative flex min-h-svh flex-1 flex-col bg-background',
         'peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow',
@@ -349,7 +355,7 @@ const SidebarInput = React.forwardRef<
   React.ComponentProps<typeof Input>
 >(({ className, ...props }, ref) => {
   const { state } = useSidebar();
-  
+
   return (
     <Input
       ref={ref}
@@ -560,7 +566,7 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean;
     isActive?: boolean;
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+  } & CVAProps<typeof sidebarMenuButtonVariants>
 >(
   (
     {
@@ -711,7 +717,7 @@ const SidebarMenuSub = React.forwardRef<
   React.ComponentProps<'ul'>
 >(({ className, ...props }, ref) => {
   const { state } = useSidebar();
-  
+
   return (
     <ul
       ref={ref}

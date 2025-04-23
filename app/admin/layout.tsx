@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/app/(auth)/auth';
@@ -9,18 +9,27 @@ export default async function AdminLayout({
   children: ReactNode;
 }) {
   const session = await auth();
-  
+
   // Read admin emails from environment variable
   // Format: comma-separated list of emails, e.g., "admin1@example.com,admin2@example.com"
   const adminEmailsStr = process.env.ADMIN_EMAILS || '';
-  const adminEmails = adminEmailsStr.split(',').map(email => email.trim()).filter(Boolean);
-  
+  const adminEmails = adminEmailsStr
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean);
+
   if (adminEmails.length === 0) {
-    console.warn('No admin emails configured. Set ADMIN_EMAILS environment variable.');
+    console.warn(
+      'No admin emails configured. Set ADMIN_EMAILS environment variable.',
+    );
   }
-  
+
   // Check if user is authenticated and is an admin
-  if (!session || !session.user || !adminEmails.includes(session.user.email as string)) {
+  if (
+    !session ||
+    !session.user ||
+    !adminEmails.includes(session.user.email as string)
+  ) {
     redirect('/');
   }
 

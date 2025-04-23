@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
-import { EyeIcon } from './icons';
-import { CrossSmallIcon } from './icons';
+import { EyeIcon, CrossSmallIcon } from './icons';
 
 export function AuthForm({
   action,
@@ -67,16 +66,16 @@ export function AuthForm({
             type="button"
             variant="ghost"
             size="sm"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+            className="absolute right-1 top-1/2 -translate-y-1/2 size-7 p-0"
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (
-              <div className="h-4 w-4 flex items-center justify-center">
+              <div className="size-4 flex items-center justify-center">
                 <CrossSmallIcon size={14} />
               </div>
             ) : (
-              <div className="h-4 w-4 flex items-center justify-center">
+              <div className="size-4 flex items-center justify-center">
                 <EyeIcon size={14} />
               </div>
             )}
