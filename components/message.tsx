@@ -22,6 +22,22 @@ import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { UseChatHelpers } from '@ai-sdk/react';
 
+// Helper function to preserve line breaks in user messages
+const UserTextWithLineBreaks = ({ text }: { text: string }) => {
+  // Split by newlines and map each line to a paragraph
+  const lines = text.split('\n');
+  
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span key={i} className="block whitespace-pre-wrap">
+          {line || ' '} {/* Replace empty lines with a space to maintain height */}
+        </span>
+      ))}
+    </>
+  );
+};
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -107,7 +123,13 @@ const PurePreviewMessage = ({
                           message.role === 'user',
                       })}
                     >
-                      <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
+                      {message.role === 'user' ? (
+                        <div className="whitespace-pre-wrap break-words">
+                          <UserTextWithLineBreaks text={part.text} />
+                        </div>
+                      ) : (
+                        <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
+                      )}
                     </div>
                   </div>
                 );
