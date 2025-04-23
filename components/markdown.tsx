@@ -39,24 +39,6 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Component to handle code block overflow with proper scrollbars
-const CodeBlockWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div 
-      className="code-block-container"
-      style={{
-        width: '100%',
-        overflowX: 'scroll', // Force horizontal scrollbar to be visible
-        display: 'block',
-        borderRadius: '0.375rem',
-        WebkitOverflowScrolling: 'touch',
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
 // Simplified component using react-markdown library
 const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) => {
   // Early return for empty content to avoid unnecessary rendering
@@ -69,57 +51,15 @@ const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) 
       remarkPlugins={[remarkGfm]}
       skipHtml={true} // Skip HTML for security and performance
       components={{
-        // Pre and Code components for code blocks
+        // Pre and Code components for code blocks - simple implementation
         pre: ({ node, className, children, ...props }) => {
-          // Find the <code> child to potentially get the language
-          let language = '';
-          if (Array.isArray(children)) {
-            const codeChild = children.find(
-              child => typeof child === 'object' && child && 'props' in child && child.props?.className
-            );
-            
-            if (codeChild && typeof codeChild === 'object' && 'props' in codeChild) {
-              const match = /language-(\w+)/.exec(codeChild.props.className || '');
-              if (match) {
-                language = match[1];
-              }
-            }
-          }
-
           return (
-            <div 
-              className="relative my-4 w-full"
-              style={{
-                maxWidth: '100%',
-                borderRadius: '0.375rem',
-                border: '1px solid var(--border)',
-              }}
+            <pre
+              className={cn(`rounded-md p-4 m-0 my-4 bg-zinc-100 dark:bg-[#161616] border border-zinc-300 dark:border-zinc-700`, className)}
+              {...props}
             >
-              <div
-                className="overflow-x-auto"
-                style={{
-                  overflowX: 'auto',
-                  overflowY: 'hidden',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'var(--scrollbar-thumb) transparent',
-                  WebkitOverflowScrolling: 'touch',
-                }}
-              >
-                <pre
-                  className={cn(`rounded-md p-4 m-0 bg-zinc-100 dark:bg-[#161616]`, className)}
-                  data-language={language || undefined}
-                  {...props}
-                  style={{
-                    width: '150%', // Make content wider than container to trigger scroll
-                    minWidth: '100%',
-                    overflow: 'visible', // Let the parent handle the scrolling
-                    whiteSpace: 'pre',
-                  }}
-                >
-                  {children}
-                </pre>
-              </div>
-            </div>
+              {children}
+            </pre>
           );
         },
         

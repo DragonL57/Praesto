@@ -1,126 +1,28 @@
-/* Import highlight.js themes */
-@import 'highlight.js/styles/atom-one-light.css';
-@import 'highlight.js/styles/github-dark.css';
+/* Import highlight.js themes - REMOVED to avoid conflicts */
+/* @import 'highlight.js/styles/atom-one-light.css';
+@import 'highlight.js/styles/github-dark.css'; */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Dark theme for highlight.js */
-.dark {
-    /* Use a more vibrant dark theme */
+/* Code block styling with responsive behavior */
+pre,
+pre:hover {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--scrollbar-thumb) transparent !important;
 }
 
-/* Dark mode specific styling for code blocks */
-.dark pre,
-.dark pre code,
-.dark .hljs {
-    background-color: #161616 !important;
-    /* VS Code-like dark background */
-    border-color: #333333 !important;
-    /* Darker border for code blocks */
-    color: #a8a8a8 !important;
-    /* Default text color */
+pre code {
+    display: block;
+    overflow-x: auto;
 }
 
-/* Custom syntax highlighting overrides with VS Code-like colors */
-/* Light mode colors */
-pre code .hljs-keyword,
-code .hljs-keyword {
-    color: #0000ff !important;
-    /* Blue in light mode */
-}
 
-pre code .hljs-built_in,
-code .hljs-built_in {
-    color: #0000ff !important;
-    /* Blue in light mode */
-}
-
-pre code .hljs-string,
-code .hljs-string {
-    color: #008000 !important;
-    /* Green in light mode */
-}
-
-pre code .hljs-number,
-code .hljs-number {
-    color: #b5cea8 !important;
-    /* Lighter green in light mode */
-}
-
-pre code .hljs-comment,
-code .hljs-comment {
-    color: #808080 !important;
-    /* Gray */
-}
-
-pre code .hljs-function,
-code .hljs-function {
-    color: #795E26 !important;
-    /* Brown/gold in light mode */
-}
-
-pre code .hljs-title,
-code .hljs-title {
-    color: #795E26 !important;
-    /* Brown/gold in light mode */
-}
-
-pre code .hljs-params,
-code .hljs-params {
-    color: #000000 !important;
-    /* Black in light mode */
-}
-
-/* Dark mode syntax colors (VS Code dark theme) */
-.dark pre code .hljs-keyword,
-.dark code .hljs-keyword {
-    color: #68bbff !important;
-    /* Blue */
-}
-
-.dark pre code .hljs-built_in,
-.dark code .hljs-built_in {
-    color: #61b8ff !important;
-    /* Blue */
-}
-
-.dark pre code .hljs-string,
-.dark code .hljs-string {
-    color: #a8de8b !important;
-    /* Green */
-}
-
-.dark pre code .hljs-number,
-.dark code .hljs-number {
-    color: #D16969 !important;
-    /* Pink/Red */
-}
-
-.dark pre code .hljs-comment,
-.dark code .hljs-comment {
-    color: #808080 !important;
-    /* Gray */
-}
-
-.dark pre code .hljs-function,
-.dark code .hljs-function {
-    color: #DCDCAA !important;
-    /* Yellow/Gold */
-}
-
-.dark pre code .hljs-title,
-.dark code .hljs-title {
-    color: #DCDCAA !important;
-    /* Yellow/Gold */
-}
-
-.dark pre code .hljs-params,
-.dark code .hljs-params {
-    color: #E0E0E0 !important;
-    /* Default text color */
-}
 
 /* PF Beau Sans Pro Font Family */
 @font-face {
@@ -425,23 +327,9 @@ code .hljs-params {
     background-color: transparent;
 }
 
-/* Mobile responsive fixes */
+/* Mobile responsive fixes - MODIFIED to avoid conflicts with code blocks */
 @media (max-width: 768px) {
-
-    pre,
-    code {
-        max-width: 100%;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-
-    .hljs {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        max-width: 100vw;
-        padding: 1rem;
-    }
+    /* Removed code block styling to prevent conflicts */
 
     img,
     video {

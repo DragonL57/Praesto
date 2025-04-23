@@ -1227,3 +1227,22 @@ export const WebpageLoadingIcon = ({ size = 16 }: { size?: number }) => {
     </svg>
   );
 };
+
+export const CheckIcon = ({ size = 16 }: { size?: number }) => {
+  return (
+    <svg
+      height={size}
+      strokeLinejoin="round"
+      viewBox="0 0 16 16"
+      width={size}
+      style={{ color: 'currentcolor' }}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M13.7803 3.28033L14.3107 3.81066L6.81066 11.3107L6.28033 11.841L5.68934 11.25L1.68934 7.25L2.21967 6.71967L2.81066 6.12868L6.28033 9.59835L13.1893 2.68934L13.7803 3.28033Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};
