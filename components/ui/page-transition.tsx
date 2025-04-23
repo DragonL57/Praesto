@@ -1,7 +1,6 @@
 'use client';
 
-import React, { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type PageTransitionProps = {
@@ -10,22 +9,25 @@ type PageTransitionProps = {
 };
 
 export function PageTransition({ children, className }: PageTransitionProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    // Set visible after component mounts for the transition to trigger
+    setIsVisible(true);
+    return () => setIsVisible(false);
+  }, []);
+
   return (
     <div className="overflow-hidden w-full h-full">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ 
-          type: "spring",
-          stiffness: 260, 
-          damping: 25,
-          duration: 0.25
-        }}
-        className={cn("w-full h-full", className)}
+      <div
+        className={cn(
+          "w-full h-full transition-opacity duration-200 ease-out",
+          isVisible ? "opacity-100" : "opacity-0",
+          className
+        )}
       >
         {children}
-      </motion.div>
+      </div>
     </div>
   );
 }
