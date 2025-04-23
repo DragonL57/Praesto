@@ -39,6 +39,24 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Component to handle code block overflow with proper scrollbars
+const CodeBlockWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div 
+      className="code-block-container"
+      style={{
+        width: '100%',
+        overflowX: 'scroll', // Force horizontal scrollbar to be visible
+        display: 'block',
+        borderRadius: '0.375rem',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 // Simplified component using react-markdown library
 const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) => {
   // Early return for empty content to avoid unnecessary rendering
@@ -69,13 +87,39 @@ const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) 
           }
 
           return (
-            <pre
-              className={cn(`overflow-x-auto rounded-md p-0 m-0 border-0 bg-zinc-100 dark:bg-[#161616]`, className)}
-              data-language={language || undefined}
-              {...props}
+            <div 
+              className="relative my-4 w-full"
+              style={{
+                maxWidth: '100%',
+                borderRadius: '0.375rem',
+                border: '1px solid var(--border)',
+              }}
             >
-              {children}
-            </pre>
+              <div
+                className="overflow-x-auto"
+                style={{
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'var(--scrollbar-thumb) transparent',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
+                <pre
+                  className={cn(`rounded-md p-4 m-0 bg-zinc-100 dark:bg-[#161616]`, className)}
+                  data-language={language || undefined}
+                  {...props}
+                  style={{
+                    width: '150%', // Make content wider than container to trigger scroll
+                    minWidth: '100%',
+                    overflow: 'visible', // Let the parent handle the scrolling
+                    whiteSpace: 'pre',
+                  }}
+                >
+                  {children}
+                </pre>
+              </div>
+            </div>
           );
         },
         
