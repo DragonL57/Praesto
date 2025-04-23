@@ -23,6 +23,7 @@ import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function PureMultimodalInput({
   chatId,
@@ -53,12 +54,18 @@ function PureMultimodalInput({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (textareaRef.current) {
       adjustHeight();
+      
+      // Only focus on desktop, not on mobile
+      if (!isMobile && width && width >= 768) {
+        textareaRef.current.focus();
+      }
     }
-  }, []);
+  }, [isMobile, width]);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -293,7 +300,6 @@ function PureMultimodalInput({
           className,
         )}
         rows={2}
-        autoFocus
         onKeyDown={(event) => {
           if (
             event.key === 'Enter' &&

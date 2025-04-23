@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const Greeting = () => {
+  const isMobile = useIsMobile();
+  
   return (
     <div
       key="overview"
-      className="max-w-3xl mx-auto md:mt-20 px-8 size-full flex flex-col justify-center"
+      className={`max-w-3xl mx-auto px-8 size-full flex flex-col ${isMobile ? 'justify-start mt-44' : 'justify-center md:mt-20'}`}
     >
       <motion.div
         initial={{ opacity: 0, y: 10 }}
