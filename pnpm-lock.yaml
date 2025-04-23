@@ -174,7 +174,7 @@ importers:
         specifier: 19.0.0-rc-45804af1-20241021
         version: 19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021)
       react-markdown:
-        specifier: ^9.0.1
+        specifier: ^9.1.0
         version: 9.1.0(@types/react@18.3.20)(react@19.0.0-rc-45804af1-20241021)
       react-resizable-panels:
         specifier: ^2.1.7
@@ -183,7 +183,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
       remark-gfm:
-        specifier: ^4.0.0
+        specifier: ^4.0.1
         version: 4.0.1
       serpapi:
         specifier: ^1.0.0
