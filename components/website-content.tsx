@@ -50,27 +50,11 @@ function PureWebsiteContent({ url, content, query, status, error, source, fallba
     return filteredContent;
   };
 
-  // Determine if the content is likely too complex or dynamic
+  // Determine if the content is likely too complex or dynamic - 
+  // DISABLED - now always returns false to never block content
   const isDynamicOrComplexSite = () => {
-    // Skip this check if content came from fallback scraper
-    if (source === 'fallback-scraper' || source === 'serper-dev-primary' || source === 'serper-dev-fallback') return false;
-    
-    const dynamicSitesPatterns = [
-      'discourse',
-      'forum',
-      'react',
-      'javascript',
-      'interactive',
-      'login required',
-      'sign in',
-      'please enable javascript'
-    ];
-    
-    return dynamicSitesPatterns.some(pattern => 
-      content.toLowerCase().includes(pattern) || 
-      error?.toLowerCase().includes(pattern) ||
-      url.toLowerCase().includes(pattern)
-    );
+    // Always return false to never block content
+    return false;
   };
 
   // Determine if the content is likely from serper.dev based on general patterns

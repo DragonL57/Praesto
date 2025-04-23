@@ -202,17 +202,12 @@ async function fetchWithSerper(url: string): Promise<string> {
 
 // Helper function to format error messages
 function formatErrorMessage(url: string, primaryError: string, fallbackError: string): string {
-  if (url.includes('forum.') || url.includes('community.')) {
-    return `Error extracting content from ${new URL(url).hostname}:\n` +
-      `Primary method: ${primaryError}\n` +
-      `Fallback method: ${fallbackError}\n\n` + 
-      `Forums often use complex JavaScript and may require authentication, making them difficult to scrape.\n\n` +
-      `Suggestions:\n\n` +
-      `- Visit the website directly using the link in the top-right\n` +
-      `- Try asking a specific question about the website's content\n` +
-      `- If you have access to the content, try copying and pasting relevant sections directly\n` +
-      `- For forum posts or complex pages, try viewing in Reader Mode in your browser first, then share the content`;
-  }
-  
-  return `Error fetching webpage content:\nPrimary method: ${primaryError}\nFallback method: ${fallbackError}`;
+  // Simplified generic error message for all website types
+  return `Error extracting content from ${new URL(url).hostname}:\n` +
+    `Primary method: ${primaryError}\n` +
+    `Fallback method: ${fallbackError}\n\n` + 
+    `Suggestions:\n\n` +
+    `- Visit the website directly using the link in the top-right\n` +
+    `- Try asking a specific question about the website's content\n` +
+    `- If you have access to the content, try copying and pasting relevant sections directly`;
 }
