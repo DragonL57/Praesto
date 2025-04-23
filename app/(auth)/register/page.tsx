@@ -25,17 +25,22 @@ export default function Page() {
 
   useEffect(() => {
     if (state.status === 'user_exists') {
-      toast({ type: 'error', description: 'Account already exists!' });
+      toast({ 
+        type: 'error', 
+        description: state.message || 'Account already exists!' 
+      });
     } else if (state.status === 'failed') {
-      toast({ type: 'error', description: 'Failed to create account!' });
+      toast({ 
+        type: 'error', 
+        description: state.message || 'Failed to create account!' 
+      });
     } else if (state.status === 'invalid_data') {
       toast({
         type: 'error',
-        description: 'Failed validating your submission!',
+        description: state.message || 'Please check your email and password requirements.',
       });
     } else if (state.status === 'success') {
       toast({ type: 'success', description: 'Account created successfully!' });
-
       setIsSuccessful(true);
       router.refresh();
     }
@@ -56,7 +61,16 @@ export default function Page() {
             Create an account with your email and password
           </p>
         </div>
-        <AuthForm action={handleSubmit} defaultEmail={email}>
+        <AuthForm action={handleSubmit} defaultEmail={email} isRegistration={true}>
+          <div className="mt-3 px-1">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Password must:</h4>
+            <ul className="text-xs text-gray-500 dark:text-zinc-400 space-y-1 list-disc pl-4">
+              <li>Be at least 6 characters long</li>
+              <li>Contain at least one uppercase letter (A-Z)</li>
+              <li>Contain at least one lowercase letter (a-z)</li>
+              <li>Contain at least one number (0-9)</li>
+            </ul>
+          </div>
           <SubmitButton isSuccessful={isSuccessful}>Sign Up</SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {'Already have an account? '}

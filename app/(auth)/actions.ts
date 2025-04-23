@@ -6,13 +6,29 @@ import { createUser, getUser } from '@/lib/db/queries';
 
 import { signIn } from './auth';
 
-const authFormSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+// Enhanced password validation schema - only for registration
+const passwordSchema = z.string()
+  .min(6, "Password must be at least 6 characters long")
+  .max(100, "Password is too long")
+  .refine(password => /[A-Z]/.test(password), "Password must contain at least one uppercase letter")
+  .refine(password => /[a-z]/.test(password), "Password must contain at least one lowercase letter")
+  .refine(password => /[0-9]/.test(password), "Password must contain at least one number");
+
+// Registration form schema with strict password validation
+const registrationFormSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: passwordSchema,
+});
+
+// Login form schema with simple validation
+const loginFormSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export interface LoginActionState {
-  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data';
+  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data' | 'user_not_found' | 'wrong_password';
+  message?: string;
 }
 
 export const login = async (
@@ -20,24 +36,50 @@ export const login = async (
   formData: FormData,
 ): Promise<LoginActionState> => {
   try {
-    const validatedData = authFormSchema.parse({
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-    await signIn('credentials', {
-      email: validatedData.email,
-      password: validatedData.password,
-      redirect: false,
-    });
-
-    return { status: 'success' };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
+    // Basic validation just to ensure email format and password presence
+    try {
+      loginFormSchema.parse({ email, password });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return { 
+          status: 'invalid_data',
+          message: error.errors[0]?.message || 'Invalid email or password format'
+        };
+      }
     }
 
-    return { status: 'failed' };
+    // First check if user exists
+    const users = await getUser(email);
+    if (users.length === 0) {
+      return { 
+        status: 'user_not_found',
+        message: 'No account found with this email. Please register first.' 
+      };
+    }
+
+    // Attempt to sign in - this checks password correctness
+    try {
+      await signIn('credentials', {
+        email: email,
+        password: password,
+        redirect: false,
+      });
+      return { status: 'success' };
+    } catch (error) {
+      // If we reach here after verifying the user exists, it's a wrong password
+      return { 
+        status: 'wrong_password',
+        message: 'Incorrect password. Please try again.' 
+      };
+    }
+  } catch (error) {
+    return { 
+      status: 'failed',
+      message: 'An unexpected error occurred. Please try again later.'
+    };
   }
 };
 
@@ -49,6 +91,7 @@ export interface RegisterActionState {
     | 'failed'
     | 'user_exists'
     | 'invalid_data';
+  message?: string;
 }
 
 export const register = async (
@@ -56,29 +99,43 @@ export const register = async (
   formData: FormData,
 ): Promise<RegisterActionState> => {
   try {
-    const validatedData = authFormSchema.parse({
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-    const [user] = await getUser(validatedData.email);
-
-    if (user) {
-      return { status: 'user_exists' } as RegisterActionState;
+    // Check if user already exists first - move this before validation
+    const existingUser = await getUser(email);
+    if (existingUser.length > 0) {
+      return { 
+        status: 'user_exists',
+        message: 'An account with this email already exists. Please sign in instead.'
+      };
     }
-    await createUser(validatedData.email, validatedData.password);
+
+    // Validate input data with strict password requirements
+    try {
+      registrationFormSchema.parse({ email, password });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return { 
+          status: 'invalid_data',
+          message: error.errors[0]?.message || 'Please check your email and password requirements'
+        };
+      }
+    }
+
+    // Create user and sign in
+    await createUser(email, password);
     await signIn('credentials', {
-      email: validatedData.email,
-      password: validatedData.password,
+      email: email,
+      password: password,
       redirect: false,
     });
 
     return { status: 'success' };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
-    }
-
-    return { status: 'failed' };
+    return { 
+      status: 'failed',
+      message: 'Failed to create account. Please try again later.'
+    };
   }
 };

@@ -24,21 +24,31 @@ export default function Page() {
   );
 
   useEffect(() => {
-    if (state.status === 'failed') {
+    if (state.status === 'user_not_found') {
       toast({
         type: 'error',
-        description: 'Invalid credentials!',
+        description: state.message || 'No account found. Please register first.',
+      });
+    } else if (state.status === 'wrong_password') {
+      toast({
+        type: 'error',
+        description: state.message || 'Incorrect password. Please try again.',
+      });
+    } else if (state.status === 'failed') {
+      toast({
+        type: 'error',
+        description: state.message || 'Failed to sign in. Please try again.',
       });
     } else if (state.status === 'invalid_data') {
       toast({
         type: 'error',
-        description: 'Failed validating your submission!',
+        description: state.message || 'Invalid email or password format.',
       });
     } else if (state.status === 'success') {
       setIsSuccessful(true);
       router.refresh();
     }
-  }, [state.status, router]);
+  }, [state.status, state.message, router]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);
