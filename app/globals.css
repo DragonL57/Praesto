@@ -425,20 +425,6 @@ code .hljs-params {
     background-color: transparent;
 }
 
-/* Fix for table overflow on mobile */
-.prose table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.prose table tbody {
-    display: table;
-    min-width: 100%;
-    width: max-content;
-}
-
 /* Mobile responsive fixes */
 @media (max-width: 768px) {
 

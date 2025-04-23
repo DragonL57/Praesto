@@ -10,6 +10,14 @@ import { SpreadsheetEditor } from '@/components/sheet-editor';
 import { parse, unparse } from 'papaparse';
 import { toast } from 'sonner';
 
+// Define consistent CSV options to match the sheet-editor component
+const CSV_OPTIONS = {
+  quotes: true,      // Always quote fields
+  quoteChar: '"',    // Use double quotes
+  escapeChar: '"',   // Escape quotes by doubling
+  delimiter: ',',    // Use comma as delimiter
+};
+
 type Metadata = any;
 
 export const sheetArtifact = new Artifact<'sheet', Metadata>({
@@ -76,13 +84,18 @@ export const sheetArtifact = new Artifact<'sheet', Metadata>({
       icon: <CopyIcon />,
       description: 'Copy as .csv',
       onClick: ({ content }) => {
-        const parsed = parse<string[]>(content, { skipEmptyLines: true });
+        // Parse with options to handle quotes and commas correctly
+        const parsed = parse<string[]>(content, { 
+          skipEmptyLines: true,
+          ...CSV_OPTIONS,
+        });
 
         const nonEmptyRows = parsed.data.filter((row) =>
           row.some((cell) => cell.trim() !== ''),
         );
 
-        const cleanedCsv = unparse(nonEmptyRows);
+        // Use proper quoting when unparsing to preserve commas in content
+        const cleanedCsv = unparse(nonEmptyRows, CSV_OPTIONS);
 
         navigator.clipboard.writeText(cleanedCsv);
         toast.success('Copied csv to clipboard!');

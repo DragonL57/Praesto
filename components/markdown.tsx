@@ -103,29 +103,29 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     code: CodeComponent,
     img: ImageComponent,
 
-    // Add display names to the rest of the components
-    // Table container with horizontal scrolling
+    // Remove table-specific components and use simpler implementations
+    // that indicate tables should be created with createDocument
     table: function MarkdownTable({ node, children, ...props }) {
       return (
-        <div className="relative my-2 w-full">
-          {/* Add visual scroll indicator for mobile */}
-          <div className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 pointer-events-none bg-gradient-to-l from-background to-transparent z-10 opacity-75"></div>
-          
-          {/* Table wrapper with enhanced mobile handling */}
-          <div className="overflow-x-auto w-full max-w-full pb-2 scrollbar-thin scrollbar-thumb-zinc-400 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent -mx-4 px-4 md:mx-0 md:px-0">
-            <div className="inline-block min-w-full align-middle">
-              <table className="w-full border-collapse border border-zinc-300 dark:border-zinc-700" {...props}>
-                {children}
-              </table>
-            </div>
+        <div className="my-4 p-4 border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 rounded-md">
+          <p className="text-sm text-muted-foreground mb-2">
+            <strong>Note:</strong> This table would display better as a spreadsheet. 
+            For optimal viewing on all devices, especially mobile, tables should be created 
+            using the <code>createDocument</code> tool with <code>kind: 'sheet'</code>.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse" {...props}>
+              {children}
+            </table>
           </div>
         </div>
       );
     },
     
+    // Simplify remaining table components
     thead: function MarkdownThead({ node, children, ...props }) {
       return (
-        <thead className="bg-zinc-100 dark:bg-zinc-800" {...props}>
+        <thead {...props}>
           {children}
         </thead>
       );
@@ -133,7 +133,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     tbody: function MarkdownTbody({ node, children, ...props }) {
       return (
-        <tbody className="bg-white dark:bg-zinc-900" {...props}>
+        <tbody {...props}>
           {children}
         </tbody>
       );
@@ -149,7 +149,7 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     th: function MarkdownTh({ node, children, ...props }) {
       return (
-        <th className="px-4 py-2 text-left font-semibold border-r last:border-r-0 border-zinc-300 dark:border-zinc-700 break-words" {...props}>
+        <th className="px-2 py-1 text-left font-semibold" {...props}>
           {children}
         </th>
       );
@@ -157,14 +157,12 @@ const getComponents = (baseHeadingLevel: number = 1): Partial<Components> => {
     
     td: function MarkdownTd({ node, children, ...props }) {
       return (
-        <td className="px-4 py-2 border-r last:border-r-0 border-zinc-300 dark:border-zinc-700 break-words min-w-[120px]" {...props}>
-          <div className="line-clamp-5 overflow-hidden text-ellipsis">
-            {children}
-          </div>
+        <td className="px-2 py-1" {...props}>
+          {children}
         </td>
       );
     },
-    
+
     hr: function MarkdownHr({ node, ...props }) {
       return (
         <hr

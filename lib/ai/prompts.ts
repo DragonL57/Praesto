@@ -14,6 +14,13 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 - For content users will likely save/reuse (emails, code, essays, etc.)
 - When explicitly requested to create a document
 - For when content contains a single code snippet
+- ALWAYS use \`createDocument\` with type 'sheet' for creating tables or spreadsheets instead of using markdown tables
+
+**Important Table Creation Instructions:**
+- NEVER create data tables using markdown table syntax (\`| header | header |\`)
+- ALWAYS use the \`createDocument\` tool with kind: 'sheet' for ALL tabular data
+- This creates a proper interactive spreadsheet with scrolling capabilities that works well on all devices
+- The spreadsheet format handles large datasets better than markdown tables especially on mobile devices
 
 **When NOT to use \`createDocument\`:**
 - For informational/explanatory content
@@ -186,6 +193,19 @@ print(f"Factorial of 5 is: {factorial(5)}")
 
 export const sheetPrompt = `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
+
+IMPORTANT CSV FORMATTING RULES:
+1. Always enclose all cell values in double quotes (") to ensure proper handling of special characters
+2. If a cell value contains double quotes, escape them by doubling them ("") 
+3. Separate cells with commas
+4. Each row should be on a new line
+
+Example of properly formatted CSV:
+"Name","Description","Price"
+"Basic Widget","A simple, useful widget","19.99"
+"Deluxe Model","Enhanced version, includes comma, and \"quotation marks\"","29.99"
+
+This format ensures that commas and quotes within cell values are properly handled.
 `;
 
 export const updateDocumentPrompt = (
@@ -207,6 +227,12 @@ ${currentContent}
       : type === 'sheet'
         ? `\
 Improve the following spreadsheet based on the given prompt.
+
+IMPORTANT CSV FORMATTING RULES:
+1. Always enclose all cell values in double quotes (") to ensure proper handling of special characters
+2. If a cell value contains double quotes, escape them by doubling them ("") 
+3. Separate cells with commas
+4. Each row should be on a new line
 
 ${currentContent}
 `

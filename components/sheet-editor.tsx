@@ -19,6 +19,14 @@ type SheetEditorProps = {
 const MIN_ROWS = 50;
 const MIN_COLS = 26;
 
+// Define consistent CSV parsing/generation options once
+const CSV_OPTIONS = {
+  quotes: true,       // Always quote fields
+  quoteChar: '"',     // Use double quotes
+  escapeChar: '"',    // Escape quotes by doubling
+  delimiter: ',',     // Use comma as delimiter
+};
+
 const PureSpreadsheetEditor = ({
   content,
   saveContent,
@@ -29,7 +37,11 @@ const PureSpreadsheetEditor = ({
 
   const parseData = useMemo(() => {
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
-    const result = parse<string[]>(content, { skipEmptyLines: true });
+    // Use consistent parsing options
+    const result = parse<string[]>(content, { 
+      skipEmptyLines: true,
+      ...CSV_OPTIONS
+    });
 
     const paddedData = result.data.map((row) => {
       const paddedRow = [...row];
@@ -95,7 +107,8 @@ const PureSpreadsheetEditor = ({
   }, [initialRows]);
 
   const generateCsv = (data: any[][]) => {
-    return unparse(data);
+    // Use PapaParse's unparse with proper quoting configuration
+    return unparse(data, CSV_OPTIONS);
   };
 
   const handleRowsChange = (newRows: any[]) => {
