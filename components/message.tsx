@@ -78,14 +78,14 @@ const PurePreviewMessage = ({
             if (type === 'text') {
               if (mode === 'view') {
                 return (
-                  <div key={key} className="flex flex-row gap-2 items-start">
+                  <div key={key} className="flex flex-row gap-2 items-start relative">
                     {message.role === 'user' && !isReadonly && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             data-testid="message-edit-button"
                             variant="ghost"
-                            className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                            className="px-2 h-fit rounded-full text-muted-foreground absolute -left-10 opacity-0 group-hover/message:opacity-100 transition-opacity"
                             onClick={() => {
                               setMode('edit');
                             }}
