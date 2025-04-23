@@ -124,6 +124,7 @@ function PureWebsiteContent({ url, content, query, status, error, source, fallba
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex size-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                aria-label={`Visit ${getDomainName(url)} website`}
               >
                 <ExternalLinkIcon size={14} />
               </a>

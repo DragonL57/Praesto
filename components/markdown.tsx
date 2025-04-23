@@ -170,13 +170,13 @@ const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) 
         // Links
         a: ({ children, href, ...props }) => (
           <Link
-            className="text-blue-500 hover:underline break-words overflow-wrap-anywhere"
+            className="text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere"
             target="_blank"
             rel="noreferrer"
             href={href as any}
             {...props}
           >
-            {children}
+            {children || href}
           </Link>
         ),
         
