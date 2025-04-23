@@ -21,8 +21,27 @@ export function MessageEditor({
   reload,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  
+  // Extract text content from message parts instead of using message.content which might be empty
+  const extractMessageText = () => {
+    // If message.content has value, use it
+    if (message.content && message.content.trim() !== '') {
+      return message.content;
+    }
+    
+    // Otherwise extract text from message parts
+    if (message.parts && message.parts.length > 0) {
+      return message.parts
+        .filter(part => part.type === 'text')
+        .map(part => (part as any).text)
+        .join('\n')
+        .trim();
+    }
+    
+    return '';
+  };
 
-  const [draftContent, setDraftContent] = useState<string>(message.content);
+  const [draftContent, setDraftContent] = useState<string>(extractMessageText());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -47,6 +66,8 @@ export function MessageEditor({
     <div className="flex flex-col gap-2 w-full">
       <Textarea
         data-testid="message-editor"
+        id="message-edit-field"
+        name="message-edit-content"
         ref={textareaRef}
         className="bg-transparent outline-none overflow-hidden resize-none !text-base rounded-xl w-full"
         value={draftContent}

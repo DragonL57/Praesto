@@ -78,29 +78,31 @@ const PurePreviewMessage = ({
             if (type === 'text') {
               if (mode === 'view') {
                 return (
-                  <div key={key} className="flex flex-row gap-2 items-start relative">
+                  <div key={key} className="flex flex-row gap-2 items-start">
                     {message.role === 'user' && !isReadonly && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            data-testid="message-edit-button"
-                            variant="ghost"
-                            className="px-2 h-fit rounded-full text-muted-foreground absolute -left-10 opacity-0 group-hover/message:opacity-100 transition-opacity"
-                            onClick={() => {
-                              setMode('edit');
-                            }}
-                          >
-                            <PencilEditIcon />
-                            <span className="sr-only">Edit message</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Edit message</TooltipContent>
-                      </Tooltip>
+                      <div className="self-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              data-testid="message-edit-button"
+                              variant="ghost"
+                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                              onClick={() => {
+                                setMode('edit');
+                              }}
+                            >
+                              <PencilEditIcon />
+                              <span className="sr-only">Edit message</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit message</TooltipContent>
+                        </Tooltip>
+                      </div>
                     )}
 
                     <div
                       data-testid="message-content"
-                      className={cn('flex flex-col gap-0', {
+                      className={cn('flex flex-col gap-0 flex-1', {
                         'dark:bg-zinc-700 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-3 py-2 rounded-xl':
                           message.role === 'user',
                       })}

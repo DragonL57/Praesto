@@ -71,13 +71,54 @@ export const readWebsiteContent = tool({
         ? `Request failed: ${error.message} ${error.response?.status ? `(Status: ${error.response.status})` : ''}`
         : error.message;
       
-      return {
-        url: url,
-        content: `Error fetching webpage content: ${errorMessage}`,
-        query: query || null,
-        status: 'error',
-        error: errorMessage
-      };
+      // Try fallback using serper.dev scraping API
+      try {
+        console.log("Attempting fallback with serper.dev scraping API");
+        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+        
+        const scrapeOptions = {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': '5b106638ab76499468577a6a8844cacfa7d38551',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "url": fullUrl,
+            "includeMarkdown": true
+          })
+        };
+        
+        const scrapeResponse = await fetch('https://scrape.serper.dev', scrapeOptions);
+        
+        if (!scrapeResponse.ok) {
+          throw new Error(`Scraping API error: ${scrapeResponse.status} ${scrapeResponse.statusText}`);
+        }
+        
+        const scrapeData = await scrapeResponse.json();
+        
+        if (scrapeData.markdown || scrapeData.text) {
+          console.log('Fallback scraping successful');
+          return {
+            url: fullUrl,
+            content: scrapeData.markdown || scrapeData.text,
+            query: query || null,
+            status: 'success',
+            source: 'fallback-scraper'
+          };
+        } else {
+          throw new Error('No content found in scraped data');
+        }
+      } catch (fallbackError: any) {
+        console.error(`Fallback scraping also failed: ${fallbackError.message}`);
+        return {
+          url: url,
+          content: `Error fetching webpage content: ${errorMessage}\nFallback scraping also failed: ${fallbackError.message}`,
+          query: query || null,
+          status: 'error',
+          error: errorMessage,
+          fallbackError: fallbackError.message
+        };
+      }
     }
   },
 });

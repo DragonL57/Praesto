@@ -12,9 +12,11 @@ interface WebsiteContentProps {
   query?: string | null;
   status: 'success' | 'error' | 'loading';
   error?: string;
+  source?: string; // Add source field to track if content came from fallback
+  fallbackError?: string; // Add fallbackError field to track any errors from fallback
 }
 
-function PureWebsiteContent({ url, content, query, status, error }: WebsiteContentProps) {
+function PureWebsiteContent({ url, content, query, status, error, source, fallbackError }: WebsiteContentProps) {
   const [showRawContent, setShowRawContent] = useState(false);
 
   // Format the URL for display
@@ -34,6 +36,9 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
 
   // Determine if the content is likely too complex or dynamic
   const isDynamicOrComplexSite = () => {
+    // Skip this check if content came from fallback scraper
+    if (source === 'fallback-scraper') return false;
+    
     const dynamicSitesPatterns = [
       'discourse',
       'forum',
@@ -106,11 +111,29 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
           
           <p className="text-sm text-center text-muted-foreground">Loading content from {getDomainName(url)}...</p>
         </div>
-      ) : status === 'error' || (!content.trim() && status === 'success') ? (
+      ) : status === 'success' && content.trim() && (source === 'fallback-scraper' || !isDynamicOrComplexSite()) ? (
+        // Show content if we have valid content from fallback scraper or it's not a complex site
+        <div className="text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
+          {source === 'fallback-scraper' && (
+            <div className="mb-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <InfoIcon size={14} />
+              <span>Content extracted using enhanced scraping technology</span>
+            </div>
+          )}
+          <Markdown>{content}</Markdown>
+        </div>
+      ) : (
+        // Show error state
         <div className="flex flex-col gap-4 text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
           <div className="text-destructive font-medium">
             {error || "Couldn't extract readable content from this website"}
           </div>
+          
+          {fallbackError && (
+            <div className="text-amber-600 dark:text-amber-400 text-sm">
+              Both primary and fallback extraction methods failed.
+            </div>
+          )}
           
           <p>{getSiteSpecificGuidance()}</p>
           
@@ -126,7 +149,7 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
             </ul>
           </div>
           
-          {status === 'success' && content && (
+          {content && (
             <div className="mt-3">
               <Button
                 variant="outline" 
@@ -143,10 +166,6 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
               )}
             </div>
           )}
-        </div>
-      ) : (
-        <div className="text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
-          <Markdown>{content}</Markdown>
         </div>
       )}
     </div>
@@ -190,6 +209,26 @@ function ExternalLinkIcon({ size = 16, className }: { size?: number; className?:
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+      />
+    </svg>
+  );
+}
+
+function InfoIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn("stroke-current", className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 16v-4m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
       />
     </svg>
   );

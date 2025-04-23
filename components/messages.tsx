@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
 import { Greeting } from './greeting';
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
@@ -29,8 +29,35 @@ function PureMessages({
   reload,
   isReadonly,
 }: MessagesProps) {
-  const [messagesContainerRef, messagesEndRef] =
-    useScrollToBottom<HTMLDivElement>();
+  // Instead of using the useScrollToBottom hook which is too sensitive,
+  // we'll implement a more selective scrolling mechanism
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef<number>(messages.length);
+  const isStreamingRef = useRef<boolean>(status === 'streaming');
+
+  // Only scroll to bottom when messages are added or when streaming starts/continues
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    const end = messagesEndRef.current;
+    
+    if (container && end) {
+      const shouldScrollToBottom = 
+        messages.length > prevMessagesLengthRef.current || // New message added
+        (status === 'streaming' && !isStreamingRef.current) || // Streaming just started
+        (status === 'streaming' && isStreamingRef.current); // Continued streaming
+      
+      if (shouldScrollToBottom) {
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          end.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+      }
+    }
+    
+    prevMessagesLengthRef.current = messages.length;
+    isStreamingRef.current = status === 'streaming';
+  }, [messages.length, status]);
 
   return (
     <div 
