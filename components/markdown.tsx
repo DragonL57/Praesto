@@ -98,7 +98,7 @@ const NonMemoizedMarkdown = ({ children, baseHeadingLevel = 1 }: MarkdownProps) 
                   height={300} // Fixed height as number
                   className="rounded-md object-contain"
                   style={{ maxWidth: '100%', height: 'auto' }}
-                  unoptimized={!src.startsWith('http')} // For non-HTTP sources
+                  unoptimized={true} // Set to true for all external images to bypass domain restrictions
                 />
               </div>
             </div>
