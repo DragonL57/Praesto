@@ -1,9 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Markdown } from './markdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Button } from './ui/button';
 
 interface WebsiteContentProps {
   url: string;
@@ -14,6 +15,8 @@ interface WebsiteContentProps {
 }
 
 function PureWebsiteContent({ url, content, query, status, error }: WebsiteContentProps) {
+  const [showRawContent, setShowRawContent] = useState(false);
+
   // Format the URL for display
   const getFormattedUrl = (url: string) => {
     return url.startsWith('http') ? url : `https://${url}`;
@@ -27,6 +30,37 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
     } catch (e) {
       return url;
     }
+  };
+
+  // Determine if the content is likely too complex or dynamic
+  const isDynamicOrComplexSite = () => {
+    const dynamicSitesPatterns = [
+      'discourse',
+      'forum',
+      'react',
+      'javascript',
+      'interactive',
+      'login required',
+      'sign in',
+      'please enable javascript'
+    ];
+    
+    return dynamicSitesPatterns.some(pattern => 
+      content.toLowerCase().includes(pattern) || 
+      error?.toLowerCase().includes(pattern) ||
+      url.toLowerCase().includes(pattern)
+    );
+  };
+
+  // Provide guidance based on the site type
+  const getSiteSpecificGuidance = () => {
+    if (url.includes('forum') || url.includes('discourse')) {
+      return "Forums often use complex JavaScript and may require authentication, making them difficult to scrape.";
+    }
+    if (url.includes('react') || url.includes('vue') || url.includes('angular')) {
+      return "JavaScript framework documentation sites often have dynamic content that can be challenging to extract properly.";
+    }
+    return "This website may use dynamic content loading or require authentication, which makes automatic content extraction difficult.";
   };
 
   return (
@@ -72,13 +106,47 @@ function PureWebsiteContent({ url, content, query, status, error }: WebsiteConte
           
           <p className="text-sm text-center text-muted-foreground">Loading content from {getDomainName(url)}...</p>
         </div>
-      ) : (
-        <div className="text-sm overflow-auto max-h-[30rem] border p-4 rounded-md bg-muted/30">
-          {status === 'error' ? (
-            <div className="text-destructive">{error || 'Failed to load website content'}</div>
-          ) : (
-            <Markdown>{content}</Markdown>
+      ) : status === 'error' || (!content.trim() && status === 'success') ? (
+        <div className="flex flex-col gap-4 text-sm overflow-auto max-h-[15rem] border p-4 rounded-md bg-muted/30">
+          <div className="text-destructive font-medium">
+            {error || "Couldn't extract readable content from this website"}
+          </div>
+          
+          <p>{getSiteSpecificGuidance()}</p>
+          
+          <div className="flex flex-col gap-3 mt-2">
+            <p className="font-medium">Suggestions:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Visit the website directly using the link in the top-right</li>
+              <li>Try asking a specific question about the website's content</li>
+              <li>If you have access to the content, try copying and pasting relevant sections directly</li>
+              {isDynamicOrComplexSite() && (
+                <li>For forum posts or complex pages, try viewing in Reader Mode in your browser first, then share the content</li>
+              )}
+            </ul>
+          </div>
+          
+          {status === 'success' && content && (
+            <div className="mt-3">
+              <Button
+                variant="outline" 
+                className="text-xs"
+                onClick={() => setShowRawContent(!showRawContent)}
+              >
+                {showRawContent ? "Hide raw content" : "Show raw extracted content"}
+              </Button>
+              
+              {showRawContent && (
+                <div className="mt-3 border border-dashed p-3 overflow-auto max-h-40 text-xs opacity-70">
+                  <pre>{content}</pre>
+                </div>
+              )}
+            </div>
           )}
+        </div>
+      ) : (
+        <div className="text-sm overflow-auto max-h-[15rem] border p-4 rounded-md bg-muted/30">
+          <Markdown>{content}</Markdown>
         </div>
       )}
     </div>
