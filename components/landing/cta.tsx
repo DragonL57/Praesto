@@ -8,7 +8,7 @@ export default function CTA() {
         <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-5xl">
           Ready to boost your productivity?
         </h2>
-        <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
+        <p className="max-w-2xl leading-normal text-muted-foreground sm:text-xl sm:leading-8">
           Sign up for UniTaskAI today and experience the power of an integrated
           AI assistant. Get started for free.
         </p>

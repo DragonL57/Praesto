@@ -11,7 +11,7 @@ export default function Hero() {
           <br />
           Your Intelligent AI Assistant
         </h1>
-        <p className="mx-auto max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
+        <p className="mx-auto max-w-2xl leading-normal text-muted-foreground sm:text-xl sm:leading-8">
           Enhance your productivity with AI-powered chat, code generation, text
           analysis, web search, and more. Get started for free.
         </p>
@@ -20,7 +20,7 @@ export default function Hero() {
         <Button size="lg" asChild>
           <Link href="/chat">
             Start Now
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 size-4" />
           </Link>
         </Button>
         <Button variant="outline" size="lg" asChild>

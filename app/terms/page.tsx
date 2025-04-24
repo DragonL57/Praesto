@@ -39,14 +39,15 @@ export default function TermsPage() {
       />
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow container py-12 md:py-24">
+        <main className="grow container py-12 md:py-24">
           <h1 className="text-4xl font-bold mb-8">Terms of Service</h1>
           <div className="prose dark:prose-invert max-w-none">
             <p>Last updated: April 25, 2025</p>
             <p>
-              Please read these Terms of Service ("Terms", "Terms of Service")
-              carefully before using the UniTaskAI website and application (the
-              "Service") operated by UniTaskAI ("us", "we", or "our").
+              Please read these Terms of Service (&quot;Terms&quot;, &quot;Terms
+              of Service&quot;) carefully before using the UniTaskAI website and
+              application (the &quot;Service&quot;) operated by UniTaskAI
+              (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
             </p>
             <h2 className="text-2xl font-semibold mt-8 mb-4">
               1. Acceptance of Terms

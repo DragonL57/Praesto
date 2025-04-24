@@ -47,7 +47,7 @@ export default function AboutPage() {
       />
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow container py-12 md:py-24">
+        <main className="grow container py-12 md:py-24">
           <h1 className="text-4xl font-bold mb-8">About UniTaskAI</h1>
           <div className="prose dark:prose-invert max-w-none">
             <p>
@@ -56,8 +56,8 @@ export default function AboutPage() {
             </p>
             <p>
               Our mission is to provide a versatile and powerful AI tool that
-              integrates seamlessly into your daily tasks, whether it's coding,
-              writing, research, or complex problem-solving.
+              integrates seamlessly into your daily tasks, whether it&apos;s
+              coding, writing, research, or complex problem-solving.
             </p>
             <h2 className="text-2xl font-semibold mt-8 mb-4">Our Vision</h2>
             <p>

@@ -44,7 +44,7 @@ export default function PrivacyPage() {
       />
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow container py-12 md:py-24">
+        <main className="grow container py-12 md:py-24">
           <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
           <div className="prose dark:prose-invert max-w-none">
             <p>Last updated: April 25, 2025</p>

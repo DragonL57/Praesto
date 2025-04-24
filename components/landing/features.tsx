@@ -47,7 +47,7 @@ export default function Features() {
             className="relative overflow-hidden rounded-lg border bg-background p-8"
           >
             <div className="flex items-center gap-4">
-              <feature.icon className="h-8 w-8 text-primary" />
+              <feature.icon className="size-8 text-primary" />
               <h3 className="font-bold">{feature.name}</h3>
             </div>
             <p className="mt-2 text-muted-foreground">{feature.description}</p>

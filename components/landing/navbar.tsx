@@ -33,7 +33,7 @@ export default function Navbar() {
         <div className="flex items-center space-x-4">
           {/* Placeholder Icon Button */}
           <Button variant="ghost" size="icon" disabled>
-            <Github className="h-4 w-4" />{' '}
+            <Github className="size-4" />{' '}
             {/* Using Github as placeholder icon */}
             <span className="sr-only">Placeholder Icon</span>
           </Button>
