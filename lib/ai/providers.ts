@@ -78,6 +78,5 @@ export const myProvider = isTestEnvironment
         // Keep Google models as they are
         'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
         'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
-        'google-gemini-search': google('gemini-2.5-flash-preview-04-17', { useSearchGrounding: true }),
       },
     });

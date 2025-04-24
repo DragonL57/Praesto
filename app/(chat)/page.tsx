@@ -18,7 +18,7 @@ export const metadata: Metadata = {
       'Engage with our AI assistant for instant help with coding, writing, and answering questions.',
   },
   alternates: {
-    canonical: 'https://unitaskai.vercel.app/',
+    canonical: 'https://www.unitaskai.com/',
   },
 };
 
