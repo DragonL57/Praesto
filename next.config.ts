@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
       {
         hostname: 'avatar.vercel.sh',
       },
+      {
+        hostname: 'i.ytimg.com',
+      },
+      {
+        hostname: 'img.youtube.com',
+      },
     ],
   },
 };

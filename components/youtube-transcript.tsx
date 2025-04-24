@@ -36,7 +36,14 @@ function PureYouTubeTranscript({
 }: YouTubeTranscriptProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
+  const [imageError, setImageError] = useState(false);
+
+  // Try different thumbnail qualities (maxresdefault, hqdefault, mqdefault, default)
+  // i.ytimg.com is more reliable than img.youtube.com
+  const thumbnailUrl = imageError
+    ? `/images/youtube-placeholder.jpg` // Fallback to local placeholder if all YouTube options fail
+    : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   // Format the transcript for display
@@ -112,18 +119,26 @@ function PureYouTubeTranscript({
             rel="noopener noreferrer"
             className="relative group rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
           >
-            <Image
-              src={thumbnailUrl}
-              alt="Video thumbnail"
-              width={320}
-              height={180}
-              className="w-full h-auto object-cover"
-              unoptimized={false}
-              priority={true}
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-              <PlayIcon size={48} className="text-white" />
+            <div className="aspect-video bg-gray-100 relative">
+              <Image
+                src={thumbnailUrl}
+                alt="Video thumbnail"
+                fill
+                sizes="(max-width: 768px) 100vw, 320px"
+                className="object-cover"
+                onError={() => setImageError(true)}
+                unoptimized={false}
+                priority={true}
+              />
+
+              {/* YouTube play button overlay - only visible on hover */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="rounded-full bg-black/70 p-3">
+                  <PlayIcon size={30} className="text-white" />
+                </div>
+              </div>
             </div>
+
             {formatDuration() && (
               <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
                 {formatDuration()}
