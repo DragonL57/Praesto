@@ -1,10 +1,9 @@
 import { Toaster } from 'sonner';
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Analytics } from '@vercel/analytics/react';
+import type { Viewport, Metadata } from 'next';
 import localFont from 'next/font/local';
 import { AnimatePresence } from 'framer-motion';
-import { Analytics } from '@vercel/analytics/react';
 
 import './globals.css';
 
@@ -15,104 +14,59 @@ const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.unitaskai.com'),
   title: {
-    default: 'UniTaskAI - Your Intelligent AI Assistant',
+    default: 'UniTaskAI',
     template: '%s | UniTaskAI',
   },
   description:
-    'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more, providing intelligent responses to all your needs.',
-  generator: 'Next.js',
-  applicationName: 'UniTaskAI',
-  referrer: 'origin-when-cross-origin',
+    'Enhance your productivity with UniTaskAI, an intelligent assistant for chat, code generation, and more.',
   keywords: [
     'AI assistant',
-    'chat AI',
-    'coding assistant',
-    'text generation',
+    'productivity',
+    'chat',
+    'code generation',
     'AI tools',
-    'artificial intelligence',
   ],
   authors: [{ name: 'UniTaskAI Team' }],
-  creator: 'UniTaskAI',
+  creator: 'UniTaskAI Team',
   publisher: 'UniTaskAI',
   formatDetection: {
     email: false,
-    address: false,
     telephone: false,
+    address: false,
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     type: 'website',
-    locale: 'en_US',
-    url: 'https://www.unitaskai.com',
-    title: 'UniTaskAI - Your Intelligent AI Assistant',
-    description:
-      'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more, providing intelligent responses to all your needs.',
     siteName: 'UniTaskAI',
     images: [
       {
-        url: 'https://www.unitaskai.com/opengraph-image.png',
+        url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'UniTaskAI - Your Intelligent AI Assistant',
+        alt: 'UniTaskAI',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'UniTaskAI - Your Intelligent AI Assistant',
-    description:
-      'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more.',
-    images: ['https://www.unitaskai.com/twitter-image.png'],
     creator: '@unitaskai',
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/apple-icon.png',
-  },
-  verification: {
-    google: 'google-site-verification-code', // Replace with your actual verification code
-    yandex: 'yandex-verification-code', // Replace with your actual verification code if needed
-  },
-  alternates: {
-    canonical: 'https://www.unitaskai.com',
-    languages: {
-      'en-US': 'https://www.unitaskai.com/en-US',
-    },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+  ],
   width: 'device-width',
   initialScale: 1,
-  // Removed maximumScale restriction to allow zooming for accessibility
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: LIGHT_THEME_COLOR },
-    { media: '(prefers-color-scheme: dark)', color: DARK_THEME_COLOR },
-  ],
 };
-
-const geist = Geist({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-geist',
-});
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-geist-mono',
-});
 
 const pfBeauSansPro = localFont({
   src: [
@@ -171,24 +125,6 @@ const pfBeauSansPro = localFont({
   display: 'swap',
 });
 
-const THEME_COLOR_SCRIPT = `\
-(function() {
-  var html = document.documentElement;
-  var meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) {
-    meta = document.createElement('meta');
-    meta.setAttribute('name', 'theme-color');
-    document.head.appendChild(meta);
-  }
-  function updateThemeColor() {
-    var isDark = html.classList.contains('dark');
-    meta.setAttribute('content', isDark ? '${DARK_THEME_COLOR}' : '${LIGHT_THEME_COLOR}');
-  }
-  var observer = new MutationObserver(updateThemeColor);
-  observer.observe(html, { attributes: true, attributeFilter: ['class'] });
-  updateThemeColor();
-})();`;
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -197,20 +133,10 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      // `next-themes` injects an extra classname to the body element to avoid
-      // visual flicker before hydration. Hence the `suppressHydrationWarning`
-      // prop is necessary to avoid the React hydration mismatch warning.
-      // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${pfBeauSansPro.variable}`}
+      className={`${pfBeauSansPro.variable}`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
-        />
-      </head>
+      <head />
       <body className="antialiased font-pf-beau">
         <ThemeProvider
           attribute="class"
