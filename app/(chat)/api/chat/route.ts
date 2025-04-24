@@ -1,10 +1,10 @@
 import {
-  UIMessage,
   appendResponseMessages,
   createDataStreamResponse,
   smoothStream,
   streamText,
 } from 'ai';
+import type { UIMessage } from 'ai';
 import { auth } from '@/app/(auth)/auth';
 import { systemPrompt } from '@/lib/ai/prompts';
 import {
@@ -83,11 +83,22 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
       execute: (dataStream) => {
+        const isGemini25Model = selectedChatModel === 'google-gemini-pro' || selectedChatModel === 'google-gemini-flash';
+        
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel }),
           messages,
           maxSteps: 5,
+          providerOptions: isGemini25Model 
+            ? { 
+                google: {
+                  thinkingConfig: {
+                    thinkingBudget: 24576, // Maximum thinking budget
+                  }
+                } 
+              }
+            : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []

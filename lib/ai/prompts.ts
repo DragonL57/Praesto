@@ -363,6 +363,7 @@ export const regularPrompt = `
     - Structure responses with logical flow
     - Use lists and tables for organized information
     - Format specialized content appropriately (math, code, etc.)
+    - STRICTLY use Markdown horizontal rules (---) to divide answers into distinct sections for better visual clarity
   </response_format>
 </assistant_configuration>
 `;

@@ -54,6 +54,13 @@ export const typedPollinationsProvider = createOpenAICompatible<
   },
 });
 
+// Export the thinking config to be used when calling the Gemini models
+export const geminiThinkingConfig = {
+  thinkingConfig: {
+    thinkingBudget: 24576, // Maximum thinking budget as requested
+  }
+};
+
 // You can swap openai() for openai.chat(), openai.responses(), etc. per model as needed
 export const myProvider = isTestEnvironment
   ? customProvider({
@@ -69,13 +76,13 @@ export const myProvider = isTestEnvironment
         // GPT-4.1 from OpenAI for chat
         'chat-model': pollinationsProvider.chatModel('openai-xlarge'),
         
-        // Use openai-xlarge for title generation
+        // Use gemini 2.0 for title generation (no thinking capability)
         'title-model': google('gemini-2.0-flash'),
         
         // Use openai-xlarge for artifact generation
         'artifact-model': pollinationsProvider.chatModel('openai-xlarge'),
         
-        // Keep Google models as they are
+        // Enable thinking for Gemini 2.5 models
         'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
         'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
       },
