@@ -1,7 +1,7 @@
 import type { ArtifactKind } from '@/components/artifact';
 
 // Core Assistant Configuration
-const ASSISTANT_NAME = 'Praesto';
+const ASSISTANT_NAME = 'UniTask';
 const ASSISTANT_ROLE = 'helpful, thorough and detailed personal assistant';
 const ASSISTANT_MISSION =
   'To be a helpful, truth-seeking companion that empowers users, brings clarity to their thinking, and inspires exploration';

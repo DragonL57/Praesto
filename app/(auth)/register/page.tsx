@@ -55,7 +55,7 @@ export default function Page() {
     <div className="flex h-dvh w-screen items-start pt-12 md:pt-0 md:items-center justify-center bg-background">
       <div className="w-full max-w-md overflow-hidden rounded-2xl gap-12 flex flex-col">
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
-          <h2 className="text-2xl font-bold dark:text-zinc-50 mb-2">Praesto</h2>
+          <h2 className="text-2xl font-bold dark:text-zinc-50 mb-2">UniTaskAI</h2>
           <h3 className="text-xl font-semibold dark:text-zinc-50">Sign Up</h3>
           <p className="text-sm text-gray-500 dark:text-zinc-400">
             Create an account with your email and password
@@ -66,7 +66,6 @@ export default function Page() {
             <h4 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Password must:</h4>
             <ul className="text-xs text-gray-500 dark:text-zinc-400 space-y-1 list-disc pl-4">
               <li>Be at least 6 characters long</li>
-              <li>Contain at least one uppercase letter (A-Z)</li>
               <li>Contain at least one lowercase letter (a-z)</li>
               <li>Contain at least one number (0-9)</li>
             </ul>

@@ -9,9 +9,9 @@ import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://praesto.ai'),
-  title: 'Praesto',
-  description: 'Praesto - Your intelligent AI assistant.',
+  metadataBase: new URL('https://unitaskai.com'),
+  title: 'UniTaskAI',
+  description: 'UniTaskAI - The only general AI assistant you need',
 };
 
 export const viewport = {

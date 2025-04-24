@@ -1,10 +1,10 @@
-<a href="https://praesto.vercel.app/">
-  <img alt="Praesto - Your intelligent AI assistant." src="app/Main_ui.png">
-  <h1 align="center">Praesto</h1>
+<a href="https://unitaskai.vercel.app/">
+  <img alt="UniTaskAI - The only general AI assistant you need" src="app/Main_ui.png">
+  <h1 align="center">UniTaskAI</h1>
 </a>
 
 <p align="center">
-    Praesto is a powerful, intelligent AI assistant built with Next.js and the AI SDK from Vercel.
+    UniTaskAI is a powerful, intelligent AI assistant built with Next.js and the AI SDK from Vercel. The only general AI assistant you need.
 </p>
 
 <p align="center">

@@ -10,7 +10,6 @@ import { signIn } from './auth';
 const passwordSchema = z.string()
   .min(6, "Password must be at least 6 characters long")
   .max(100, "Password is too long")
-  .refine(password => /[A-Z]/.test(password), "Password must contain at least one uppercase letter")
   .refine(password => /[a-z]/.test(password), "Password must contain at least one lowercase letter")
   .refine(password => /[0-9]/.test(password), "Password must contain at least one number");
 

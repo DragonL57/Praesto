@@ -26,7 +26,7 @@ export const Greeting = () => {
         transition={{ delay: 0.5 }}
         className="text-2xl font-semibold"
       >
-        Welcome to Praesto!
+        Welcome to UniTaskAI!
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -35,7 +35,7 @@ export const Greeting = () => {
         transition={{ delay: 0.6 }}
         className="text-2xl text-zinc-500"
       >
-        How can I assist you today?
+        The only general AI assistant you need
       </motion.div>
     </div>
   );
