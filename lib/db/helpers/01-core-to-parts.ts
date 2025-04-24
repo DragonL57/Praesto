@@ -9,7 +9,8 @@ import {
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { inArray } from 'drizzle-orm';
-import { appendResponseMessages, UIMessage } from 'ai';
+import { appendResponseMessages } from 'ai';
+import type { UIMessage } from 'ai';
 
 config({
   path: '.env.local',

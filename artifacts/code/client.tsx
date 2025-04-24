@@ -10,11 +10,8 @@ import {
 } from '@/components/icons';
 import { toast } from 'sonner';
 import { generateUUID } from '@/lib/utils';
-import {
-  Console,
-  ConsoleOutput,
-  ConsoleOutputContent,
-} from '@/components/console';
+import { Console } from '@/components/console';
+import type { ConsoleOutput, ConsoleOutputContent } from '@/components/console';
 
 const OUTPUT_HANDLERS = {
   matplotlib: `

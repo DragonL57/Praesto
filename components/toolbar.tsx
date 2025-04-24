@@ -1,6 +1,5 @@
 'use client';
 
-import type { Message } from 'ai';
 import cx from 'classnames';
 import {
   AnimatePresence,
@@ -8,15 +7,8 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import {
-  type Dispatch,
-  memo,
-  ReactNode,
-  type SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { nanoid } from 'nanoid';
 import {
@@ -27,9 +19,10 @@ import {
 } from '@/components/ui/tooltip';
 
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
-import { artifactDefinitions, ArtifactKind } from './artifact';
-import { ArtifactToolbarItem } from './create-artifact';
-import { UseChatHelpers } from '@ai-sdk/react';
+import { artifactDefinitions } from './artifact';
+import type { ArtifactKind } from './artifact';
+import type { ArtifactToolbarItem } from './create-artifact';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 type ToolProps = {
   description: string;
