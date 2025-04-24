@@ -13,7 +13,7 @@ const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
 const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://unitaskai.com'),
+  metadataBase: new URL('https://unitaskai.vercel.app'),
   title: {
     default: 'UniTaskAI - Your Intelligent AI Assistant',
     template: '%s | UniTaskAI'
@@ -36,13 +36,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://unitaskai.com',
+    url: 'https://unitaskai.vercel.app',
     title: 'UniTaskAI - Your Intelligent AI Assistant',
     description: 'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more, providing intelligent responses to all your needs.',
     siteName: 'UniTaskAI',
     images: [
       {
-        url: 'https://unitaskai.com/opengraph-image.png',
+        url: 'https://unitaskai.vercel.app/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'UniTaskAI - Your Intelligent AI Assistant',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'UniTaskAI - Your Intelligent AI Assistant',
     description: 'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more.',
-    images: ['https://unitaskai.com/twitter-image.png'],
+    images: ['https://unitaskai.vercel.app/twitter-image.png'],
     creator: '@unitaskai',
   },
   robots: {
@@ -77,9 +77,9 @@ export const metadata: Metadata = {
     yandex: 'yandex-verification-code', // Replace with your actual verification code if needed
   },
   alternates: {
-    canonical: 'https://unitaskai.com',
+    canonical: 'https://unitaskai.vercel.app',
     languages: {
-      'en-US': 'https://unitaskai.com/en-US',
+      'en-US': 'https://unitaskai.vercel.app/en-US',
     },
   },
 };
