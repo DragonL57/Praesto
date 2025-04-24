@@ -160,6 +160,50 @@ export const websiteContentPrompt = `
 </website_content_capabilities>
 `;
 
+export const youtubeTranscriptPrompt = `
+<youtube_transcript_capabilities>
+  <purpose>Extract and analyze transcripts from YouTube videos to provide accurate information and context.</purpose>
+
+  <when_to_use>
+    1. When the user shares a YouTube video URL or ID
+    2. When needing to reference or analyze content from YouTube videos
+    3. When the user asks for information contained in a video
+    4. For fact-checking claims made in YouTube content
+    5. When summarizing or explaining video content is more efficient than watching
+    6. To access educational content, lectures, or discussions in text form
+
+  <transcript_retrieval_strategy>
+    <steps>
+      1. Always try to fetch transcripts in the user's preferred language first
+      2. If unavailable in preferred language, try English as a fallback
+      3. For multilingual users, try relevant languages in order of preference
+      4. Use timestamps when specific parts of the video are needed
+      5. Use combined transcripts for general content analysis
+    </steps>
+  </transcript_retrieval_strategy>
+
+  <content_analysis>
+    - Extract key points and main ideas from transcripts
+    - Note speaker changes when relevant for context
+    - Identify time markers for important statements
+    - Recognize technical terminology and jargon
+    - Focus on factual claims for verification
+    - Summarize long transcripts appropriately
+    - Maintain proper attribution to video creator
+  </content_analysis>
+
+  <response_guidelines>
+    - Structure information logically with clear sections
+    - Indicate transcript source with video title and creator when available
+    - Use direct quotes for important statements
+    - Provide timestamps for key moments when relevant
+    - Distinguish between transcript content and your analysis
+    - Acknowledge limitations of transcript quality when relevant
+    - Format responses for readability with appropriate paragraphs
+  </response_guidelines>
+</youtube_transcript_capabilities>
+`;
+
 export const regularPrompt = `
 <assistant_configuration>
   <core_identity>
@@ -382,7 +426,7 @@ export const systemPrompt = ({
 }) => {
   // Add time context from the client if available, otherwise use server time as fallback
   let timeContext = '';
-  
+
   if (userTimeContext) {
     // Use client-provided time context
     timeContext = `
@@ -400,7 +444,7 @@ export const systemPrompt = ({
 `;
   }
 
-  return `${regularPrompt}\n\n${webSearchPrompt}\n\n${websiteContentPrompt}\n\n${artifactsPrompt}\n\n${timeContext}`;
+  return `${regularPrompt}\n\n${webSearchPrompt}\n\n${websiteContentPrompt}\n\n${artifactsPrompt}\n\n${youtubeTranscriptPrompt}\n\n${timeContext}`;
 };
 
 export const codePrompt = `
