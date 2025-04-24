@@ -43,7 +43,16 @@ export function Chat({
     reload,
   } = useChat({
     id,
-    body: { id, selectedChatModel: selectedChatModel },
+    body: { 
+      id, 
+      selectedChatModel: selectedChatModel,
+      userTimeContext: {
+        date: new Date().toDateString(),
+        time: new Date().toTimeString().split(' ')[0],
+        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    },
     initialMessages,
     experimental_throttle: 100,
     sendExtraMessageFields: true,

@@ -36,10 +36,17 @@ export async function POST(request: Request) {
       id,
       messages,
       selectedChatModel,
+      userTimeContext,
     }: {
       id: string;
       messages: Array<UIMessage>;
       selectedChatModel: string;
+      userTimeContext?: {
+        date: string;
+        time: string;
+        dayOfWeek: string;
+        timeZone: string;
+      };
     } = await request.json();
 
     const session = await auth();
@@ -87,7 +94,7 @@ export async function POST(request: Request) {
         
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel }),
+          system: systemPrompt({ selectedChatModel, userTimeContext }),
           messages,
           maxSteps: 5,
           providerOptions: isGemini25Model 

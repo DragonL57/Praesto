@@ -370,10 +370,37 @@ export const regularPrompt = `
 
 export const systemPrompt = ({
   selectedChatModel,
+  userTimeContext,
 }: {
   selectedChatModel: string;
+  userTimeContext?: {
+    date: string;
+    time: string;
+    dayOfWeek: string;
+    timeZone: string;
+  };
 }) => {
-  return `${regularPrompt}\n\n${webSearchPrompt}\n\n${websiteContentPrompt}\n\n${artifactsPrompt}`;
+  // Add time context from the client if available, otherwise use server time as fallback
+  let timeContext = '';
+  
+  if (userTimeContext) {
+    // Use client-provided time context
+    timeContext = `
+<current_time_context>
+  <current_date>${userTimeContext.date}</current_date>
+  <current_time>${userTimeContext.time}</current_time>
+  <day_of_week>${userTimeContext.dayOfWeek}</day_of_week>
+  <time_zone>${userTimeContext.timeZone}</time_zone>
+  <instructions>
+    Use this temporal context when discussing time-sensitive information, scheduling, or making references to "today," "yesterday," or "tomorrow." 
+    Consider the user's time zone when discussing global events or providing location-specific information.
+    The time context will be useful for weather reports, event planning, and other time-dependent tasks.
+  </instructions>
+</current_time_context>
+`;
+  }
+
+  return `${regularPrompt}\n\n${webSearchPrompt}\n\n${websiteContentPrompt}\n\n${artifactsPrompt}\n\n${timeContext}`;
 };
 
 export const codePrompt = `
