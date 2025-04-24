@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { memo, useState } from 'react';
+import Image from 'next/image';
 import {
   Tooltip,
   TooltipContent,
@@ -111,16 +112,20 @@ function PureYouTubeTranscript({
             rel="noopener noreferrer"
             className="relative group rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
           >
-            <img
+            <Image
               src={thumbnailUrl}
               alt="Video thumbnail"
+              width={320}
+              height={180}
               className="w-full h-auto object-cover"
+              unoptimized={false}
+              priority={true}
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
               <PlayIcon size={48} className="text-white" />
             </div>
             {formatDuration() && (
-              <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-1 rounded">
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
                 {formatDuration()}
               </div>
             )}
