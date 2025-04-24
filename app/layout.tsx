@@ -8,16 +8,90 @@ import { Analytics } from '@vercel/analytics/react';
 
 import './globals.css';
 
+// Define theme colors at the top level before using them
+const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
+const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://unitaskai.com'),
-  title: 'UniTaskAI',
-  description: 'UniTaskAI - The only general AI assistant you need',
+  title: {
+    default: 'UniTaskAI - Your Intelligent AI Assistant',
+    template: '%s | UniTaskAI'
+  },
+  description: 'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more, providing intelligent responses to all your needs.',
+  generator: 'Next.js',
+  applicationName: 'UniTaskAI',
+  referrer: 'origin-when-cross-origin',
+  keywords: ['AI assistant', 'chat AI', 'coding assistant', 'text generation', 'AI tools', 'artificial intelligence'],
+  authors: [
+    { name: 'UniTaskAI Team' }
+  ],
+  creator: 'UniTaskAI',
+  publisher: 'UniTaskAI',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://unitaskai.com',
+    title: 'UniTaskAI - Your Intelligent AI Assistant',
+    description: 'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more, providing intelligent responses to all your needs.',
+    siteName: 'UniTaskAI',
+    images: [
+      {
+        url: 'https://unitaskai.com/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'UniTaskAI - Your Intelligent AI Assistant',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'UniTaskAI - Your Intelligent AI Assistant',
+    description: 'UniTaskAI is a versatile AI assistant that helps you with chat, code, text generation, and more.',
+    images: ['https://unitaskai.com/twitter-image.png'],
+    creator: '@unitaskai',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  verification: {
+    google: 'google-site-verification-code', // Replace with your actual verification code
+    yandex: 'yandex-verification-code', // Replace with your actual verification code if needed
+  },
+  alternates: {
+    canonical: 'https://unitaskai.com',
+    languages: {
+      'en-US': 'https://unitaskai.com/en-US',
+    },
+  },
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   // Removed maximumScale restriction to allow zooming for accessibility
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: LIGHT_THEME_COLOR },
+    { media: '(prefers-color-scheme: dark)', color: DARK_THEME_COLOR },
+  ],
 };
 
 const geist = Geist({
@@ -89,8 +163,6 @@ const pfBeauSansPro = localFont({
   display: 'swap',
 });
 
-const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
-const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;

@@ -1,0 +1,11 @@
+# Allow all web crawlers to access all content
+User-agent: *
+Allow: /
+
+# Block specific paths that should not be indexed
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+
+# Sitemap location
+Sitemap: https://unitaskai.com/sitemap.xml

@@ -1,6 +1,5 @@
 import { customProvider } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { google, createGoogleGenerativeAI } from '@ai-sdk/google';
+import { google } from '@ai-sdk/google';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -16,12 +15,12 @@ export const pollinationsProvider = createOpenAICompatible({
   baseURL: 'https://text.pollinations.ai/openai', // Pollinations OpenAI-compatible endpoint
   // Optional: Add headers for tracking/identification
   headers: {
-    'X-App-Name': 'VercelChatUI',
+    'X-App-Name': 'UniTaskAI',
     'X-Custom-Header': process.env.POLLINATIONS_CUSTOM_HEADER || '',
   },
   // Optional: Add referrer for analytics and potentially better rate limits
   queryParams: {
-    'referrer': 'VercelChatUI',
+    'referrer': 'UniTaskAI',
   },
 });
 
@@ -48,10 +47,10 @@ export const typedPollinationsProvider = createOpenAICompatible<
   name: 'pollinations-ai',
   baseURL: 'https://text.pollinations.ai/openai',
   headers: {
-    'X-App-Name': 'VercelChatUI',
+    'X-App-Name': 'UniTaskAI',
   },
   queryParams: {
-    'referrer': 'VercelChatUI',
+    'referrer': 'UniTaskAI',
   },
 });
 
@@ -71,7 +70,7 @@ export const myProvider = isTestEnvironment
         'chat-model': pollinationsProvider.chatModel('openai-xlarge'),
         
         // Use openai-xlarge for title generation
-        'title-model': pollinationsProvider.chatModel('openai-xlarge'),
+        'title-model': google('gemini-2.0-flash'),
         
         // Use openai-xlarge for artifact generation
         'artifact-model': pollinationsProvider.chatModel('openai-xlarge'),
@@ -81,5 +80,4 @@ export const myProvider = isTestEnvironment
         'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
         'google-gemini-search': google('gemini-2.5-flash-preview-04-17', { useSearchGrounding: true }),
       },
-      // Remove image models from Pollinations provider
     });
