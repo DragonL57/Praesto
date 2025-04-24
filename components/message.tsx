@@ -14,6 +14,7 @@ import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import { WebSearch } from './web-search';
 import { WebsiteContent } from './website-content';
+import { YouTubeTranscript } from './youtube-transcript';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -21,6 +22,29 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import type { UseChatHelpers } from '@ai-sdk/react';
+
+// Helper function to extract video ID from YouTube URL or ID
+function extractVideoId(urlOrId: string): string {
+  let videoId = urlOrId;
+
+  if (urlOrId.includes('youtube.com') || urlOrId.includes('youtu.be')) {
+    // Handle youtu.be format
+    if (urlOrId.includes('youtu.be/')) {
+      videoId = urlOrId.split('youtu.be/')[1].split('?')[0];
+    }
+    // Handle regular youtube.com format with v parameter
+    else if (urlOrId.includes('v=')) {
+      const match = urlOrId.match(/v=([^&]+)/);
+      videoId = match?.[1] || videoId;
+    }
+    // Handle youtube.com/embed format
+    else if (urlOrId.includes('/embed/')) {
+      videoId = urlOrId.split('/embed/')[1].split('?')[0];
+    }
+  }
+
+  return videoId;
+}
 
 // Helper function to preserve line breaks in user messages
 const UserTextWithLineBreaks = ({ text }: { text: string }) => {
@@ -242,6 +266,15 @@ const PurePreviewMessage = ({
                         query={result.query}
                         status={result.status}
                         error={result.error}
+                      />
+                    ) : toolName === 'getYoutubeTranscript' ? (
+                      <YouTubeTranscript
+                        transcript={result}
+                        videoId={extractVideoId(toolInvocation.args.urlOrId)}
+                        title={toolInvocation.args.urlOrId}
+                        hasTimestamps={!toolInvocation.args.combineAll}
+                        urlOrId={toolInvocation.args.urlOrId}
+                        languages={toolInvocation.args.languages}
                       />
                     ) : (
                       <pre>{JSON.stringify(result, null, 2)}</pre>

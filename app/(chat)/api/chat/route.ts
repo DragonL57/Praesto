@@ -25,6 +25,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { webSearch } from '@/lib/ai/tools/web-search';
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
+import { getYoutubeTranscript } from '@/lib/ai/tools/get-youtube-transcript';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 
@@ -90,20 +91,22 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
       execute: (dataStream) => {
-        const isGemini25Model = selectedChatModel === 'google-gemini-pro' || selectedChatModel === 'google-gemini-flash';
-        
+        const isGemini25Model =
+          selectedChatModel === 'google-gemini-pro' ||
+          selectedChatModel === 'google-gemini-flash';
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, userTimeContext }),
           messages,
           maxSteps: 5,
-          providerOptions: isGemini25Model 
-            ? { 
+          providerOptions: isGemini25Model
+            ? {
                 google: {
                   thinkingConfig: {
                     thinkingBudget: 24576, // Maximum thinking budget
-                  }
-                } 
+                  },
+                },
               }
             : undefined,
           experimental_activeTools:
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
                   'requestSuggestions',
                   'webSearch',
                   'readWebsiteContent',
+                  'getYoutubeTranscript',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -123,6 +127,7 @@ export async function POST(request: Request) {
             getWeather,
             webSearch,
             readWebsiteContent,
+            getYoutubeTranscript,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
             requestSuggestions: requestSuggestions({

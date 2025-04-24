@@ -2,8 +2,12 @@
 
 import { cn } from '@/lib/utils';
 import { memo } from 'react';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 interface WebSearchResult {
   title: string;
@@ -19,9 +23,16 @@ interface WebSearchProps {
 
 function PureWebSearch({ results, query, count }: WebSearchProps) {
   // Ensure results is an array and each result has the required properties
-  const safeResults = Array.isArray(results) ? results.filter(result => 
-    result && typeof result === 'object' && (result.href !== undefined) && result.title && result.body
-  ) : [];
+  const safeResults = Array.isArray(results)
+    ? results.filter(
+        (result) =>
+          result &&
+          typeof result === 'object' &&
+          result.href !== undefined &&
+          result.title &&
+          result.body,
+      )
+    : [];
 
   const getFormattedUrl = (url: string | undefined) => {
     if (!url) return '';
@@ -33,18 +44,22 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
       <div className="flex justify-between items-center">
         <div className="flex gap-2 items-center text-sm text-muted-foreground">
           <SearchIcon size={16} />
-          <span>Search results for <span className="font-medium">&quot;{query}&quot;</span></span>
+          <span>
+            Search results for{' '}
+            <span className="font-medium">&quot;{query}&quot;</span>
+          </span>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {count} results
-        </div>
+        <div className="text-xs text-muted-foreground">{count} results</div>
       </div>
-      
+
       <div className="flex flex-col gap-4">
-        {safeResults.map((result, index) => (
-          <div key={index} className="flex flex-col gap-1">
+        {safeResults.map((result) => (
+          <div
+            key={`${result.href}-${result.title}`}
+            className="flex flex-col gap-1"
+          >
             <div className="flex justify-between items-start">
-              <a 
+              <a
                 href={getFormattedUrl(result.href)}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -69,15 +84,17 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <a 
+            <a
               href={getFormattedUrl(result.href)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-muted-foreground truncate hover:underline" 
+              className="text-xs text-muted-foreground truncate hover:underline"
             >
               {result.href}
             </a>
-            <p className="text-sm text-foreground/80 line-clamp-2">{result.body}</p>
+            <p className="text-sm text-foreground/80 line-clamp-2">
+              {result.body}
+            </p>
           </div>
         ))}
       </div>
@@ -87,33 +104,39 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
 
 export const WebSearch = memo(PureWebSearch);
 
-function SearchIcon({ size = 16, className }: { size?: number; className?: string }) {
+function SearchIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
   return (
-    <svg 
+    <svg
       height={size}
       width={size}
       viewBox="0 0 24 24"
-      className={cn("stroke-current", className)}
+      className={cn('stroke-current', className)}
       strokeWidth="2"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
       />
     </svg>
   );
 }
 
-function ExternalLinkIcon({ size = 16, className }: { size?: number; className?: string }) {
+function ExternalLinkIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
   return (
     <svg
       height={size}
       width={size}
       viewBox="0 0 24 24"
-      className={cn("stroke-current", className)}
+      className={cn('stroke-current', className)}
       strokeWidth="2"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
