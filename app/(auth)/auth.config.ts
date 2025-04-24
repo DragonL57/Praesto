@@ -14,6 +14,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isRootPath = nextUrl.pathname === '/';
       const isOnChat = nextUrl.pathname.startsWith('/chat');
+      const isOnApi = nextUrl.pathname.startsWith('/api');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
 
@@ -30,7 +31,7 @@ export const authConfig = {
         return true; // Always allow access to register and login pages
       }
 
-      if (isOnChat) {
+      if (isOnChat || isOnApi) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
       }
