@@ -37,13 +37,25 @@ export async function GET(request: NextRequest) {
       
       console.log(`Forwarding to Python API: ${apiUrl}`);
       
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error(`API returned status ${response.status}`);
       }
       
-      const data = await response.json();
-      return NextResponse.json(data);
+      try {
+        const data = await response.json();
+        return NextResponse.json(data);
+      } catch (err: any) {
+        console.error('Failed to parse response as JSON:', err.message);
+        const text = await response.text();
+        console.error('Response body:', text.substring(0, 500));
+        throw new Error(`Failed to parse response from Python API: ${err.message}`);
+      }
     }
     
     // In development, we'll execute the Python script directly

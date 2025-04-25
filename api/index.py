@@ -2,11 +2,12 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 import json
 import sys
+import os
 
-# Import the get_transcript script
+# Import from the same directory using relative import
 from get_transcript import get_transcript, extract_video_id
 
-class Handler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests for YouTube transcript."""
         self.send_response(200)
@@ -48,6 +49,3 @@ class Handler(BaseHTTPRequestHandler):
                 'videoInfo': {}
             }
             self.wfile.write(json.dumps(response).encode())
-
-# Required for Vercel serverless function
-handler = Handler
