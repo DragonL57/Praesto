@@ -82,10 +82,10 @@ export function Header({ isScrolled, mobileMenuOpen, setMobileMenuOpen }: Header
         </div>
         <div className="flex items-center gap-4 md:hidden">
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
-            {mounted && theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}\
+            {mounted && theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}\
+            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             <span className="sr-only">Toggle menu</span>
           </Button>
         </div>
