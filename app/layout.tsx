@@ -3,7 +3,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Analytics } from '@vercel/analytics/react';
 import type { Viewport, Metadata } from 'next';
 import localFont from 'next/font/local';
-import { AnimatePresence } from 'framer-motion';
+import { ClientAnimatePresence } from '@/components/client-animate-presence';
 
 import './globals.css';
 
@@ -145,7 +145,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Toaster position="top-center" />
-          <AnimatePresence mode="wait">{children}</AnimatePresence>
+          <ClientAnimatePresence>
+            {children}
+          </ClientAnimatePresence>
           <Analytics />
         </ThemeProvider>
       </body>

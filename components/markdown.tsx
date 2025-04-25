@@ -98,7 +98,7 @@ const NonMemoizedMarkdown = ({
             <div className="my-2 flex justify-center">
               <div className="relative max-w-full">
                 <Image
-                  src={src}
+                  src={typeof src === 'string' ? src : URL.createObjectURL(src as Blob)}
                   alt={alt || 'Image'}
                   width={500} // Fixed width as number
                   height={300} // Fixed height as number

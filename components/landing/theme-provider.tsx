@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import type { Attribute } from 'next-themes';
 
 // Define the ThemeProviderProps type based on React's PropsWithChildren
 type ThemeProviderProps = React.PropsWithChildren<{
-  attribute?: string;
+  attribute?: Attribute | Attribute[];
   defaultTheme?: string;
   enableSystem?: boolean;
   disableTransitionOnChange?: boolean;

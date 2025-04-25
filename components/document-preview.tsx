@@ -34,7 +34,7 @@ export function DocumentPreview({
   >(result ? `/api/document?id=${result.id}` : null, fetcher);
 
   const previewDocument = useMemo(() => documents?.[0], [documents]);
-  const hitboxRef = useRef<HTMLDivElement>(null);
+  const hitboxRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   useEffect(() => {
     const boundingBox = hitboxRef.current?.getBoundingClientRect();
