@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
-import DataGrid, { textEditor } from 'react-data-grid';
+import { DataGrid, textEditor } from 'react-data-grid';
 import { parse, unparse } from 'papaparse';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -21,10 +21,10 @@ const MIN_COLS = 26;
 
 // Define consistent CSV parsing/generation options once
 const CSV_OPTIONS = {
-  quotes: true,       // Always quote fields
-  quoteChar: '"',     // Use double quotes
-  escapeChar: '"',    // Escape quotes by doubling
-  delimiter: ',',     // Use comma as delimiter
+  quotes: true, // Always quote fields
+  quoteChar: '"', // Use double quotes
+  escapeChar: '"', // Escape quotes by doubling
+  delimiter: ',', // Use comma as delimiter
 };
 
 const PureSpreadsheetEditor = ({
@@ -38,9 +38,9 @@ const PureSpreadsheetEditor = ({
   const parseData = useMemo(() => {
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
     // Use consistent parsing options
-    const result = parse<string[]>(content, { 
+    const result = parse<string[]>(content, {
       skipEmptyLines: true,
-      ...CSV_OPTIONS
+      ...CSV_OPTIONS,
     });
 
     const paddedData = result.data.map((row) => {

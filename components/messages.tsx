@@ -7,6 +7,7 @@ import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
+import { ScrollToBottomButton } from './scroll-to-bottom-button';
 
 interface MessagesProps {
   chatId: string;
@@ -109,6 +110,11 @@ function PureMessages({
           className="shrink-0 min-w-[24px] min-h-[24px]"
         />
       </div>
+
+      <ScrollToBottomButton
+        containerRef={messagesContainerRef}
+        endRef={messagesEndRef}
+      />
     </div>
   );
 }
