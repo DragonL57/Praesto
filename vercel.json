@@ -1,0 +1,19 @@
+{
+    "buildCommand": "pnpm run build",
+    "functions": {
+        "api/get_transcript.py": {
+            "runtime": "python3.9",
+            "memory": 1024
+        },
+        "app/api/get_transcript/route.ts": {
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    },
+    "routes": [
+        {
+            "src": "/api/get_transcript",
+            "dest": "/api/get_transcript.py"
+        }
+    ]
+}

@@ -34,6 +34,12 @@ export async function generateTitleFromUserMessage({
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
   const [message] = await getMessageById({ id });
+  
+  // Check if message exists before accessing its properties
+  if (!message) {
+    console.error(`No message found with id: ${id}`);
+    return;
+  }
 
   await deleteMessagesByChatIdAfterTimestamp({
     chatId: message.chatId,

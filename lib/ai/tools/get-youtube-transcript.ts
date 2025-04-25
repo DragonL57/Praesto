@@ -1,17 +1,10 @@
 import { z } from 'zod';
 import { tool } from 'ai';
-import { YoutubeTranscript } from 'youtube-transcript';
 
 // Define interfaces for transcript data
 interface TranscriptItem {
   text: string;
   offset: number;
-  duration: number;
-}
-
-interface FallbackTranscriptItem {
-  text: string;
-  start: number;
   duration: number;
 }
 
@@ -125,13 +118,13 @@ async function getVideoInfo(
   }
 }
 
-// Alternative methods to fetch transcript
-async function fetchTranscriptWithFallback(
+// Get transcript using our Python API endpoint
+async function fetchTranscriptFromPythonApi(
   videoId: string,
-  language = 'en',
+  languages: string[]
 ): Promise<TranscriptItem[]> {
   // Check cache first
-  const cacheKey = `transcript:${videoId}:${language}`;
+  const cacheKey = `transcript:${videoId}:${languages.join(',')}`;
   const cachedData = transcriptCache.get(cacheKey);
   
   if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_TTL) {
@@ -139,288 +132,63 @@ async function fetchTranscriptWithFallback(
     return cachedData.data;
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const baseDomain = isProduction 
+    ? process.env.VERCEL_URL || 'your-deployed-vercel-app.vercel.app' 
+    : 'localhost:3000';
+  
+  const protocol = isProduction ? 'https' : 'http';
+  const apiUrl = `${protocol}://${baseDomain}/api/get_transcript`;
+
+  const url = new URL(apiUrl);
+  url.searchParams.append('videoId', videoId);
+  languages.forEach(lang => url.searchParams.append('languages', lang));
+
+  console.log(`Fetching transcript from Python API: ${url.toString()}`);
+
   try {
-    // Add small delay before making the request
-    await delay(200);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    
+    clearTimeout(timeoutId);
 
-    // First attempt with youtube-transcript with timeout
-    const transcriptItems = await Promise.race([
-      YoutubeTranscript.fetchTranscript(videoId, {
-        lang: language,
-      }),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("YoutubeTranscript timed out after 5 seconds")), 5000);
-      })
-    ]);
-
-    if (transcriptItems && transcriptItems.length > 0) {
-      // Cache successful result
-      transcriptCache.set(cacheKey, {
-        timestamp: Date.now(),
-        data: transcriptItems
-      });
-      return transcriptItems;
+    if (!response.ok) {
+      throw new Error(`API returned status ${response.status}`);
     }
 
-    throw new Error('No transcript items returned');
-  } catch (primaryError) {
-    console.log(
-      `Primary method failed: ${primaryError instanceof Error ? primaryError.message : String(primaryError)}`,
-    );
-
-    // Second attempt: external API fallback
-    try {
-      // Add small delay before trying alternative method
-      await delay(300);
-      
-      // Use a public transcript API service as fallback with enhanced fetch options
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(
-        `https://yt-transcript-api.vercel.app/api/transcript?id=${videoId}&lang=${language}`,
-        {
-          method: 'GET',
-          headers: { 
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15'
-          },
-          signal: controller.signal,
-          cache: 'no-store'
-        },
-      );
-      
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Fallback API returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.transcript || data.transcript.length === 0) {
-        throw new Error('No transcript data returned from fallback API');
-      }
-
-      // Convert the format to match what our code expects
-      const results = data.transcript.map((item: FallbackTranscriptItem) => ({
-        text: item.text,
-        offset: item.start * 1000,
-        duration: item.duration * 1000,
-      }));
-      
-      // Cache successful result
-      transcriptCache.set(cacheKey, {
-        timestamp: Date.now(),
-        data: results
-      });
-      
-      return results;
-    } catch (fallbackError) {
-      console.log(
-        `Fallback method failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
-      );
-
-      // Third attempt: YouTube subtitles API endpoint
-      try {
-        // Add small delay before trying final method
-        await delay(300);
-        
-        // Try to access YouTube's subtitle API directly with improved fetch options
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-        
-        const subtitleUrl = `https://youtube.com/api/timedtext?lang=${language}&v=${videoId}`;
-        const response = await fetch(subtitleUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          },
-          signal: controller.signal,
-          cache: 'no-store'
-        });
-        
-        clearTimeout(timeoutId);
-
-        if (!response.ok || response.headers.get('content-length') === '0') {
-          throw new Error('No subtitles available from YouTube API');
-        }
-
-        const text = await response.text();
-
-        // Simple XML parsing to extract transcript
-        if (text?.includes('<text ')) {
-          const items: TranscriptItem[] = [];
-          const regex =
-            /<text start="([\d\.]+)" dur="([\d\.]+)"[^>]*>(.*?)<\/text>/g;
-          let match: RegExpExecArray | null = regex.exec(text);
-
-          while (match !== null) {
-            const start = Number.parseFloat(match[1]);
-            const duration = Number.parseFloat(match[2]);
-            const content = match[3]
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&amp;/g, '&')
-              .replace(/<[^>]*>/g, ''); // Remove any HTML tags
-
-            items.push({
-              text: content,
-              offset: start * 1000,
-              duration: duration * 1000,
-            });
-
-            // Get next match
-            match = regex.exec(text);
-          }
-
-          if (items.length > 0) {
-            // Cache successful result
-            transcriptCache.set(cacheKey, {
-              timestamp: Date.now(),
-              data: items
-            });
-            return items;
-          }
-        }
-        throw new Error('Failed to parse subtitles from YouTube API');
-      } catch (thirdError) {
-        console.log(
-          `Third method failed: ${thirdError instanceof Error ? thirdError.message : String(thirdError)}`,
-        );
-
-        // Fourth attempt: Try to fetch metadata from YouTube's oEmbed or Invidious API to create a synthetic transcript
-        try {
-          // Add small delay before trying the fourth method
-          await delay(300);
-
-          // 1. First try to get detailed video info from Invidious API (public YouTube frontend alternative)
-          const invidiousInstances = [
-            'https://invidious.fdn.fr',
-            'https://vid.puffyan.us', 
-            'https://invidious.namazso.eu',
-            'https://invidious.snopyta.org'
-          ];
-          
-          let videoDetails = null;
-
-          // Try different Invidious instances until we get a response
-          for (const instance of invidiousInstances) {
-            try {
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 3000); // shorter timeout for multiple attempts
-              
-              const response = await fetch(`${instance}/api/v1/videos/${videoId}`, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                  'Accept': 'application/json'
-                },
-                signal: controller.signal,
-                cache: 'no-store'
-              });
-
-              clearTimeout(timeoutId);
-
-              if (response.ok) {
-                videoDetails = await response.json();
-                break;
-              }
-            } catch (error) {
-              // Continue to next instance if one fails
-              console.log(`Failed to fetch from Invidious instance ${instance}`);
-            }
-          }
-
-          // Create a synthetic "transcript" with video metadata
-          if (videoDetails) {
-            console.log('Creating synthetic transcript from video metadata');
-            const items: TranscriptItem[] = [];
-
-            // Add title as first item
-            if (videoDetails.title) {
-              items.push({
-                text: `Title: ${videoDetails.title}`,
-                offset: 0,
-                duration: 1000
-              });
-            }
-
-            // Add author
-            if (videoDetails.author) {
-              items.push({
-                text: `Channel: ${videoDetails.author}`,
-                offset: 1000,
-                duration: 1000
-              });
-            }
-
-            // Add view count and published date
-            items.push({
-              text: `Views: ${videoDetails.viewCount?.toLocaleString() || 'unknown'}, Published: ${
-                videoDetails.publishedText || 'unknown date'
-              }`,
-              offset: 2000,
-              duration: 1000
-            });
-
-            // Add description (parsed into paragraphs)
-            if (videoDetails.description) {
-              const paragraphs = videoDetails.description
-                .split('\n\n')
-                .filter((p: string) => p.trim().length > 0);
-              
-              paragraphs.forEach((paragraph: string, index: number) => {
-                items.push({
-                  text: paragraph,
-                  offset: (index + 3) * 1000,
-                  duration: 1000
-                });
-              });
-            }
-
-            // Add keywords/tags
-            if (videoDetails.keywords && videoDetails.keywords.length > 0) {
-              items.push({
-                text: `Tags: ${videoDetails.keywords.join(', ')}`,
-                offset: (items.length + 3) * 1000,
-                duration: 1000
-              });
-            }
-
-            // Add video categories if available
-            if (videoDetails.category) {
-              items.push({
-                text: `Category: ${videoDetails.category}`,
-                offset: (items.length + 4) * 1000,
-                duration: 1000
-              });
-            }
-
-            // Add final note that this is not a real transcript
-            items.push({
-              text: "Note: This is not an actual transcript. The video does not have accessible captions, so this information is derived from video metadata.",
-              offset: (items.length + 5) * 1000,
-              duration: 1000
-            });
-
-            if (items.length > 0) {
-              // Cache the synthetic "transcript"
-              transcriptCache.set(cacheKey, {
-                timestamp: Date.now(),
-                data: items
-              });
-
-              return items;
-            }
-          }
-          
-          throw new Error('Could not create synthetic transcript from metadata');
-        } catch (fourthError) {
-          console.log(`Fourth method failed: ${fourthError instanceof Error ? fourthError.message : String(fourthError)}`);
-          throw new Error(`No transcript available for video ${videoId}`);
-        }
-      }
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown error from transcript API');
     }
+
+    // Convert the transcript data to our format
+    const transcriptItems: TranscriptItem[] = data.transcript.map((item: any) => ({
+      text: item.text,
+      offset: item.start * 1000, // Convert to milliseconds
+      duration: item.duration * 1000 // Convert to milliseconds
+    }));
+    
+    // Cache the result
+    transcriptCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: transcriptItems
+    });
+    
+    return transcriptItems;
+  } catch (error) {
+    console.error(`Error fetching transcript from Python API: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
   }
 }
 
@@ -458,33 +226,8 @@ async function getTranscriptCore(
     // Get video info first to provide better context in responses
     const videoInfo = await getVideoInfo(videoId);
 
-    // Try all languages in order of preference
-    let transcriptItems: TranscriptItem[] = [];
-    let lastError = null;
-
-    for (const language of languages) {
-      try {
-        transcriptItems = await fetchTranscriptWithFallback(videoId, language);
-        if (transcriptItems.length > 0) {
-          break; // Successfully found transcript in this language
-        }
-      } catch (error) {
-        lastError = error;
-        console.log(
-          `Failed for language ${language}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        // Continue to next language
-      }
-    }
-
-    if (transcriptItems.length === 0) {
-      throw (
-        lastError ||
-        new Error(
-          `No transcript available for video ${videoId} in languages: ${languages.join(', ')}`,
-        )
-      );
-    }
+    // Try to get transcript using our Python API
+    const transcriptItems = await fetchTranscriptFromPythonApi(videoId, languages);
 
     return {
       result: processTranscript(transcriptItems, combineAll),
