@@ -15,6 +15,16 @@ interface FallbackTranscriptItem {
   duration: number;
 }
 
+// Add a simple in-memory cache for transcripts
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const transcriptCache = new Map<string, {
+  timestamp: number;
+  data: any;
+}>();
+
+// Simple delay function to avoid rate limiting
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Define the schema for the YouTube transcript tool
 const youtubeTranscriptSchema = z.object({
   urlOrId: z.string().describe('YouTube URL or video ID'),
@@ -53,27 +63,60 @@ function extractVideoId(urlOrId: string): string {
   return videoId;
 }
 
-// Try to get video info (title, channel) from YouTube
+// Try to get video info (title, channel) from YouTube with enhanced fetch options
 async function getVideoInfo(
   videoId: string,
 ): Promise<{ title?: string; channel?: string }> {
+  // Check cache first
+  const cacheKey = `video_info:${videoId}`;
+  const cachedData = transcriptCache.get(cacheKey);
+  
+  if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_TTL) {
+    console.log('Using cached video info');
+    return cachedData.data;
+  }
+
   try {
-    // This uses public API endpoints
+    // Add small delay to avoid rate limiting
+    await delay(100);
+    
+    // This uses public API endpoints with enhanced fetch options
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const response = await fetch(
       `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`,
       {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { 
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+        },
+        signal: controller.signal,
+        cache: 'no-store'
       },
     );
+    
+    clearTimeout(timeoutId);
 
-    if (!response.ok) return {};
+    if (!response.ok) {
+      console.log(`Failed to get video info: ${response.status} ${response.statusText}`);
+      return {};
+    }
 
     const data = await response.json();
-    return {
+    const result = {
       title: data.title,
       channel: data.author_name,
     };
+    
+    // Cache the result
+    transcriptCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: result
+    });
+    
+    return result;
   } catch (error) {
     console.log(
       `Failed to get video info: ${error instanceof Error ? error.message : String(error)}`,
@@ -87,13 +130,35 @@ async function fetchTranscriptWithFallback(
   videoId: string,
   language = 'en',
 ): Promise<TranscriptItem[]> {
+  // Check cache first
+  const cacheKey = `transcript:${videoId}:${language}`;
+  const cachedData = transcriptCache.get(cacheKey);
+  
+  if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_TTL) {
+    console.log('Using cached transcript data');
+    return cachedData.data;
+  }
+
   try {
-    // First attempt with youtube-transcript
-    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, {
-      lang: language,
-    });
+    // Add small delay before making the request
+    await delay(200);
+
+    // First attempt with youtube-transcript with timeout
+    const transcriptItems = await Promise.race([
+      YoutubeTranscript.fetchTranscript(videoId, {
+        lang: language,
+      }),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("YoutubeTranscript timed out after 5 seconds")), 5000);
+      })
+    ]);
 
     if (transcriptItems && transcriptItems.length > 0) {
+      // Cache successful result
+      transcriptCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: transcriptItems
+      });
       return transcriptItems;
     }
 
@@ -105,14 +170,27 @@ async function fetchTranscriptWithFallback(
 
     // Second attempt: external API fallback
     try {
-      // Use a public transcript API service as fallback
+      // Add small delay before trying alternative method
+      await delay(300);
+      
+      // Use a public transcript API service as fallback with enhanced fetch options
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(
         `https://yt-transcript-api.vercel.app/api/transcript?id=${videoId}&lang=${language}`,
         {
           method: 'GET',
-          headers: { Accept: 'application/json' },
+          headers: { 
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15'
+          },
+          signal: controller.signal,
+          cache: 'no-store'
         },
       );
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Fallback API returned status ${response.status}`);
@@ -125,11 +203,19 @@ async function fetchTranscriptWithFallback(
       }
 
       // Convert the format to match what our code expects
-      return data.transcript.map((item: FallbackTranscriptItem) => ({
+      const results = data.transcript.map((item: FallbackTranscriptItem) => ({
         text: item.text,
         offset: item.start * 1000,
         duration: item.duration * 1000,
       }));
+      
+      // Cache successful result
+      transcriptCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: results
+      });
+      
+      return results;
     } catch (fallbackError) {
       console.log(
         `Fallback method failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
@@ -137,9 +223,24 @@ async function fetchTranscriptWithFallback(
 
       // Third attempt: YouTube subtitles API endpoint
       try {
-        // Try to access YouTube's subtitle API directly
+        // Add small delay before trying final method
+        await delay(300);
+        
+        // Try to access YouTube's subtitle API directly with improved fetch options
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
         const subtitleUrl = `https://youtube.com/api/timedtext?lang=${language}&v=${videoId}`;
-        const response = await fetch(subtitleUrl);
+        const response = await fetch(subtitleUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok || response.headers.get('content-length') === '0') {
           throw new Error('No subtitles available from YouTube API');
@@ -174,6 +275,11 @@ async function fetchTranscriptWithFallback(
           }
 
           if (items.length > 0) {
+            // Cache successful result
+            transcriptCache.set(cacheKey, {
+              timestamp: Date.now(),
+              data: items
+            });
             return items;
           }
         }
