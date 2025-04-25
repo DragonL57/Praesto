@@ -1,152 +1,28 @@
-import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Analytics } from '@vercel/analytics/react';
-import type { Viewport, Metadata } from 'next';
-import localFont from 'next/font/local';
-import { ClientAnimatePresence } from '@/components/client-animate-presence';
+import type React from "react"
+import "@/app/globals.css"
+import { Inter } from "next/font/google"
+import type { Metadata } from "next"
+import { ThemeProvider } from "@/components/theme-provider"
 
-import './globals.css';
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.unitaskai.com'),
-  title: {
-    default: 'UniTaskAI',
-    template: '%s | UniTaskAI',
-  },
-  description:
-    'Enhance your productivity with UniTaskAI, an intelligent assistant for chat, code generation, and more.',
-  keywords: [
-    'AI assistant',
-    'productivity',
-    'chat',
-    'code generation',
-    'AI tools',
-  ],
-  authors: [{ name: 'UniTaskAI Team' }],
-  creator: 'UniTaskAI Team',
-  publisher: 'UniTaskAI',
-  formatDetection: {
-    email: false,
-    telephone: false,
-    address: false,
-  },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'UniTaskAI',
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'UniTaskAI',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    creator: '@unitaskai',
-  },
-  other: {
-    'apple-mobile-web-app-capable': 'yes',
-  },
-};
+  title: "UniTaskAI - Streamline Your Workflow",
+  description: "Boost productivity, reduce costs, and scale your business with our all-in-one AI-powered platform.",
+}
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
-  width: 'device-width',
-  initialScale: 1,
-};
-
-const pfBeauSansPro = localFont({
-  src: [
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Regular.ttf',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Italic.ttf',
-      weight: '400',
-      style: 'italic',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Light.ttf',
-      weight: '300',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-LightItalic.ttf',
-      weight: '300',
-      style: 'italic',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Bold.ttf',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-BoldItalic.ttf',
-      weight: '700',
-      style: 'italic',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-SemiBold.ttf',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-SemiBoldItalic.ttf',
-      weight: '600',
-      style: 'italic',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-Black.ttf',
-      weight: '900',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/PFBeauSansPro/FS PFBeauSansPro-BlackItalic.ttf',
-      weight: '900',
-      style: 'italic',
-    },
-  ],
-  variable: '--font-pf-beau-sans-pro',
-  display: 'swap',
-});
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${pfBeauSansPro.variable}`}
-    >
-      <head />
-      <body className="antialiased font-pf-beau">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          <ClientAnimatePresence>
-            {children}
-          </ClientAnimatePresence>
-          <Analytics />
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }
