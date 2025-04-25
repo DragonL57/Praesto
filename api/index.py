@@ -49,3 +49,6 @@ class handler(BaseHTTPRequestHandler):
                 'videoInfo': {}
             }
             self.wfile.write(json.dumps(response).encode())
+
+# Export for Vercel Serverless Function
+handler = handler

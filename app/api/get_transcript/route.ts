@@ -26,40 +26,39 @@ export async function GET(request: NextRequest) {
     
     console.log(`Processing transcript request for video: ${videoId}, languages: ${languages.join(',')}`);
     
-    // In production (Vercel), we'll rely on the Python API endpoint being routed directly
-    // via the vercel.json routes configuration. Just forward to the Python API.
+    // In production (Vercel), we'll forward to the Python API endpoint
     if (process.env.VERCEL) {
       const url = new URL(request.url);
-      // Keep the same path but ensure it points to our Python endpoint
-      const apiUrl = `${url.origin}/api/get_transcript?videoId=${encodeURIComponent(videoId)}${
-        languages.map(lang => `&languages=${encodeURIComponent(lang)}`).join('')
-      }`;
+      // Build API URL with query params
+      let apiUrl = `${url.origin}/api/get_transcript?videoId=${encodeURIComponent(videoId)}`;
+      
+      // Add languages to query string
+      if (languages && languages.length > 0) {
+        languages.forEach(lang => {
+          apiUrl += `&languages=${encodeURIComponent(lang)}`;
+        });
+      }
       
       console.log(`Forwarding to Python API: ${apiUrl}`);
       
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-      
       try {
+        const response = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API returned status ${response.status}`);
+        }
+        
         const data = await response.json();
         return NextResponse.json(data);
-      } catch (err: any) {
-        console.error('Failed to parse response as JSON:', err.message);
-        const text = await response.text();
-        console.error('Response body:', text.substring(0, 500));
-        throw new Error(`Failed to parse response from Python API: ${err.message}`);
+      } catch (fetchError: any) {
+        console.error('Error fetching from Python API:', fetchError);
+        throw new Error(`Error fetching transcript from Python API: ${fetchError.message}`);
       }
     }
     
-    // In development, we'll execute the Python script directly
-    // Prepare command to run the Python script
+    // In development, execute the Python script directly
     const pythonScriptPath = path.join(process.cwd(), 'api', 'get_transcript.py');
     
     // Build command arguments
@@ -68,7 +67,6 @@ export async function GET(request: NextRequest) {
       '--video-id', videoId,
     ];
     
-    // Add languages if specified
     if (languages.length > 0) {
       args.push('--languages', ...languages);
     } else {
@@ -77,12 +75,11 @@ export async function GET(request: NextRequest) {
     
     console.log(`Executing python script with args: ${args.join(' ')}`);
     
-    // Execute the Python script with the parameters
+    // Execute the Python script
     const result = await new Promise((resolve, reject) => {
       let stdoutData = '';
       let stderrData = '';
       
-      // Use python3 to run the script
       const pythonProcess = spawn('python3', args);
       
       pythonProcess.stdout.on('data', (data) => {
