@@ -4,7 +4,7 @@ import json
 import sys
 import os
 
-# Import from the same directory using relative import
+# Import the get_transcript script from the same directory
 from get_transcript import get_transcript, extract_video_id
 
 class handler(BaseHTTPRequestHandler):
