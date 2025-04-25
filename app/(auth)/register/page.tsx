@@ -1,9 +1,8 @@
 /* eslint-disable import/no-unresolved */
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
-import { useActionState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react"
@@ -90,7 +89,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col">
+    <div className="flex min-h-dvh flex-col">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold">
           <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground">
@@ -103,7 +102,7 @@ export default function RegisterPage() {
 
       <main className="flex-1 flex items-center justify-center py-12">
         <div className="w-full max-w-md px-4">
-          <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+          <div className="absolute inset-0 -z-10 size-full bg-white dark:bg-black [background-image:linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:[background-image:linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] [background-size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -120,7 +119,7 @@ export default function RegisterPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    className={`flex size-8 items-center justify-center rounded-full ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                   >
                     {step > 1 ? <Check className="size-4" /> : "1"}
                   </div>
@@ -129,7 +128,7 @@ export default function RegisterPage() {
                 <div className="h-0.5 w-10 bg-muted"></div>
                 <div className="flex items-center">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    className={`flex size-8 items-center justify-center rounded-full ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                   >
                     2
                   </div>

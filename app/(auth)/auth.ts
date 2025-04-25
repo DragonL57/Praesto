@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 import { compare } from 'bcrypt-ts';
 import NextAuth, { type User, type Session } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
@@ -19,14 +20,22 @@ export const {
   ...authConfig,
   providers: [
     Credentials({
-      credentials: {},
-      async authorize({ email, password }: any) {
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        const email = credentials?.email as string;
+        const password = credentials?.password as string;
+        
+        if (!email || !password) return null;
+        
         const users = await getUser(email);
         if (users.length === 0) return null;
         // biome-ignore lint: Forbidden non-null assertion.
         const passwordsMatch = await compare(password, users[0].password!);
         if (!passwordsMatch) return null;
-        return users[0] as any;
+        return users[0] as User;
       },
     }),
   ],
@@ -43,7 +52,7 @@ export const {
       token,
     }: {
       session: ExtendedSession;
-      token: any;
+      token: { id?: string; [key: string]: unknown };
     }) {
       if (session.user) {
         session.user.id = token.id as string;

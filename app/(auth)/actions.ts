@@ -121,6 +121,7 @@ export const register = async (
           message: error.errors[0]?.message || 'Please check your email and password requirements'
         };
       }
+      throw error; // Re-throw the error if it's not a ZodError
     }
 
     // Create user and sign in
@@ -133,6 +134,7 @@ export const register = async (
 
     return { status: 'success' };
   } catch (error) {
+    console.error('Registration error:', error);
     return { 
       status: 'failed',
       message: 'Failed to create account. Please try again later.'
