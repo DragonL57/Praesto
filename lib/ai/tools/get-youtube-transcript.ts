@@ -289,8 +289,136 @@ async function fetchTranscriptWithFallback(
           `Third method failed: ${thirdError instanceof Error ? thirdError.message : String(thirdError)}`,
         );
 
-        // All methods failed
-        throw new Error(`No transcript available for video ${videoId}`);
+        // Fourth attempt: Try to fetch metadata from YouTube's oEmbed or Invidious API to create a synthetic transcript
+        try {
+          // Add small delay before trying the fourth method
+          await delay(300);
+
+          // 1. First try to get detailed video info from Invidious API (public YouTube frontend alternative)
+          const invidiousInstances = [
+            'https://invidious.fdn.fr',
+            'https://vid.puffyan.us', 
+            'https://invidious.namazso.eu',
+            'https://invidious.snopyta.org'
+          ];
+          
+          let videoDetails = null;
+
+          // Try different Invidious instances until we get a response
+          for (const instance of invidiousInstances) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 3000); // shorter timeout for multiple attempts
+              
+              const response = await fetch(`${instance}/api/v1/videos/${videoId}`, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                  'Accept': 'application/json'
+                },
+                signal: controller.signal,
+                cache: 'no-store'
+              });
+
+              clearTimeout(timeoutId);
+
+              if (response.ok) {
+                videoDetails = await response.json();
+                break;
+              }
+            } catch (error) {
+              // Continue to next instance if one fails
+              console.log(`Failed to fetch from Invidious instance ${instance}`);
+            }
+          }
+
+          // Create a synthetic "transcript" with video metadata
+          if (videoDetails) {
+            console.log('Creating synthetic transcript from video metadata');
+            const items: TranscriptItem[] = [];
+
+            // Add title as first item
+            if (videoDetails.title) {
+              items.push({
+                text: `Title: ${videoDetails.title}`,
+                offset: 0,
+                duration: 1000
+              });
+            }
+
+            // Add author
+            if (videoDetails.author) {
+              items.push({
+                text: `Channel: ${videoDetails.author}`,
+                offset: 1000,
+                duration: 1000
+              });
+            }
+
+            // Add view count and published date
+            items.push({
+              text: `Views: ${videoDetails.viewCount?.toLocaleString() || 'unknown'}, Published: ${
+                videoDetails.publishedText || 'unknown date'
+              }`,
+              offset: 2000,
+              duration: 1000
+            });
+
+            // Add description (parsed into paragraphs)
+            if (videoDetails.description) {
+              const paragraphs = videoDetails.description
+                .split('\n\n')
+                .filter((p: string) => p.trim().length > 0);
+              
+              paragraphs.forEach((paragraph: string, index: number) => {
+                items.push({
+                  text: paragraph,
+                  offset: (index + 3) * 1000,
+                  duration: 1000
+                });
+              });
+            }
+
+            // Add keywords/tags
+            if (videoDetails.keywords && videoDetails.keywords.length > 0) {
+              items.push({
+                text: `Tags: ${videoDetails.keywords.join(', ')}`,
+                offset: (items.length + 3) * 1000,
+                duration: 1000
+              });
+            }
+
+            // Add video categories if available
+            if (videoDetails.category) {
+              items.push({
+                text: `Category: ${videoDetails.category}`,
+                offset: (items.length + 4) * 1000,
+                duration: 1000
+              });
+            }
+
+            // Add final note that this is not a real transcript
+            items.push({
+              text: "Note: This is not an actual transcript. The video does not have accessible captions, so this information is derived from video metadata.",
+              offset: (items.length + 5) * 1000,
+              duration: 1000
+            });
+
+            if (items.length > 0) {
+              // Cache the synthetic "transcript"
+              transcriptCache.set(cacheKey, {
+                timestamp: Date.now(),
+                data: items
+              });
+
+              return items;
+            }
+          }
+          
+          throw new Error('Could not create synthetic transcript from metadata');
+        } catch (fourthError) {
+          console.log(`Fourth method failed: ${fourthError instanceof Error ? fourthError.message : String(fourthError)}`);
+          throw new Error(`No transcript available for video ${videoId}`);
+        }
       }
     }
   }
