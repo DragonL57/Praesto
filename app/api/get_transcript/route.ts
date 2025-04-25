@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const videoId = searchParams.get('videoId');
     const languages = searchParams.getAll('languages');
+    const debug = searchParams.get('debug') === 'true';
     
     if (!videoId) {
       return NextResponse.json(
@@ -31,32 +32,54 @@ export async function GET(request: NextRequest) {
       const url = new URL(request.url);
       const baseUrl = url.origin;
       
-      // Direct URL to Python function
+      // Direct URL to Python function with debug parameter
       const apiUrl = `${baseUrl}/api/get_transcript?videoId=${encodeURIComponent(videoId)}${
         languages.map(lang => `&languages=${encodeURIComponent(lang)}`).join('')
-      }`;
+      }${debug ? '&debug=true' : ''}`;
       
       console.log(`Forwarding to Python API: ${apiUrl}`);
       
       try {
+        // Add more request headers to help debug auth issues
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: { 
             'Accept': 'application/json',
-            'Origin': baseUrl
+            'Origin': baseUrl,
+            'User-Agent': 'NextJS-Client',
+            'x-debug': debug ? 'true' : 'false'
           }
         });
         
         console.log(`Python API response status: ${response.status}`);
         
         // Log headers for debugging
-        console.log('Response headers:', JSON.stringify(Object.fromEntries([...response.headers])));
+        const responseHeaders = Object.fromEntries([...response.headers]);
+        console.log('Response headers:', JSON.stringify(responseHeaders));
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`API error response: ${errorText}`);
+          let errorText = '';
+          try {
+            errorText = await response.text();
+            console.error(`API error response: ${errorText}`);
+          } catch (e: unknown) {
+            errorText = `Could not read error response: ${e instanceof Error ? e.message : String(e)}`;
+          }
           
-          throw new Error(`API returned status ${response.status}: ${errorText}`);
+          // Return more detailed error info to frontend
+          return NextResponse.json({
+            success: false,
+            error: `API returned status ${response.status}`,
+            detailedError: errorText,
+            debugInfo: {
+              url: apiUrl,
+              status: response.status,
+              statusText: response.statusText,
+              headers: responseHeaders,
+            },
+            transcript: null,
+            videoInfo: {},
+          }, { status: 500 });
         }
         
         try {
@@ -67,19 +90,35 @@ export async function GET(request: NextRequest) {
           console.error('Failed to parse response as JSON:', parseError.message);
           console.error('Raw response:', text.substring(0, 1000));
           
-          throw new Error(`Failed to parse response from Python API: ${parseError.message}`);
+          // Return parsing error details to frontend
+          return NextResponse.json({
+            success: false,
+            error: `Failed to parse response from Python API: ${parseError.message}`,
+            detailedError: text.substring(0, 1000),
+            debugInfo: {
+              rawResponsePreview: text.substring(0, 1000),
+              parserError: parseError.message
+            },
+            transcript: null,
+            videoInfo: {},
+          }, { status: 500 });
         }
       } catch (fetchError: any) {
         console.error('Error fetching from Python API:', fetchError);
         
-        // Try direct access as fallback
-        try {
-          console.log('Attempting direct Python script execution as fallback...');
-          // Fall back to the development mode code below...
-          // Continue execution to the development code path
-        } catch (e) {
-          throw new Error(`Error fetching transcript from Python API: ${fetchError.message}`);
-        }
+        // Return network error details to frontend
+        return NextResponse.json({
+          success: false,
+          error: `Error fetching transcript from Python API: ${fetchError.message}`,
+          detailedError: fetchError.stack,
+          debugInfo: {
+            url: apiUrl,
+            networkError: fetchError.message,
+            stack: fetchError.stack
+          },
+          transcript: null,
+          videoInfo: {},
+        }, { status: 500 });
       }
     }
     
@@ -166,6 +205,12 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: error.error || error.message || 'Unknown error in transcript API',
+        detailedError: error.stack,
+        debugInfo: {
+          stack: error.stack,
+          originalError: error.error,
+          message: error.message
+        },
         transcript: null,
         videoInfo: {},
       },

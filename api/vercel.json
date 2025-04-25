@@ -2,7 +2,7 @@
     "buildCommand": "pnpm run build",
     "functions": {
         "api/**/*.py": {
-            "runtime": "@vercel/python@3.11.0",
+            "runtime": "@vercel/python@3.1.0",
             "memory": 1024
         },
         "app/api/get_transcript/route.ts": {
@@ -10,12 +10,12 @@
             "maxDuration": 30
         },
         "api/index.py": {
-            "runtime": "@vercel/python@3.11.0",
+            "runtime": "@vercel/python@3.1.0",
             "memory": 1024,
             "maxDuration": 30
         },
         "api/api.py": {
-            "runtime": "@vercel/python@3.11.0",
+            "runtime": "@vercel/python@3.1.0",
             "memory": 1024,
             "maxDuration": 30
         }

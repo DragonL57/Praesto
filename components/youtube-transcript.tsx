@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from './ui/tooltip';
 import { Button } from './ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface YouTubeTranscriptProps {
   transcript: string;
@@ -21,6 +22,9 @@ interface YouTubeTranscriptProps {
   duration?: string;
   urlOrId: string; // Original URL or ID used to fetch the transcript
   languages?: string[]; // Languages that were used to fetch the transcript
+  error?: string; // Error message if transcript fetch failed
+  detailedError?: string; // Detailed error message
+  debugInfo?: any; // Debug information from the API
 }
 
 function PureYouTubeTranscript({
@@ -33,10 +37,14 @@ function PureYouTubeTranscript({
   duration,
   urlOrId,
   languages = ['en'],
+  error,
+  detailedError,
+  debugInfo,
 }: YouTubeTranscriptProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // Try different thumbnail qualities (maxresdefault, hqdefault, mqdefault, default)
   // i.ytimg.com is more reliable than img.youtube.com
@@ -92,6 +100,52 @@ function PureYouTubeTranscript({
   const formattedDate = publishDate
     ? new Date(publishDate).toLocaleDateString()
     : null;
+
+  // If there was an error fetching the transcript, display error info
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4 w-full bg-background border border-red-300 rounded-xl p-4 mb-2">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2 items-center text-sm text-red-500">
+            <AlertCircle size={16} />
+            <span>YouTube Transcript Error</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDebugInfo(!showDebugInfo)}
+          >
+            {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
+          </Button>
+        </div>
+        
+        <div className="text-sm">
+          <p className="text-red-500 font-medium">Error: {error}</p>
+          {detailedError && <p className="mt-2 text-muted-foreground">{detailedError}</p>}
+        </div>
+        
+        {showDebugInfo && debugInfo && (
+          <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900 rounded-md text-xs overflow-auto">
+            <h4 className="font-medium mb-2">Debug Information:</h4>
+            <pre className="whitespace-pre-wrap break-all">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
+        )}
+        
+        <div className="flex gap-2">
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-500 hover:underline"
+          >
+            Open video on YouTube
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
