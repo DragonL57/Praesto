@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
-import { DataGrid as RDG, textEditor } from 'react-data-grid';
+import { DataGrid, textEditor } from 'react-data-grid';
 import { parse, unparse } from 'papaparse';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -123,8 +123,7 @@ const PureSpreadsheetEditor = ({
   };
 
   return (
-    <RDG
-      className={theme === 'dark' ? 'rdg-dark' : 'rdg-light'}
+    <DataGrid
       columns={columns}
       rows={localRows}
       enableVirtualization

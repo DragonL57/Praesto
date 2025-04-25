@@ -1,8 +1,9 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
 
+// Modify the return type to be more specific about what we're returning
 export function useScrollToBottom<T extends HTMLElement>(): [
-  RefObject<T>,
-  RefObject<T>,
+  MutableRefObject<T | null>,
+  MutableRefObject<T | null>
 ] {
   const containerRef = useRef<T>(null);
   const endRef = useRef<T>(null);

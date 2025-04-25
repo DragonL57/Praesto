@@ -51,7 +51,7 @@ const Tool = ({
   append,
   onClick,
 }: ToolProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedTool !== description) {
@@ -310,7 +310,7 @@ const PureToolbar = ({
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false); // Simplified initialization
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
   useOnClickOutside(toolbarRef as React.RefObject<HTMLElement>, () => {
     setIsToolbarVisible(false);
