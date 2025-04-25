@@ -1,0 +1,27 @@
+{
+    "buildCommand": "pnpm run build",
+    "functions": {
+        "api/**/*.py": {
+            "runtime": "python@3.9",
+            "memory": 1024
+        },
+        "app/api/get_transcript/route.ts": {
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    },
+    "routes": [
+        {
+            "src": "/api/get_transcript",
+            "dest": "api/api.py"
+        },
+        {
+            "src": "/api/get_transcript/(.*)",
+            "dest": "api/api.py"
+        },
+        {
+            "handle": "filesystem"
+        }
+    ],
+    "outputDirectory": ".vercel/output"
+}
