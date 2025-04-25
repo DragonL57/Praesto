@@ -23,16 +23,30 @@ interface WebSearchProps {
 
 // Helper function to safely parse HTML content
 const parseHtml = (htmlString: string): string => {
+  // First, decode HTML entities consistently on both server and client side
+  const decodedString = htmlString
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+    
   // Check if we're in a browser environment
   if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
-    // Create a temporary DOM element
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, 'text/html');
-    return doc.body.textContent || '';
+    try {
+      // Create a temporary DOM element
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(decodedString, 'text/html');
+      return doc.body.textContent || '';
+    } catch (e) {
+      // Fallback if DOMParser fails
+      return decodedString.replace(/<[^>]*>/g, '');
+    }
   }
   
   // Fallback for server-side rendering
-  return htmlString.replace(/<[^>]*>/g, ''); // Simple regex to strip HTML tags
+  return decodedString.replace(/<[^>]*>/g, ''); // Simple regex to strip HTML tags
 };
 
 function PureWebSearch({ results, query, count }: WebSearchProps) {
