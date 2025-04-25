@@ -21,6 +21,14 @@ interface WebSearchProps {
   count: number;
 }
 
+// Helper function to safely parse HTML content
+const parseHtml = (htmlString: string): string => {
+  // Create a temporary DOM element
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+  return doc.body.textContent || '';
+};
+
 function PureWebSearch({ results, query, count }: WebSearchProps) {
   // Ensure results is an array and each result has the required properties
   const safeResults = Array.isArray(results)
@@ -64,9 +72,9 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-blue-600 dark:text-blue-400 line-clamp-1 hover:underline"
-                title={result.title}
+                title={parseHtml(result.title)}
               >
-                {result.title}
+                {parseHtml(result.title)}
               </a>
               <TooltipProvider>
                 <Tooltip>
@@ -93,7 +101,7 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
               {result.href}
             </a>
             <p className="text-sm text-foreground/80 line-clamp-2">
-              {result.body}
+              {parseHtml(result.body)}
             </p>
           </div>
         ))}

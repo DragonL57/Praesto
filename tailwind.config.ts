@@ -1,4 +1,11 @@
 import type { Config } from 'tailwindcss';
+import typography from '@tailwindcss/typography';
+import animate from 'tailwindcss-animate';
+// Remove or comment out unused import
+// import { fontFamily } from 'tailwindcss/defaultTheme';
+import tailwindScrollbar from 'tailwind-scrollbar';
+import tailwindcssContainerQueries from '@tailwindcss/container-queries';
+import tailwindcssReactAriaComponents from 'tailwindcss-react-aria-components';
 
 const config: Config = {
   darkMode: ['class'],
@@ -84,9 +91,11 @@ const config: Config = {
     },
   },
   plugins: [
-    require('tailwindcss-animate'),
-    require('@tailwindcss/typography'),
-    require('tailwind-scrollbar'),
+    typography,
+    animate,
+    tailwindScrollbar({ nocompatible: true }),
+    tailwindcssContainerQueries,
+    tailwindcssReactAriaComponents,
   ],
 };
 export default config;

@@ -8,6 +8,29 @@ interface SearchResult {
   body: string;
 }
 
+// Error type definitions
+interface ErrorWithMessage {
+  message: string;
+}
+
+// Type guard for checking if an error has a message property
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
+// Safely extract error message
+function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+  return String(error);
+}
+
 // DuckDuckGo client using duck-duck-scrape library
 class DuckDuckGoClient {
   async search({
@@ -59,14 +82,14 @@ class DuckDuckGoClient {
         count: results.length,
         query: query,
       };
-    } catch (error: any) {
-      console.error(`Error during DuckDuckGo search: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(`Error during DuckDuckGo search: ${getErrorMessage(error)}`);
 
       // If standard search fails, try using other DuckDuckGo APIs
       try {
         console.log('Trying alternative DuckDuckGo search methods...');
         return await this.alternativeSearch(query, maxResults);
-      } catch (altError) {
+      } catch {
         console.error('Alternative search methods also failed');
         throw error; // Re-throw original error for fallback
       }
@@ -89,7 +112,7 @@ class DuckDuckGoClient {
           body: `${def.text || ""} ${def.partOfSpeech ? `(${def.partOfSpeech})` : ""}`
         });
       }
-    } catch (e) {
+    } catch {
       // Ignore errors from specific API endpoints
     }
     
@@ -108,7 +131,7 @@ class DuckDuckGoClient {
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore errors from specific API endpoints
       }
     }
@@ -129,7 +152,7 @@ class DuckDuckGoClient {
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore errors from specific API endpoints
       }
     }
@@ -234,8 +257,8 @@ class SerperClient {
         count: results.length,
         query: query,
       };
-    } catch (error: any) {
-      console.error(`Error during Serper search: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(`Error during Serper search: ${getErrorMessage(error)}`);
       throw error;
     }
   }
@@ -289,9 +312,9 @@ export const webSearch = tool({
         });
 
         return duckResults;
-      } catch (duckError: any) {
+      } catch (duckError: unknown) {
         console.error(
-          `DuckDuckGo search failed: ${duckError.message}, falling back to Serper`,
+          `DuckDuckGo search failed: ${getErrorMessage(duckError)}, falling back to Serper`,
         );
         // Fall back to Serper if DuckDuckGo fails
         const serperResults = await serper.search({
@@ -302,19 +325,19 @@ export const webSearch = tool({
         });
         return serperResults;
       }
-    } catch (error: any) {
-      console.error(`All search attempts failed: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(`All search attempts failed: ${getErrorMessage(error)}`);
       return {
         results: [
           {
             title: 'Search Error',
             href: '',
-            body: `Failed to search for '${query}'. Error: ${error.message}. Please try again with a different query.`,
+            body: `Failed to search for '${query}'. Error: ${getErrorMessage(error)}. Please try again with a different query.`,
           },
         ],
         count: 0,
         query: query,
-        error: `Search error: ${error.message}`,
+        error: `Search error: ${getErrorMessage(error)}`,
       };
     }
   },

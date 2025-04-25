@@ -11,14 +11,6 @@ interface MarkdownProps {
   baseHeadingLevel?: number;
 }
 
-// Type for code component props from react-markdown
-interface CodeProps {
-  className?: string;
-  children?: React.ReactNode;
-  node?: any;
-  [key: string]: any;
-}
-
 // Component to handle table overflow with proper scrollbars
 const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -56,7 +48,7 @@ const NonMemoizedMarkdown = ({
       skipHtml={true} // Skip HTML for security and performance
       components={{
         // Pre and Code components for code blocks - simple implementation
-        pre: ({ node, className, children, ...props }) => {
+        pre: ({ className, children, ...props }) => {
           return (
             <pre
               className={cn(
@@ -70,7 +62,7 @@ const NonMemoizedMarkdown = ({
           );
         },
 
-        code: ({ className, children, ...props }: CodeProps) => {
+        code: ({ className, children, ...props }) => {
           // Determine if this is a code block or inline code
           const match = /language-(\w+)/.exec(className || '');
           const isInline = !match;
@@ -91,14 +83,14 @@ const NonMemoizedMarkdown = ({
         },
 
         // Image component with lazy loading
-        img: ({ src, alt, ...props }) => {
+        img: ({ src, alt, ..._props }) => {
           if (!src) return null;
 
           return (
             <div className="my-2 flex justify-center">
               <div className="relative max-w-full">
                 <Image
-                  src={typeof src === 'string' ? src : URL.createObjectURL(src as Blob)}
+                  src={src}
                   alt={alt || 'Image'}
                   width={500} // Fixed width as number
                   height={300} // Fixed height as number
@@ -204,7 +196,7 @@ const NonMemoizedMarkdown = ({
             className="text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere"
             target="_blank"
             rel="noreferrer"
-            href={href as any}
+            href={href as string}
             {...props}
           >
             {children || href}
@@ -303,9 +295,9 @@ NonMemoizedMarkdown.displayName = 'NonMemoizedMarkdown';
 // Memoize the component for better performance
 export const Markdown = memo(
   NonMemoizedMarkdown,
-  (prevProps, nextProps) =>
-    prevProps.children === nextProps.children &&
-    prevProps.baseHeadingLevel === nextProps.baseHeadingLevel,
+  (prevProps, _nextProps) =>
+    prevProps.children === _nextProps.children &&
+    prevProps.baseHeadingLevel === _nextProps.baseHeadingLevel,
 );
 
 // Add display name to the memoized component

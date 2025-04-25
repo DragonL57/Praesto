@@ -171,7 +171,14 @@ function interpretWeatherCodes(
     99: 'Thunderstorm with heavy hail'
   };
   
-  const interpretation: Record<string, any> = {};
+  // Define a specific type for weather interpretations
+  interface WeatherInterpretation {
+    current?: string;
+    daily?: string[];
+    hourly?: string[];
+  }
+  
+  const interpretation: WeatherInterpretation = {};
   
   // Interpret current weather code
   if (currentCode !== undefined) {

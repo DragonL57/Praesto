@@ -69,7 +69,7 @@ function PureScrollToBottomButton({
   return (
     <Button
       onClick={scrollToBottom}
-      className={`fixed bottom-20 right-10 z-50 rounded-full shadow-md hover:shadow-lg transition-all duration-200 w-8 h-8 p-0 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed bottom-20 right-10 z-50 rounded-full shadow-md hover:shadow-lg transition-all duration-200 size-8 p-0 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       size="icon"
       aria-label="Scroll to bottom"
     >

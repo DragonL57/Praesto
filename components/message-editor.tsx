@@ -8,6 +8,20 @@ import { Textarea } from './ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
 import type { UseChatHelpers } from '@ai-sdk/react';
 
+// Define proper types for message parts
+interface TextMessagePart {
+  type: 'text';
+  text: string;
+}
+
+interface ImageMessagePart {
+  type: 'image';
+  image: string;
+}
+
+// Prefix with underscore since it's not directly used yet but helps with type safety
+type _MessagePart = TextMessagePart | ImageMessagePart;
+
 export type MessageEditorProps = {
   message: Message;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
@@ -33,8 +47,8 @@ export function MessageEditor({
     // Otherwise extract text from message parts
     if (message.parts && message.parts.length > 0) {
       return message.parts
-        .filter((part) => part.type === 'text')
-        .map((part) => (part as any).text)
+        .filter((part): part is TextMessagePart => part.type === 'text')
+        .map((part) => part.text)
         .join('\n')
         .trim();
     }

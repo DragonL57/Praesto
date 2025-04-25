@@ -4,6 +4,29 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
 
+// Define error types for better type safety
+interface ErrorWithMessage {
+  message: string;
+}
+
+// Type guard for checking if an error has a message property
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
+// Helper to get error message safely
+function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+  return String(error);
+}
+
 // Get the serper.dev API key from environment variables, with fallback to hardcoded key for development
 const SERPER_API_KEY =
   process.env.SERPER_API_KEY || '5b106638ab76499468577a6a8844cacfa7d38551';
@@ -116,12 +139,12 @@ export const readWebsiteContent = tool({
         status: 'success',
         source: 'direct',
       };
-    } catch (error: any) {
-      console.error(`Error fetching website content: ${error.message}`);
-
+    } catch (error) {
       const errorMessage = axios.isAxiosError(error)
-        ? `Request failed: ${error.message} ${error.response?.status ? `(Status: ${error.response.status})` : ''}`
-        : error.message;
+        ? `Request failed: ${getErrorMessage(error)} ${error.response?.status ? `(Status: ${error.response.status})` : ''}`
+        : getErrorMessage(error);
+
+      console.error(`Error fetching website content: ${errorMessage}`);
 
       // Only attempt fallback if we have an API key
       if (!SERPER_API_KEY) {
@@ -152,21 +175,22 @@ export const readWebsiteContent = tool({
         } else {
           throw new Error('No content found in scraped data');
         }
-      } catch (fallbackError: any) {
+      } catch (fallbackError) {
+        const fallbackErrorMessage = getErrorMessage(fallbackError);
         console.error(
-          `Fallback scraping also failed: ${fallbackError.message}`,
+          `Fallback scraping also failed: ${fallbackErrorMessage}`,
         );
         return {
           url: fullUrl,
           content: formatErrorMessage(
             fullUrl,
             errorMessage,
-            fallbackError.message,
+            fallbackErrorMessage,
           ),
           query: query || null,
           status: 'error',
           error: errorMessage,
-          fallbackError: fallbackError.message,
+          fallbackError: fallbackErrorMessage,
         };
       }
     }
@@ -224,9 +248,10 @@ async function fetchWithSerper(url: string): Promise<string> {
 
     console.log('Images stripped from content');
     return content;
-  } catch (error: any) {
-    console.error(`Error in serper.dev request: ${error.message}`);
-    throw error;
+  } catch (error) {
+    const errorMessage = getErrorMessage(error);
+    console.error(`Error in serper.dev request: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 }
 

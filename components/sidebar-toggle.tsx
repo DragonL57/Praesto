@@ -11,7 +11,8 @@ import { SidebarLeftIcon } from './icons';
 import { Button } from './ui/button';
 
 export function SidebarToggle({
-  className,
+  // Use destructuring to ignore the className prop without renaming it
+  ..._props
 }: ComponentProps<typeof SidebarTrigger>) {
   const { toggleSidebar } = useSidebar();
 

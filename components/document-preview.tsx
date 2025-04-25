@@ -16,10 +16,21 @@ import equal from 'fast-deep-equal';
 import { SpreadsheetEditor } from './sheet-editor';
 import { ImageEditor } from './image-editor';
 
+interface DocumentResult {
+  id: string;
+  title: string;
+  kind: ArtifactKind;
+}
+
+interface DocumentArgs {
+  title: string;
+  kind?: ArtifactKind;
+}
+
 interface DocumentPreviewProps {
   isReadonly: boolean;
-  result?: any;
-  args?: any;
+  result?: DocumentResult;
+  args?: DocumentArgs;
 }
 
 export function DocumentPreview({
@@ -34,7 +45,7 @@ export function DocumentPreview({
   >(result ? `/api/document?id=${result.id}` : null, fetcher);
 
   const previewDocument = useMemo(() => documents?.[0], [documents]);
-  const hitboxRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const hitboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const boundingBox = hitboxRef.current?.getBoundingClientRect();
@@ -75,7 +86,7 @@ export function DocumentPreview({
   }
 
   if (isDocumentsFetching) {
-    return <LoadingSkeleton artifactKind={result.kind ?? args.kind} />;
+    return <LoadingSkeleton artifactKind={result?.kind ?? args?.kind ?? 'text'} />;
   }
 
   const document: Document | null = previewDocument
@@ -141,7 +152,7 @@ const PureHitboxLayer = ({
   setArtifact,
 }: {
   hitboxRef: React.RefObject<HTMLDivElement>;
-  result: any;
+  result?: DocumentResult;
   setArtifact: (
     updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact),
   ) => void;
@@ -155,9 +166,9 @@ const PureHitboxLayer = ({
           ? { ...artifact, isVisible: true }
           : {
               ...artifact,
-              title: result.title,
-              documentId: result.id,
-              kind: result.kind,
+              title: result?.title ?? '',
+              documentId: result?.id ?? '',
+              kind: result?.kind ?? artifact.kind,
               isVisible: true,
               boundingBox: {
                 left: boundingBox.x,

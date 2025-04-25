@@ -1,9 +1,9 @@
 'use client';
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
-import { DataGrid, textEditor } from 'react-data-grid';
+import { TreeDataGrid, textEditor } from 'react-data-grid'; // Changed DataGrid to TreeDataGrid
+import type { Column, RenderEditCellProps } from 'react-data-grid';
 import { parse, unparse } from 'papaparse';
-import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 import 'react-data-grid/lib/styles.css';
@@ -15,6 +15,13 @@ type SheetEditorProps = {
   isCurrentVersion: boolean;
   currentVersionIndex: number;
 };
+
+// Define a type for the row data
+interface RowData {
+  id: number;
+  rowNumber: number;
+  [key: string]: string | number; // Allow string keys for column data
+}
 
 const MIN_ROWS = 50;
 const MIN_COLS = 26;
@@ -30,11 +37,7 @@ const CSV_OPTIONS = {
 const PureSpreadsheetEditor = ({
   content,
   saveContent,
-  status,
-  isCurrentVersion,
 }: SheetEditorProps) => {
-  const { theme } = useTheme();
-
   const parseData = useMemo(() => {
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
     // Use consistent parsing options
@@ -58,8 +61,8 @@ const PureSpreadsheetEditor = ({
     return paddedData;
   }, [content]);
 
-  const columns = useMemo(() => {
-    const rowNumberColumn = {
+  const columns = useMemo((): readonly Column<RowData>[] => {
+    const rowNumberColumn: Column<RowData> = {
       key: 'rowNumber',
       name: '',
       frozen: true,
@@ -69,10 +72,10 @@ const PureSpreadsheetEditor = ({
       headerCellClass: 'border-t border-r dark:bg-zinc-900 dark:text-zinc-50',
     };
 
-    const dataColumns = Array.from({ length: MIN_COLS }, (_, i) => ({
+    const dataColumns: Column<RowData>[] = Array.from({ length: MIN_COLS }, (_, i) => ({
       key: i.toString(),
       name: String.fromCharCode(65 + i),
-      renderEditCell: textEditor,
+      renderEditCell: (props: RenderEditCellProps<RowData, unknown>) => textEditor(props),
       width: 120,
       cellClass: cn(`border-t dark:bg-zinc-950 dark:text-zinc-50`, {
         'border-l': i !== 0,
@@ -87,7 +90,7 @@ const PureSpreadsheetEditor = ({
 
   const initialRows = useMemo(() => {
     return parseData.map((row, rowIndex) => {
-      const rowData: any = {
+      const rowData: RowData = {
         id: rowIndex,
         rowNumber: rowIndex + 1,
       };
@@ -100,18 +103,18 @@ const PureSpreadsheetEditor = ({
     });
   }, [parseData, columns]);
 
-  const [localRows, setLocalRows] = useState(initialRows);
+  const [localRows, setLocalRows] = useState<RowData[]>(initialRows);
 
   useEffect(() => {
     setLocalRows(initialRows);
   }, [initialRows]);
 
-  const generateCsv = (data: any[][]) => {
+  const generateCsv = (data: (string | number)[][]) => {
     // Use PapaParse's unparse with proper quoting configuration
     return unparse(data, CSV_OPTIONS);
   };
 
-  const handleRowsChange = (newRows: any[]) => {
+  const handleRowsChange = (newRows: RowData[]) => {
     setLocalRows(newRows);
 
     const updatedData = newRows.map((row) => {
@@ -122,8 +125,11 @@ const PureSpreadsheetEditor = ({
     saveContent(newCsvContent, true);
   };
 
+  // Add required props for TreeDataGrid
+  const [expandedGroupIds] = useState<ReadonlySet<unknown>>(new Set());
+
   return (
-    <DataGrid
+    <TreeDataGrid
       columns={columns}
       rows={localRows}
       enableVirtualization
@@ -138,6 +144,10 @@ const PureSpreadsheetEditor = ({
         resizable: true,
         sortable: true,
       }}
+      groupBy={[]}
+      rowGrouper={() => ({})}
+      expandedGroupIds={expandedGroupIds}
+      onExpandedGroupIdsChange={() => {}}
     />
   );
 };

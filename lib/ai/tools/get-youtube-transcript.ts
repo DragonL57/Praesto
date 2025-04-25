@@ -2,6 +2,19 @@ import { z } from 'zod';
 import { tool } from 'ai';
 import { YoutubeTranscript } from 'youtube-transcript';
 
+// Define interfaces for transcript data
+interface TranscriptItem {
+  text: string;
+  offset: number;
+  duration: number;
+}
+
+interface FallbackTranscriptItem {
+  text: string;
+  start: number;
+  duration: number;
+}
+
 // Define the schema for the YouTube transcript tool
 const youtubeTranscriptSchema = z.object({
   urlOrId: z.string().describe('YouTube URL or video ID'),
@@ -73,7 +86,7 @@ async function getVideoInfo(
 async function fetchTranscriptWithFallback(
   videoId: string,
   language = 'en',
-): Promise<any[]> {
+): Promise<TranscriptItem[]> {
   try {
     // First attempt with youtube-transcript
     const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, {
@@ -112,7 +125,7 @@ async function fetchTranscriptWithFallback(
       }
 
       // Convert the format to match what our code expects
-      return data.transcript.map((item: any) => ({
+      return data.transcript.map((item: FallbackTranscriptItem) => ({
         text: item.text,
         offset: item.start * 1000,
         duration: item.duration * 1000,
@@ -136,7 +149,7 @@ async function fetchTranscriptWithFallback(
 
         // Simple XML parsing to extract transcript
         if (text?.includes('<text ')) {
-          const items = [];
+          const items: TranscriptItem[] = [];
           const regex =
             /<text start="([\d\.]+)" dur="([\d\.]+)"[^>]*>(.*?)<\/text>/g;
           let match: RegExpExecArray | null = regex.exec(text);
@@ -178,7 +191,7 @@ async function fetchTranscriptWithFallback(
 }
 
 // Process transcript data for different return formats
-function processTranscript(transcriptItems: any[], combineAll = true) {
+function processTranscript(transcriptItems: TranscriptItem[], combineAll = true) {
   // Format the transcript based on user preference
   if (combineAll) {
     // Combine all parts into a single text
@@ -212,7 +225,7 @@ async function getTranscriptCore(
     const videoInfo = await getVideoInfo(videoId);
 
     // Try all languages in order of preference
-    let transcriptItems = [];
+    let transcriptItems: TranscriptItem[] = [];
     let lastError = null;
 
     for (const language of languages) {
@@ -269,7 +282,7 @@ I'd be happy to try finding alternative information sources about this topic.`;
         error: error instanceof Error ? error.message : String(error),
         success: false,
       };
-    } catch (infoError) {
+    } catch {
       // Fallback to basic error message if even video info can't be retrieved
       const message = `Error: Failed to fetch YouTube transcript: ${error instanceof Error ? error.message : String(error)}
 

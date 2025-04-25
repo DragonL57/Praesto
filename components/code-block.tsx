@@ -1,46 +1,65 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import type { ReactNode } from 'react';
 
-interface CodeBlockProps {
-  node: any;
-  inline: boolean;
-  className: string;
-  children: any;
+type Props = {
+  lang: string;
+  children: string;
+};
+
+interface CodeProps {
+  inline?: boolean;
+  className?: string;
+  children?: ReactNode;
 }
 
-export function CodeBlock({
-  node,
-  inline,
-  className,
-  children,
-  ...props
-}: CodeBlockProps) {
-  const [isHovering, setIsHovering] = useState(false);
+const CodeBlock = memo(({ lang, children }: Props) => {
+  const [isCopied, setIsCopied] = useState(false);
 
-  if (!inline) {
-    return (
-      <div className="not-prose flex flex-col">
-        <pre
-          {...props}
-          className={`text-sm w-full overflow-x-auto dark:bg-zinc-900 p-4 border border-zinc-200 dark:border-zinc-700 rounded-xl dark:text-zinc-50 text-zinc-900`}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+  const onCopy = () => {
+    navigator.clipboard.writeText(children);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  return (
+    <div className="not-prose flex flex-col">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {lang}
+        </span>
+        <button
+          onClick={onCopy}
+          className="text-sm text-blue-500 hover:underline"
         >
-          <code 
-            className="whitespace-pre-wrap break-words"
-            style={{
-              // Always allow text wrapping, regardless of hover state
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}
-          >
-            {children}
-          </code>
-        </pre>
+          {isCopied ? 'Copied!' : 'Copy'}
+        </button>
       </div>
-    );
-  } else {
+      <SyntaxHighlighter
+        language={lang}
+        style={coldarkDark}
+        customStyle={{
+          borderRadius: '0.5rem',
+          padding: '1rem',
+          fontSize: '0.875rem',
+        }}
+      >
+        {children}
+      </SyntaxHighlighter>
+    </div>
+  );
+});
+
+// Add display name to fix ESLint warning
+CodeBlock.displayName = 'CodeBlock';
+
+export function code({ inline, className, children, ...props }: CodeProps) {
+  const match = /language-(\w+)/.exec(className || '');
+
+  if (inline) {
     return (
       <code
         className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md`}
@@ -49,5 +68,15 @@ export function CodeBlock({
         {children}
       </code>
     );
+  } else {
+    // Fix children prop warning by using JSX children syntax
+    return (
+      <CodeBlock lang={match?.[1] || ''}>
+        {String(children)}
+      </CodeBlock>
+    );
   }
 }
+
+// Export CodeBlock component for use in other files
+export { CodeBlock };
