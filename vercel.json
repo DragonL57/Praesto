@@ -18,10 +18,6 @@
         {
             "src": "/api/get_transcript/(.*)",
             "dest": "api/api.py"
-        },
-        {
-            "handle": "filesystem"
         }
-    ],
-    "outputDirectory": ".vercel/output"
+    ]
 }
