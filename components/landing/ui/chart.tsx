@@ -322,7 +322,7 @@ function getPayloadConfigFromPayload(
   payload: unknown,
   key: string,
 ) {
-  if (typeof payload !== 'object' || payload === null) {
+  if (!config || typeof payload !== 'object' || payload === null) {
     return undefined;
   }
 
@@ -350,9 +350,11 @@ function getPayloadConfigFromPayload(
     ] as string;
   }
 
-  return configLabelKey in config
+  return config && configLabelKey in config
     ? config[configLabelKey]
-    : config[key as keyof typeof config];
+    : config && key in config
+    ? config[key as keyof typeof config]
+    : undefined;
 }
 
 export {
