@@ -1,7 +1,7 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
 
 // Use Blob instead of File since File is not available in Node.js environment
@@ -56,10 +56,10 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json(data);
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to process request' },
       { status: 500 },

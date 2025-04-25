@@ -3,13 +3,10 @@
 import { generateText } from 'ai';
 import type { Message } from 'ai';
 import { cookies } from 'next/headers';
-
-import {
-  deleteMessagesByChatIdAfterTimestamp,
-  getMessageById,
-  updateChatVisiblityById,
-} from '@/lib/db/queries';
+// eslint-disable-next-line import/no-unresolved
+import { deleteMessagesByChatIdAfterTimestamp, getMessageById, updateChatVisiblityById, } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
+// eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
 
 export async function saveChatModelAsCookie(model: string) {

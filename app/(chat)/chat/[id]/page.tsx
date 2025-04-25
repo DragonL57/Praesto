@@ -1,13 +1,18 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
+// eslint-disable-next-line import/no-unresolved
 import { Chat } from '@/components/chat';
+// eslint-disable-next-line import/no-unresolved
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
+// eslint-disable-next-line import/no-unresolved
 import { DataStreamHandler } from '@/components/data-stream-handler';
+// eslint-disable-next-line import/no-unresolved
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
+// eslint-disable-next-line import/no-unresolved
 import { PageTransition } from '@/components/ui/page-transition';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {

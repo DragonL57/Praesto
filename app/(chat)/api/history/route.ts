@@ -1,5 +1,7 @@
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
 import type { NextRequest } from 'next/server';
+// eslint-disable-next-line import/no-unresolved
 import { getChatsByUserId } from '@/lib/db/queries';
 
 export async function GET(request: NextRequest) {
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json(chats);
-  } catch (_) {
+  } catch {
     return Response.json('Failed to fetch chats!', { status: 500 });
   }
 }

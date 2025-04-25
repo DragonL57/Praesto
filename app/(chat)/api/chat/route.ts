@@ -5,28 +5,32 @@ import {
   streamText,
 } from 'ai';
 import type { UIMessage } from 'ai';
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
+// eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
-import {
-  deleteChatById,
-  getChatById,
-  saveChat,
-  saveMessages,
-} from '@/lib/db/queries';
-import {
-  generateUUID,
-  getMostRecentUserMessage,
-  getTrailingMessageId,
-} from '@/lib/utils';
+// eslint-disable-next-line import/no-unresolved
+import { deleteChatById, getChatById, saveChat, saveMessages, } from '@/lib/db/queries';
+// eslint-disable-next-line import/no-unresolved
+import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
+// eslint-disable-next-line import/no-unresolved
 import { createDocument } from '@/lib/ai/tools/create-document';
+// eslint-disable-next-line import/no-unresolved
 import { updateDocument } from '@/lib/ai/tools/update-document';
+// eslint-disable-next-line import/no-unresolved
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
+// eslint-disable-next-line import/no-unresolved
 import { getWeather } from '@/lib/ai/tools/get-weather';
+// eslint-disable-next-line import/no-unresolved
 import { webSearch } from '@/lib/ai/tools/web-search';
+// eslint-disable-next-line import/no-unresolved
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
+// eslint-disable-next-line import/no-unresolved
 import { getYoutubeTranscript } from '@/lib/ai/tools/get-youtube-transcript';
+// eslint-disable-next-line import/no-unresolved
 import { isProductionEnvironment } from '@/lib/constants';
+// eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
 
 export const maxDuration = 60;
@@ -166,7 +170,7 @@ export async function POST(request: Request) {
                     },
                   ],
                 });
-              } catch (_) {
+              } catch {
                 console.error('Failed to save chat');
               }
             }
@@ -187,7 +191,7 @@ export async function POST(request: Request) {
         return 'Oops, an error occurred!';
       },
     });
-  } catch (error) {
+  } catch {
     return new Response('An error occurred while processing your request!', {
       status: 404,
     });
@@ -218,7 +222,7 @@ export async function DELETE(request: Request) {
     await deleteChatById({ id });
 
     return new Response('Chat deleted', { status: 200 });
-  } catch (error) {
+  } catch {
     return new Response('An error occurred while processing your request!', {
       status: 500,
     });

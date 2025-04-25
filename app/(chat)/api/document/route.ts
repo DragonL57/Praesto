@@ -1,10 +1,8 @@
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
 import type { ArtifactKind } from '@/components/artifact';
-import {
-  deleteDocumentsByIdAfterTimestamp,
-  getDocumentsById,
-  saveDocument,
-} from '@/lib/db/queries';
+// eslint-disable-next-line import/no-unresolved
+import { deleteDocumentsByIdAfterTimestamp, getDocumentsById, saveDocument, } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

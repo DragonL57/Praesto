@@ -1,4 +1,6 @@
+// eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
+// eslint-disable-next-line import/no-unresolved
 import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
