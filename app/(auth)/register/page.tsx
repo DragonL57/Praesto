@@ -43,6 +43,10 @@ export default function Page() {
       toast({ type: 'success', description: 'Account created successfully!' });
       setIsSuccessful(true);
       router.refresh();
+      // Redirect to /chat after successful registration
+      setTimeout(() => {
+        router.push('/chat');
+      }, 500); // Small delay to allow refresh to complete
     }
   }, [state, router]);
 

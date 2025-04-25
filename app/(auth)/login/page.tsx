@@ -27,7 +27,8 @@ export default function Page() {
     if (state.status === 'user_not_found') {
       toast({
         type: 'error',
-        description: state.message || 'No account found. Please register first.',
+        description:
+          state.message || 'No account found. Please register first.',
       });
     } else if (state.status === 'wrong_password') {
       toast({
@@ -47,6 +48,10 @@ export default function Page() {
     } else if (state.status === 'success') {
       setIsSuccessful(true);
       router.refresh();
+      // Redirect to /chat after successful login
+      setTimeout(() => {
+        router.push('/chat');
+      }, 500); // Small delay to allow refresh to complete
     }
   }, [state.status, state.message, router]);
 
@@ -59,7 +64,9 @@ export default function Page() {
     <div className="flex h-dvh w-screen items-start pt-12 md:pt-0 md:items-center justify-center bg-background">
       <div className="w-full max-w-md overflow-hidden rounded-2xl flex flex-col gap-12">
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
-          <h2 className="text-2xl font-bold dark:text-zinc-50 mb-2">UniTaskAI</h2>
+          <h2 className="text-2xl font-bold dark:text-zinc-50 mb-2">
+            UniTaskAI
+          </h2>
           <h3 className="text-xl font-semibold dark:text-zinc-50">Sign In</h3>
           <p className="text-sm text-gray-500 dark:text-zinc-400">
             Use your email and password to sign in
