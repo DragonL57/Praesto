@@ -2,6 +2,12 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import * as DDG from 'duck-duck-scrape';
 
+// Add a type definition for needle options to handle custom headers
+interface NeedleOptions {
+  headers?: Record<string, string>;
+  [key: string]: any;
+}
+
 interface SearchResult {
   title: string;
   href: string;
@@ -31,8 +37,32 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
+// Add a simple delay function to prevent hitting rate limits
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Simple in-memory cache for search results
+const searchCache = new Map<string, {
+  timestamp: number,
+  results: { results: SearchResult[], count: number, query: string }
+}>();
+
+// Cache TTL in milliseconds (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000;
+
 // DuckDuckGo client using duck-duck-scrape library
 class DuckDuckGoClient {
+  // Realistic browser user agents
+  private userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15'
+  ];
+
+  private getRandomUserAgent(): string {
+    return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
+  }
+
   async search({
     query,
     maxResults = 5,
@@ -48,15 +78,42 @@ class DuckDuckGoClient {
       `DuckDuckGo Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
     );
 
+    // Check cache first
+    const cacheKey = `ddg:${query}:${maxResults}:${region}:${safeSearch}`;
+    const cachedResult = searchCache.get(cacheKey);
+    
+    if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
+      console.log('Using cached DuckDuckGo search results');
+      return cachedResult.results;
+    }
+
     try {
+      // Add a small delay before making the request to avoid rate limiting
+      await delay(200);
+
+      // Set a custom user agent to appear more like a real browser
+      const customHeaders = {
+        'User-Agent': this.getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Referer': 'https://duckduckgo.com/',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+      };
+
       // Use duck-duck-scrape library for better search results
-      const searchResults = await DDG.search(query, {
-        safeSearch: safeSearch
-          ? DDG.SafeSearchType.MODERATE
-          : DDG.SafeSearchType.OFF,
-        region: region.toUpperCase(),
-        time: DDG.SearchTimeType.ALL,
-      });
+      // Pass the needle options as the third parameter instead of trying to include headers in SearchOptions
+      const searchResults = await DDG.search(
+        query, 
+        {
+          safeSearch: safeSearch
+            ? DDG.SafeSearchType.MODERATE
+            : DDG.SafeSearchType.OFF,
+          region: region.toUpperCase(),
+          time: DDG.SearchTimeType.ALL,
+        },
+        { headers: customHeaders } as NeedleOptions
+      );
 
       const results: SearchResult[] = [];
 
@@ -77,30 +134,49 @@ class DuckDuckGoClient {
         `DuckDuckGo Search Complete: Found ${results.length} results`,
       );
 
-      return {
+      const finalResults = {
         results: results.slice(0, maxResults),
         count: results.length,
         query: query,
       };
+
+      // Cache the results
+      searchCache.set(cacheKey, {
+        timestamp: Date.now(),
+        results: finalResults
+      });
+
+      return finalResults;
     } catch (error: unknown) {
       console.error(`Error during DuckDuckGo search: ${getErrorMessage(error)}`);
 
       // If standard search fails, try using other DuckDuckGo APIs
       try {
         console.log('Trying alternative DuckDuckGo search methods...');
-        return await this.alternativeSearch(query, maxResults);
-      } catch {
-        console.error('Alternative search methods also failed');
+        return await this.alternativeSearch(query, maxResults, region);
+      } catch (error) {
+        console.error(`Alternative search methods also failed: ${getErrorMessage(error)}`);
         throw error; // Re-throw original error for fallback
       }
     }
   }
 
-  private async alternativeSearch(query: string, maxResults: number) {
+  private async alternativeSearch(query: string, maxResults: number, region: string) {
     // Try to get direct answers if possible
     const results: SearchResult[] = [];
+    const cacheKey = `ddg-alt:${query}:${maxResults}:${region}`;
+    
+    // Check cache first
+    const cachedResult = searchCache.get(cacheKey);
+    if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
+      console.log('Using cached DuckDuckGo alternative search results');
+      return cachedResult.results;
+    }
     
     try {
+      // Add a small delay before making the request to avoid rate limiting
+      await delay(300);
+      
       // Try dictionary definition
       const definitionResults = await DDG.dictionaryDefinition(query);
       // Check if we have results and they have text property (which contains the definition)
@@ -112,14 +188,33 @@ class DuckDuckGoClient {
           body: `${def.text || ""} ${def.partOfSpeech ? `(${def.partOfSpeech})` : ""}`
         });
       }
-    } catch {
+    } catch (error) {
       // Ignore errors from specific API endpoints
+      console.log(`Alternative search approach failed: ${getErrorMessage(error)}`);
     }
     
-    // If no direct answers, try a standard web search again
+    // If no direct answers, try a standard web search again with different approach
     if (results.length === 0) {
       try {
-        const webSearch = await DDG.search(query);
+        // Add a small delay
+        await delay(300);
+        
+        // Use the standard search method with needle options as the third parameter
+        const customHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        };
+
+        const webSearch = await DDG.search(
+          query, 
+          {
+            time: DDG.SearchTimeType.ALL,
+            region: region.toUpperCase(),
+            safeSearch: DDG.SafeSearchType.MODERATE,
+          },
+          { headers: customHeaders } as NeedleOptions
+        );
+        
         if (webSearch?.results?.length > 0) {
           for (const result of webSearch.results) {
             if (results.length >= maxResults) break;
@@ -131,14 +226,18 @@ class DuckDuckGoClient {
             });
           }
         }
-      } catch {
+      } catch (error) {
         // Ignore errors from specific API endpoints
+        console.log(`Web search approach failed: ${getErrorMessage(error)}`);
       }
     }
     
     // If still no results, try news search
     if (results.length === 0) {
       try {
+        // Add a small delay
+        await delay(300);
+        
         const newsSearch = await DDG.searchNews(query);
         if (newsSearch?.results?.length > 0) {
           for (const result of newsSearch.results) {
@@ -152,23 +251,38 @@ class DuckDuckGoClient {
             });
           }
         }
-      } catch {
+      } catch (error) {
         // Ignore errors from specific API endpoints
+        console.log(`News search approach failed: ${getErrorMessage(error)}`);
       }
     }
     
     console.log(`DuckDuckGo Alternative Search: Found ${results.length} results`);
     
-    return {
+    const finalResults = {
       results: results.slice(0, maxResults),
       count: results.length,
       query: query
     };
+    
+    // Cache the results
+    searchCache.set(cacheKey, {
+      timestamp: Date.now(),
+      results: finalResults
+    });
+    
+    return finalResults;
   }
 }
 
 // Serper client for fallback web searches
 class SerperClient {
+  // Simple in-memory cache for Serper API results
+  private cache = new Map<string, {
+    timestamp: number,
+    results: { results: SearchResult[], count: number, query: string }
+  }>();
+
   async search({
     query,
     maxResults = 5,
@@ -184,7 +298,19 @@ class SerperClient {
       `Serper (Google) Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
     );
 
+    // Check cache first
+    const cacheKey = `serper:${query}:${maxResults}:${region}:${safeSearch}`;
+    const cachedResult = this.cache.get(cacheKey);
+    
+    if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
+      console.log('Using cached Serper search results');
+      return cachedResult.results;
+    }
+
     try {
+      // Add a small delay before making the request
+      await delay(200);
+      
       // Set up the request to the Serper API
       const options = {
         method: 'POST',
@@ -252,11 +378,19 @@ class SerperClient {
 
       console.log(`Serper Search Complete: Found ${results.length} results`);
 
-      return {
+      const finalResults = {
         results: results.slice(0, maxResults),
         count: results.length,
         query: query,
       };
+      
+      // Cache the results
+      this.cache.set(cacheKey, {
+        timestamp: Date.now(),
+        results: finalResults
+      });
+
+      return finalResults;
     } catch (error: unknown) {
       console.error(`Error during Serper search: ${getErrorMessage(error)}`);
       throw error;
@@ -311,7 +445,20 @@ export const webSearch = tool({
           safeSearch,
         });
 
-        return duckResults;
+        // If we got at least some results, return them
+        if (duckResults.results.length > 0) {
+          return duckResults;
+        }
+        
+        console.log('DuckDuckGo returned no results, trying Serper');
+        // If no results from DuckDuckGo, fall back to Serper
+        const serperResults = await serper.search({
+          query,
+          maxResults: normalizedMaxResults,
+          region,
+          safeSearch,
+        });
+        return serperResults;
       } catch (duckError: unknown) {
         console.error(
           `DuckDuckGo search failed: ${getErrorMessage(duckError)}, falling back to Serper`,

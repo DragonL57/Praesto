@@ -322,34 +322,27 @@ function getPayloadConfigFromPayload(
   payload: unknown,
   key: string,
 ) {
-  if (!config || typeof payload !== 'object' || payload === null) {
+  if (!config || !payload || typeof payload !== 'object' || payload === null) {
     return undefined;
   }
 
   // Safely check if payload has a 'payload' property
-  const payloadPayload = payload && 
-    typeof payload === 'object' && 
+  const payloadPayload = 
     'payload' in payload && 
-    typeof payload.payload === 'object' && 
-    payload.payload !== null
+    payload.payload !== null &&
+    typeof payload.payload === 'object'
       ? payload.payload
       : undefined;
 
   let configLabelKey: string = key;
 
   // Safely check if key exists in payload
-  if (
-    payload && 
-    typeof payload === 'object' && 
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === 'string'
-  ) {
+  if (key in payload && typeof payload[key as keyof typeof payload] === 'string') {
     configLabelKey = payload[key as keyof typeof payload] as string;
   } 
   // Safely check if key exists in payloadPayload
   else if (
     payloadPayload &&
-    typeof payloadPayload === 'object' &&
     key in payloadPayload &&
     typeof payloadPayload[key as keyof typeof payloadPayload] === 'string'
   ) {
@@ -358,9 +351,9 @@ function getPayloadConfigFromPayload(
     ] as string;
   }
 
-  return config && configLabelKey in config
+  return configLabelKey in config
     ? config[configLabelKey]
-    : config && key in config
+    : key in config
     ? config[key as keyof typeof config]
     : undefined;
 }
