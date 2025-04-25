@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "get_transcript.py": {
+      "runtime": "python3.9",
+      "excludeFiles": "{tests,dist,node_modules}/**"
+    }
+  },
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/get_transcript.py"
+    }
+  ]
+}
