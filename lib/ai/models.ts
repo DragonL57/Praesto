@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'chat-model';
+export const DEFAULT_CHAT_MODEL: string = 'google-gemini-flash';
 
 interface ChatModel {
   id: string;
@@ -15,11 +15,11 @@ export const chatModels: Array<ChatModel> = [
   {
     id: 'google-gemini-flash',
     name: 'Google Gemini Flash',
-    description: 'Google Generative AI Gemini 2.5 Flash model',
+    description: 'Gemini 2.5 Flash model with thinking enabled',
   },
   {
     id: 'google-gemini-pro',
     name: 'Google Gemini Pro',
-    description: 'Google Generative AI Gemini 2.5 Pro model',
+    description: 'Gemini 2.5 Pro model',
   },
 ];

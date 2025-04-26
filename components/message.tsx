@@ -1,10 +1,10 @@
 'use client';
 
+import React, { memo, useState, useEffect, useMemo } from 'react';
 import type { UIMessage } from 'ai';
 import cx from 'classnames';
 // Removing framer-motion animations
 // import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState, useEffect, useMemo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, WebpageLoadingIcon } from './icons';
@@ -92,8 +92,11 @@ const PurePreviewMessage = ({
   useEffect(() => {
     if (message.role !== 'assistant') return;
     
-    const tempResults: GroupableToolResult[] = [];
+    // Collect all tool results of web search or web content reading types
+    const webSearchResults: GroupableToolResult[] = [];
+    const webContentResults: GroupableToolResult[] = [];
     
+    // First, collect all relevant tool results
     message.parts?.forEach(part => {
       if (part.type === 'tool-invocation') {
         const { toolInvocation } = part;
@@ -103,7 +106,7 @@ const PurePreviewMessage = ({
           const { result } = toolInvocation;
           
           if (toolName === 'webSearch') {
-            tempResults.push({
+            webSearchResults.push({
               type: 'websearch',
               data: result,
               timestamp: Date.now(),
@@ -111,7 +114,7 @@ const PurePreviewMessage = ({
             });
           } 
           else if (toolName === 'readWebsiteContent') {
-            tempResults.push({
+            webContentResults.push({
               type: 'websitecontent',
               data: result,
               timestamp: Date.now(),
@@ -122,9 +125,26 @@ const PurePreviewMessage = ({
       }
     });
     
-    // Only update if we have 2 or more groupable results
-    if (tempResults.length >= 2) {
-      setGroupableToolResults(tempResults);
+    // Determine which collection of results to use for the group
+    // Priority: Use web content results if we have multiple, otherwise web search results
+    let resultsToGroup: GroupableToolResult[] = [];
+    
+    if (webContentResults.length >= 2) {
+      // If we have multiple web content results, group those
+      resultsToGroup = [...webContentResults];
+    } else if (webSearchResults.length >= 2) {
+      // If we have multiple web search results but not enough web content results, group the searches
+      resultsToGroup = [...webSearchResults];
+    } else if (webContentResults.length + webSearchResults.length >= 2) {
+      // If we have at least 2 total between both types, group them together
+      resultsToGroup = [...webSearchResults, ...webContentResults];
+    }
+    
+    // Update state only if we have results to group
+    if (resultsToGroup.length >= 2) {
+      setGroupableToolResults(resultsToGroup);
+    } else {
+      setGroupableToolResults([]);
     }
   }, [message.parts]);
   
@@ -164,184 +184,209 @@ const PurePreviewMessage = ({
             </div>
           )}
 
-          {/* Show MultiToolResults if we have groupable results */}
-          {groupableToolResults.length >= 2 && (
-            <MultiToolResults results={groupableToolResults} />
-          )}
+          {(() => {
+            // Track if we've already rendered the multi-tool results
+            let hasRenderedMultiTools = false;
+            
+            // Find the index of the first grouped tool to know where to insert the multi-tool container
+            let firstGroupedToolIndex = -1;
+            if (groupableToolResults.length >= 2) {
+              message.parts?.forEach((part, idx) => {
+                if (part.type === 'tool-invocation') {
+                  const { toolCallId } = part.toolInvocation;
+                  if (groupedToolIds.includes(toolCallId) && firstGroupedToolIndex === -1) {
+                    firstGroupedToolIndex = idx;
+                  }
+                }
+              });
+            }
+            
+            return message.parts?.map((part, index) => {
+              const { type } = part;
+              const key = `message-${message.id}-part-${index}`;
 
-          {message.parts?.map((part, index) => {
-            const { type } = part;
-            const key = `message-${message.id}-part-${index}`;
-
-            if (type === 'text') {
-              if (mode === 'view') {
+              // Insert the MultiToolResults component at the position of the first grouped tool
+              if (groupableToolResults.length >= 2 && index === firstGroupedToolIndex && !hasRenderedMultiTools) {
+                hasRenderedMultiTools = true;
                 return (
-                  <div key={key} className="flex flex-row gap-2 items-start">
-                    {message.role === 'user' && !isReadonly && (
-                      <div className="self-center">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              data-testid="message-edit-button"
-                              variant="ghost"
-                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                              onClick={() => {
-                                setMode('edit');
-                              }}
-                            >
-                              <PencilEditIcon />
-                              <span className="sr-only">Edit message</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit message</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    )}
+                  <React.Fragment key={`${key}-multi-tool`}>
+                    <MultiToolResults results={groupableToolResults} />
+                  </React.Fragment>
+                );
+              }
 
+              if (type === 'text') {
+                if (mode === 'view') {
+                  return (
+                    <div key={key} className="flex flex-row gap-2 items-start">
+                      {message.role === 'user' && !isReadonly && (
+                        <div className="self-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                data-testid="message-edit-button"
+                                variant="ghost"
+                                className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                                onClick={() => {
+                                  setMode('edit');
+                                }}
+                              >
+                                <PencilEditIcon />
+                                <span className="sr-only">Edit message</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit message</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      )}
+
+                      <div
+                        data-testid="message-content"
+                        className={cn('flex flex-col gap-0 flex-1', {
+                          'dark:bg-zinc-700 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-3 py-2 rounded-xl':
+                            message.role === 'user',
+                        })}
+                      >
+                        {message.role === 'user' ? (
+                          <div className="whitespace-pre-wrap break-words">
+                            <UserTextWithLineBreaks text={part.text} />
+                          </div>
+                        ) : (
+                          <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (mode === 'edit') {
+                  return (
+                    <div key={key} className="flex flex-row gap-2 items-start">
+                      <div className="size-8" />
+
+                      <MessageEditor
+                        key={message.id}
+                        message={message}
+                        setMode={setMode}
+                        setMessages={setMessages}
+                        reload={reload}
+                      />
+                    </div>
+                  );
+                }
+              }
+
+              if (type === 'tool-invocation') {
+                const { toolInvocation } = part;
+                const { toolName, toolCallId, state } = toolInvocation;
+
+                // Skip rendering this tool if it's being shown in the MultiToolResults group
+                if (groupedToolIds.includes(toolCallId)) {
+                  return null;
+                }
+
+                if (state === 'call') {
+                  const { args } = toolInvocation;
+
+                  return (
                     <div
-                      data-testid="message-content"
-                      className={cn('flex flex-col gap-0 flex-1', {
-                        'dark:bg-zinc-700 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-3 py-2 rounded-xl':
-                          message.role === 'user',
+                      key={toolCallId}
+                      className={cx({
+                        skeleton: ['getWeather'].includes(toolName),
                       })}
                     >
-                      {message.role === 'user' ? (
-                        <div className="whitespace-pre-wrap break-words">
-                          <UserTextWithLineBreaks text={part.text} />
+                      {toolName === 'getWeather' ? (
+                        <Weather />
+                      ) : toolName === 'createDocument' ? (
+                        <DocumentPreview isReadonly={isReadonly} args={args} />
+                      ) : toolName === 'updateDocument' ? (
+                        <DocumentToolCall
+                          type="update"
+                          args={args}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'requestSuggestions' ? (
+                        <DocumentToolCall
+                          type="request-suggestions"
+                          args={args}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'readWebsiteContent' ? (
+                        <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
+                          <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                            <WebpageLoadingIcon size={16} />
+                            <span>
+                              Reading webpage{' '}
+                              <span className="font-medium">{args.url}</span>...
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-center p-4">
+                            <div className="animate-spin rounded-full size-6 border-y-2 border-primary" />
+                          </div>
                         </div>
+                      ) : null}
+                    </div>
+                  );
+                }
+
+                if (state === 'result') {
+                  const { result } = toolInvocation;
+
+                  return (
+                    <div key={toolCallId}>
+                      {toolName === 'getWeather' ? (
+                        <Weather weatherAtLocation={result} />
+                      ) : toolName === 'createDocument' ? (
+                        <DocumentPreview
+                          isReadonly={isReadonly}
+                          result={result}
+                        />
+                      ) : toolName === 'updateDocument' ? (
+                        <DocumentToolResult
+                          type="update"
+                          result={result}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'requestSuggestions' ? (
+                        <DocumentToolResult
+                          type="request-suggestions"
+                          result={result}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'webSearch' ? (
+                        <WebSearch
+                          results={result.results}
+                          query={result.query}
+                          count={result.count}
+                        />
+                      ) : toolName === 'readWebsiteContent' ? (
+                        <WebsiteContent
+                          url={result.url}
+                          content={result.content}
+                          query={result.query}
+                          status={result.status}
+                          error={result.error}
+                        />
+                      ) : toolName === 'getYoutubeTranscript' ? (
+                        <YouTubeTranscript
+                          transcript={result}
+                          videoId={extractVideoId(toolInvocation.args.urlOrId)}
+                          title={toolInvocation.args.urlOrId}
+                          hasTimestamps={!toolInvocation.args.combineAll}
+                          urlOrId={toolInvocation.args.urlOrId}
+                          languages={toolInvocation.args.languages}
+                        />
                       ) : (
-                        <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
+                        <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}
                     </div>
-                  </div>
-                );
+                  );
+                }
               }
-
-              if (mode === 'edit') {
-                return (
-                  <div key={key} className="flex flex-row gap-2 items-start">
-                    <div className="size-8" />
-
-                    <MessageEditor
-                      key={message.id}
-                      message={message}
-                      setMode={setMode}
-                      setMessages={setMessages}
-                      reload={reload}
-                    />
-                  </div>
-                );
-              }
-            }
-
-            if (type === 'tool-invocation') {
-              const { toolInvocation } = part;
-              const { toolName, toolCallId, state } = toolInvocation;
-
-              // Skip rendering this tool if it's being shown in the MultiToolResults group
-              if (groupedToolIds.includes(toolCallId)) {
-                return null;
-              }
-
-              if (state === 'call') {
-                const { args } = toolInvocation;
-
-                return (
-                  <div
-                    key={toolCallId}
-                    className={cx({
-                      skeleton: ['getWeather'].includes(toolName),
-                    })}
-                  >
-                    {toolName === 'getWeather' ? (
-                      <Weather />
-                    ) : toolName === 'createDocument' ? (
-                      <DocumentPreview isReadonly={isReadonly} args={args} />
-                    ) : toolName === 'updateDocument' ? (
-                      <DocumentToolCall
-                        type="update"
-                        args={args}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'requestSuggestions' ? (
-                      <DocumentToolCall
-                        type="request-suggestions"
-                        args={args}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'readWebsiteContent' ? (
-                      <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
-                        <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                          <WebpageLoadingIcon size={16} />
-                          <span>
-                            Reading webpage{' '}
-                            <span className="font-medium">{args.url}</span>...
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-center p-4">
-                          <div className="animate-spin rounded-full size-6 border-y-2 border-primary" />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              }
-
-              if (state === 'result') {
-                const { result } = toolInvocation;
-
-                return (
-                  <div key={toolCallId}>
-                    {toolName === 'getWeather' ? (
-                      <Weather weatherAtLocation={result} />
-                    ) : toolName === 'createDocument' ? (
-                      <DocumentPreview
-                        isReadonly={isReadonly}
-                        result={result}
-                      />
-                    ) : toolName === 'updateDocument' ? (
-                      <DocumentToolResult
-                        type="update"
-                        result={result}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'requestSuggestions' ? (
-                      <DocumentToolResult
-                        type="request-suggestions"
-                        result={result}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'webSearch' ? (
-                      <WebSearch
-                        results={result.results}
-                        query={result.query}
-                        count={result.count}
-                      />
-                    ) : toolName === 'readWebsiteContent' ? (
-                      <WebsiteContent
-                        url={result.url}
-                        content={result.content}
-                        query={result.query}
-                        status={result.status}
-                        error={result.error}
-                      />
-                    ) : toolName === 'getYoutubeTranscript' ? (
-                      <YouTubeTranscript
-                        transcript={result}
-                        videoId={extractVideoId(toolInvocation.args.urlOrId)}
-                        title={toolInvocation.args.urlOrId}
-                        hasTimestamps={!toolInvocation.args.combineAll}
-                        urlOrId={toolInvocation.args.urlOrId}
-                        languages={toolInvocation.args.languages}
-                      />
-                    ) : (
-                      <pre>{JSON.stringify(result, null, 2)}</pre>
-                    )}
-                  </div>
-                );
-              }
-            }
-          })}
+              
+              return null;
+            });
+          })()}
 
           {!isReadonly && (
             <MessageActions
