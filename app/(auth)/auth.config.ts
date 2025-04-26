@@ -23,8 +23,9 @@ export const authConfig = {
         return true;
       }
 
+      // Redirect authenticated users from login/register pages to /chat
       if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+        return Response.redirect(new URL('/chat', nextUrl as unknown as URL));
       }
 
       if (isOnRegister || isOnLogin) {

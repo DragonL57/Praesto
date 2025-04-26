@@ -2,7 +2,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect, useState, startTransition } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
@@ -69,7 +69,11 @@ export default function LoginPage() {
     
     const formData = new FormData(e.currentTarget)
     setEmail(formData.get("email") as string)
-    formAction(formData)
+    
+    // Wrap formAction in startTransition
+    startTransition(() => {
+      formAction(formData)
+    })
   }
 
   return (
