@@ -4,7 +4,7 @@ import type { UIMessage } from 'ai';
 import cx from 'classnames';
 // Removing framer-motion animations
 // import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, WebpageLoadingIcon } from './icons';
@@ -15,6 +15,7 @@ import { Weather } from './weather';
 import { WebSearch } from './web-search';
 import { WebsiteContent } from './website-content';
 import { YouTubeTranscript } from './youtube-transcript';
+import { MultiToolResults } from './multi-tool-results';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -25,25 +26,15 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 
 // Helper function to extract video ID from YouTube URL or ID
 function extractVideoId(urlOrId: string): string {
-  let videoId = urlOrId;
-
-  if (urlOrId.includes('youtube.com') || urlOrId.includes('youtu.be')) {
-    // Handle youtu.be format
-    if (urlOrId.includes('youtu.be/')) {
-      videoId = urlOrId.split('youtu.be/')[1].split('?')[0];
-    }
-    // Handle regular youtube.com format with v parameter
-    else if (urlOrId.includes('v=')) {
-      const match = urlOrId.match(/v=([^&]+)/);
-      videoId = match?.[1] || videoId;
-    }
-    // Handle youtube.com/embed format
-    else if (urlOrId.includes('/embed/')) {
-      videoId = urlOrId.split('/embed/')[1].split('?')[0];
-    }
+  // Handle direct video IDs
+  if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) {
+    return urlOrId;
   }
 
-  return videoId;
+  const youtubeRegex =
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+  const match = urlOrId.match(youtubeRegex);
+  return match ? match[1] : urlOrId;
 }
 
 // Helper function to preserve line breaks in user messages
@@ -67,6 +58,14 @@ const UserTextWithLineBreaks = ({ text }: { text: string }) => {
   );
 };
 
+// Type for tool results we want to group
+type GroupableToolResult = {
+  type: 'websearch' | 'websitecontent';
+  data: any;
+  timestamp: number;
+  toolCallId: string;
+};
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -85,6 +84,55 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  
+  // Keep track of tool results that can be grouped
+  const [groupableToolResults, setGroupableToolResults] = useState<GroupableToolResult[]>([]);
+  
+  // Detect groupable tool results when message parts change
+  useEffect(() => {
+    if (message.role !== 'assistant') return;
+    
+    const tempResults: GroupableToolResult[] = [];
+    
+    message.parts?.forEach(part => {
+      if (part.type === 'tool-invocation') {
+        const { toolInvocation } = part;
+        const { toolName, toolCallId, state } = toolInvocation;
+        
+        if (state === 'result') {
+          const { result } = toolInvocation;
+          
+          if (toolName === 'webSearch') {
+            tempResults.push({
+              type: 'websearch',
+              data: result,
+              timestamp: Date.now(),
+              toolCallId
+            });
+          } 
+          else if (toolName === 'readWebsiteContent') {
+            tempResults.push({
+              type: 'websitecontent',
+              data: result,
+              timestamp: Date.now(),
+              toolCallId
+            });
+          }
+        }
+      }
+    });
+    
+    // Only update if we have 2 or more groupable results
+    if (tempResults.length >= 2) {
+      setGroupableToolResults(tempResults);
+    }
+  }, [message.parts]);
+  
+  // Track which tool IDs are being shown in the group container
+  const groupedToolIds = useMemo(() => 
+    groupableToolResults.map(result => result.toolCallId),
+    [groupableToolResults]
+  );
 
   return (
     <div
@@ -114,6 +162,11 @@ const PurePreviewMessage = ({
                 />
               ))}
             </div>
+          )}
+
+          {/* Show MultiToolResults if we have groupable results */}
+          {groupableToolResults.length >= 2 && (
+            <MultiToolResults results={groupableToolResults} />
           )}
 
           {message.parts?.map((part, index) => {
@@ -184,6 +237,11 @@ const PurePreviewMessage = ({
             if (type === 'tool-invocation') {
               const { toolInvocation } = part;
               const { toolName, toolCallId, state } = toolInvocation;
+
+              // Skip rendering this tool if it's being shown in the MultiToolResults group
+              if (groupedToolIds.includes(toolCallId)) {
+                return null;
+              }
 
               if (state === 'call') {
                 const { args } = toolInvocation;
