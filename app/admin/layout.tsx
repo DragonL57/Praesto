@@ -1,46 +1,39 @@
-import type { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
+'use client';
 
-import { auth } from '@/app/(auth)/auth';
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { ThemeProvider } from '@/components/theme-provider';
 
-export default async function AdminLayout({
+import { AdminSidebar } from '@/components/admin/sidebar';
+import { AdminTopNav } from '@/components/admin/top-nav';
+
+export default function AdminLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  // Read admin emails from environment variable
-  // Format: comma-separated list of emails, e.g., "admin1@example.com,admin2@example.com"
-  const adminEmailsStr = process.env.ADMIN_EMAILS || '';
-  const adminEmails = adminEmailsStr
-    .split(',')
-    .map((email) => email.trim())
-    .filter(Boolean);
-
-  if (adminEmails.length === 0) {
-    console.warn(
-      'No admin emails configured. Set ADMIN_EMAILS environment variable.',
-    );
-  }
-
-  // Check if user is authenticated and is an admin
-  if (
-    !session ||
-    !session.user ||
-    !adminEmails.includes(session.user.email as string)
-  ) {
-    redirect('/');
-  }
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col">
-        <div className="bg-gray-100 dark:bg-gray-900 p-4">
-          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <div className="min-h-screen bg-background">
+        <AdminSidebar 
+          sidebarOpen={sidebarOpen} 
+          setSidebarOpen={setSidebarOpen} 
+          pathname={pathname}
+        />
+        <div className="flex flex-col md:pl-64">
+          <AdminTopNav setSidebarOpen={setSidebarOpen} />
+          <main className="flex-1">
+            <div className="py-6">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+                {children}
+              </div>
+            </div>
+          </main>
         </div>
-        <main className="flex-1 p-6">{children}</main>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
