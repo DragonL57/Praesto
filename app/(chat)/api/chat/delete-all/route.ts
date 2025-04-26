@@ -1,9 +1,8 @@
 /* eslint-disable import/no-unresolved */
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import { db } from '@/lib/db';
+import { deleteChatById, getChatsByUserId } from '@/lib/db/queries';
 import { chat, message, vote } from '@/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
 
 export async function DELETE() {
   try {
@@ -15,34 +14,24 @@ export async function DELETE() {
     const userId = session.user.id;
 
     // Get all chats for this user
-    const userChats = await db
-      .select({ id: chat.id })
-      .from(chat)
-      .where(eq(chat.userId, userId));
-
-    const chatIds = userChats.map(c => c.id);
+    const { chats: userChats } = await getChatsByUserId({
+      id: userId,
+      limit: 1000, // Using a high limit to get all chats
+      startingAfter: null,
+      endingBefore: null
+    });
 
     // No chats found for user
-    if (chatIds.length === 0) {
+    if (userChats.length === 0) {
       return NextResponse.json({ success: true, deleted: 0 });
     }
 
-    // Delete all votes for these chats
-    await db.delete(vote).where(
-      and(
-        eq(vote.chatId, chatIds[0]) // We'll delete one by one if multiple chats
-      )
+    // Delete each chat (deleteChatById also deletes associated messages and votes)
+    const deletePromises = userChats.map(chat => 
+      deleteChatById({ id: chat.id })
     );
-
-    // Delete all messages for these chats
-    await db.delete(message).where(
-      and(
-        eq(message.chatId, chatIds[0]) // Same approach
-      )
-    );
-
-    // Delete all chats for this user
-    const result = await db.delete(chat).where(eq(chat.userId, userId));
+    
+    await Promise.all(deletePromises);
 
     return NextResponse.json({
       success: true,
