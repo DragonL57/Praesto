@@ -1,15 +1,9 @@
 'use client';
 
+import { useState, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
-import { memo, useState } from 'react';
 import { Markdown } from './markdown';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from './ui/tooltip';
-import { Button } from './ui/button';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface WebsiteContentProps {
   url: string;
@@ -30,7 +24,9 @@ function PureWebsiteContent({
   source,
   fallbackError,
 }: WebsiteContentProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showRawContent, setShowRawContent] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Format the URL for display
   const getFormattedUrl = (url: string) => {
@@ -129,163 +125,193 @@ function PureWebsiteContent({
   // Get appropriate label for the content source
   const getSourceLabel = () => {
     if (source === 'serper-dev-primary') {
-      return 'Content extracted using serper.dev as primary method';
+      return 'Enhanced extraction';
     } else if (source === 'serper-dev-fallback') {
-      return 'Content extracted using serper.dev as fallback method';
+      return 'Fallback extraction';
     } else if (source === 'fallback-scraper') {
-      return 'Content extracted using enhanced scraping technology';
+      return 'Enhanced scraping';
     } else if (source === 'direct') {
-      return 'Content extracted directly from the website';
+      return 'Direct extraction';
     }
-    return null;
+    return detectSerperContent() ? 'Enhanced extraction' : null;
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Handle click outside to collapse
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
+
   return (
-    <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2 items-center text-sm text-muted-foreground">
-          <WebpageIcon size={16} />
-          <span>
-            Content from{' '}
-            <span className="font-medium">{getDomainName(url)}</span>
-          </span>
-          {query && (
-            <span className="text-xs text-muted-foreground">
-              {' '}
-              • Search: &quot;{query}&quot;
-            </span>
-          )}
+    <div
+      ref={contentRef}
+      className={cn(
+        'bg-background border-2 border-border/50 rounded-xl transition-all duration-300 ease-in-out mb-2 w-full',
+        !isExpanded && status === 'success' && content.trim() && 'cursor-pointer',
+      )}
+      onClick={!isExpanded && status === 'success' && content.trim() ? toggleExpanded : undefined}
+      onKeyDown={
+        !isExpanded && status === 'success' && content.trim()
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleExpanded();
+              }
+            }
+          : undefined
+      }
+      tabIndex={!isExpanded && status === 'success' && content.trim() ? 0 : undefined}
+      role={!isExpanded && status === 'success' && content.trim() ? 'button' : undefined}
+      aria-expanded={isExpanded}
+    >
+      {/* Header - Always visible */}
+      <div
+        className={cn(
+          'flex items-center justify-between px-4 py-3',
+          isExpanded && status === 'success' && content.trim() && 'border-b border-border/30',
+        )}
+        onClick={
+          status === 'success' && content.trim()
+            ? (e) => {
+                e.stopPropagation();
+                toggleExpanded();
+              }
+            : undefined
+        }
+        onKeyDown={
+          status === 'success' && content.trim()
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleExpanded();
+                }
+              }
+            : undefined
+        }
+        tabIndex={status === 'success' && content.trim() ? 0 : undefined}
+        role={status === 'success' && content.trim() ? 'button' : undefined}
+        aria-expanded={isExpanded}
+        style={status === 'success' && content.trim() ? { cursor: 'pointer' } : undefined}
+      >
+        <div className="flex items-center gap-2 text-sm">
+          <WebpageIcon size={14} className="text-muted-foreground" />
+          <span className="truncate max-w-[180px]">{getDomainName(url)}</span>
+          {query && <span className="text-xs text-muted-foreground hidden sm:inline-block">• &quot;{query}&quot;</span>}
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a
-                href={getFormattedUrl(url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex size-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                aria-label={`Visit ${getDomainName(url)} website`}
-              >
-                <ExternalLinkIcon size={14} />
-              </a>
-            </TooltipTrigger>
-            <TooltipContent>Visit website</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+
+        <div className="flex items-center gap-2">
+          {status === 'loading' ? (
+            <LoaderIcon size={14} className="text-muted-foreground animate-spin" />
+          ) : status === 'error' ? (
+            <AlertCircleIcon size={14} className="text-destructive" />
+          ) : (
+            <>
+              {getSourceLabel() && (
+                <span className="text-xs text-muted-foreground hidden sm:inline-block">{getSourceLabel()}</span>
+              )}
+              {status === 'success' &&
+                content.trim() &&
+                (isExpanded ? (
+                  <ChevronUpIcon size={14} className="text-muted-foreground" />
+                ) : (
+                  <ChevronDownIcon size={14} className="text-muted-foreground" />
+                ))}
+            </>
+          )}
+          <a
+            href={getFormattedUrl(url)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={`Visit ${getDomainName(url)} website`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLinkIcon size={14} />
+          </a>
+        </div>
       </div>
 
-      {status === 'loading' ? (
-        <div className="flex flex-col w-full space-y-4">
-          <div className="flex items-center justify-center py-6">
-            <div className="animate-spin rounded-full size-8 border-y-2 border-primary" />
-          </div>
+      {/* Content - Only visible when expanded or in loading/error state */}
+      <AnimatePresence>
+        {(isExpanded || status === 'loading' || status === 'error') && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            {status === 'loading' ? (
+              <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                <LoaderIcon size={24} className="animate-spin text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Loading content...</p>
+              </div>
+            ) : status === 'success' && content.trim() && (detectSerperContent() || !isDynamicOrComplexSite()) ? (
+              <div className="p-4 text-sm max-h-[320px] overflow-y-auto">
+                <Markdown>{filterImagesFromContent(content)}</Markdown>
+              </div>
+            ) : (
+              <div className="p-4 space-y-3">
+                <p className="text-sm text-destructive">{error || "Couldn't extract readable content"}</p>
 
-          <div className="space-y-3 border p-4 rounded-md bg-muted/30">
-            {/* Simple placeholder lines instead of Skeleton component */}
-            <div className="h-4 w-3/4 bg-muted rounded" />
-            <div className="h-4 w-full bg-muted rounded" />
-            <div className="h-4 w-5/6 bg-muted rounded" />
-            <div className="h-4 w-full bg-muted rounded" />
-            <div className="h-4 w-4/5 bg-muted rounded" />
-            <div className="h-4 w-3/4 bg-muted rounded" />
-          </div>
+                {fallbackError && (
+                  <p className="text-xs text-muted-foreground">
+                    Both primary and fallback extraction methods failed
+                  </p>
+                )}
 
-          <p className="text-sm text-center text-muted-foreground">
-            Loading content from {getDomainName(url)}...
-          </p>
-        </div>
-      ) : status === 'success' &&
-        content.trim() &&
-        (detectSerperContent() || !isDynamicOrComplexSite()) ? (
-        // Show content if we have valid content from any scraper or it's not a complex site
-        <div className="text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
-          {detectSerperContent() && !getSourceLabel() && (
-            <div className="mb-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <InfoIcon size={14} />
-              <span>Content extracted using enhanced scraping technology</span>
-            </div>
-          )}
-          {getSourceLabel() && (
-            <div
-              className={cn(
-                'mb-3 text-xs flex items-center gap-1',
-                source === 'direct'
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-amber-600 dark:text-amber-400',
-              )}
-            >
-              <InfoIcon size={14} />
-              <span>{getSourceLabel()}</span>
-            </div>
-          )}
-          <Markdown>{filterImagesFromContent(content)}</Markdown>
-        </div>
-      ) : (
-        // Show error state
-        <div className="flex flex-col gap-4 text-sm overflow-auto max-h-60 border p-4 rounded-md bg-muted/30">
-          <div className="text-destructive font-medium">
-            {error || "Couldn't extract readable content from this website"}
-          </div>
+                <p className="text-xs text-muted-foreground">{getSiteSpecificGuidance()}</p>
 
-          {fallbackError ? (
-            <div className="text-amber-600 dark:text-amber-400 text-sm">
-              <p>Both primary extraction and fallback methods failed:</p>
-              <ul className="list-disc pl-5 space-y-1 mt-1">
-                <li>Primary method: {error || 'Failed to extract content'}</li>
-                <li>Fallback method (serper.dev): {fallbackError}</li>
-              </ul>
-            </div>
-          ) : (
-            <div className="text-amber-600 dark:text-amber-400 text-sm">
-              Content extraction failed.
-            </div>
-          )}
+                <div className="flex flex-col gap-2 mt-2">
+                  <p className="text-xs text-muted-foreground">Try visiting the website directly</p>
 
-          <p>{getSiteSpecificGuidance()}</p>
+                  {content && (
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowRawContent(!showRawContent);
+                      }}
+                    >
+                      {showRawContent ? (
+                        <>
+                          <ChevronUpIcon size={12} />
+                          <span>Hide raw content</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDownIcon size={12} />
+                          <span>Show raw content</span>
+                        </>
+                      )}
+                    </button>
+                  )}
 
-          <div className="flex flex-col gap-3 mt-2">
-            <p className="font-medium">Suggestions:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                Visit the website directly using the link in the top-right
-              </li>
-              <li>
-                Try asking a specific question about the website&apos;s content
-              </li>
-              <li>
-                If you have access to the content, try copying and pasting
-                relevant sections directly
-              </li>
-              {isDynamicOrComplexSite() && (
-                <li>
-                  For forum posts or complex pages, try viewing in Reader Mode
-                  in your browser first, then share the content
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {content && (
-            <div className="mt-3">
-              <Button
-                variant="outline"
-                className="text-xs"
-                onClick={() => setShowRawContent(!showRawContent)}
-              >
-                {showRawContent
-                  ? 'Hide raw content'
-                  : 'Show raw extracted content'}
-              </Button>
-
-              {showRawContent && (
-                <div className="mt-3 border border-dashed p-3 overflow-auto max-h-40 text-xs opacity-70">
-                  <pre>{content}</pre>
+                  {showRawContent && content && (
+                    <div className="mt-2 border border-dashed border-border/30 p-3 rounded-md overflow-auto max-h-40 text-xs text-muted-foreground">
+                      <pre>{content}</pre>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -333,6 +359,98 @@ function ExternalLinkIcon({
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+      />
+    </svg>
+  );
+}
+
+function ChevronUpIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn('stroke-current', className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 15l7-7 7 7"
+      />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn('stroke-current', className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  );
+}
+
+function LoaderIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn('stroke-current', className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+      />
+    </svg>
+  );
+}
+
+function AlertCircleIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn('stroke-current', className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );
