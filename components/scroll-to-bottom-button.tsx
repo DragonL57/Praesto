@@ -70,11 +70,11 @@ function PureScrollToBottomButton({
     <div className="fixed w-full max-w-3xl left-1/2 -translate-x-1/2 bottom-[70px] md:bottom-[86px] z-50 flex justify-center items-center px-4">
       <Button
         onClick={scrollToBottom}
-        className={`rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all duration-300 size-10 p-0 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+        className={`rounded-full shadow-lg bg-muted-foreground/70 hover:bg-muted-foreground transition-all duration-300 size-10 p-0 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
         size="icon"
         aria-label="Scroll to bottom"
       >
-        <LuArrowDownToLine size={20} className="text-primary-foreground" />
+        <LuArrowDownToLine size={20} className="text-muted" />
       </Button>
     </div>
   );

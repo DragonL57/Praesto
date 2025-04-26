@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 
 import { ModelSelector } from '@/components/model-selector';
@@ -10,7 +10,8 @@ import { PlusIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
 import { memo, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType, VisibilitySelector } from './visibility-selector';
+import { type VisibilityType } from './visibility-selector';
+import { ShareDialog } from './share-dialog';
 
 function PureChatHeader({
   chatId,
@@ -24,10 +25,14 @@ function PureChatHeader({
   isReadonly: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { open } = useSidebar();
   // Use client-side only rendering for the buttons to avoid hydration issues
   const [mounted, setMounted] = useState(false);
   const { width: windowWidth } = useWindowSize();
+  
+  // Check if we're in a specific chat (not the root /chat page)
+  const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
 
   // Only render dynamic content after hydration
   useEffect(() => {
@@ -68,8 +73,8 @@ function PureChatHeader({
             />
           )}
 
-          {!isReadonly && (
-            <VisibilitySelector
+          {!isReadonly && isInSavedChat && (
+            <ShareDialog
               chatId={chatId}
               selectedVisibilityType={selectedVisibilityType}
               className="order-1 md:order-3 md:ml-auto"

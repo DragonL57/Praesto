@@ -67,12 +67,11 @@ function PureMessages({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col w-full"
+      className="absolute inset-0 flex flex-col w-full scrollbar-thin scrollbar-thumb-muted-foreground/50 hover:scrollbar-thumb-muted-foreground scrollbar-track-transparent"
       style={{
         overflowY: 'auto',
         overflowX: 'hidden',
         right: '0px',
-        scrollbarWidth: 'thin',
         scrollbarGutter: 'stable',
       }}
       ref={containerRef}

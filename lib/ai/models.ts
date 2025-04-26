@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'google-gemini-flash';
+export const DEFAULT_CHAT_MODEL: string = 'chat-model';
 
 interface ChatModel {
   id: string;
