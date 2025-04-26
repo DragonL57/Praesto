@@ -145,7 +145,7 @@ function PureMultiToolResults({ results }: MultiToolResultsProps) {
       >
         <div className="flex items-center gap-2 text-sm">
           <ResearchIcon size={14} className="text-muted-foreground" />
-          <span className="text-sm">AI research</span>
+          <span className="text-sm">Reading websites</span>
         </div>
 
         <div className="flex items-center gap-2">
