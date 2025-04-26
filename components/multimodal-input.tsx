@@ -379,7 +379,7 @@ function PureAttachmentsButton({
       variant="ghost"
       aria-label="Attach files"
     >
-      <PaperclipIcon size={14} />
+      <PaperclipIcon size={16} />
       <span className="sr-only">Attach files</span>
     </Button>
   );
@@ -397,7 +397,7 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className="rounded-full p-1.5 h-fit border dark:border-zinc-600"
+      className="rounded-full p-2 h-fit border dark:border-zinc-600"
       onClick={(event) => {
         event.preventDefault();
         stop();
@@ -405,7 +405,7 @@ function PureStopButton({
       }}
       aria-label="Stop generating"
     >
-      <StopIcon size={14} />
+      <StopIcon size={16} />
       <span className="sr-only">Stop generating</span>
     </Button>
   );
@@ -425,7 +425,7 @@ function PureSendButton({
   return (
     <Button
       data-testid="send-button"
-      className="rounded-full p-1.5 h-fit border dark:border-zinc-600"
+      className="rounded-full p-2 h-fit border dark:border-zinc-600"
       onClick={(event) => {
         event.preventDefault();
         submitForm();
@@ -433,7 +433,7 @@ function PureSendButton({
       disabled={input.length === 0 || uploadQueue.length > 0}
       aria-label="Send message"
     >
-      <ArrowUpIcon size={14} />
+      <ArrowUpIcon size={16} />
       <span className="sr-only">Send message</span>
     </Button>
   );
