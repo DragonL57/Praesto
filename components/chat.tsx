@@ -2,7 +2,7 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -30,6 +30,10 @@ export function Chat({
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+
+  // Create refs for message container and end element
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -93,6 +97,8 @@ export function Chat({
             reload={reload}
             isReadonly={isReadonly}
             isArtifactVisible={isArtifactVisible}
+            messagesContainerRef={messagesContainerRef}
+            messagesEndRef={messagesEndRef}
           />
         </div>
 
@@ -111,6 +117,8 @@ export function Chat({
                 messages={messages}
                 setMessages={setMessages}
                 append={append}
+                messagesContainerRef={messagesContainerRef}
+                messagesEndRef={messagesEndRef}
               />
             )}
           </form>

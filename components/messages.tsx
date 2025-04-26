@@ -7,7 +7,6 @@ import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
-import { ScrollToBottomButton } from './scroll-to-bottom-button';
 
 interface MessagesProps {
   chatId: string;
@@ -18,6 +17,8 @@ interface MessagesProps {
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  messagesContainerRef?: React.RefObject<HTMLDivElement>;
+  messagesEndRef?: React.RefObject<HTMLDivElement>;
 }
 
 function PureMessages({
@@ -28,18 +29,23 @@ function PureMessages({
   setMessages,
   reload,
   isReadonly,
+  messagesContainerRef: externalContainerRef,
+  messagesEndRef: externalEndRef,
 }: MessagesProps) {
-  // Instead of using the useScrollToBottom hook which is too sensitive,
-  // we'll implement a more selective scrolling mechanism
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Use external refs if provided, otherwise create our own
+  const internalContainerRef = useRef<HTMLDivElement>(null);
+  const internalEndRef = useRef<HTMLDivElement>(null);
+  
+  const containerRef = externalContainerRef || internalContainerRef;
+  const endRef = externalEndRef || internalEndRef;
+  
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const isStreamingRef = useRef<boolean>(status === 'streaming');
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    const end = messagesEndRef.current;
+    const container = containerRef.current;
+    const end = endRef.current;
 
     if (container && end) {
       const shouldScrollToBottom =
@@ -57,7 +63,7 @@ function PureMessages({
 
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
-  }, [messages.length, status]);
+  }, [messages.length, status, containerRef, endRef]);
 
   return (
     <div
@@ -69,7 +75,7 @@ function PureMessages({
         scrollbarWidth: 'thin',
         scrollbarGutter: 'stable',
       }}
-      ref={messagesContainerRef}
+      ref={containerRef}
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
         {messages.length === 0 && <Greeting />}
@@ -106,15 +112,10 @@ function PureMessages({
           )}
 
         <div
-          ref={messagesEndRef}
+          ref={endRef}
           className="shrink-0 min-w-[24px] min-h-[24px]"
         />
       </div>
-
-      <ScrollToBottomButton
-        containerRef={messagesContainerRef}
-        endRef={messagesEndRef}
-      />
     </div>
   );
 }

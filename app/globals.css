@@ -110,3 +110,17 @@ body {
     transform: translateY(0);
   }
 }
+
+
+/* Nested bullet styles using CSS selectors */
+.nested-bullets {
+  list-style-type: disc;
+}
+
+.nested-bullets .nested-bullets {
+  list-style-type: circle;
+}
+
+.nested-bullets .nested-bullets .nested-bullets {
+  list-style-type: square;
+}

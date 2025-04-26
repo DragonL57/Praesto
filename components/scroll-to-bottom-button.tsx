@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from './ui/button';
-import { ArrowUpIcon } from './icons';
 import { memo, useEffect, useState } from 'react';
+import { LuArrowDownToLine } from "react-icons/lu";
 
 interface ScrollToBottomButtonProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -67,16 +67,16 @@ function PureScrollToBottomButton({
   }
 
   return (
-    <Button
-      onClick={scrollToBottom}
-      className={`fixed bottom-20 right-10 z-50 rounded-full shadow-md hover:shadow-lg transition-all duration-200 size-8 p-0 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-      size="icon"
-      aria-label="Scroll to bottom"
-    >
-      <div className="rotate-180">
-        <ArrowUpIcon size={20} />
-      </div>
-    </Button>
+    <div className="fixed w-full max-w-3xl left-1/2 -translate-x-1/2 bottom-[70px] md:bottom-[86px] z-50 flex justify-center items-center px-4">
+      <Button
+        onClick={scrollToBottom}
+        className={`rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all duration-300 size-10 p-0 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+        size="icon"
+        aria-label="Scroll to bottom"
+      >
+        <LuArrowDownToLine size={20} className="text-primary-foreground" />
+      </Button>
+    </div>
   );
 }
 
