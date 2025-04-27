@@ -8,6 +8,7 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 
 import { PreviewMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
+import { ScrollToBottomButton } from './scroll-to-bottom-button';
 
 interface ArtifactMessagesProps {
   chatId: string;
@@ -29,13 +30,13 @@ function PureArtifactMessages({
   reload,
   isReadonly,
 }: ArtifactMessagesProps) {
-  const [messagesContainerRef, messagesEndRef] =
+  const [messagesContainerRef, messagesEndRef, scrollToBottom] =
     useScrollToBottom<HTMLDivElement>();
 
   return (
     <div
       ref={messagesContainerRef}
-      className="flex flex-col gap-4 h-full items-center overflow-y-scroll px-4 pt-20"
+      className="flex flex-col gap-4 h-full items-center overflow-y-scroll px-4 pt-20 relative"
     >
       {messages.map((message, index) => (
         <PreviewMessage
@@ -58,6 +59,14 @@ function PureArtifactMessages({
         ref={messagesEndRef}
         className="shrink-0 min-w-[24px] min-h-[24px]"
       />
+      
+      {/* Use our custom ScrollToBottomButton component instead of relying on auto-scroll */}
+      {messages.length > 2 && (
+        <ScrollToBottomButton 
+          containerRef={messagesContainerRef}
+          endRef={messagesEndRef}
+        />
+      )}
     </div>
   );
 }
