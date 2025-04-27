@@ -6,6 +6,21 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Create a VisuallyHidden component for accessibility
+const VisuallyHidden = ({
+  children
+}: {
+  children: React.ReactNode
+}) => {
+  return (
+    <span
+      className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,_0,_0,_0)] whitespace-nowrap border-0"
+    >
+      {children}
+    </span>
+  )
+}
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -29,10 +44,16 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+interface DialogContentProps
+  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  title?: string;
+  description?: string;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, title = "Dialog", description, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -43,6 +64,18 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
+      {/* Add hidden title for accessibility */}
+      <DialogPrimitive.Title asChild>
+        <VisuallyHidden>{title}</VisuallyHidden>
+      </DialogPrimitive.Title>
+      
+      {/* Add hidden description for accessibility if provided */}
+      {description && (
+        <DialogPrimitive.Description asChild>
+          <VisuallyHidden>{description}</VisuallyHidden>
+        </DialogPrimitive.Description>
+      )}
+      
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
         <X className="h-4 w-4" />
