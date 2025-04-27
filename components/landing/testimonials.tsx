@@ -8,44 +8,44 @@ import { Card, CardContent } from "@/components/ui/card"
 const testimonialsData = [
   {
     quote:
-      "SaaSify has transformed how we manage our projects. The automation features have saved us countless hours of manual work.",
+      "UniTaskAI has transformed our content strategy. We create blog posts and marketing emails in minutes that used to take our team days. The quality is consistently impressive.",
     author: "Sarah Johnson",
-    role: "Project Manager, TechCorp",
+    role: "Content Marketing Manager, TechGrowth",
     rating: 5,
   },
   {
     quote:
-      "The analytics dashboard provides insights we never had access to before. It's helped us make data-driven decisions that have improved our ROI.",
+      "As a developer, I was skeptical about AI coding tools, but UniTaskAI has become my secret weapon. It helps me prototype faster and solves bugs that would have taken hours to track down.",
     author: "Michael Chen",
-    role: "Marketing Director, GrowthLabs",
+    role: "Senior Developer, CodeStack",
     rating: 5,
   },
   {
     quote:
-      "Customer support is exceptional. Any time we've had an issue, the team has been quick to respond and resolve it. Couldn't ask for better service.",
+      "The data analysis capabilities are incredible. We can ask questions about our metrics in plain English and get instant visualizations and insights. Game-changer for our quarterly reports.",
     author: "Emily Rodriguez",
-    role: "Operations Lead, StartupX",
+    role: "Data Analyst, InsightFlow",
     rating: 5,
   },
   {
     quote:
-      "We've tried several similar solutions, but none compare to the ease of use and comprehensive features of SaaSify. It's been a game-changer.",
+      "As a solopreneur, UniTaskAI feels like having a full team at my fingertips. I use it for everything from drafting proposals to building landing pages and analyzing customer feedback.",
     author: "David Kim",
-    role: "CEO, InnovateNow",
+    role: "Founder, LaunchPad",
     rating: 5,
   },
   {
     quote:
-      "The collaboration tools have made remote work so much easier for our team. We're more productive than ever despite being spread across different time zones.",
+      "Our creative team uses UniTaskAI for brainstorming sessions. The ideas it generates have led to some of our most successful campaigns. It's like having an extra creative director.",
     author: "Lisa Patel",
-    role: "HR Director, RemoteFirst",
+    role: "Creative Director, Spark Agency",
     rating: 5,
   },
   {
     quote:
-      "Implementation was seamless, and the ROI was almost immediate. We've reduced our operational costs by 30% since switching to SaaSify.",
+      "UniTaskAI has reduced our research time by 70%. Whether we need market analysis or competitive insights, the AI delivers high-quality information that we can trust and act on.",
     author: "James Wilson",
-    role: "COO, ScaleUp Inc",
+    role: "Strategy Consultant, FutureEdge",
     rating: 5,
   },
 ]
@@ -62,11 +62,11 @@ export function Testimonials() {
           className="flex flex-col items-center justify-center space-y-4 text-center mb-12"
         >
           <Badge className="rounded-full px-4 py-1.5 text-sm font-medium" variant="secondary">
-            Testimonials
+            Success Stories
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Loved by Teams Worldwide</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">AI That Delivers Results</h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Don&apos;t just take our word for it. See what our customers have to say about their experience.
+            See how professionals across industries are using UniTaskAI to transform their work and achieve more in less time.
           </p>
         </motion.div>
 

@@ -6,18 +6,18 @@ import { Badge } from "@/components/ui/badge"
 const steps = [
   {
     step: "01",
-    title: "Create Account",
-    description: "Sign up in seconds with just your email. No credit card required to get started.",
+    title: "Start a Conversation",
+    description: "Simply tell UniTaskAI what you need in plain language – from writing content to generating code or analyzing data.",
   },
   {
     step: "02",
-    title: "Configure Workspace",
-    description: "Customize your workspace to match your team's unique workflow and requirements.",
+    title: "Get AI-Generated Results",
+    description: "Watch as our advanced AI instantly creates high-quality content, functional code, or insightful analytics based on your request.",
   },
   {
     step: "03",
-    title: "Boost Productivity",
-    description: "Start using our powerful features to streamline processes and achieve your goals.",
+    title: "Edit & Export",
+    description: "Refine the results with follow-up prompts, then export to your preferred format or integrate directly with your workflow.",
   },
 ]
 
@@ -35,11 +35,11 @@ export function HowItWorks() {
           className="flex flex-col items-center justify-center space-y-4 text-center mb-16"
         >
           <Badge className="rounded-full px-4 py-1.5 text-sm font-medium" variant="secondary">
-            How It Works
+            Your AI Workflow
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Simple Process, Powerful Results</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From Prompt to Perfect in Minutes</h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Get started in minutes and see the difference our platform can make for your business.
+            UniTaskAI transforms complex tasks into simple conversations. No technical expertise required – just describe what you need and watch it happen.
           </p>
         </motion.div>
 

@@ -1,40 +1,40 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Zap, BarChart, Users, Shield, Layers, Star } from "lucide-react"
+import { Code, FileText, Database, Zap, MessageSquare, Lightbulb } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 const featuresData = [
   {
-    title: "Smart Automation",
-    description: "Automate repetitive tasks and workflows to save time and reduce errors.",
+    title: "AI Content Creation",
+    description: "Generate high-quality blog posts, marketing copy, emails, and creative content in seconds with advanced AI assistance.",
+    icon: <FileText className="size-5" />,
+  },
+  {
+    title: "Code Generation",
+    description: "Turn your ideas into working code across multiple programming languages with intelligent code snippets and explanations.",
+    icon: <Code className="size-5" />,
+  },
+  {
+    title: "Data Analysis",
+    description: "Extract insights from your data with AI-powered charts, trends identification, and natural language queries.",
+    icon: <Database className="size-5" />,
+  },
+  {
+    title: "Task Automation",
+    description: "Automate repetitive workflows and processes with no-code AI solutions that save time and reduce errors.",
     icon: <Zap className="size-5" />,
   },
   {
-    title: "Advanced Analytics",
-    description: "Gain valuable insights with real-time data visualization and reporting.",
-    icon: <BarChart className="size-5" />,
+    title: "Smart Chat Interface",
+    description: "Engage with our advanced AI through a conversational interface that understands context and remembers your preferences.",
+    icon: <MessageSquare className="size-5" />,
   },
   {
-    title: "Team Collaboration",
-    description: "Work together seamlessly with integrated communication tools.",
-    icon: <Users className="size-5" />,
-  },
-  {
-    title: "Enterprise Security",
-    description: "Keep your data safe with end-to-end encryption and compliance features.",
-    icon: <Shield className="size-5" />,
-  },
-  {
-    title: "Seamless Integration",
-    description: "Connect with your favorite tools through our extensive API ecosystem.",
-    icon: <Layers className="size-5" />,
-  },
-  {
-    title: "24/7 Support",
-    description: "Get help whenever you need it with our dedicated support team.",
-    icon: <Star className="size-5" />,
+    title: "Idea Generation",
+    description: "Overcome creative blocks with AI-powered brainstorming for new business ideas, strategies, and solutions.",
+    icon: <Lightbulb className="size-5" />,
   },
 ]
 
@@ -65,12 +65,12 @@ export function Features() {
           className="flex flex-col items-center justify-center space-y-4 text-center mb-12"
         >
           <Badge className="rounded-full px-4 py-1.5 text-sm font-medium" variant="secondary">
-            Features
+            AI Superpowers
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything You Need to Succeed</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">One AI, Unlimited Possibilities</h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Our comprehensive platform provides all the tools you need to streamline your workflow, boost
-            productivity, and achieve your goals.
+            UniTaskAI transforms how you work with AI-powered tools that adapt to your needs. 
+            Whether you&apos;re drafting content, coding, or analyzing data, our platform amplifies your capabilities.
           </p>
         </motion.div>
 
@@ -83,7 +83,7 @@ export function Features() {
         >
           {featuresData.map((feature, i) => (
             <motion.div key={i} variants={item}>
-              <Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md">
+              <Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md hover:border-primary/20">
                 <CardContent className="p-6 flex flex-col h-full">
                   <div className="size-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary mb-4">
                     {feature.icon}
