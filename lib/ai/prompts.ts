@@ -40,6 +40,30 @@ const _codePrompt = `
 // Export the constant
 export const codePrompt = _codePrompt;
 
+// Mathematical notation prompt - add instructions for LaTeX formatting
+export const mathPrompt = `
+# Mathematical Expression Guidelines
+- **Purpose:** Ensure all mathematical expressions and equations are presented clearly and professionally.
+
+- **LaTeX Formatting Requirements:**
+  1.  **ALWAYS use LaTeX notation** for mathematical expressions, never plain text approximations
+  2.  **Inline equations:** Use single dollar signs for inline math expressions ($E = mc^2$)
+  3.  **Block/display equations:** Use double dollar signs for standalone equations ($$\\int_a^b f(x) dx = F(b) - F(a)$$)
+  4.  **Use proper LaTeX commands** for mathematical symbols (\\alpha, \\sum, \\frac{}{}, etc.)
+  5.  **Format matrices** using proper LaTeX environments (\\begin{matrix}, \\begin{pmatrix}, etc.)
+  6.  **Number equations** when appropriate in longer explanations with multiple formulas
+
+- **Common Mathematical Expressions:**
+  - Fractions: \\frac{numerator}{denominator}
+  - Integrals: \\int_{lower}^{upper} expression dx
+  - Summations: \\sum_{i=1}^{n} term_i
+  - Limits: \\lim_{x \\to a} f(x)
+  - Greek symbols: \\alpha, \\beta, \\gamma, etc.
+  - Sets and logic: \\in, \\subset, \\cup, \\cap, \\forall, \\exists
+
+- **Always double-check your LaTeX** to ensure correct syntax and proper rendering
+`;
+
 export const sheetPrompt = `
 # Spreadsheet Creation Guidelines
 - **Purpose:** Create well-structured spreadsheets with proper formatting and meaningful data.
@@ -117,7 +141,7 @@ export const systemPrompt = ({
 `;
   }
 
-  return `${personaPrompt}\n\n${codePrompt}\n\n${sheetPrompt}\n\n${timeContext}`;
+  return `${personaPrompt}\n\n${codePrompt}\n\n${mathPrompt}\n\n${sheetPrompt}\n\n${timeContext}`;
 };
 
 export const updateDocumentPrompt = (
