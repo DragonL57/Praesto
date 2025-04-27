@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/tooltip';
 
 import { Button } from './ui/button';
-import { GoSidebarExpand, GoSidebarCollapse } from 'react-icons/go';
+import { LuPanelLeftClose, LuPanelLeftOpen} from 'react-icons/lu';
 
 export function SidebarToggle({
   // Use destructuring to ignore the className prop without renaming it
@@ -25,7 +25,7 @@ export function SidebarToggle({
           className="md:px-2 md:h-fit"
           aria-label="Toggle Sidebar"
         >
-          {open ? <GoSidebarExpand size={16} /> : <GoSidebarCollapse size={16} />}
+          {open ? <LuPanelLeftClose size={16} /> : <LuPanelLeftOpen size={16} />}
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </TooltipTrigger>

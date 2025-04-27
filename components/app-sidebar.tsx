@@ -3,7 +3,6 @@
 import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
-import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { PiNotePencilBold } from "react-icons/pi";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       router.refresh();
                     }}
                   >
-                    <PlusIcon />
+                    <PiNotePencilBold size={16} />
                     <span className="sr-only">New Chat</span>
                   </Button>
                 </TooltipTrigger>
