@@ -25,13 +25,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   const session = await auth();
+  const isAuthenticated = !!session?.user;
 
   if (chat.visibility === 'private') {
-    if (!session || !session.user) {
+    if (!isAuthenticated) {
       return notFound();
     }
 
-    if (session.user.id !== chat.userId) {
+    if (!session?.user || session.user.id !== chat.userId) {
       return notFound();
     }
   }
@@ -64,7 +65,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           initialMessages={convertToUIMessages(messagesFromDb)}
           selectedChatModel={DEFAULT_CHAT_MODEL}
           selectedVisibilityType={chat.visibility}
-          isReadonly={session?.user?.id !== chat.userId}
+          isReadonly={!session?.user || session.user.id !== chat.userId}
+          isAuthenticated={isAuthenticated}
         />
         <DataStreamHandler id={id} />
       </PageTransition>
@@ -78,7 +80,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         initialMessages={convertToUIMessages(messagesFromDb)}
         selectedChatModel={chatModelFromCookie.value}
         selectedVisibilityType={chat.visibility}
-        isReadonly={session?.user?.id !== chat.userId}
+        isReadonly={!session?.user || session.user.id !== chat.userId}
+        isAuthenticated={isAuthenticated}
       />
       <DataStreamHandler id={id} />
     </PageTransition>

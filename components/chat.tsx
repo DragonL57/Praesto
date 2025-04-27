@@ -22,12 +22,14 @@ export function Chat({
   selectedChatModel,
   selectedVisibilityType,
   isReadonly,
+  isAuthenticated,
 }: {
   id: string;
   initialMessages: Array<UIMessage>;
   selectedChatModel: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
+  isAuthenticated: boolean;
 }) {
   const { mutate } = useSWRConfig();
 
@@ -85,6 +87,7 @@ export function Chat({
           selectedModelId={selectedChatModel}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
+          isAuthenticated={isAuthenticated}
         />
 
         <div className="flex-1 overflow-hidden relative w-full">

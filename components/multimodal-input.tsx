@@ -359,7 +359,7 @@ function PureMultimodalInput({
         </div>
         
         {/* Disclaimer text positioned underneath without affecting layout */}
-        <div className="absolute -bottom-6 left-0 right-0 text-center pointer-events-none">
+        <div className="absolute -bottom-6 inset-x-0 text-center pointer-events-none">
           <span className="text-xs text-muted-foreground">UniTaskAI can make mistakes, double-check the info.</span>
         </div>
       </div>
