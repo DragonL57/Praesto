@@ -17,6 +17,7 @@ export const authConfig = {
       const isOnApi = nextUrl.pathname.startsWith('/api');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isSharedChat = nextUrl.pathname.match(/^\/chat\/[a-zA-Z0-9-]+$/); // Match shared chat URL pattern
 
       // Allow access to landing page without authentication
       if (isRootPath) {
@@ -30,6 +31,11 @@ export const authConfig = {
 
       if (isOnRegister || isOnLogin) {
         return true; // Always allow access to register and login pages
+      }
+      
+      // Allow access to shared chat URLs without authentication
+      if (isSharedChat) {
+        return true;
       }
 
       if (isOnChat || isOnApi) {
