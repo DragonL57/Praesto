@@ -30,7 +30,7 @@ function PureArtifactMessages({
   reload,
   isReadonly,
 }: ArtifactMessagesProps) {
-  const [messagesContainerRef, messagesEndRef, scrollToBottom] =
+  const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
   return (

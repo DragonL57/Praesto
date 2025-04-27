@@ -69,7 +69,7 @@ function PureScrollToBottomButton({
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, []); // Empty dependency array as we use refs for fresh values
+  }, [containerRef]); // Empty dependency array as we use refs for fresh values
 
   // Control rendering based on visibility for fade in/out effect
   useEffect(() => {
