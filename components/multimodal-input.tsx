@@ -25,6 +25,7 @@ import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LuArrowDownToLine } from "react-icons/lu";
+import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 
 function PureMultimodalInput({
   chatId,
@@ -335,6 +336,7 @@ function PureMultimodalInput({
       </div>
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
+        <SpeechToTextButton setInput={setInput} status={status} input={input} />
         {(status === 'submitted' || status === 'streaming') ? (
           <StopButton stop={stop} setMessages={setMessages} />
         ) : (
@@ -519,3 +521,135 @@ function ScrollButton({
     </div>
   );
 }
+
+function PureSpeechToTextButton({
+  setInput,
+  status,
+  input,
+}: {
+  setInput: UseChatHelpers['setInput'];
+  status: UseChatHelpers['status'];
+  input: string;
+}) {
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  // Using a more specific type instead of 'any'
+  type SpeechRecognitionInstance = {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onstart: (event: Event) => void;
+    onresult: (event: any) => void;
+    onerror: (event: any) => void;
+    onend: (event: Event) => void;
+    start: () => void;
+    stop: () => void;
+  };
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+
+  // Check if speech recognition is supported
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+    }
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (!speechSupported) {
+      toast.error("Speech recognition is not supported in your browser");
+      return;
+    }
+
+    if (isListening) {
+      // Stop listening
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsListening(false);
+    } else {
+      // Start listening
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          toast.error("Speech recognition is not supported in your browser");
+          return;
+        }
+        
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US'; // Set language - could be made configurable
+        
+        recognition.onstart = () => {
+          setIsListening(true);
+          toast.info("Listening...");
+        };
+        
+        recognition.onresult = (event) => {
+          // Get only the latest result to prevent duplication
+          const lastResultIndex = event.results.length - 1;
+          const lastResult = event.results[lastResultIndex];
+          const transcript = lastResult[0].transcript;
+          
+          // Replace the entire input rather than appending
+          if (lastResult.isFinal) {
+            setInput((currentInput) => {
+              // For final results, keep existing input and only add the new text
+              if (currentInput && !transcript.startsWith(currentInput)) {
+                // Add a space if needed
+                if (currentInput.trim().length > 0 && !currentInput.endsWith(' ')) {
+                  return `${currentInput} ${transcript}`;
+                }
+                return `${currentInput}${transcript}`;
+              }
+              return transcript;
+            });
+          }
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          toast.error(`Speech recognition error: ${event.error}`);
+        };
+        
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+        
+        recognition.start();
+        recognitionRef.current = recognition;
+      } catch (error) {
+        console.error("Error starting speech recognition:", error);
+        toast.error("Failed to start speech recognition");
+        setIsListening(false);
+      }
+    }
+  }, [isListening, setInput, speechSupported]);
+
+  if (!speechSupported) {
+    return null;
+  }
+
+  return (
+    <Button
+      data-testid="speech-to-text-button"
+      className={`rounded-md mx-1 p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
+      onClick={(event) => {
+        event.preventDefault();
+        toggleListening();
+      }}
+      disabled={status !== 'ready'}
+      variant="ghost"
+      aria-label={isListening ? "Stop listening" : "Start speech recognition"}
+    >
+      {isListening ? <FaMicrophoneSlash size={16} className="text-red-500" /> : <FaMicrophone size={16} />}
+      <span className="sr-only">{isListening ? "Stop listening" : "Start speech recognition"}</span>
+    </Button>
+  );
+}
+
+const SpeechToTextButton = memo(PureSpeechToTextButton);
