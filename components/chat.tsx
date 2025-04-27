@@ -2,11 +2,13 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { useLocalStorage } from 'usehooks-ts';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
+import { DEFAULT_PERSONA_ID } from '@/lib/ai/personas';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -31,6 +33,11 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
+  // Get the selected persona from localStorage
+  const [selectedPersonaId] = useLocalStorage('selected-persona-id', DEFAULT_PERSONA_ID);
+  // Track when persona changes to avoid unnecessary reloads
+  const [prevPersonaId, setPrevPersonaId] = useState(selectedPersonaId);
+
   // Create refs for message container and end element
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,6 +57,7 @@ export function Chat({
     body: { 
       id, 
       selectedChatModel: selectedChatModel,
+      personaId: selectedPersonaId, // Send the selected persona ID to the API
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
@@ -68,6 +76,29 @@ export function Chat({
       toast.error('An error occurred, please try again!');
     },
   });
+
+  // Much safer approach to handling persona changes - only reload when necessary
+  // and only when the chat is idle (status === 'ready')
+  useEffect(() => {
+    // Only reload if persona changed AND we have messages AND we're not currently in the middle of generating
+    if (selectedPersonaId !== prevPersonaId && messages.length > 0 && status === 'ready') {
+      // Save the new persona ID to prevent duplicate reloads
+      setPrevPersonaId(selectedPersonaId);
+      
+      // Show toast notification to inform user
+      toast.info(`Switched to ${selectedPersonaId === 'witty' ? 'Sassy Scholar' : 'Standard'} persona`);
+      
+      // Wait a bit before reloading to avoid race conditions
+      const timeoutId = setTimeout(() => {
+        reload();
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    } else if (selectedPersonaId !== prevPersonaId) {
+      // Update the ID without reloading if we don't have messages yet or are busy
+      setPrevPersonaId(selectedPersonaId);
+    }
+  }, [selectedPersonaId, prevPersonaId, reload, messages.length, status]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

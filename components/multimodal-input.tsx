@@ -28,6 +28,7 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LuArrowDownToLine } from "react-icons/lu";
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
+import PersonaSelector from './persona-selector';
 import type { 
   SpeechRecognition,
   SpeechRecognitionEvent,
@@ -341,11 +342,14 @@ function PureMultimodalInput({
           }}
         />
 
-        <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
-          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+        {/* Left side - only persona selector */}
+        <div className="absolute bottom-0 left-2 p-2 w-fit flex flex-row justify-start items-center">
+          <PersonaSelector />
         </div>
 
-        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
+        {/* Right side - attachments, speech-to-text, and send buttons */}
+        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end items-center">
+          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
           <SpeechToTextButton setInput={setInput} status={status} input={input} />
           {(status === 'submitted' || status === 'streaming') ? (
             <StopButton stop={stop} setMessages={setMessages} />
