@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useOptimistic, useState } from 'react';
 
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 
@@ -22,8 +23,27 @@ export function ModelSelector({
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
-  const [optimisticModelId, setOptimisticModelId] =
-    useOptimistic(selectedModelId);
+  // Use local storage to persist model selection without server action
+  const [localModelId, setLocalModelId] = useLocalStorage('selected-chat-model-id', selectedModelId);
+  
+  // This optimistic state handles immediate UI updates
+  const [optimisticModelId, setOptimisticModelId] = useOptimistic(localModelId);
+
+  // Update server cookie without causing UI refresh (debounced)
+  const saveModelCookie = useCallback((modelId: string) => {
+    // Using a zero timeout to move this to the end of the event loop
+    // This prevents the server action from blocking the UI update
+    setTimeout(() => {
+      saveChatModelAsCookie(modelId);
+    }, 0);
+  }, []);
+
+  // Sync local storage with server cookie when component mounts
+  useEffect(() => {
+    if (localModelId !== selectedModelId) {
+      saveModelCookie(localModelId);
+    }
+  }, [localModelId, selectedModelId, saveModelCookie]);
 
   const selectedChatModel = useMemo(
     () => chatModels.find((chatModel) => chatModel.id === optimisticModelId),
@@ -60,8 +80,12 @@ export function ModelSelector({
                 setOpen(false);
 
                 startTransition(() => {
+                  // Update local state first - this is immediate and doesn't refresh
                   setOptimisticModelId(id);
-                  saveChatModelAsCookie(id);
+                  setLocalModelId(id);
+                  
+                  // Then update server cookie in background without causing refresh
+                  saveModelCookie(id);
                 });
               }}
               data-active={id === optimisticModelId}
