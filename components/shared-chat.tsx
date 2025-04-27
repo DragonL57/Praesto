@@ -4,15 +4,12 @@ import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useState, useRef } from 'react';
 import useSWR from 'swr';
-import Link from 'next/link';
 import { fetcher, generateUUID } from '@/lib/utils';
 import { Messages } from './messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
 import { SharedChatHeader } from './shared-chat-header';
-import { MultimodalInput } from './multimodal-input';
 import { SharedArtifact } from './shared-artifact';
 import type { Vote } from '@/lib/db/schema';
 
@@ -90,37 +87,6 @@ export function SharedChat({
             messagesContainerRef={messagesContainerRef}
             messagesEndRef={messagesEndRef}
           />
-        </div>
-
-        <div className="shrink-0">
-          <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
-            {!isReadonly && (
-              <MultimodalInput
-                chatId={id}
-                input={input}
-                setInput={setInput}
-                handleSubmit={handleSubmit}
-                status={status}
-                stop={stop}
-                attachments={attachments}
-                setAttachments={setAttachments}
-                messages={messages}
-                setMessages={setMessages}
-                append={append}
-                messagesContainerRef={messagesContainerRef}
-                messagesEndRef={messagesEndRef}
-              />
-            )}
-            {isReadonly && (
-              <div className="flex w-full justify-center py-2">
-                <Link href="/chat" passHref>
-                  <Button>
-                    Start your own conversation
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </form>
         </div>
       </div>
       

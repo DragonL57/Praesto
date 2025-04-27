@@ -22,7 +22,7 @@ function PureSharedChatHeader() {
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
       {mounted ? (
         <>
-          {/* Left section with New Chat button */}
+          {/* Left section with Start your own conversation button */}
           <div className="flex-1">
             <TooltipProvider>
               <Tooltip>
@@ -38,19 +38,21 @@ function PureSharedChatHeader() {
                     type="button"
                   >
                     <PlusIcon size={16} />
-                    <span className="md:sr-only">New Chat</span>
+                    <span className="md:hidden">Start your own</span>
+                    <span className="hidden md:inline-block">Start your own conversation</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>New Chat</TooltipContent>
+                <TooltipContent>Start your own conversation</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           
-          {/* Middle section with UniTaskAI - absolute positioning to ensure true centering */}
-          <div className="absolute left-1/2 -translate-x-1/2 font-bold">
-            <Link href="/" className="flex items-center">
+          {/* Middle section with UniTaskAI and disclaimer */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <Link href="/" className="flex items-center font-bold">
               <span>UniTaskAI</span>
             </Link>
+            <p className="text-xs text-muted-foreground mt-0.5">This is a shared conversation from an user on UniTaskAI</p>
           </div>
           
           {/* Right section with Login and Register buttons */}
