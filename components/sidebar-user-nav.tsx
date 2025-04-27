@@ -49,7 +49,7 @@ export function SidebarUserNav({ user }: { user: User }) {
               side="top"
               align="start"
               alignOffset={-8} 
-              className="w-64 min-w-[16rem] md:w-64"
+              className="w-64 min-w-64 md:w-64"
               sideOffset={0}
               style={{ marginLeft: '0', left: '0' }}
             >
