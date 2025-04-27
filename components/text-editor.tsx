@@ -23,6 +23,25 @@ import {
   suggestionsPluginKey,
 } from '@/lib/editor/suggestions';
 
+// Add a style block to prevent focus outlines
+const editorStyles = `
+.ProseMirror {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.ProseMirror:focus, .ProseMirror:focus-visible {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
+.ProseMirror-focused {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+`;
+
 type EditorProps = {
   content: string;
   onSaveContent: (updatedContent: string, debounce: boolean) => void;
@@ -43,6 +62,14 @@ function PureEditor({
 
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
+      // Insert the editor style globally
+      if (!document.getElementById('prosemirror-editor-styles')) {
+        const styleElement = document.createElement('style');
+        styleElement.id = 'prosemirror-editor-styles';
+        styleElement.textContent = editorStyles;
+        document.head.appendChild(styleElement);
+      }
+
       const state = EditorState.create({
         doc: buildDocumentFromContent(content),
         plugins: [
@@ -146,7 +173,10 @@ function PureEditor({
   }, [suggestions, content]);
 
   return (
-    <div className="relative prose dark:prose-invert" ref={containerRef} />
+    <div 
+      className="relative prose dark:prose-invert touch-auto" 
+      ref={containerRef} 
+    />
   );
 }
 
