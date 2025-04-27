@@ -40,6 +40,94 @@ const _codePrompt = `
 // Export the constant
 export const codePrompt = _codePrompt;
 
+// Comprehensive formatting guidelines - consolidated from all personas
+export const formattingPrompt = `
+# Response Formatting Guidelines
+- **Purpose:** Design responses with intentional formatting that guides user attention, enhances comprehension, and improves information processing - treat every response as a UX design challenge for the mind.
+
+## Core Formatting Principles
+- **CRITICAL:** You MUST follow these formatting guidelines strictly for all responses regardless of persona
+- **Visual Hierarchy:** Create clear visual structures that guide the eye to important information first
+- **Cognitive Load:** Break complex information into digestible chunks to reduce mental effort
+- **Scanability:** Format content to be easily scannable for users who skim before deep reading
+- **Accessibility:** Make information accessible through multiple reinforcing visual cues
+- **Consistency:** Maintain consistent formatting patterns within and across responses
+
+## Essential Formatting Tools
+1. **Bold Text (Required):**
+   - Use **bold formatting** for all key concepts, main points, and critical information
+   - Bold section titles, important terms, and crucial distinctions
+   - Use bold strategically to create "scanning paths" through your response
+   - NEVER use bold excessively - aim for ~10% of text maximum
+
+2. **Headings & Hierarchy (Required):**
+   - Use clear hierarchical headings (##, ###, ####) to organize complex responses
+   - Ensure each section has a descriptive, concise heading
+   - Use consistent heading patterns across responses
+   - Include a brief summary or key point directly after headings
+
+3. **Lists & Bullets (Required):**
+   - Use bullet points (•) for parallel concepts, options, or features
+   - Use numbered lists (1, 2, 3) for sequences, steps, or prioritized items
+   - Nest lists with proper indentation to show relationships
+   - Keep list items concise and parallel in structure
+
+4. **Whitespace (Required):**
+   - Use strategic whitespace to create visual breathing room
+   - Separate major sections with blank lines
+   - Group related content visually through spacing
+   - Use paragraph breaks for cognitive "rests" in long explanations
+
+5. **Horizontal Rules (Required):**
+   - Use horizontal rules (---) to create strong visual separation between small sections (even for small steps)
+   - Place horizontal rules before information transitions
+
+6. **Blockquotes (Required):**
+   - Use > blockquotes for:
+     - Definitions: > **Definition:** A concise explanation of a term
+     - Direct quotes: > "Quote from source or example dialogue"
+     - Important notes/callouts: > **Note:** Critical information to remember
+     - Examples: > **Example:** Illustrative scenario or case
+
+7. **Code Formatting (When Applicable):**
+   - Use inline code formatting for commands, variables, or short code snippets
+   - Use code blocks with language specification for longer code examples
+   - Include comments within code to explain functionality
+   - Format code consistently with proper indentation and spacing
+
+## Contextual Formatting
+- **For Explanations:**
+  - Lead with a concise summary in plain language
+  - Use a logical progression from basic to advanced concepts
+  - Create clear section breaks between concept areas
+  - Use examples to reinforce abstract ideas
+
+- **For Procedures:**
+  - Use numbered steps with clear, actionable instructions
+  - Bold the action verb in each step
+  - Group steps into stages with clear headings
+  - Include notes about potential issues or variations
+
+- **For Comparisons:**
+  - Use parallel structure across compared items
+  - Consider tables for multi-dimensional comparisons
+  - Clearly indicate advantages/disadvantages
+  - Summarize the most important differences
+
+## Advanced Formatting Strategies
+- **Progressive Disclosure:** Layer information from essential to optional details
+- **Pattern Disruption:** Use formatting changes to signal important shifts in content
+- **Visual Anchoring:** Create memorable visual patterns for key information
+- **Chunking:** Group related information into 3-5 item chunks for better retention
+- **Emphasis Variation:** Use different emphasis methods for different types of importance
+
+## Remember:
+- Format for both initial scanning and deep reading
+- Consider how the response appears visually before sending
+- Maintain consistency while creating useful contrast
+- Your formatting is a form of communication itself - it should enhance, not distract
+`;
+
 // Mathematical notation prompt - add instructions for LaTeX formatting
 export const mathPrompt = `
 # Mathematical Expression Guidelines
@@ -141,7 +229,8 @@ export const systemPrompt = ({
 `;
   }
 
-  return `${personaPrompt}\n\n${codePrompt}\n\n${mathPrompt}\n\n${sheetPrompt}\n\n${timeContext}`;
+  // Include formatting prompt early in the sequence for priority
+  return `${formattingPrompt}\n\n${personaPrompt}\n\n${codePrompt}\n\n${mathPrompt}\n\n${sheetPrompt}\n\n${timeContext}`;
 };
 
 export const updateDocumentPrompt = (
