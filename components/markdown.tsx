@@ -3,6 +3,9 @@ import Image from 'next/image';
 import { memo, createElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { cn } from '@/lib/utils';
 
 // Define custom props to track heading depth
@@ -44,7 +47,8 @@ const NonMemoizedMarkdown = ({
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       skipHtml={true} // Skip HTML for security and performance
       components={{
         // Pre and Code components for code blocks - simple implementation
