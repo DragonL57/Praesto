@@ -309,52 +309,59 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        data-testid="multimodal-input"
-        ref={textareaRef}
-        placeholder="Send a message..."
-        value={input}
-        onChange={handleInput}
-        onPaste={handlePaste}
-        name="message-input"
-        id="message-input"
-        className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-3xl !text-base bg-muted pb-10 dark:border-zinc-700',
-          className,
-        )}
-        rows={2}
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
+      <div className="relative">
+        <Textarea
+          data-testid="multimodal-input"
+          ref={textareaRef}
+          placeholder="Send a message..."
+          value={input}
+          onChange={handleInput}
+          onPaste={handlePaste}
+          name="message-input"
+          id="message-input"
+          className={cx(
+            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-3xl !text-base bg-muted pb-10 dark:border-zinc-700',
+            className,
+          )}
+          rows={2}
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
 
-            if (status !== 'ready') {
-              toast.error('Please wait for the model to finish its response!');
-            } else {
-              submitForm();
+              if (status !== 'ready') {
+                toast.error('Please wait for the model to finish its response!');
+              } else {
+                submitForm();
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
 
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
-        <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-      </div>
+        <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
+          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+        </div>
 
-      <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
-        <SpeechToTextButton setInput={setInput} status={status} input={input} />
-        {(status === 'submitted' || status === 'streaming') ? (
-          <StopButton stop={stop} setMessages={setMessages} />
-        ) : (
-          <SendButton
-            input={input}
-            submitForm={submitForm}
-            uploadQueue={uploadQueue}
-          />
-        )}
+        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
+          <SpeechToTextButton setInput={setInput} status={status} input={input} />
+          {(status === 'submitted' || status === 'streaming') ? (
+            <StopButton stop={stop} setMessages={setMessages} />
+          ) : (
+            <SendButton
+              input={input}
+              submitForm={submitForm}
+              uploadQueue={uploadQueue}
+            />
+          )}
+        </div>
+        
+        {/* Disclaimer text positioned underneath without affecting layout */}
+        <div className="absolute -bottom-6 left-0 right-0 text-center pointer-events-none">
+          <span className="text-xs text-muted-foreground">UniTaskAI can make mistakes, double-check the info.</span>
+        </div>
       </div>
     </div>
   );
