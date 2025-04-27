@@ -51,14 +51,19 @@ const NonMemoizedMarkdown = ({
       rehypePlugins={[rehypeKatex]}
       skipHtml={true} // Skip HTML for security and performance
       components={{
-        // Pre and Code components for code blocks - simple implementation
+        // Pre and Code components for code blocks - improved to handle overflow
         pre: ({ className, children, ...props }) => {
           return (
             <pre
               className={cn(
-                `rounded-md p-4 m-0 my-4 bg-zinc-100 dark:bg-[#161616] border border-zinc-300 dark:border-zinc-700`,
+                `rounded-md p-4 m-0 my-4 bg-zinc-100 dark:bg-[#161616] border border-zinc-300 dark:border-zinc-700 overflow-x-auto w-full max-w-full`,
                 className,
               )}
+              style={{
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
               {...props}
             >
               {children}
@@ -76,9 +81,18 @@ const NonMemoizedMarkdown = ({
               className={cn(
                 isInline
                   ? 'px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700'
-                  : '',
+                  : 'block w-full max-w-full',
                 className,
               )}
+              style={
+                !isInline
+                  ? {
+                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }
+                  : {}
+              }
               {...props}
             >
               {children}
