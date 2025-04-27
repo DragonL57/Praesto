@@ -21,6 +21,7 @@ import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -370,20 +371,27 @@ function PureAttachmentsButton({
   status: UseChatHelpers['status'];
 }) {
   return (
-    <Button
-      data-testid="attachments-button"
-      className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
-      onClick={(event) => {
-        event.preventDefault();
-        fileInputRef.current?.click();
-      }}
-      disabled={status !== 'ready'}
-      variant="ghost"
-      aria-label="Attach files"
-    >
-      <PaperclipIcon size={16} />
-      <span className="sr-only">Attach files</span>
-    </Button>
+    <TooltipProvider delayDuration={50} skipDelayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            data-testid="attachments-button"
+            className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+            onClick={(event) => {
+              event.preventDefault();
+              fileInputRef.current?.click();
+            }}
+            disabled={status !== 'ready'}
+            variant="ghost"
+            aria-label="Attach files"
+          >
+            <PaperclipIcon size={16} />
+            <span className="sr-only">Attach files</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Attach files</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -533,19 +541,8 @@ function PureSpeechToTextButton({
 }) {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  // Using a more specific type instead of 'any'
-  type SpeechRecognitionInstance = {
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    onstart: (event: Event) => void;
-    onresult: (event: any) => void;
-    onerror: (event: any) => void;
-    onend: (event: Event) => void;
-    start: () => void;
-    stop: () => void;
-  };
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  
+  const recognitionRef = useRef<any>(null);
 
   // Check if speech recognition is supported
   useEffect(() => {
@@ -588,7 +585,7 @@ function PureSpeechToTextButton({
           toast.info("Listening...");
         };
         
-        recognition.onresult = (event) => {
+        recognition.onresult = (event: any) => {
           // Get only the latest result to prevent duplication
           const lastResultIndex = event.results.length - 1;
           const lastResult = event.results[lastResultIndex];
@@ -610,7 +607,7 @@ function PureSpeechToTextButton({
           }
         };
         
-        recognition.onerror = (event) => {
+        recognition.onerror = (event: any) => {
           console.error('Speech recognition error', event.error);
           setIsListening(false);
           toast.error(`Speech recognition error: ${event.error}`);
@@ -635,20 +632,29 @@ function PureSpeechToTextButton({
   }
 
   return (
-    <Button
-      data-testid="speech-to-text-button"
-      className={`rounded-md mx-1 p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
-      onClick={(event) => {
-        event.preventDefault();
-        toggleListening();
-      }}
-      disabled={status !== 'ready'}
-      variant="ghost"
-      aria-label={isListening ? "Stop listening" : "Start speech recognition"}
-    >
-      {isListening ? <FaMicrophoneSlash size={16} className="text-red-500" /> : <FaMicrophone size={16} />}
-      <span className="sr-only">{isListening ? "Stop listening" : "Start speech recognition"}</span>
-    </Button>
+    <TooltipProvider delayDuration={50} skipDelayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            data-testid="speech-to-text-button"
+            className={`rounded-md mx-1 p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
+            onClick={(event) => {
+              event.preventDefault();
+              toggleListening();
+            }}
+            disabled={status !== 'ready'}
+            variant="ghost"
+            aria-label={isListening ? "Stop listening" : "Start speech recognition"}
+          >
+            {isListening ? <FaMicrophoneSlash size={16} className="text-red-500" /> : <FaMicrophone size={16} />}
+            <span className="sr-only">{isListening ? "Stop listening" : "Start speech recognition"}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {isListening ? "Stop voice input" : "Start voice input"}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
