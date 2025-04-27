@@ -53,12 +53,12 @@ export function ShareDialog({
         <Button
           variant="outline"
           className={cn(
-            'hidden md:flex md:px-3 md:h-[34px] gap-2 items-center',
+            'hidden md:flex md:px-3 md:h-11 gap-2 items-center',
             className
           )}
         >
-          <ShareIcon />
-          <span>Share</span>
+          <ShareIcon size={20} />
+          <span className="text-base">Share</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[350px] p-0" align="end">
@@ -69,7 +69,7 @@ export function ShareDialog({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="visibility-switch">Make conversation public</Label>
+                <Label htmlFor="visibility-switch" className="text-base">Make conversation public</Label>
                 <div className="text-xs text-muted-foreground">
                   {visibilityType === 'public' 
                     ? 'Anyone with the link can view this chat' 
@@ -82,6 +82,7 @@ export function ShareDialog({
                 onCheckedChange={(checked) => {
                   setVisibilityType(checked ? 'public' : 'private');
                 }}
+                className="scale-110"
               />
             </div>
             
@@ -93,14 +94,14 @@ export function ShareDialog({
                     id="link"
                     value={shareUrl}
                     readOnly
-                    className="rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-muted"
+                    className="rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-muted h-11 text-base"
                   />
                   <Button
                     onClick={handleCopyLink}
-                    className="rounded-l-none"
+                    className="rounded-l-none h-11"
                     variant="secondary"
                   >
-                    {copied ? <CheckIcon /> : <CopyIcon />}
+                    {copied ? <CheckIcon size={20} /> : <CopyIcon size={20} />}
                     <span className="sr-only">Copy</span>
                   </Button>
                 </div>

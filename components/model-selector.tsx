@@ -42,10 +42,10 @@ export function ModelSelector({
         <Button
           data-testid="model-selector"
           variant="outline"
-          className="md:px-2 md:h-[34px]"
+          className="md:px-3 px-3 h-11 md:h-11 flex gap-2 items-center border-transparent hover:border-transparent focus:border-transparent"
         >
-          {selectedChatModel?.name}
-          <ChevronDownIcon />
+          <span className="text-base">{selectedChatModel?.name}</span>
+          <ChevronDownIcon size={20} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
@@ -69,17 +69,17 @@ export function ModelSelector({
             >
               <button
                 type="button"
-                className="gap-4 group/item flex flex-row justify-between items-center w-full"
+                className="gap-4 group/item flex flex-row justify-between items-center w-full py-2"
               >
                 <div className="flex flex-col gap-1 items-start">
-                  <div>{chatModel.name}</div>
+                  <div className="text-base">{chatModel.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {chatModel.description}
                   </div>
                 </div>
 
                 <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
-                  <CheckCircleFillIcon />
+                  <CheckCircleFillIcon size={20} />
                 </div>
               </button>
             </DropdownMenuItem>

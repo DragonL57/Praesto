@@ -40,7 +40,7 @@ function PureChatHeader({
   }, []);
 
   return (
-    <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
+    <header className="flex sticky top-0 bg-background py-2.5 items-center px-3 md:px-3 gap-3">
       <SidebarToggle />
 
       {mounted ? (
@@ -50,7 +50,7 @@ function PureChatHeader({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
+                  className="order-2 md:order-1 md:px-3 px-3 h-11 md:h-11 ml-auto md:ml-0"
                   onClick={() => {
                     router.push('/chat');
                     router.refresh();
@@ -58,7 +58,7 @@ function PureChatHeader({
                   data-testid="new-chat-button"
                   type="button"
                 >
-                  <PlusIcon size={16} />
+                  <PlusIcon size={20} />
                   <span className="md:sr-only">New Chat</span>
                 </Button>
               </TooltipTrigger>
@@ -82,7 +82,7 @@ function PureChatHeader({
           )}
         </>
       ) : (
-        <div className="h-[34px] flex-1" />
+        <div className="h-[40px] flex-1" />
       )}
     </header>
   );

@@ -19,7 +19,7 @@ function PureSharedChatHeader() {
   }, []);
 
   return (
-    <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
+    <header className="flex sticky top-0 bg-background py-2.5 items-center px-3 md:px-3 gap-3">
       {mounted ? (
         <>
           {/* Left section with Start your own conversation button */}
@@ -29,7 +29,7 @@ function PureSharedChatHeader() {
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    className="md:px-2 px-2 md:h-fit"
+                    className="md:px-3 px-3 h-11 md:h-11"
                     onClick={() => {
                       router.push('/chat');
                       router.refresh();
@@ -37,9 +37,9 @@ function PureSharedChatHeader() {
                     data-testid="new-chat-button"
                     type="button"
                   >
-                    <PlusIcon size={16} />
-                    <span className="md:hidden">Start your own</span>
-                    <span className="hidden md:inline-block">Start your own conversation</span>
+                    <PlusIcon size={20} />
+                    <span className="md:hidden text-base">Start your own</span>
+                    <span className="hidden md:inline-block text-base">Start your own conversation</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Start your own conversation</TooltipContent>
@@ -49,7 +49,7 @@ function PureSharedChatHeader() {
           
           {/* Middle section with UniTaskAI and disclaimer */}
           <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <Link href="/" className="flex items-center font-bold">
+            <Link href="/" className="flex items-center font-bold text-lg">
               <span>UniTaskAI</span>
             </Link>
             <p className="text-xs text-muted-foreground mt-0.5">This is a shared conversation from an user on UniTaskAI</p>
@@ -58,19 +58,19 @@ function PureSharedChatHeader() {
           {/* Right section with Login and Register buttons */}
           <div className="flex-1 flex justify-end gap-2">
             <Link href="/login">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="default" className="h-11 px-4 text-base">
                 Login
               </Button>
             </Link>
             <Link href="/register">
-              <Button size="sm">
+              <Button size="default" className="h-11 px-4 text-base">
                 Register
               </Button>
             </Link>
           </div>
         </>
       ) : (
-        <div className="h-[34px] flex-1" />
+        <div className="h-[40px] flex-1" />
       )}
     </header>
   );

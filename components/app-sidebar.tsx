@@ -35,7 +35,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
                 className="flex flex-row gap-3 items-center"
               >
-                <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+                <span className="text-xl font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
                   UniTaskAI
                 </span>
               </Link>
@@ -44,14 +44,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   <Button
                     variant="ghost"
                     type="button"
-                    className="p-2 h-fit"
+                    className="p-3 h-11 w-11"
                     onClick={() => {
                       setOpenMobile(false);
                       router.push('/chat');
                       router.refresh();
                     }}
                   >
-                    <PiNotePencilBold size={16} />
+                    <PiNotePencilBold size={20} />
                     <span className="sr-only">New Chat</span>
                   </Button>
                 </TooltipTrigger>
