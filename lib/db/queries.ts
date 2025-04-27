@@ -68,9 +68,11 @@ export async function saveChat({
   title: string;
 }) {
   try {
+    const now = new Date();
     return await db.insert(chat).values({
       id,
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       userId,
       title,
     });
@@ -106,7 +108,7 @@ export async function getChatsByUserId({
   try {
     const extendedLimit = limit + 1;
 
-    const query = (whereCondition?: SQL<any>) =>
+    const query = (whereCondition?: SQL<unknown>) =>
       db
         .select()
         .from(chat)
@@ -115,7 +117,7 @@ export async function getChatsByUserId({
             ? and(whereCondition, eq(chat.userId, id))
             : eq(chat.userId, id),
         )
-        .orderBy(desc(chat.createdAt))
+        .orderBy(desc(chat.updatedAt)) // Sort by updatedAt to show recently active chats first
         .limit(extendedLimit);
 
     let filteredChats: Array<Chat> = [];
@@ -131,7 +133,7 @@ export async function getChatsByUserId({
         throw new Error(`Chat with id ${startingAfter} not found`);
       }
 
-      filteredChats = await query(gt(chat.createdAt, selectedChat.createdAt));
+      filteredChats = await query(gt(chat.updatedAt, selectedChat.updatedAt)); // Compare by updatedAt
     } else if (endingBefore) {
       const [selectedChat] = await db
         .select()
@@ -143,7 +145,7 @@ export async function getChatsByUserId({
         throw new Error(`Chat with id ${endingBefore} not found`);
       }
 
-      filteredChats = await query(lt(chat.createdAt, selectedChat.createdAt));
+      filteredChats = await query(lt(chat.updatedAt, selectedChat.updatedAt)); // Compare by updatedAt
     } else {
       filteredChats = await query();
     }
@@ -232,7 +234,7 @@ export async function getVotesByChatId({ id }: { id: string }) {
   try {
     return await db.select().from(vote).where(eq(vote.chatId, id));
   } catch (error) {
-    console.error('Failed to get votes by chat id from database', error);
+    console.error('Failed to get votes by chat id from database');
     throw error;
   }
 }
@@ -431,6 +433,29 @@ export async function updateChatTitleById({
     return await db.update(chat).set({ title }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error('Failed to update chat title in database');
+    throw error;
+  }
+}
+
+export async function updateChatTimestamp({ id }: { id: string }) {
+  try {
+    // Try to update using updatedAt first
+    try {
+      return await db
+        .update(chat)
+        .set({ updatedAt: new Date() })
+        .where(eq(chat.id, id));
+    } catch (innerError) {
+      // If updatedAt column doesn't exist yet, we'll silently catch the error
+      // This is a temporary workaround until the migration is properly applied
+      const errorMessage = innerError instanceof Error 
+        ? innerError.message 
+        : 'Unknown error';
+      console.log('Notice: updateChatTimestamp failed:', errorMessage);
+    }
+    return { count: 0 }; // Return something compatible with the expected return type
+  } catch (error) {
+    console.error('Failed to update chat timestamp in database');
     throw error;
   }
 }

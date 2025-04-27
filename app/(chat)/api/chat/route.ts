@@ -10,7 +10,7 @@ import { auth } from '@/app/(auth)/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
-import { deleteChatById, getChatById, saveChat, saveMessages, } from '@/lib/db/queries';
+import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -93,6 +93,10 @@ export async function POST(request: Request) {
       ],
     });
 
+    // Update the chat timestamp immediately when the user sends a message
+    // This ensures the conversation moves to the top of the sidebar right away
+    await updateChatTimestamp({ id });
+
     return createDataStreamResponse({
       execute: (dataStream) => {
         const isGemini25Model =
@@ -170,6 +174,9 @@ export async function POST(request: Request) {
                     },
                   ],
                 });
+
+                // Update the chat timestamp to move it to the top of the sidebar
+                await updateChatTimestamp({ id });
               } catch {
                 console.error('Failed to save chat');
               }
@@ -224,7 +231,6 @@ export async function DELETE(request: Request) {
     return new Response('Chat deleted', { status: 200 });
   } catch {
     return new Response('An error occurred while processing your request!', {
-      status: 500,
-    });
+      status: 500 });
   }
 }

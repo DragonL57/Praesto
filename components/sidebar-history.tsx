@@ -49,7 +49,8 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
 
   return chats.reduce(
     (groups, chat) => {
-      const chatDate = new Date(chat.createdAt);
+      // Use updatedAt if it exists, otherwise fall back to createdAt
+      const chatDate = new Date(chat.updatedAt || chat.createdAt);
 
       if (isToday(chatDate)) {
         groups.today.push(chat);
@@ -91,31 +92,6 @@ export function getChatHistoryPaginationKey(
 
   return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
 }
-
-// Animation variants for container and items
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 260,
-      damping: 20,
-    },
-  },
-};
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
   const { setOpenMobile } = useSidebar();
