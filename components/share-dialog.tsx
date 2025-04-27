@@ -36,9 +36,9 @@ export function ShareDialog({
     initialVisibility: selectedVisibilityType,
   });
 
-  // Generate share URL (typically would use the base URL + chat ID)
+  // Generate share URL using the new /share route instead of /chat
   const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/chat/${chatId}`
+    ? `${window.location.origin}/share/${chatId}`
     : '';
 
   const handleCopyLink = () => {

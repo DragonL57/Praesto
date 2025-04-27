@@ -3,34 +3,32 @@
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useState, useRef } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
-import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
+import useSWR from 'swr';
+import Link from 'next/link';
 import { fetcher, generateUUID } from '@/lib/utils';
-import { Artifact } from './artifact';
-import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
-import { unstable_serialize } from 'swr/infinite';
-import { getChatHistoryPaginationKey } from './sidebar-history';
+import { Button } from './ui/button';
+import { SharedChatHeader } from './shared-chat-header';
+import { MultimodalInput } from './multimodal-input';
+import { SharedArtifact } from './shared-artifact';
+import type { Vote } from '@/lib/db/schema';
 
-export function Chat({
+export function SharedChat({
   id,
   initialMessages,
   selectedChatModel,
-  selectedVisibilityType,
+  _selectedVisibilityType,
   isReadonly,
 }: {
   id: string;
   initialMessages: Array<UIMessage>;
   selectedChatModel: string;
-  selectedVisibilityType: VisibilityType;
+  _selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
-  const { mutate } = useSWRConfig();
-
   // Create refs for message container and end element
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,9 +59,6 @@ export function Chat({
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
-    onFinish: () => {
-      mutate(unstable_serialize(getChatHistoryPaginationKey));
-    },
     onError: () => {
       toast.error('An error occurred, please try again!');
     },
@@ -80,12 +75,7 @@ export function Chat({
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
-        <ChatHeader
-          chatId={id}
-          selectedModelId={selectedChatModel}
-          selectedVisibilityType={selectedVisibilityType}
-          isReadonly={isReadonly}
-        />
+        <SharedChatHeader />
 
         <div className="flex-1 overflow-hidden relative w-full">
           <Messages
@@ -121,19 +111,28 @@ export function Chat({
                 messagesEndRef={messagesEndRef}
               />
             )}
+            {isReadonly && (
+              <div className="flex w-full justify-center py-2">
+                <Link href="/chat" passHref>
+                  <Button>
+                    Start your own conversation
+                  </Button>
+                </Link>
+              </div>
+            )}
           </form>
         </div>
       </div>
-
-      <Artifact
+      
+      <SharedArtifact
         chatId={id}
-        input={input}
-        setInput={setInput}
-        handleSubmit={handleSubmit}
+        _input={input}
+        _setInput={setInput}
+        _handleSubmit={handleSubmit}
         status={status}
         stop={stop}
-        attachments={attachments}
-        setAttachments={setAttachments}
+        _attachments={attachments}
+        _setAttachments={setAttachments}
         append={append}
         messages={messages}
         setMessages={setMessages}

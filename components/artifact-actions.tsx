@@ -1,5 +1,5 @@
 import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import { artifactDefinitions } from './artifact';
 import type { UIArtifact } from './artifact';
 import { memo, useState } from 'react';
@@ -50,45 +50,47 @@ function PureArtifactActions<T = unknown>({
 
   return (
     <div className="flex flex-row gap-1">
-      {artifactDefinition.actions.map((action) => (
-        <Tooltip key={action.description}>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn('h-fit dark:hover:bg-zinc-700', {
-                'p-2': !action.label,
-                'py-1.5 px-2': action.label,
-              })}
-              onClick={async () => {
-                setIsLoading(true);
+      <TooltipProvider>
+        {artifactDefinition.actions.map((action) => (
+          <Tooltip key={action.description}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn('h-fit dark:hover:bg-zinc-700', {
+                  'p-2': !action.label,
+                  'py-1.5 px-2': action.label,
+                })}
+                onClick={async () => {
+                  setIsLoading(true);
 
-                try {
-                  // We need to use the 'as any' temporarily to make TypeScript happy
-                  // since the artifact system is dynamically typed
-                  // @ts-expect-error The action.onClick expects a specific type, but we're passing a generic type
-                  await Promise.resolve(action.onClick(actionContext));
-                } catch {
-                  toast.error('Failed to execute action');
-                } finally {
-                  setIsLoading(false);
+                  try {
+                    // We need to use the 'as any' temporarily to make TypeScript happy
+                    // since the artifact system is dynamically typed
+                    // @ts-expect-error The action.onClick expects a specific type, but we're passing a generic type
+                    await Promise.resolve(action.onClick(actionContext));
+                  } catch {
+                    toast.error('Failed to execute action');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={
+                  isLoading || artifact.status === 'streaming'
+                    ? true
+                    : action.isDisabled
+                      ? // @ts-expect-error The action.isDisabled expects a specific type
+                        action.isDisabled(actionContext)
+                      : false
                 }
-              }}
-              disabled={
-                isLoading || artifact.status === 'streaming'
-                  ? true
-                  : action.isDisabled
-                    ? // @ts-expect-error The action.isDisabled expects a specific type
-                      action.isDisabled(actionContext)
-                    : false
-              }
-            >
-              {action.icon}
-              {action.label}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{action.description}</TooltipContent>
-        </Tooltip>
-      ))}
+              >
+                {action.icon}
+                {action.label}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{action.description}</TooltipContent>
+          </Tooltip>
+        ))}
+      </TooltipProvider>
     </div>
   );
 }

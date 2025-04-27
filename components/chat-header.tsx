@@ -18,13 +18,11 @@ function PureChatHeader({
   selectedModelId,
   selectedVisibilityType,
   isReadonly,
-  isAuthenticated = false,
 }: {
   chatId: string;
   selectedModelId: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
-  isAuthenticated?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,8 +33,6 @@ function PureChatHeader({
   
   // Check if we're in a specific chat (not the root /chat page)
   const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
-  // Check if this is a shared conversation view (user not authenticated and viewing a specific chat)
-  const isSharedView = isInSavedChat && !isAuthenticated;
 
   // Only render dynamic content after hydration
   useEffect(() => {
@@ -45,25 +41,16 @@ function PureChatHeader({
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
-      {/* Only show sidebar toggle if authenticated */}
-      {(!isSharedView) && <SidebarToggle />}
-
-      {/* Centered UniTaskAI logo - only for shared conversation pages */}
-      {isSharedView && (
-        <div className="absolute inset-x-0 mx-auto w-full flex flex-col justify-center items-center pointer-events-none">
-          <h1 className="font-bold text-lg">UniTaskAI</h1>
-          <p className="text-xs text-muted-foreground mt-0">This is a shared conversation from an anonymous user on UniTaskAI</p>
-        </div>
-      )}
+      <SidebarToggle />
 
       {mounted ? (
         <>
-          {(!open || windowWidth < 768) && !isSharedView && (
+          {(!open || windowWidth < 768) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0 z-10"
+                  className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
                   onClick={() => {
                     router.push('/chat');
                     router.refresh();
@@ -82,7 +69,7 @@ function PureChatHeader({
           {!isReadonly && (
             <ModelSelector
               selectedModelId={selectedModelId}
-              className="order-1 md:order-2 z-10"
+              className="order-1 md:order-2"
             />
           )}
 
@@ -90,30 +77,8 @@ function PureChatHeader({
             <ShareDialog
               chatId={chatId}
               selectedVisibilityType={selectedVisibilityType}
-              className="order-1 md:order-3 md:ml-auto z-10"
+              className="order-1 md:order-3 md:ml-auto"
             />
-          )}
-
-          {/* Login and Signup buttons for shared views */}
-          {isSharedView && (
-            <div className="flex gap-2 ml-auto order-last z-10">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => router.push('/login')}
-                className="text-sm"
-              >
-                Log in
-              </Button>
-              <Button 
-                variant="default"
-                size="sm"
-                onClick={() => router.push('/register')}
-                className="text-sm"
-              >
-                Sign up
-              </Button>
-            </div>
           )}
         </>
       ) : (
