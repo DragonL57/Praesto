@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { memo, createElement } from 'react';
+import { memo, createElement, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { cn } from '@/lib/utils';
 
 // Define custom props to track heading depth
 interface MarkdownProps {
@@ -35,6 +34,38 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Code block component with copy functionality
+const CodeBlockWithCopy = ({ language, children }: { language: string, children: string }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(children);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  return (
+    <div className="bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md">
+      <div className="flex justify-between items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-t-md">
+        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {language || 'Text'}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="text-xs bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-md transition-colors"
+        >
+          {isCopied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <div className="w-full max-w-full">
+        <pre className="p-4 m-0 whitespace-pre-wrap break-all">
+          <code className={`language-${language || 'text'} block`}>{children}</code>
+        </pre>
+      </div>
+    </div>
+  );
+};
+
 // Simplified component using react-markdown library
 const NonMemoizedMarkdown = ({
   children,
@@ -52,51 +83,32 @@ const NonMemoizedMarkdown = ({
       skipHtml={true} // Skip HTML for security and performance
       components={{
         // Pre and Code components for code blocks - improved to handle overflow
-        pre: ({ className, children, ...props }) => {
-          return (
-            <pre
-              className={cn(
-                `rounded-md p-4 m-0 my-4 bg-zinc-100 dark:bg-[#161616] border border-zinc-300 dark:border-zinc-700 overflow-x-auto w-full max-w-full`,
-                className,
-              )}
-              style={{
-                overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-              }}
-              {...props}
-            >
-              {children}
-            </pre>
-          );
+        pre: ({ children }) => {
+          // The actual rendering is handled by the code component below
+          return <>{children}</>;
         },
 
         code: ({ className, children, ...props }) => {
           // Determine if this is a code block or inline code
           const match = /language-(\w+)/.exec(className || '');
+          const language = match?.[1] || '';
           const isInline = !match;
-
+          
+          if (isInline) {
+            return (
+              <code
+                className="px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                {...props}
+              >
+                {children}
+              </code>
+            );
+          }
+          
           return (
-            <code
-              className={cn(
-                isInline
-                  ? 'px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700'
-                  : 'block w-full max-w-full',
-                className,
-              )}
-              style={
-                !isInline
-                  ? {
-                      overflowX: 'auto',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                    }
-                  : {}
-              }
-              {...props}
-            >
-              {children}
-            </code>
+            <CodeBlockWithCopy language={language}>
+              {String(children)}
+            </CodeBlockWithCopy>
           );
         },
 

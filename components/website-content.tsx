@@ -38,6 +38,7 @@ function PureWebsiteContent({
     try {
       const domain = new URL(getFormattedUrl(url)).hostname;
       return domain;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return url;
     }
@@ -456,25 +457,4 @@ function AlertCircleIcon({
   );
 }
 
-function InfoIcon({
-  size = 16,
-  className,
-}: { size?: number; className?: string }) {
-  return (
-    <svg
-      height={size}
-      width={size}
-      viewBox="0 0 24 24"
-      className={cn('stroke-current', className)}
-      strokeWidth="2"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 16v-4m0-4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9.03 4.03 9 9z"
-      />
-    </svg>
-  );
-}
+
