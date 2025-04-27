@@ -126,8 +126,17 @@ function PureMultimodalInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
+  // Create the recognition reference at this level so it can be shared between components
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
+
+    // Stop speech recognition if it's active when sending a message
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
 
     handleSubmit(undefined, {
       experimental_attachments: attachments,
@@ -350,7 +359,12 @@ function PureMultimodalInput({
         {/* Right side - attachments, speech-to-text, and send buttons */}
         <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end items-center">
           <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-          <SpeechToTextButton setInput={setInput} status={status} input={input} />
+          <SpeechToTextButton 
+            setInput={setInput} 
+            status={status} 
+            input={input}
+            recognitionRef={recognitionRef}
+          />
           {(status === 'submitted' || status === 'streaming') ? (
             <StopButton stop={stop} setMessages={setMessages} />
           ) : (
@@ -601,10 +615,13 @@ function ScrollButton({
 function PureSpeechToTextButton({
   setInput,
   status,
+  input: _input, // Renamed to _input to indicate it's not used
+  recognitionRef,
 }: {
   setInput: UseChatHelpers['setInput'];
   status: UseChatHelpers['status'];
-  input?: string; // Made optional since it's not used
+  input?: string;
+  recognitionRef: React.MutableRefObject<SpeechRecognition | null>;
 }) {
   // Detect user's browser language and map to a supported language
   const detectUserLanguage = (): string => {
@@ -663,7 +680,6 @@ function PureSpeechToTextButton({
   const [recognitionMode] = useLocalStorage<SpeechRecognitionMode>('speech-recognition-mode', 'ondevice-preferred');
   const [deviceLanguageStatus, setDeviceLanguageStatus] = useState<AvailabilityStatus | null>(null);
   
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
   // Store current transcript buffer to avoid redundant updates
   const transcriptBufferRef = useRef<string>('');
   // Track recognition restarts for auto detection improvements
@@ -727,7 +743,7 @@ function PureSpeechToTextButton({
         recognitionRef.current = null;
       }
     };
-  }, []);
+  }, [recognitionRef]);
 
   // Function to efficiently update input with new transcript
   const updateInputWithTranscript = useCallback((transcript: string, isFinal: boolean) => {
@@ -822,7 +838,7 @@ function PureSpeechToTextButton({
         }
       }
     }
-  }, [selectedLanguage, isListening]);
+  }, [selectedLanguage, isListening, recognitionRef]);
 
   // Function to start the speech recognition
   const startRecognition: StartRecognitionFn = useCallback(async () => {
@@ -944,7 +960,7 @@ function PureSpeechToTextButton({
       toast.error("Failed to start speech recognition");
       return false;
     }
-  }, [deviceLanguageStatus, installLanguageIfNeeded, languages, recognitionMode, restartRecognitionIfNeeded, selectedLanguage, updateInputWithTranscript]);
+  }, [deviceLanguageStatus, installLanguageIfNeeded, languages, recognitionMode, restartRecognitionIfNeeded, selectedLanguage, updateInputWithTranscript, recognitionRef]);
 
   // Store the startRecognition function in the ref to break the circular dependency
   useEffect(() => {
@@ -973,7 +989,7 @@ function PureSpeechToTextButton({
       recognitionAttemptsRef.current = 0;
       startRecognition();
     }
-  }, [isListening, speechSupported, startRecognition]);
+  }, [isListening, speechSupported, startRecognition, recognitionRef]);
 
   if (!speechSupported) {
     return null;
