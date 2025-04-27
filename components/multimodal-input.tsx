@@ -2,12 +2,13 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import cx from 'classnames';
-import type React from 'react';
+import React from 'react';
 import {
   useRef,
   useEffect,
   useState,
   useCallback,
+  useMemo,
   type Dispatch,
   type SetStateAction,
   type ChangeEvent,
@@ -549,8 +550,8 @@ function PureSpeechToTextButton({
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Available languages for speech recognition
-  const languages = [
+  // Available languages for speech recognition - wrapped in useMemo to prevent recreation on each render
+  const languages = useMemo(() => [
     { value: 'en-US', label: 'English (US)' },
     { value: 'en-GB', label: 'English (UK)' },
     { value: 'es-ES', label: 'Spanish' },
@@ -566,7 +567,7 @@ function PureSpeechToTextButton({
     { value: 'ar-SA', label: 'Arabic' },
     { value: 'ru-RU', label: 'Russian' },
     { value: 'hi-IN', label: 'Hindi' },
-  ];
+  ], []);
 
   // Check if speech recognition is supported
   useEffect(() => {

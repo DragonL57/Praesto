@@ -83,7 +83,7 @@ function NavItem({ icon: Icon, title, tab, currentTab, onClick }: NavItemProps) 
           : "hover:bg-accent/50 text-muted-foreground"
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="size-4" />
       <span>{title}</span>
     </button>
   );
@@ -162,7 +162,7 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
             onClick={setCurrentTab}
           />
           <NavItem 
-            icon={FaMicrophone as any} 
+            icon={FaMicrophone} 
             title="Speech Recognition" 
             tab="speech" 
             currentTab={currentTab} 
