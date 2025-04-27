@@ -77,7 +77,7 @@ export function SidebarUserNav({ user }: { user: User }) {
       </SidebarMenu>
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px] p-0 border-none">
+        <DialogContent className="max-w-[700px] md:max-w-[700px] p-0 border-none">
           <DialogTitle className="sr-only">Settings</DialogTitle>
           <SettingsCard onClose={() => setIsSettingsOpen(false)} />
         </DialogContent>

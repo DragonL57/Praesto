@@ -22,11 +22,28 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LuArrowDownToLine } from "react-icons/lu";
+import { LuArrowDownToLine, LuLanguages } from "react-icons/lu";
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
+import type { 
+  SpeechRecognition,
+  SpeechRecognitionEvent,
+  SpeechRecognitionErrorEvent
+} from '../types/speech-recognition';
 
 function PureMultimodalInput({
   chatId,
@@ -533,16 +550,35 @@ function ScrollButton({
 function PureSpeechToTextButton({
   setInput,
   status,
-  input,
 }: {
   setInput: UseChatHelpers['setInput'];
   status: UseChatHelpers['status'];
-  input: string;
+  input?: string; // Made optional since it's not used
 }) {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [selectedLanguage] = useLocalStorage('speech-recognition-language', 'en-US');
   
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Available languages for speech recognition
+  const languages = [
+    { value: 'en-US', label: 'English (US)' },
+    { value: 'en-GB', label: 'English (UK)' },
+    { value: 'es-ES', label: 'Spanish' },
+    { value: 'fr-FR', label: 'French' },
+    { value: 'de-DE', label: 'German' },
+    { value: 'it-IT', label: 'Italian' },
+    { value: 'pt-BR', label: 'Portuguese (Brazil)' },
+    { value: 'pt-PT', label: 'Portuguese (Portugal)' },
+    { value: 'zh-CN', label: 'Chinese (Simplified)' },
+    { value: 'zh-TW', label: 'Chinese (Traditional)' },
+    { value: 'ja-JP', label: 'Japanese' },
+    { value: 'ko-KR', label: 'Korean' },
+    { value: 'ar-SA', label: 'Arabic' },
+    { value: 'ru-RU', label: 'Russian' },
+    { value: 'hi-IN', label: 'Hindi' },
+  ];
 
   // Check if speech recognition is supported
   useEffect(() => {
@@ -578,14 +614,15 @@ function PureSpeechToTextButton({
         
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'en-US'; // Set language - could be made configurable
+        recognition.lang = selectedLanguage; // Use selected language from settings
         
         recognition.onstart = () => {
           setIsListening(true);
-          toast.info("Listening...");
+          const selectedLang = languages.find(lang => lang.value === selectedLanguage);
+          toast.info(`Listening in ${selectedLang?.label || selectedLanguage}...`);
         };
         
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
           // Get only the latest result to prevent duplication
           const lastResultIndex = event.results.length - 1;
           const lastResult = event.results[lastResultIndex];
@@ -607,7 +644,7 @@ function PureSpeechToTextButton({
           }
         };
         
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('Speech recognition error', event.error);
           setIsListening(false);
           toast.error(`Speech recognition error: ${event.error}`);
@@ -625,7 +662,7 @@ function PureSpeechToTextButton({
         setIsListening(false);
       }
     }
-  }, [isListening, setInput, speechSupported]);
+  }, [isListening, setInput, speechSupported, selectedLanguage, languages]);
 
   if (!speechSupported) {
     return null;
@@ -651,7 +688,7 @@ function PureSpeechToTextButton({
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          {isListening ? "Stop voice input" : "Start voice input"}
+          {isListening ? "Stop voice input" : `Start voice input (${languages.find(lang => lang.value === selectedLanguage)?.label})`}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -1,32 +1,32 @@
-interface SpeechRecognitionErrorEvent extends Event {
+export interface SpeechRecognitionErrorEvent extends Event {
   error: string;
   message: string;
 }
 
-interface SpeechRecognitionEvent extends Event {
+export interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
   results: SpeechRecognitionResultList;
 }
 
-interface SpeechRecognitionResultList {
+export interface SpeechRecognitionResultList {
   length: number;
   item(index: number): SpeechRecognitionResult;
   [index: number]: SpeechRecognitionResult;
 }
 
-interface SpeechRecognitionResult {
+export interface SpeechRecognitionResult {
   length: number;
   item(index: number): SpeechRecognitionAlternative;
   [index: number]: SpeechRecognitionAlternative;
   isFinal: boolean;
 }
 
-interface SpeechRecognitionAlternative {
+export interface SpeechRecognitionAlternative {
   transcript: string;
   confidence: number;
 }
 
-interface SpeechRecognition extends EventTarget {
+export interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
@@ -40,7 +40,7 @@ interface SpeechRecognition extends EventTarget {
   abort(): void;
 }
 
-interface SpeechRecognitionConstructor {
+export interface SpeechRecognitionConstructor {
   new(): SpeechRecognition;
   prototype: SpeechRecognition;
 }
@@ -51,5 +51,3 @@ declare global {
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
-
-export {};
