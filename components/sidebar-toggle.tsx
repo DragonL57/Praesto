@@ -7,14 +7,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { SidebarLeftIcon } from './icons';
 import { Button } from './ui/button';
+import { GoSidebarExpand, GoSidebarCollapse } from 'react-icons/go';
 
 export function SidebarToggle({
   // Use destructuring to ignore the className prop without renaming it
   ..._props
 }: ComponentProps<typeof SidebarTrigger>) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, open } = useSidebar();
 
   return (
     <Tooltip>
@@ -25,7 +25,7 @@ export function SidebarToggle({
           className="md:px-2 md:h-fit"
           aria-label="Toggle Sidebar"
         >
-          <SidebarLeftIcon size={16} />
+          {open ? <GoSidebarExpand size={16} /> : <GoSidebarCollapse size={16} />}
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </TooltipTrigger>
