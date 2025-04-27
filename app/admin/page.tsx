@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// @ts-expect-error - Dashboard components exist but TypeScript can't find them
 import { Overview } from "@/components/admin/dashboard/overview";
 import { RecentUsers } from "@/components/admin/dashboard/recent-users";
 import { StatusCards } from "@/components/admin/dashboard/status-cards";

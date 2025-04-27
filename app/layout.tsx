@@ -2,11 +2,17 @@ import type React from "react"
 import "@/app/globals.css"
 import "katex/dist/katex.min.css" // Add KaTeX CSS for math rendering
 import { Inter } from "next/font/google"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { JsonLd } from "@/components/json-ld"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.unitaskai.com"),
@@ -57,11 +63,6 @@ export const metadata: Metadata = {
     description: "Your complete AI assistant for content, code, data, and more",
     images: ["https://www.unitaskai.com/images/twitter-image.png"],
     creator: "@unitaskai",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
   },
   verification: {
     google: "your-google-verification-code", // Replace with actual code when available

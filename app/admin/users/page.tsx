@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// @ts-expect-error - Missing type definitions for UsersTable component
 import { UsersTable } from "@/components/admin/users/users-table";
 import { UserStatsCards } from "@/components/admin/users/user-stats-cards";
 import { UserFilters } from "@/components/admin/users/user-filters";
