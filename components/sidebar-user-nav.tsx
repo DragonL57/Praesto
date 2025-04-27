@@ -48,7 +48,10 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuContent
               side="top"
               align="start"
-              className="w-[200px]"
+              alignOffset={-8} 
+              className="w-64 min-w-[16rem] md:w-64"
+              sideOffset={0}
+              style={{ marginLeft: '0', left: '0' }}
             >
               <DropdownMenuItem
                 className="cursor-pointer"
