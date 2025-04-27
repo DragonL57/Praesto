@@ -50,8 +50,9 @@ function PureChatHeader({
 
       {/* Centered UniTaskAI logo - only for shared conversation pages */}
       {isSharedView && (
-        <div className="absolute inset-x-0 mx-auto w-full flex justify-center items-center pointer-events-none">
+        <div className="absolute inset-x-0 mx-auto w-full flex flex-col justify-center items-center pointer-events-none">
           <h1 className="font-bold text-lg">UniTaskAI</h1>
+          <p className="text-xs text-muted-foreground mt-0">This is a shared conversation from an anonymous user on UniTaskAI</p>
         </div>
       )}
 
