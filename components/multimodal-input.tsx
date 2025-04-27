@@ -22,22 +22,10 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from './ui/popover';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LuArrowDownToLine, LuLanguages } from "react-icons/lu";
+import { LuArrowDownToLine } from "react-icons/lu";
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import type { 
   SpeechRecognition,

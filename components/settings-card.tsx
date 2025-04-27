@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Settings, Moon, Sun, Laptop, Trash2, Languages, LucideIcon } from 'lucide-react';
+import { Settings, Moon, Sun, Laptop, Trash2, LucideIcon } from 'lucide-react';
 import { useLocalStorage } from 'usehooks-ts';
 import { FaMicrophone } from 'react-icons/fa';
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -35,7 +34,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/toast';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Tab types for improved type safety
 type SettingTab = 'appearance' | 'speech' | 'data';
@@ -179,16 +177,11 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
           />
         </div>
         
-        {/* Content area - reduce the width */}
+        {/* Content area - remove redundant headers */}
         <div className="flex-1 p-6 overflow-auto" style={{ maxWidth: '500px' }}>
           {/* Appearance settings */}
           {currentTab === 'appearance' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Appearance</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Choose your preferred theme for the application.
-              </p>
-              
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Theme</h4>
                 <Select value={theme} onValueChange={setTheme}>
@@ -223,11 +216,6 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
           {/* Speech Recognition settings */}
           {currentTab === 'speech' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Speech Recognition</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Configure voice input settings for speech recognition.
-              </p>
-              
               {!speechSupported ? (
                 <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/50 p-3">
                   <p className="text-sm text-yellow-800 dark:text-yellow-300">
@@ -262,11 +250,6 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
           {/* Data Management settings */}
           {currentTab === 'data' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Data Management</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Manage your chat history and personal data.
-              </p>
-              
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Delete All Chats</h4>
                 <p className="text-xs text-muted-foreground">
