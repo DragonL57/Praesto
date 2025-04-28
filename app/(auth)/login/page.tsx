@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useState, startTransition } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [isSuccessful, setIsSuccessful] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [state, formAction] = useActionState<LoginActionState, FormData>(
     login,
@@ -124,14 +125,25 @@ export default function LoginPage() {
                     Forgot password?
                   </Link>
                 </div>
-                <Input 
-                  id="password" 
-                  name="password" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  required 
-                  className="h-12 rounded-lg" 
-                />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    name="password" 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••" 
+                    required 
+                    className="h-12 rounded-lg pr-10" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
