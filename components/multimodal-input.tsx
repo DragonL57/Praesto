@@ -352,17 +352,21 @@ function PureMultimodalInput({
             <Textarea
               data-testid="multimodal-input"
               ref={textareaRef}
-              placeholder="Send a message..."
+              placeholder="Ask UniTaskAI anything..."
               value={input}
               onChange={handleInput}
               onPaste={handlePaste}
               name="message-input"
               id="message-input"
               className={cx(
-                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
-                'scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
+                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-3 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
                 className,
               )}
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent'
+              }}
               rows={2}
               onKeyDown={(event) => {
                 if (
