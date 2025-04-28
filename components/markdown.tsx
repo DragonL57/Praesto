@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { ImagePreviewModal } from './image-preview-modal';
 
 // Define custom props to track heading depth
 interface MarkdownProps {
@@ -71,251 +72,286 @@ const NonMemoizedMarkdown = ({
   children,
   baseHeadingLevel = 1,
 }: MarkdownProps) => {
+  // State to track image preview modal - defined before any conditional returns
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
+  
   // Early return for empty content to avoid unnecessary rendering
   if (!children || children.trim() === '') {
     return null;
   }
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
-      skipHtml={true} // Skip HTML for security and performance
-      components={{
-        // Pre and Code components for code blocks - improved to handle overflow
-        pre: ({ children }) => {
-          // The actual rendering is handled by the code component below
-          return <>{children}</>;
-        },
+    <>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        skipHtml={true} // Skip HTML for security and performance
+        components={{
+          // Pre and Code components for code blocks - improved to handle overflow
+          pre: ({ children }) => {
+            // The actual rendering is handled by the code component below
+            return <>{children}</>;
+          },
 
-        code: ({ className, children, ...props }) => {
-          // Determine if this is a code block or inline code
-          const match = /language-(\w+)/.exec(className || '');
-          const language = match?.[1] || '';
-          const isInline = !match;
-          
-          if (isInline) {
+          code: ({ className, children, ...props }) => {
+            // Determine if this is a code block or inline code
+            const match = /language-(\w+)/.exec(className || '');
+            const language = match?.[1] || '';
+            const isInline = !match;
+            
+            if (isInline) {
+              return (
+                <code
+                  className="px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                  {...props}
+                >
+                  {children}
+                </code>
+              );
+            }
+            
             return (
-              <code
-                className="px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+              <CodeBlockWithCopy language={language}>
+                {String(children)}
+              </CodeBlockWithCopy>
+            );
+          },
+
+          // Image component with lazy loading and full screen preview
+          img: ({ src, alt, ..._props }) => {
+            if (!src) return null;
+            
+            const handleImageClick = () => {
+              setPreviewImage({ src, alt: alt || 'Image' });
+            };
+            
+            const handleKeyDown = (event: React.KeyboardEvent) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleImageClick();
+              }
+            };
+
+            return (
+              <div className="my-2 flex justify-center">
+                <div className="relative max-w-full">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleImageClick}
+                    onKeyDown={handleKeyDown}
+                    className="cursor-pointer"
+                    aria-label={`View ${alt || 'image'} in full screen`}
+                  >
+                    <Image
+                      src={src}
+                      alt={alt || 'Image'}
+                      width={500} // Fixed width as number
+                      height={300} // Fixed height as number
+                      className="rounded-md object-contain hover:opacity-90 transition-opacity"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                      unoptimized={true} // Set to true for all external images to bypass domain restrictions
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          },
+
+          // Table components with improved overflow handling
+          table: ({ children, ...props }) => (
+            <TableWrapper>
+              <table
+                style={{
+                  borderSpacing: 0,
+                  width: '150%', // Force table to be wider than container
+                  minWidth: '100%',
+                }}
                 {...props}
               >
                 {children}
-              </code>
-            );
-          }
-          
-          return (
-            <CodeBlockWithCopy language={language}>
-              {String(children)}
-            </CodeBlockWithCopy>
-          );
-        },
+              </table>
+            </TableWrapper>
+          ),
 
-        // Image component with lazy loading
-        img: ({ src, alt, ..._props }) => {
-          if (!src) return null;
-
-          return (
-            <div className="my-2 flex justify-center">
-              <div className="relative max-w-full">
-                <Image
-                  src={src}
-                  alt={alt || 'Image'}
-                  width={500} // Fixed width as number
-                  height={300} // Fixed height as number
-                  className="rounded-md object-contain"
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                  unoptimized={true} // Set to true for all external images to bypass domain restrictions
-                />
-              </div>
-            </div>
-          );
-        },
-
-        // Table components with improved overflow handling
-        table: ({ children, ...props }) => (
-          <TableWrapper>
-            <table
+          thead: ({ children, ...props }) => (
+            <thead
+              className="bg-zinc-50 dark:bg-zinc-800"
+              style={{ position: 'sticky', top: 0, zIndex: 1 }}
+              {...props}
+            >
+              {children}
+            </thead>
+          ),
+          tbody: ({ children, ...props }) => <tbody {...props}>{children}</tbody>,
+          tr: ({ children, ...props }) => (
+            <tr className="border-b dark:border-zinc-700" {...props}>
+              {children}
+            </tr>
+          ),
+          th: ({ children, ...props }) => (
+            <th
+              className="px-4 py-2 text-left font-semibold"
               style={{
-                borderSpacing: 0,
-                width: '150%', // Force table to be wider than container
-                minWidth: '100%',
+                maxWidth: '300px', // Set max width for cell
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
               {...props}
             >
               {children}
-            </table>
-          </TableWrapper>
-        ),
+            </th>
+          ),
+          td: ({ children, ...props }) => (
+            <td
+              className="px-4 py-2"
+              style={{
+                maxWidth: '300px', // Set max width for cell
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                wordBreak: 'break-word',
+              }}
+              {...props}
+            >
+              {children}
+            </td>
+          ),
 
-        thead: ({ children, ...props }) => (
-          <thead
-            className="bg-zinc-50 dark:bg-zinc-800"
-            style={{ position: 'sticky', top: 0, zIndex: 1 }}
-            {...props}
-          >
-            {children}
-          </thead>
-        ),
-        tbody: ({ children, ...props }) => <tbody {...props}>{children}</tbody>,
-        tr: ({ children, ...props }) => (
-          <tr className="border-b dark:border-zinc-700" {...props}>
-            {children}
-          </tr>
-        ),
-        th: ({ children, ...props }) => (
-          <th
-            className="px-4 py-2 text-left font-semibold"
-            style={{
-              maxWidth: '300px', // Set max width for cell
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            {...props}
-          >
-            {children}
-          </th>
-        ),
-        td: ({ children, ...props }) => (
-          <td
-            className="px-4 py-2"
-            style={{
-              maxWidth: '300px', // Set max width for cell
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              wordBreak: 'break-word',
-            }}
-            {...props}
-          >
-            {children}
-          </td>
-        ),
+          // Basic elements
+          hr: ({ ...props }) => (
+            <hr
+              className="my-8 border-0 border-t border-zinc-300 dark:border-zinc-700"
+              {...props}
+            />
+          ),
+          ol: ({ children, ...props }) => (
+            <ol className="list-decimal list-outside ml-4 my-2" {...props}>
+              {children}
+            </ol>
+          ),
+          ul: ({ children, ...props }) => (
+            <ul className="nested-bullets list-outside ml-4 my-2" {...props}>
+              {children}
+            </ul>
+          ),
+          li: ({ children, ...props }) => (
+            <li className="py-1 break-words" {...props}>
+              {children}
+            </li>
+          ),
+          strong: ({ children, ...props }) => (
+            <span className="font-semibold" {...props}>
+              {children}
+            </span>
+          ),
 
-        // Basic elements
-        hr: ({ ...props }) => (
-          <hr
-            className="my-8 border-0 border-t border-zinc-300 dark:border-zinc-700"
-            {...props}
-          />
-        ),
-        ol: ({ children, ...props }) => (
-          <ol className="list-decimal list-outside ml-4 my-2" {...props}>
-            {children}
-          </ol>
-        ),
-        ul: ({ children, ...props }) => (
-          <ul className="nested-bullets list-outside ml-4 my-2" {...props}>
-            {children}
-          </ul>
-        ),
-        li: ({ children, ...props }) => (
-          <li className="py-1 break-words" {...props}>
-            {children}
-          </li>
-        ),
-        strong: ({ children, ...props }) => (
-          <span className="font-semibold" {...props}>
-            {children}
-          </span>
-        ),
+          // Links
+          a: ({ children, href, ...props }) => (
+            <Link
+              className="text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere"
+              target="_blank"
+              rel="noreferrer"
+              href={href as string}
+              {...props}
+            >
+              {children || href}
+            </Link>
+          ),
 
-        // Links
-        a: ({ children, href, ...props }) => (
-          <Link
-            className="text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere"
-            target="_blank"
-            rel="noreferrer"
-            href={href as string}
-            {...props}
-          >
-            {children || href}
-          </Link>
-        ),
+          // Paragraphs
+          p: ({ children, ...props }) => (
+            <p className="my-2 break-words" {...props}>
+              {children}
+            </p>
+          ),
 
-        // Paragraphs
-        p: ({ children, ...props }) => (
-          <p className="my-2 break-words" {...props}>
-            {children}
-          </p>
-        ),
+          // Heading components with dynamic level based on baseHeadingLevel
+          h1: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-3xl font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
 
-        // Heading components with dynamic level based on baseHeadingLevel
-        h1: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-3xl font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
+          h2: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel + 1, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-2xl font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
 
-        h2: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel + 1, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-2xl font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
+          h3: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel + 2, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-xl font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
 
-        h3: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel + 2, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-xl font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
+          h4: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel + 3, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-lg font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
 
-        h4: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel + 3, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-lg font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
+          h5: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel + 4, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-base font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
 
-        h5: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel + 4, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-base font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
+          h6: ({ children, ...props }) => {
+            const level = Math.min(baseHeadingLevel + 5, 6);
+            return createElement(
+              `h${level}`,
+              {
+                className: 'text-sm font-semibold mt-2 mb-2 break-words',
+                ...props,
+              },
+              children,
+            );
+          },
+        }}
+      >
+        {children}
+      </ReactMarkdown>
 
-        h6: ({ children, ...props }) => {
-          const level = Math.min(baseHeadingLevel + 5, 6);
-          return createElement(
-            `h${level}`,
-            {
-              className: 'text-sm font-semibold mt-2 mb-2 break-words',
-              ...props,
-            },
-            children,
-          );
-        },
-      }}
-    >
-      {children}
-    </ReactMarkdown>
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <ImagePreviewModal
+          isOpen={!!previewImage}
+          onClose={() => setPreviewImage(null)}
+          imageUrl={previewImage.src}
+          alt={previewImage.alt}
+        />
+      )}
+    </>
   );
 };
 
