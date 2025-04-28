@@ -184,8 +184,6 @@ export default function RegisterPage() {
                         <li>Be at least 6 characters long</li>
                         <li>Contain at least one lowercase letter (a-z)</li>
                         <li>Contain at least one number (0-9)</li>
-                        <li>No spaces at beginning or end</li>
-                        <li>Special characters are recommended for stronger security</li>
                       </ul>
                     </div>
                   </div>

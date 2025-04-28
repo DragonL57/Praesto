@@ -1,6 +1,7 @@
 import type React from "react"
 import "@/app/globals.css"
 import "katex/dist/katex.min.css" // Add KaTeX CSS for math rendering
+import "@/public/katex-override.css" // Import KaTeX override CSS
 import { Inter } from "next/font/google"
 import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -79,7 +80,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="stylesheet" href="/katex-override.css" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

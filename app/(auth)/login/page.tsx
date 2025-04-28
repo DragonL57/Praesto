@@ -21,6 +21,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [isSuccessful, setIsSuccessful] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+
+  // Load saved email if it exists
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("unitaskai_remembered_email")
+    if (savedEmail) {
+      setEmail(savedEmail)
+      setRememberMe(true)
+    }
+  }, [])
 
   const [state, formAction] = useActionState<LoginActionState, FormData>(
     login,
@@ -55,6 +65,13 @@ export default function LoginPage() {
       })
       setIsLoading(false)
     } else if (state.status === "success") {
+      // Save email to localStorage if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("unitaskai_remembered_email", email)
+      } else {
+        localStorage.removeItem("unitaskai_remembered_email")
+      }
+      
       setIsSuccessful(true)
       router.refresh()
       // Redirect to /chat after successful login
@@ -62,14 +79,18 @@ export default function LoginPage() {
         router.push("/chat")
       }, 500) // Small delay to allow refresh to complete
     }
-  }, [state.status, state.message, router])
+  }, [state.status, state.message, router, rememberMe, email])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     
     const formData = new FormData(e.currentTarget)
-    setEmail(formData.get("email") as string)
+    const emailValue = formData.get("email") as string
+    setEmail(emailValue)
+    
+    // Add remember_me to the form data
+    formData.append("remember_me", rememberMe.toString())
     
     // Wrap formAction in startTransition
     startTransition(() => {
@@ -114,7 +135,8 @@ export default function LoginPage() {
                   placeholder="name@example.com" 
                   required 
                   className="h-12 rounded-lg"
-                  defaultValue={email} 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
@@ -147,9 +169,14 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Checkbox id="remember" name="remember" />
+                <Checkbox 
+                  id="remember" 
+                  name="remember" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
                 <Label htmlFor="remember" className="text-sm font-normal">
-                  Remember me for 30 days
+                  Remember me next time
                 </Label>
               </div>
 

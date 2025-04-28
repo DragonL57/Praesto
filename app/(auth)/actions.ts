@@ -38,15 +38,18 @@ export const login = async (
   try {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    // Renamed to _rememberMe to indicate it's collected but unused for now
+    // This can be used in future implementations
+    const _rememberMe = formData.get('remember_me') === 'true';
 
     // Basic validation just to ensure email format and password presence
     try {
       loginFormSchema.parse({ email, password });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
         return { 
           status: 'invalid_data',
-          message: error.errors[0]?.message || 'Invalid email or password format'
+          message: validationError.errors[0]?.message || 'Invalid email or password format'
         };
       }
     }
@@ -66,16 +69,17 @@ export const login = async (
         email: email,
         password: password,
         redirect: false,
+        callbackUrl: undefined
       });
       return { status: 'success' };
-    } catch (error) {
+    } catch {
       // If we reach here after verifying the user exists, it's a wrong password
       return { 
         status: 'wrong_password',
         message: 'Incorrect password. Please try again.' 
       };
     }
-  } catch (error) {
+  } catch {
     return { 
       status: 'failed',
       message: 'An unexpected error occurred. Please try again later.'
