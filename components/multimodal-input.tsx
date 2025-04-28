@@ -347,63 +347,75 @@ function PureMultimodalInput({
             </div>
           )}
           
-          {/* Text input area */}
-          <Textarea
-            data-testid="multimodal-input"
-            ref={textareaRef}
-            placeholder="Send a message..."
-            value={input}
-            onChange={handleInput}
-            onPaste={handlePaste}
-            name="message-input"
-            id="message-input"
-            className={cx(
-              'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pb-14 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
-              'scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
-              className,
-            )}
-            rows={2}
-            onKeyDown={(event) => {
-              if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing
-              ) {
-                event.preventDefault();
+          {/* Text input container with proper spacing for buttons */}
+          <div className="relative">
+            <Textarea
+              data-testid="multimodal-input"
+              ref={textareaRef}
+              placeholder="Send a message..."
+              value={input}
+              onChange={handleInput}
+              onPaste={handlePaste}
+              name="message-input"
+              id="message-input"
+              className={cx(
+                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                'scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
+                className,
+              )}
+              rows={2}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Enter' &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
 
-                if (status !== 'ready') {
-                  toast.error('Please wait for the model to finish its response!');
-                } else {
-                  submitForm();
+                  if (status !== 'ready') {
+                    toast.error('Please wait for the model to finish its response!');
+                  } else {
+                    submitForm();
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+            {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
+            <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
+          </div>
         </div>
 
         {/* Left side - only persona selector */}
-        <div className="absolute bottom-0 left-2 p-2 w-fit flex flex-row justify-start items-center">
-          <PersonaSelector />
+        <div className="absolute bottom-0 left-2 p-2 w-fit flex flex-row justify-start items-center z-10">
+          {/* Background element with rounded corners */}
+          <span className="absolute inset-0 bg-muted dark:bg-muted rounded-full"></span>
+          <div className="relative">
+            <PersonaSelector />
+          </div>
         </div>
 
         {/* Right side - attachments, speech-to-text, and send buttons */}
-        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end items-center">
-          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-          <SpeechToTextButton 
-            setInput={setInput} 
-            status={status} 
-            input={input}
-            recognitionRef={recognitionRef}
-          />
-          {(status === 'submitted' || status === 'streaming') ? (
-            <StopButton stop={stop} setMessages={setMessages} />
-          ) : (
-            <SendButton
+        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end items-center z-10">
+          {/* Background element with rounded corners */}
+          <span className="absolute inset-0 bg-muted dark:bg-muted rounded-full"></span>
+          <div className="relative flex items-center">
+            <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+            <SpeechToTextButton 
+              setInput={setInput} 
+              status={status} 
               input={input}
-              submitForm={submitForm}
-              uploadQueue={uploadQueue}
+              recognitionRef={recognitionRef}
             />
-          )}
+            {(status === 'submitted' || status === 'streaming') ? (
+              <StopButton stop={stop} setMessages={setMessages} />
+            ) : (
+              <SendButton
+                input={input}
+                submitForm={submitForm}
+                uploadQueue={uploadQueue}
+              />
+            )}
+          </div>
         </div>
         
         {/* Disclaimer text positioned underneath without affecting layout */}
