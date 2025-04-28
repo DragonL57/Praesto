@@ -1,0 +1,19 @@
+/* Override KaTeX error styles to be less intrusive */
+.katex-error {
+  color: inherit !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Add fallback fonts for Vietnamese characters */
+.katex {
+  font-family: KaTeX_Main, "Noto Sans", "Noto Sans Vietnamese", Arial Unicode MS, sans-serif !important;
+}
+
+/* Ensure math fonts have fallbacks for Vietnamese characters */
+.katex .mathnormal,
+.katex .mathit,
+.katex .mathrm,
+.katex .mathbf {
+  font-family: KaTeX_Main, "Noto Sans", "Noto Sans Vietnamese", Arial Unicode MS, sans-serif !important;
+}

@@ -77,6 +77,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="stylesheet" href="/katex-override.css" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Suppress KaTeX warnings for Vietnamese characters
+              const originalConsoleWarn = console.warn;
+              console.warn = function() {
+                const args = Array.from(arguments);
+                if (args[0] && typeof args[0] === 'string') {
+                  if (args[0].includes('No character metrics for') || 
+                      args[0].includes('LaTeX-incompatible input') ||
+                      args[0].includes('Unrecognized Unicode character')) {
+                    return; // Suppress these specific warnings
+                  }
+                }
+                return originalConsoleWarn.apply(console, args);
+              };
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <JsonLd

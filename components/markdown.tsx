@@ -84,7 +84,15 @@ const NonMemoizedMarkdown = ({
     <>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[[rehypeKatex, { 
+          strict: false,  // Don't throw errors for invalid KaTeX
+          output: 'html', // Output as HTML
+          throwOnError: false, // Don't throw on parsing errors
+          trust: true, // Trust HTML from KaTeX
+          macros: {}, // Custom macros can be added here if needed
+          errorColor: '#FF5555', // Color for errors
+          globalGroup: true // Allow global math commands
+        }]]}
         skipHtml={true} // Skip HTML for security and performance
         components={{
           // Pre and Code components for code blocks - improved to handle overflow
