@@ -300,6 +300,7 @@ function PureMultimodalInput({
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
         ref={fileInputRef}
         multiple
+        accept=".jpg,.jpeg,.png,.gif,.pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.pptx,.ppt"
         onChange={handleFileChange}
         tabIndex={-1}
         aria-label="File upload"

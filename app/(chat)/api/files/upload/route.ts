@@ -8,13 +8,31 @@ import { auth } from '@/app/(auth)/auth';
 const FileSchema = z.object({
   file: z
     .instanceof(Blob)
-    .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: 'File size should be less than 5MB',
+    .refine((file) => file.size <= 10 * 1024 * 1024, {
+      message: 'File size should be less than 10MB',
     })
-    // Update the file type based on the kind of files you want to accept
-    .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), {
-      message: 'File type should be JPEG or PNG',
-    }),
+    // Update to accept document file types
+    .refine(
+      (file) => [
+        // Images
+        'image/jpeg', 
+        'image/png',
+        'image/gif',
+        // Documents
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+        'application/msword', // doc
+        'text/plain',
+        'text/csv',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+        'application/vnd.ms-excel', // xls
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+        'application/vnd.ms-powerpoint', // ppt
+      ].includes(file.type),
+      {
+        message: 'Supported file types: Images (JPEG, PNG, GIF), Documents (PDF, DOCX, DOC, TXT, CSV, XLSX, XLS, PPTX, PPT)',
+      }
+    ),
 });
 
 export async function POST(request: Request) {
