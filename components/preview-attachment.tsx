@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { Attachment } from 'ai';
 
 import { LoaderIcon } from './icons';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
+import { ImagePreviewModal } from './image-preview-modal';
 
 export const PreviewAttachment = ({
   attachment,
@@ -14,20 +16,43 @@ export const PreviewAttachment = ({
   onRemove?: () => void;
 }) => {
   const { name, url, contentType } = attachment;
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const handleImageClick = () => {
+    if (contentType?.startsWith('image') && url) {
+      setIsPreviewOpen(true);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleImageClick();
+    }
+  };
 
   return (
     <div data-testid="input-attachment-preview" className="flex flex-col gap-2">
       <div className="size-16 aspect-square rounded-md relative flex flex-col items-center justify-center">
         {contentType ? (
           contentType.startsWith('image') ? (
-            // NOTE: it is recommended to use next/image for images
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={url}
-              src={url}
-              alt={name ?? 'An image attachment'}
-              className="rounded-md size-full object-cover"
-            />
+            <div 
+              role="button"
+              tabIndex={0}
+              onClick={handleImageClick}
+              onKeyDown={handleKeyDown}
+              className="size-full rounded-md cursor-pointer"
+              aria-label={name ? `Preview ${name}` : 'Preview image'}
+            >
+              {/* NOTE: it is recommended to use next/image for images */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={url}
+                src={url}
+                alt={name ?? 'An image attachment'}
+                className="rounded-md size-full object-cover"
+              />
+            </div>
           ) : (
             <div className="bg-muted size-full rounded-md" />
           )
@@ -62,6 +87,16 @@ export const PreviewAttachment = ({
               <X size={10} className="text-white dark:text-zinc-800" />
             </Button>
           </div>
+        )}
+
+        {/* Image Preview Modal */}
+        {contentType?.startsWith('image') && url && (
+          <ImagePreviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            imageUrl={url}
+            alt={name || 'Image preview'}
+          />
         )}
       </div>
     </div>

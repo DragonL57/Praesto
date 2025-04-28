@@ -85,8 +85,18 @@ function PureMultimodalInput({
 
   const adjustHeight = () => {
     if (textareaRef.current) {
+      // Remove auto-height adjustment to allow scrolling instead
+      // Only adjust height up to a maximum, then enable scrollbar
+      const maxHeight = 200; // Maximum height in pixels before scrolling
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+      
+      // Set height based on content but cap at maxHeight
+      const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
+      
+      // If content is larger than maxHeight, ensure scrollbar is visible
+      textareaRef.current.style.overflowY = 
+        textareaRef.current.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
   };
 
@@ -94,6 +104,7 @@ function PureMultimodalInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = '98px';
+      textareaRef.current.style.overflowY = 'hidden';
     }
   };
 
@@ -347,7 +358,8 @@ function PureMultimodalInput({
             name="message-input"
             id="message-input"
             className={cx(
-              'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none !text-base bg-transparent pb-12 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+              'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pb-14 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+              'scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
               className,
             )}
             rows={2}

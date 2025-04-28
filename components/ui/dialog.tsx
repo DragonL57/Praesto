@@ -48,12 +48,13 @@ interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   title?: string;
   description?: string;
+  hideTitle?: boolean;
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, title = "Dialog", description, ...props }, ref) => (
+>(({ className, children, title = "Dialog", description, hideTitle = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -64,15 +65,21 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-      {/* Add hidden title for accessibility */}
+      {/* Always include a DialogTitle for accessibility */}
       <DialogPrimitive.Title asChild>
-        <VisuallyHidden>{title}</VisuallyHidden>
+        {hideTitle ? (
+          <span className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,_0,_0,_0)] whitespace-nowrap border-0">
+            {title}
+          </span>
+        ) : null}
       </DialogPrimitive.Title>
       
       {/* Add hidden description for accessibility if provided */}
       {description && (
         <DialogPrimitive.Description asChild>
-          <VisuallyHidden>{description}</VisuallyHidden>
+          <span className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,_0,_0,_0)] whitespace-nowrap border-0">
+            {description}
+          </span>
         </DialogPrimitive.Description>
       )}
       
