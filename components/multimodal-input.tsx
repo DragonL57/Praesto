@@ -234,10 +234,10 @@ function PureMultimodalInput({
         const file = item.getAsFile();
         if (file) {
           const timestamp = new Date().getTime();
-          // Create a new file with a more descriptive name
+          // Create a new file with a simple timestamp as the filename
           const renamedFile = new File(
             [file],
-            `pasted-image-${timestamp}.${file.name.split('.').pop() || 'png'}`,
+            `${timestamp}.${file.type.split('/')[1] || 'png'}`,
             { type: file.type },
           );
           imageFiles.push(renamedFile);
@@ -295,61 +295,79 @@ function PureMultimodalInput({
         id="file-upload"
       />
 
-      {(attachments.length > 0 || uploadQueue.length > 0) && (
-        <div
-          data-testid="attachments-preview"
-          className="flex flex-row gap-2 overflow-x-auto items-end"
-          style={{ scrollbarWidth: 'thin' }}
-        >
-          {attachments.map((attachment) => (
-            <PreviewAttachment key={attachment.url} attachment={attachment} />
-          ))}
-
-          {uploadQueue.map((filename) => (
-            <PreviewAttachment
-              key={filename}
-              attachment={{
-                url: '',
-                name: filename,
-                contentType: '',
-              }}
-              isUploading={true}
-            />
-          ))}
-        </div>
-      )}
-
       <div className="relative">
-        <Textarea
-          data-testid="multimodal-input"
-          ref={textareaRef}
-          placeholder="Send a message..."
-          value={input}
-          onChange={handleInput}
-          onPaste={handlePaste}
-          name="message-input"
-          id="message-input"
-          className={cx(
-            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-3xl !text-base bg-muted pb-12 pl-5 pr-5 dark:border-zinc-700',
-            className,
-          )}
-          rows={2}
-          onKeyDown={(event) => {
-            if (
-              event.key === 'Enter' &&
-              !event.shiftKey &&
-              !event.nativeEvent.isComposing
-            ) {
-              event.preventDefault();
+        {/* Input container with dynamic padding based on attachments */}
+        <div className={cx(
+          "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700",
+          {
+            "pt-4": attachments.length > 0 || uploadQueue.length > 0
+          }
+        )}>
+          {/* Attachments inside the input bar */}
+          {(attachments.length > 0 || uploadQueue.length > 0) && (
+            <div
+              data-testid="attachments-preview"
+              className="flex flex-row gap-2 overflow-x-auto items-center px-4 pb-2"
+              style={{ scrollbarWidth: 'thin' }}
+            >
+              {attachments.map((attachment, index) => (
+                <PreviewAttachment 
+                  key={attachment.url} 
+                  attachment={attachment}
+                  onRemove={() => {
+                    setAttachments(currentAttachments => 
+                      currentAttachments.filter((_, i) => i !== index)
+                    );
+                  }}
+                />
+              ))}
 
-              if (status !== 'ready') {
-                toast.error('Please wait for the model to finish its response!');
-              } else {
-                submitForm();
+              {uploadQueue.map((filename) => (
+                <PreviewAttachment
+                  key={filename}
+                  attachment={{
+                    url: '',
+                    name: filename,
+                    contentType: '',
+                  }}
+                  isUploading={true}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Text input area */}
+          <Textarea
+            data-testid="multimodal-input"
+            ref={textareaRef}
+            placeholder="Send a message..."
+            value={input}
+            onChange={handleInput}
+            onPaste={handlePaste}
+            name="message-input"
+            id="message-input"
+            className={cx(
+              'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none !text-base bg-transparent pb-12 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+              className,
+            )}
+            rows={2}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing
+              ) {
+                event.preventDefault();
+
+                if (status !== 'ready') {
+                  toast.error('Please wait for the model to finish its response!');
+                } else {
+                  submitForm();
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+        </div>
 
         {/* Left side - only persona selector */}
         <div className="absolute bottom-0 left-2 p-2 w-fit flex flex-row justify-start items-center">

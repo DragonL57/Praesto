@@ -1,19 +1,23 @@
 import type { Attachment } from 'ai';
 
 import { LoaderIcon } from './icons';
+import { Button } from './ui/button';
+import { X } from 'lucide-react';
 
 export const PreviewAttachment = ({
   attachment,
   isUploading = false,
+  onRemove,
 }: {
   attachment: Attachment;
   isUploading?: boolean;
+  onRemove?: () => void;
 }) => {
   const { name, url, contentType } = attachment;
 
   return (
     <div data-testid="input-attachment-preview" className="flex flex-col gap-2">
-      <div className="w-20 h-16 aspect-video bg-muted rounded-md relative flex flex-col items-center justify-center">
+      <div className="size-16 aspect-square rounded-md relative flex flex-col items-center justify-center">
         {contentType ? (
           contentType.startsWith('image') ? (
             // NOTE: it is recommended to use next/image for images
@@ -25,10 +29,10 @@ export const PreviewAttachment = ({
               className="rounded-md size-full object-cover"
             />
           ) : (
-            <div className="" />
+            <div className="bg-muted size-full rounded-md" />
           )
         ) : (
-          <div className="" />
+          <div className="bg-muted size-full rounded-md" />
         )}
 
         {isUploading && (
@@ -39,8 +43,27 @@ export const PreviewAttachment = ({
             <LoaderIcon />
           </div>
         )}
+        
+        {!isUploading && onRemove && (
+          <div className="absolute top-1 right-1 z-30">
+            <Button
+              data-testid="remove-attachment-button"
+              className="size-4 p-0 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove();
+              }}
+              style={{ 
+                boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.1)'
+              }}
+              aria-label="Remove attachment"
+            >
+              <X size={10} className="text-white dark:text-zinc-800" />
+            </Button>
+          </div>
+        )}
       </div>
-      <div className="text-xs text-zinc-500 max-w-16 truncate">{name}</div>
     </div>
   );
 };
