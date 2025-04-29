@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import ShinyText from './shiny-text';
 
 // Helper function to extract video ID from YouTube URL or ID
 function extractVideoId(urlOrId: string): string {
@@ -316,7 +317,7 @@ export const ThinkingMessage = () => {
       <div className="flex gap-4 w-full">
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Hmm...
+            <ShinyText>Thinking, wait a bit...</ShinyText>
           </div>
         </div>
       </div>
