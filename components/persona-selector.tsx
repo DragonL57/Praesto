@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { RiQuillPenAiLine } from "react-icons/ri";
 import { DEFAULT_PERSONA_ID, personas } from '@/lib/ai/personas';
@@ -35,6 +35,12 @@ export default function PersonaSelector({ className }: PersonaSelectorProps) {
   // State to manage dropdown open/close
   const [isOpen, setIsOpen] = useState(false);
   
+  // Add a state to control tooltip visibility
+  const [showTooltip, setShowTooltip] = useState(true);
+  
+  // Reference to the button element
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  
   // This is what will be shown after client-side hydration
   const selectedPersona = useMemo(() => {
     if (!mounted) return defaultPersona;
@@ -50,11 +56,27 @@ export default function PersonaSelector({ className }: PersonaSelectorProps) {
   const handlePersonaSelect = (id: string) => {
     setSelectedPersonaId(id);
     setIsOpen(false); // Close the dropdown after selection
+    setShowTooltip(false); // Disable tooltip after selection
+    
+    // Remove focus from button to eliminate the blue outline
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    
+    // Specifically blur the button element if we have a reference to it
+    if (buttonRef.current) {
+      buttonRef.current.blur();
+    }
+    
+    // Re-enable tooltip after a delay
+    setTimeout(() => {
+      setShowTooltip(true);
+    }, 1500);
   };
 
   return (
     <TooltipProvider delayDuration={50} skipDelayDuration={0}>
-      <Tooltip>
+      <Tooltip open={isOpen ? false : showTooltip ? undefined : false}>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger
@@ -65,9 +87,10 @@ export default function PersonaSelector({ className }: PersonaSelectorProps) {
               )}
             >
               <Button
+                ref={buttonRef}
                 data-testid="persona-selector"
                 variant="outline"
-                className="px-2 h-8 sm:h-9 flex gap-1.5 items-center border border-zinc-300 dark:border-zinc-700 bg-muted rounded-full hover:bg-zinc-200/80 dark:hover:bg-zinc-800/90 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-150"
+                className="px-2 h-8 sm:h-9 flex gap-1.5 items-center border border-zinc-300 dark:border-zinc-700 bg-muted rounded-full hover:bg-zinc-200/80 dark:hover:bg-zinc-800/90 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-150 focus:ring-0 focus:ring-offset-0"
                 title="Select AI personality style"
                 aria-label="Select AI personality"
               >

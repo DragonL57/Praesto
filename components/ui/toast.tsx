@@ -70,6 +70,8 @@ const ToastAction = React.forwardRef<
 ))
 ToastAction.displayName = ToastPrimitives.Action.displayName
 
+// We keep the ToastClose component definition but we won't export it
+// This way it's defined but not available for use
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
@@ -124,6 +126,6 @@ export {
   Toast,
   ToastTitle,
   ToastDescription,
-  ToastClose,
   ToastAction,
+  // Remove ToastClose from exports so it can't be used
 }

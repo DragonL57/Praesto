@@ -85,9 +85,6 @@ export function Chat({
       // Save the new persona ID to prevent duplicate reloads
       setPrevPersonaId(selectedPersonaId);
       
-      // Show toast notification to inform user
-      toast.info(`Switched to ${selectedPersonaId === 'witty' ? 'Sassy Scholar' : 'Standard'} persona`);
-      
       // Wait a bit before reloading to avoid race conditions
       const timeoutId = setTimeout(() => {
         reload();

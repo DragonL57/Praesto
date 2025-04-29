@@ -92,6 +92,35 @@ body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1; /* Added from template */
   }
+  
+  /* Remove focus outlines throughout the app */
+  *:focus {
+    outline: none !important;
+  }
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  /* Remove ring focus styles from Tailwind */
+  .focus\:ring:focus, 
+  .focus\:ring-1:focus, 
+  .focus\:ring-2:focus, 
+  .focus\:ring-4:focus, 
+  .focus\:ring-offset-2:focus,
+  .focus-visible\:ring:focus-visible, 
+  .focus-visible\:ring-1:focus-visible, 
+  .focus-visible\:ring-2:focus-visible, 
+  .focus-visible\:ring-4:focus-visible, 
+  .focus-visible\:ring-offset-2:focus-visible {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  
+  /* Remove any remaining button focus styles */
+  button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
 
 /* Added from template */
