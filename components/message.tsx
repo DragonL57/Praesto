@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useMemo } from 'react';
 import type { UIMessage } from 'ai';
 import cx from 'classnames';
 // Removing framer-motion animations
@@ -36,6 +36,13 @@ function extractVideoId(urlOrId: string): string {
   const match = urlOrId.match(youtubeRegex);
   return match ? match[1] : urlOrId;
 }
+
+// Create a type for our enhanced tool parts
+type EnhancedMessagePart = UIMessage['parts'][0] & {
+  connectNext?: boolean;
+  connectPrevious?: boolean;
+  toolIndex?: number;
+};
 
 // Helper function to preserve line breaks in user messages
 const UserTextWithLineBreaks = ({ text }: { text: string }) => {
@@ -77,6 +84,75 @@ const PurePreviewMessage = ({
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
+  // Process message parts to detect consecutive tool invocations
+  const processedParts = useMemo(() => {
+    const allParts = message.parts || [];
+
+    return allParts.map((part, i) => {
+      const enhancedPart = { ...part } as EnhancedMessagePart;
+      enhancedPart.connectNext = false;
+      enhancedPart.connectPrevious = false;
+
+      // Only process tool invocation results
+      if (enhancedPart.type === 'tool-invocation' && enhancedPart.toolInvocation.state === 'result') {
+        const currentToolName = enhancedPart.toolInvocation.toolName;
+
+        // Find the *next* tool invocation result, stopping if text is encountered
+        let nextToolPart: EnhancedMessagePart | null = null;
+        let textEncounteredNext = false;
+        for (let j = i + 1; j < allParts.length; j++) {
+          const potentialNextPart = allParts[j];
+          // Stop if we hit meaningful text
+          if (potentialNextPart.type === 'text' && potentialNextPart.text.trim().length > 0) {
+            textEncounteredNext = true;
+            break;
+          }
+          // If it's a tool result, we found it
+          if (potentialNextPart.type === 'tool-invocation' && 'toolInvocation' in potentialNextPart && potentialNextPart.toolInvocation.state === 'result') {
+            nextToolPart = potentialNextPart as EnhancedMessagePart;
+            break;
+          }
+        }
+
+        // Connect if a next tool was found AND no text was encountered before it
+        if (!textEncounteredNext && nextToolPart && nextToolPart.type === 'tool-invocation' && 'toolInvocation' in nextToolPart) {
+          const nextToolName = nextToolPart.toolInvocation.toolName;
+          if ((currentToolName === 'webSearch' && nextToolName === 'readWebsiteContent') ||
+              (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent')) {
+            enhancedPart.connectNext = true;
+          }
+        }
+
+        // Find the *previous* tool invocation result, stopping if text is encountered
+        let prevToolPart: EnhancedMessagePart | null = null;
+        let textEncounteredPrev = false;
+        for (let j = i - 1; j >= 0; j--) {
+          const potentialPrevPart = allParts[j];
+           // Stop if we hit meaningful text
+          if (potentialPrevPart.type === 'text' && potentialPrevPart.text.trim().length > 0) {
+            textEncounteredPrev = true;
+            break;
+          }
+          // If it's a tool result, we found it
+          if (potentialPrevPart.type === 'tool-invocation' && 'toolInvocation' in potentialPrevPart && potentialPrevPart.toolInvocation.state === 'result') {
+            prevToolPart = potentialPrevPart as EnhancedMessagePart;
+            break;
+          }
+        }
+
+        // Connect if a previous tool was found AND no text was encountered before it
+        if (!textEncounteredPrev && prevToolPart && prevToolPart.type === 'tool-invocation' && 'toolInvocation' in prevToolPart) {
+          const prevToolName = prevToolPart.toolInvocation.toolName;
+          if (currentToolName === 'readWebsiteContent' &&
+              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) {
+            enhancedPart.connectPrevious = true;
+          }
+        }
+      }
+      return enhancedPart;
+    });
+  }, [message.parts]);
+
   return (
     <div
       data-testid={`message-${message.role}`}
@@ -107,7 +183,7 @@ const PurePreviewMessage = ({
             </div>
           )}
 
-          {message.parts?.map((part, index) => {
+          {processedParts.map((part, index) => {
             const { type } = part;
             const key = `message-${message.id}-part-${index}`;
 
@@ -249,6 +325,7 @@ const PurePreviewMessage = ({
                         results={result.results}
                         query={result.query}
                         count={result.count}
+                        connectNext={part.connectNext}
                       />
                     ) : toolName === 'readWebsiteContent' ? (
                       <WebsiteContent
@@ -257,6 +334,10 @@ const PurePreviewMessage = ({
                         query={result.query}
                         status={result.status}
                         error={result.error}
+                        source={result.source}
+                        fallbackError={result.fallbackError}
+                        connectPrevious={part.connectPrevious}
+                        connectNext={part.connectNext}
                       />
                     ) : toolName === 'getYoutubeTranscript' ? (
                       <YouTubeTranscript

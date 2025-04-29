@@ -15,6 +15,7 @@ interface WebSearchProps {
   results: WebSearchResult[];
   query: string;
   count: number;
+  connectNext?: boolean; // Add prop to indicate if this should connect to the next component
 }
 
 // Helper function to safely parse HTML content
@@ -45,7 +46,7 @@ const parseHtml = (htmlString: string): string => {
   return decodedString.replace(/<[^>]*>/g, ''); // Simple regex to strip HTML tags
 };
 
-function PureWebSearch({ results, query, count }: WebSearchProps) {
+function PureWebSearch({ results, query, count: _count, connectNext = false }: WebSearchProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedResults, setExpandedResults] = useState<Record<string, boolean>>({});
   const resultsContainerRef = useRef<HTMLDivElement>(null);
@@ -99,8 +100,9 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
     <div
       ref={resultsContainerRef}
       className={cn(
-        'bg-background border-2 border-border/50 rounded-xl transition-all duration-300 ease-in-out mb-2 w-full',
-        isExpanded ? '' : 'cursor-pointer'
+        'bg-background rounded-xl transition-all duration-300 ease-in-out w-full',
+        isExpanded ? '' : 'cursor-pointer',
+        connectNext ? 'mb-0' : 'mb-1' // Restore conditional margin, use mb-1 for less space
       )}
       onClick={!isExpanded ? toggleExpanded : undefined}
       onKeyDown={!isExpanded ? (e) => {
@@ -115,7 +117,7 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
     >
       {/* Header - Always visible */}
       <div 
-        className={cn('flex items-center justify-between px-4 py-3', isExpanded ? 'border-b border-border/30' : '')}
+        className="flex items-center px-4 py-2"
         onClick={!isExpanded ? toggleExpanded : (e) => {
           e.stopPropagation();
           toggleExpanded();
@@ -131,18 +133,27 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
         aria-expanded={isExpanded}
         style={{ cursor: 'pointer' }}
       >
-        <div className="flex items-center gap-2 text-sm">
-          <SearchIcon size={14} className="text-muted-foreground" />
-          <span className="text-sm">{query}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{count}</span>
-          {isExpanded ? (
-            <ChevronUpIcon size={14} className="text-muted-foreground" />
-          ) : (
-            <ChevronRightIcon size={14} className="text-muted-foreground" />
-          )}
+        <div className="flex items-center gap-3 text-sm grow">
+          <div className="relative flex">
+            <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-muted-foreground z-10">
+              <SearchIcon size={16} />
+            </div>
+            {isExpanded && safeResults.length > 0 && (
+              <div className="absolute top-7 bottom-0 left-3.5 w-px bg-border/50 h-full"></div>
+            )}
+            {/* Add connecting line to the next component when connectNext is true */}
+            {connectNext && (
+              <div className="absolute top-7 bottom-[-22px] left-3.5 w-px bg-border/50"></div> // Using proper format for negative value
+            )}
+          </div>
+          <div className="text-sm font-medium flex items-center gap-2">
+            Search for <span className="font-semibold">&quot;{query}&quot;</span>
+            {isExpanded ? (
+              <ChevronUpIcon size={16} className="text-muted-foreground" />
+            ) : (
+              <ChevronDownIcon size={16} className="text-muted-foreground" />
+            )}
+          </div>
         </div>
       </div>
 
@@ -156,47 +167,34 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div
-              className={cn(
-                'flex flex-col',
-                safeResults.length > 3 &&
-                  'max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent',
-              )}
-            >
+            <div className="flex flex-col pl-4">
               {safeResults.map((result, index) => {
                 const resultId = `${result.href}-${result.title}`;
-                const isExpanded = expandedResults[resultId];
+                const isResultExpanded = expandedResults[resultId];
+                const isLastItem = index === safeResults.length - 1;
 
                 return (
                   <div
                     key={resultId}
-                    className={cn('py-2.5 px-4', index !== safeResults.length - 1 && 'border-b border-border/30')}
+                    className="relative pb-2 pr-4"
                   >
+                    {/* Connecting line */}
+                    {!isLastItem && (
+                      <div className="absolute left-3.5 inset-y-0 w-px bg-border/50"></div>
+                    )}
                     <div className="flex items-start gap-2">
-                      <span className="text-xs text-muted-foreground mt-0.5 w-4 text-right">{index + 1}</span>
+                      <div className="relative">
+                        <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-xs text-muted-foreground z-10 relative">
+                          {index + 1}
+                        </div>
+                        <div className="absolute top-3.5 left-0 h-px w-3 bg-border/50"></div>
+                      </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pt-0.5">
                         <div className="flex items-start justify-between gap-1">
-                          <a
-                            href={getFormattedUrl(result.href)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium hover:underline line-clamp-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <span className="text-sm font-medium line-clamp-1">
                             {parseHtml(result.title)}
-                          </a>
-
-                          <a
-                            href={getFormattedUrl(result.href)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 text-muted-foreground hover:text-foreground mt-0.5"
-                            aria-label="Open in new tab"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLinkIcon size={12} />
-                          </a>
+                          </span>
                         </div>
 
                         <a
@@ -209,7 +207,7 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
                           {result.href}
                         </a>
 
-                        {isExpanded && (
+                        {isResultExpanded && (
                           <p className="text-xs text-foreground/70 mt-1.5">
                             {parseHtml(result.body)}
                           </p>
@@ -218,9 +216,9 @@ function PureWebSearch({ results, query, count }: WebSearchProps) {
                         <button
                           onClick={(e) => toggleResultExpansion(resultId, e)}
                           className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5 mt-1"
-                          aria-label={isExpanded ? "Hide details" : "Show details"}
+                          aria-label={isResultExpanded ? "Hide details" : "Show details"}
                         >
-                          {isExpanded ? (
+                          {isResultExpanded ? (
                             <>
                               <ChevronUpIcon size={12} />
                               <span>Less</span>
@@ -270,29 +268,6 @@ function SearchIcon({
   );
 }
 
-function ExternalLinkIcon({
-  size = 16,
-  className,
-}: { size?: number; className?: string }) {
-  return (
-    <svg
-      height={size}
-      width={size}
-      viewBox="0 0 24 24"
-      className={cn('stroke-current', className)}
-      strokeWidth="2"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-      />
-    </svg>
-  );
-}
-
 function ChevronUpIcon({
   size = 16,
   className,
@@ -334,29 +309,6 @@ function ChevronDownIcon({
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  );
-}
-
-function ChevronRightIcon({
-  size = 16,
-  className,
-}: { size?: number; className?: string }) {
-  return (
-    <svg
-      height={size}
-      width={size}
-      viewBox="0 0 24 24"
-      className={cn('stroke-current', className)}
-      strokeWidth="2"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 5l7 7-7 7"
       />
     </svg>
   );

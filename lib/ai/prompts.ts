@@ -230,7 +230,12 @@ export const systemPrompt = ({
   }
 
   // Include formatting prompt early in the sequence for priority
-  return `${formattingPrompt}\n\n${personaPrompt}\n\n${codePrompt}\n\n${mathPrompt}\n\n${sheetPrompt}\n\n${timeContext}`;
+  return `${formattingPrompt}\n\n${personaPrompt}\n\n${codePrompt}\n\n${mathPrompt}\n\n${sheetPrompt}\n\n${timeContext}
+
+## Operational Guidelines
+- **Thinking Process:** For complex requests, think step-by-step internally before generating the response or executing actions.
+- **Tool Usage:** When multiple tools are needed to fulfill a request, try to group the tool calls together rather than interleaving them extensively with explanatory text. Execute the necessary calls, then synthesize the results or continue the task.
+`;
 };
 
 export const updateDocumentPrompt = (
