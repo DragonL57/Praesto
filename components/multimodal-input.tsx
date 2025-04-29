@@ -361,7 +361,7 @@ function PureMultimodalInput({
       <div className="relative">
         {/* Input container with dynamic padding based on attachments */}
         <div className={cx(
-          "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700",
+          "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm",
           {
             "pt-4": attachments.length > 0 || uploadQueue.length > 0
           }
@@ -442,18 +442,18 @@ function PureMultimodalInput({
         </div>
 
         {/* Left side - only persona selector */}
-        <div className="absolute bottom-0 left-2 p-2 w-fit flex flex-row justify-start items-center z-10">
-          {/* Background element with rounded corners */}
-          <span className="absolute inset-0 bg-muted dark:bg-muted rounded-full"></span>
+        <div className="absolute bottom-1 left-3 p-2 w-fit flex flex-row justify-start items-center z-10">
+          {/* Background element with rounded corners - smaller to not overlap with border */}
+          <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
           <div className="relative">
             <PersonaSelector />
           </div>
         </div>
 
         {/* Right side - attachments, speech-to-text, and send buttons */}
-        <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end items-center z-10">
-          {/* Background element with rounded corners */}
-          <span className="absolute inset-0 bg-muted dark:bg-muted rounded-full"></span>
+        <div className="absolute bottom-1 right-3 p-2 w-fit flex flex-row justify-end items-center z-10">
+          {/* Background element with rounded corners - smaller to not overlap with border */}
+          <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
           <div className="relative flex items-center">
             <AttachmentsButton fileInputRef={fileInputRef} status={status} />
             <SpeechToTextButton 
@@ -507,7 +507,7 @@ function PureAttachmentsButton({
         <TooltipTrigger asChild>
           <Button
             data-testid="attachments-button"
-            className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+            className="rounded-md rounded-bl-lg p-[7px] h-fit border border-input dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
             onClick={(event) => {
               event.preventDefault();
               fileInputRef.current?.click();
@@ -1117,7 +1117,7 @@ function PureSpeechToTextButton({
         <TooltipTrigger asChild>
           <Button
             data-testid="speech-to-text-button"
-            className={`rounded-md mx-1 p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
+            className={`rounded-md mx-1 p-[7px] h-fit border border-input dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
             onClick={(event) => {
               event.preventDefault();
               toggleListening();
