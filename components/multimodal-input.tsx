@@ -174,6 +174,57 @@ function PureMultimodalInput({
     formData.append('file', file);
 
     try {
+      // Determine if the file needs conversion to PDF
+      const needsPdfConversion = (file: File) => {
+        const documentTypes = [
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+          'application/msword', // doc
+          'application/vnd.ms-word',
+          'text/plain',
+          'text/csv',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+          'application/vnd.ms-excel', // xls
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+          'application/vnd.ms-powerpoint' // ppt
+        ];
+        
+        // Check by file extension too
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        const documentExtensions = ['docx', 'doc', 'txt', 'csv', 'xlsx', 'xls', 'pptx', 'ppt'];
+        
+        return documentTypes.includes(file.type) || 
+               (ext && documentExtensions.includes(ext));
+      };
+      
+      // Check if we need to convert this file to PDF (not an image or already PDF)
+      if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && needsPdfConversion(file)) {
+        // Send to our PDF conversion endpoint silently without toast notifications
+        const pdfResponse = await fetch('/api/files/convert-to-pdf', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (pdfResponse.ok) {
+          const data = await pdfResponse.json();
+          
+          return {
+            url: data.url,
+            name: data.pathname,
+            contentType: data.contentType,
+            originalFile: {
+              name: file.name,
+              type: file.type
+            }
+          };
+        } else {
+          const error = await pdfResponse.json();
+          console.error('Failed to convert document:', error);
+          toast.error(`Failed to upload file: ${file.name}`);
+          return undefined;
+        }
+      }
+      
+      // For images and PDFs, use the standard upload endpoint
       const response = await fetch('/api/files/upload', {
         method: 'POST',
         body: formData,

@@ -66,19 +66,25 @@ export const DocumentPreviewModal = ({
     return type === 'application/pdf';
   };
 
+  // ID for connecting DialogDescription and DialogContent's aria-describedby
+  const descriptionId = `document-preview-description-${fileName.replace(/\W/g, '-')}`;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogOverlay className="backdrop-blur-sm" />
-      <DialogContent className="border p-0 max-w-4xl w-[90vw] max-h-[98vh] h-[98vh] overflow-hidden">
+      <DialogContent 
+        className="border p-0 max-w-4xl w-[90vw] max-h-[98vh] h-[98vh] overflow-hidden"
+        aria-describedby={descriptionId}
+      >
         {/* Add DialogTitle with VisuallyHidden for accessibility */}
         <DialogTitle asChild>
           <VisuallyHidden>Document Preview - {fileName}</VisuallyHidden>
         </DialogTitle>
         
         {/* Add DialogDescription with VisuallyHidden for accessibility */}
-        <DialogDescription asChild>
+        <DialogDescription id={descriptionId} asChild>
           <VisuallyHidden>
-            Preview of document: {fileName}. Press Escape to close.
+            Preview of document: {fileName}. You can download this file or open it in a new tab. Press Escape to close.
           </VisuallyHidden>
         </DialogDescription>
         

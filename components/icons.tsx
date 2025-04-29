@@ -1246,3 +1246,22 @@ export const CheckIcon = ({ size = 16 }: { size?: number }) => {
     </svg>
   );
 };
+
+export const DocumentIcon = ({ size = 16 }: { size?: number }) => {
+  return (
+    <svg
+      height={size}
+      strokeLinejoin="round"
+      viewBox="0 0 16 16"
+      width={size}
+      style={{ color: 'currentcolor' }}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M3 1.5H9.08579C9.351 1.5 9.60536 1.79289 9.79289 1.79289L13.2071 5.20711C13.3946 5.39464 13.5 5.649 13.5 5.91421V13C13.5 13.8284 12.8284 14.5 12 14.5H3C2.17157 14.5 1.5 13.8284 1.5 13V3C1.5 2.17157 2.17157 1.5 3 1.5ZM9.5 2.91421V5.5H12.0858L9.5 2.91421ZM0 3C0 1.34315 1.34315 0 3 0H9.08579C9.8801 0 10.6415 0.31607 11.2071 0.87868L14.6213 4.29289C15.1839 4.85549 15.5 5.61686 15.5 6.41419V13C15.5 14.933 13.933 16.5 12 16.5H3C1.067 16.5 0 14.933 0 13V3Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};

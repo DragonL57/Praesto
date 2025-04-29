@@ -85,6 +85,7 @@
     "highlight.js": "^11.11.1",
     "input-otp": "^1.4.2",
     "katex": "^0.16.22",
+    "libreoffice-convert": "^1.6.1",
     "lucide-react": "^0.454.0",
     "nanoid": "^5.0.8",
     "next": "15.3.0-canary.31",
@@ -127,6 +128,7 @@
     "turndown": "^7.2.0",
     "unified": "^11.0.5",
     "usehooks-ts": "^3.1.0",
+    "uuid": "^11.1.0",
     "vaul": "^1.1.2",
     "youtube-transcript": "^1.2.1",
     "zod": "^3.24.1"
@@ -143,6 +145,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.25.0",
