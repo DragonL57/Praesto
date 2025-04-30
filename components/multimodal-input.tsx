@@ -37,6 +37,46 @@ import type {
   AvailabilityStatus
 } from '../types/speech-recognition';
 
+// Define interfaces for the VirtualKeyboard API
+interface VirtualKeyboardRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// Custom interface for the geometry change event that doesn't extend Event
+interface VirtualKeyboardGeometryChangeEvent {
+  target: {
+    boundingRect: VirtualKeyboardRect;
+  };
+}
+
+// Define the VirtualKeyboard interface without extending EventTarget
+interface VirtualKeyboard {
+  overlaysContent: boolean;
+  boundingRect: VirtualKeyboardRect;
+  show(): Promise<void>;
+  hide(): Promise<void>;
+  addEventListener(
+    type: "geometrychange", 
+    listener: (event: VirtualKeyboardGeometryChangeEvent) => void, 
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  removeEventListener(
+    type: "geometrychange", 
+    listener: (event: VirtualKeyboardGeometryChangeEvent) => void, 
+    options?: boolean | EventListenerOptions
+  ): void;
+}
+
+// Extend the Navigator interface to include the virtualKeyboard property
+declare global {
+  interface Navigator {
+    virtualKeyboard?: VirtualKeyboard;
+  }
+}
+
 function PureMultimodalInput({
   chatId,
   input,
@@ -74,21 +114,70 @@ function PureMultimodalInput({
   const isMobile = useIsMobile();
   const [_isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const lastViewportHeight = useRef(height);
+  const [usesVirtualKeyboardAPI, setUsesVirtualKeyboardAPI] = useState(false);
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      adjustHeight();
-      
-      // Only focus on desktop, not on mobile
-      if (!isMobile && width && width >= 768) {
-        textareaRef.current.focus();
-      }
-    }
-  }, [isMobile, width]);
-
-  // Track keyboard visibility on mobile devices
+  // Initialize VirtualKeyboard API if available
   useEffect(() => {
     if (!isMobile) return;
+
+    // Check if the VirtualKeyboard API is available
+    if ('virtualKeyboard' in navigator && navigator.virtualKeyboard) {
+      try {
+        // Opt out of the automatic virtual keyboard behavior
+        navigator.virtualKeyboard.overlaysContent = true;
+        setUsesVirtualKeyboardAPI(true);
+
+        // Listen for keyboard geometry changes
+        navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
+          // Adjust position of input bar based on keyboard geometry
+          if (inputContainerRef.current) {
+            const { height } = (event as VirtualKeyboardGeometryChangeEvent).target.boundingRect;
+            const keyboardVisible = height > 0;
+            setIsKeyboardVisible(keyboardVisible);
+            
+            if (keyboardVisible) {
+              // Make the container stick above the keyboard using fixed positioning
+              inputContainerRef.current.style.position = 'fixed';
+              inputContainerRef.current.style.bottom = `${height}px`;
+              inputContainerRef.current.style.left = '0px';
+              inputContainerRef.current.style.right = '0px';
+              inputContainerRef.current.style.zIndex = '50';
+              inputContainerRef.current.style.transition = 'bottom 0.1s ease-out';
+              inputContainerRef.current.style.paddingBottom = '8px';
+              inputContainerRef.current.style.paddingLeft = '10px';
+              inputContainerRef.current.style.paddingRight = '10px';
+              
+              // Scroll the textarea into view if needed
+              if (textareaRef.current) {
+                setTimeout(() => textareaRef.current?.focus(), 50);
+              }
+            } else {
+              // Reset position
+              inputContainerRef.current.style.position = '';
+              inputContainerRef.current.style.bottom = '';
+              inputContainerRef.current.style.left = '';
+              inputContainerRef.current.style.right = '';
+              inputContainerRef.current.style.zIndex = '';
+              inputContainerRef.current.style.transition = '';
+              inputContainerRef.current.style.paddingBottom = '';
+              inputContainerRef.current.style.paddingLeft = '';
+              inputContainerRef.current.style.paddingRight = '';
+            }
+          }
+        });
+        
+        console.log('VirtualKeyboard API initialized successfully');
+        return;
+      } catch (error) {
+        console.warn('Failed to initialize VirtualKeyboard API:', error);
+        setUsesVirtualKeyboardAPI(false);
+      }
+    }
+  }, [isMobile]);
+
+  // Fallback to viewport height tracking method for browsers without VirtualKeyboard API
+  useEffect(() => {
+    if (!isMobile || usesVirtualKeyboardAPI) return;
 
     // Function to detect keyboard visibility based on viewport height change
     const checkKeyboardVisibility = () => {
@@ -108,8 +197,8 @@ function PureMultimodalInput({
           inputContainerRef.current.style.left = '0px';
           inputContainerRef.current.style.right = '0px';
           inputContainerRef.current.style.zIndex = '50';
-          inputContainerRef.current.style.transition = 'bottom 0.1s ease-out'; // Add smooth transition
-          inputContainerRef.current.style.paddingBottom = '8px'; // Add a bit of padding
+          inputContainerRef.current.style.transition = 'bottom 0.1s ease-out'; 
+          inputContainerRef.current.style.paddingBottom = '8px'; 
           inputContainerRef.current.style.paddingLeft = '10px'; 
           inputContainerRef.current.style.paddingRight = '10px';
           
@@ -145,7 +234,18 @@ function PureMultimodalInput({
       window.addEventListener('resize', checkKeyboardVisibility);
       return () => window.removeEventListener('resize', checkKeyboardVisibility);
     }
-  }, [isMobile]);
+  }, [isMobile, usesVirtualKeyboardAPI]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      adjustHeight();
+      
+      // Only focus on desktop, not on mobile
+      if (!isMobile && width && width >= 768) {
+        textareaRef.current.focus();
+      }
+    }
+  }, [isMobile, width]);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
