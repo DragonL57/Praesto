@@ -116,13 +116,6 @@ function PureMultimodalInput({
   const lastViewportHeight = useRef(height);
   const [usesVirtualKeyboardAPI, setUsesVirtualKeyboardAPI] = useState(false);
 
-  // Function to dismiss the keyboard on mobile
-  const dismissKeyboard = useCallback(() => {
-    if (isMobile && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, [isMobile]);
-
   // Initialize VirtualKeyboard API if available
   useEffect(() => {
     if (!isMobile) return;
@@ -513,22 +506,6 @@ function PureMultimodalInput({
 
   return (
     <div className="relative w-full flex flex-col gap-4" ref={inputContainerRef}>
-      {/* Transparent overlay to dismiss keyboard when tapping empty space on mobile */}
-      {isMobile && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onTouchEnd={dismissKeyboard}
-          onClick={dismissKeyboard}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') dismissKeyboard();
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Dismiss keyboard"
-          style={{ pointerEvents: 'auto' }}
-        />
-      )}
-      
       {/* Only show suggestions on desktop (non-mobile) devices and when no messages/attachments */}
       {!isMobile && 
         messages.length === 0 &&
