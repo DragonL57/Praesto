@@ -14,11 +14,11 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
     --foreground: 240 10% 3.9%; /* Updated from template */
-    --card: 0 0% 100%;
+    --card: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
     --card-foreground: 240 10% 3.9%; /* Updated from template */
-    --popover: 0 0% 100%;
+    --popover: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
     --popover-foreground: 240 10% 3.9%; /* Updated from template */
     --primary: 221 83% 53%; /* Updated from template */
     --primary-foreground: 0 0% 98%;
@@ -39,11 +39,11 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 1rem; /* Updated from template */
-    --sidebar-background: 0 0% 94%;
+    --sidebar-background: 0 0% 90%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 240 4.8% 83%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
