@@ -1,6 +1,6 @@
 import type { Attachment } from "ai";
 import { useEffect, useState } from "react";
-import { FileIcon, TrashIcon } from "./icons";
+import { FileIcon } from "./icons";
 import { Button } from "./ui/button";
 import { 
   Loader2,
@@ -11,7 +11,8 @@ import {
   FileCode, 
   FileJson, 
   FileArchive,
-  Presentation
+  Presentation,
+  X
 } from "lucide-react";
 import { ImagePreviewModal } from "./image-preview-modal";
 
@@ -281,13 +282,13 @@ export function PreviewAttachment({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute -right-1 -top-1 size-5 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute -right-1 -top-1 size-5 rounded-full bg-gray-100 dark:bg-gray-800 shadow-sm z-10"
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
             }}
           >
-            <TrashIcon size={12} />
+            <X size={12} className="text-gray-900 dark:text-gray-200" />
             <span className="sr-only">Remove attachment</span>
           </Button>
         )}

@@ -102,9 +102,18 @@ function PureMultimodalInput({
 
   const resetHeight = () => {
     if (textareaRef.current) {
+      // First set height to auto to reset any previous height
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = '98px';
-      textareaRef.current.style.overflowY = 'hidden';
+      
+      // Use setTimeout to ensure this executes after React has updated the DOM with empty content
+      setTimeout(() => {
+        if (textareaRef.current) {
+          // At this point, the textarea should be empty, so its scrollHeight will be minimal
+          textareaRef.current.style.height = 'auto';
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+          textareaRef.current.style.overflowY = 'hidden';
+        }
+      }, 0);
     }
   };
 
