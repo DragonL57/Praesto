@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+               "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", 
+               "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 @layer utilities {
@@ -14,72 +16,72 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
-    --foreground: 240 10% 3.9%; /* Updated from template */
-    --card: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
-    --card-foreground: 240 10% 3.9%; /* Updated from template */
-    --popover: 0 0% 97%; /* Changed from 0 0% 100% to #F7F7F7 */
-    --popover-foreground: 240 10% 3.9%; /* Updated from template */
-    --primary: 221 83% 53%; /* Updated from template */
+    --background: 0 0% 98%; /* Slightly lighter off-white for main background */
+    --foreground: 240 10% 10%; /* Dark gray instead of black for better readability */
+    --card: 0 0% 95%; /* Slightly darker than background for layering */
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 95%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 221 70% 55%; /* Adjusted blue for better contrast on light background */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%; /* Updated from template */
-    --secondary-foreground: 240 5.9% 10%; /* Updated from template */
-    --muted: 240 4.8% 95.9%; /* Updated from template */
-    --muted-foreground: 240 3.8% 46.1%; /* Updated from template */
-    --accent: 240 4.8% 95.9%; /* Updated from template */
-    --accent-foreground: 240 5.9% 10%; /* Updated from template */
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 210 5% 93%; /* Subtle secondary */
+    --secondary-foreground: 240 5% 10%;
+    --muted: 210 5% 93%;
+    --muted-foreground: 240 5% 45%; /* Lighter for secondary text */
+    --accent: 210 5% 93%;
+    --accent-foreground: 240 5% 10%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%; /* Updated from template */
-    --input: 240 5.9% 90%; /* Updated from template */
-    --ring: 221 83% 53%; /* Updated from template */
+    --border: 220 13% 90%; /* Subtle border color */
+    --input: 220 13% 90%;
+    --ring: 221 70% 55%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 1rem; /* Updated from template */
-    --sidebar-background: 0 0% 90%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 1rem;
+    --sidebar-background: 210 10% 95%; /* Slightly darker sidebar for contrast */
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 221 70% 45%; /* Slightly darker primary for sidebar */
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 83%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 10% 90%;
+    --sidebar-accent-foreground: 240 5% 10%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 221 70% 55%;
   }
   .dark {
-    --background: 210 4% 11%; /* Changed to rgb(27, 28, 29) */
-    --foreground: 0 0% 98%;
-    --card: 210 4% 11%; /* Changed to match background */
-    --card-foreground: 0 0% 98%;
-    --popover: 210 4% 11%; /* Changed to match background */
-    --popover-foreground: 0 0% 98%;
+    --background: 210 5% 10%; /* Slightly adjusted for better contrast */
+    --foreground: 0 0% 90%; /* Not pure white for reduced eye strain */
+    --card: 210 5% 12%; /* Slightly lighter than background for layering */
+    --card-foreground: 0 0% 90%;
+    --popover: 210 5% 12%;
+    --popover-foreground: 0 0% 90%;
     --primary: 217 91% 60%;
     --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --secondary: 240 4% 16%; /* Slightly adjusted for better contrast */
+    --secondary-foreground: 0 0% 90%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%; /* Slightly lighter for better readability */
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 90%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 210 8% 23%; /* Increased lightness for better contrast against dark background */
-    --input: 210 8% 23%; /* Matched with border for consistency */
+    --border: 210 8% 23%;
+    --input: 210 8% 23%;
     --ring: 217 91% 60%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 210 6% 8%; /* Darker sidebar color to create contrast */
+    --sidebar-background: 210 6% 8%; /* Darker sidebar for contrast */
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 210 10% 20%; /* Increased contrast for sidebar borders */
+    --sidebar-border: 210 10% 20%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -90,10 +92,10 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1; /* Added from template */
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Remove focus outlines throughout the app */
+  /* Remove all focus styles */
   *:focus {
     outline: none !important;
   }
@@ -101,23 +103,20 @@ body {
     outline: none !important;
     box-shadow: none !important;
   }
-  /* Remove ring focus styles from Tailwind */
-  .focus\:ring:focus, 
-  .focus\:ring-1:focus, 
-  .focus\:ring-2:focus, 
-  .focus\:ring-4:focus, 
-  .focus\:ring-offset-2:focus,
-  .focus-visible\:ring:focus-visible, 
-  .focus-visible\:ring-1:focus-visible, 
-  .focus-visible\:ring-2:focus-visible, 
-  .focus-visible\:ring-4:focus-visible, 
-  .focus-visible\:ring-offset-2:focus-visible {
-    box-shadow: none !important;
-    outline: none !important;
-  }
   
-  /* Remove any remaining button focus styles */
-  button:focus {
+  /* Override focus styles for all interactive elements */
+  button:focus,
+  a:focus,
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus,
+  [tabindex]:focus {
     outline: none !important;
     box-shadow: none !important;
   }

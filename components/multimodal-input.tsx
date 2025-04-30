@@ -420,8 +420,9 @@ function PureMultimodalInput({
               name="message-input"
               id="message-input"
               className={cx(
-                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-3 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
                 'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
+                'placeholder:text-muted-foreground/70',
                 className,
               )}
               style={{
@@ -547,7 +548,7 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className="rounded-full p-2 h-fit border dark:border-zinc-600"
+      className="rounded-full p-2 h-fit border border-red-200 dark:border-red-700 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 shadow-sm transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();
@@ -575,7 +576,7 @@ function PureSendButton({
   return (
     <Button
       data-testid="send-button"
-      className="rounded-full p-2 h-fit border dark:border-zinc-600"
+      className="rounded-full p-2 h-fit border border-transparent bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-colors"
       onClick={(event) => {
         event.preventDefault();
         submitForm();
