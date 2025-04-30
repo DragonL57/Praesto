@@ -108,6 +108,17 @@ function PureMultimodalInput({
           inputContainerRef.current.style.left = '0px';
           inputContainerRef.current.style.right = '0px';
           inputContainerRef.current.style.zIndex = '50';
+          inputContainerRef.current.style.transition = 'bottom 0.1s ease-out'; // Add smooth transition
+          inputContainerRef.current.style.paddingBottom = '8px'; // Add a bit of padding
+          inputContainerRef.current.style.paddingLeft = '10px'; 
+          inputContainerRef.current.style.paddingRight = '10px';
+          
+          // Scroll the textarea into view if needed
+          if (textareaRef.current) {
+            setTimeout(() => {
+              textareaRef.current?.focus();
+            }, 50);
+          }
         } else {
           // Reset position
           inputContainerRef.current.style.position = '';
@@ -115,6 +126,10 @@ function PureMultimodalInput({
           inputContainerRef.current.style.left = '';
           inputContainerRef.current.style.right = '';
           inputContainerRef.current.style.zIndex = '';
+          inputContainerRef.current.style.transition = '';
+          inputContainerRef.current.style.paddingBottom = '';
+          inputContainerRef.current.style.paddingLeft = '';
+          inputContainerRef.current.style.paddingRight = '';
         }
       }
       
