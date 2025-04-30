@@ -69,8 +69,11 @@ function PureMultimodalInput({
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { width } = useWindowSize();
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const { width, height } = useWindowSize();
   const isMobile = useIsMobile();
+  const [_isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const lastViewportHeight = useRef(height);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -82,6 +85,52 @@ function PureMultimodalInput({
       }
     }
   }, [isMobile, width]);
+
+  // Track keyboard visibility on mobile devices
+  useEffect(() => {
+    if (!isMobile) return;
+
+    // Function to detect keyboard visibility based on viewport height change
+    const checkKeyboardVisibility = () => {
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const heightDifference = lastViewportHeight.current - viewportHeight;
+      const keyboardHeight = heightDifference > 100 ? heightDifference : 0;
+      
+      const keyboardVisible = keyboardHeight > 100;
+      setIsKeyboardVisible(keyboardVisible);
+      
+      // Adjust position of input bar
+      if (inputContainerRef.current) {
+        if (keyboardVisible) {
+          // Make the container stick to the top of keyboard
+          inputContainerRef.current.style.position = 'fixed';
+          inputContainerRef.current.style.bottom = '0px';
+          inputContainerRef.current.style.left = '0px';
+          inputContainerRef.current.style.right = '0px';
+          inputContainerRef.current.style.zIndex = '50';
+        } else {
+          // Reset position
+          inputContainerRef.current.style.position = '';
+          inputContainerRef.current.style.bottom = '';
+          inputContainerRef.current.style.left = '';
+          inputContainerRef.current.style.right = '';
+          inputContainerRef.current.style.zIndex = '';
+        }
+      }
+      
+      lastViewportHeight.current = viewportHeight;
+    };
+
+    // Using visualViewport API if available for better keyboard detection
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', checkKeyboardVisibility);
+      return () => window.visualViewport?.removeEventListener('resize', checkKeyboardVisibility);
+    } else {
+      // Fallback to resize event
+      window.addEventListener('resize', checkKeyboardVisibility);
+      return () => window.removeEventListener('resize', checkKeyboardVisibility);
+    }
+  }, [isMobile]);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -341,7 +390,7 @@ function PureMultimodalInput({
   );
 
   return (
-    <div className="relative w-full flex flex-col gap-4">
+    <div className="relative w-full flex flex-col gap-4" ref={inputContainerRef}>
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
