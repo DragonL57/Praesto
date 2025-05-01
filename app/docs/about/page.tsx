@@ -148,7 +148,7 @@ export default function About() {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain-circuit"><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z"/><path d="M16 8V5c0-1.1.9-2 2-2"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8a2 2 0 0 0 2-2V5"/></svg>
               </div>
               <div>
@@ -158,7 +158,7 @@ export default function About() {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-puzzle"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.743-.95l.235-1.86a1.118 1.118 0 0 0-1.11-1.27h-3.13c-.51 0-.948.36-1.05.857l-.099.498a1.054 1.054 0 0 1-1.007.845 1.12 1.12 0 0 1-1.045-.743l-.888-2.665a1.117 1.117 0 0 0-1.058-.744 1.116 1.116 0 0 0-1.058.744l-.888 2.665a1.12 1.12 0 0 1-1.045.743 1.054 1.054 0 0 1-1.007-.845l-.1-.498a1.12 1.12 0 0 0-1.05-.857H2.87A1.118 1.118 0 0 0 1.76 13.6l.235 1.86c.059.47-.273.88-.743.95a.979.979 0 0 1-.837-.276L.804 14.523c-.47-.47-.706-1.087-.706-1.704s.235-1.233.706-1.704l1.568-1.568a1.112 1.112 0 0 0 .29-.878c-.05-.322-.248-.619-.533-.769L1.22 7.4a1.111 1.111 0 0 1-.412-1.5l.5-.867a1.12 1.12 0 0 1 1.5-.413l.961.5a1.12 1.12 0 0 0 1.554-.43l.588-1.036a1.12 1.12 0 0 1 1.517-.425l.848.495c.331.193.73.196 1.064.007l.932-.518a1.12 1.12 0 0 1 1.517.425l.588 1.036a1.12 1.12 0 0 0 1.554.43l.961-.5a1.119 1.119 0 0 1 1.5.413l.5.867a1.112 1.112 0 0 1-.412 1.5l-.909.5c-.285.157-.483.454-.533.776Z"/></svg>
               </div>
               <div>
@@ -170,7 +170,7 @@ export default function About() {
           
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-component"><path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5Z"/><path d="m12 2 3.5 3.5L12 9 8.5 5.5 12 2Z"/><path d="m18.5 8.5 3.5 3.5-3.5 3.5-3.5-3.5 3.5-3.5Z"/><path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15Z"/></svg>
               </div>
               <div>
@@ -180,7 +180,7 @@ export default function About() {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a1.994 1.994 0 0 0 2.827 0l7.072-7.072a2 2 0 0 0 0-2.827l-8.703-8.705Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
               </div>
               <div>
