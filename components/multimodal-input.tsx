@@ -113,8 +113,8 @@ function PureMultimodalInput({
   const { width, height } = useWindowSize();
   const isMobile = useIsMobile();
   const [_isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const lastViewportHeight = useRef(height);
-  const [usesVirtualKeyboardAPI, setUsesVirtualKeyboardAPI] = useState(false);
+  const _lastViewportHeight = useRef(height);
+  const [_usesVirtualKeyboardAPI, setUsesVirtualKeyboardAPI] = useState(false);
 
   // Initialize VirtualKeyboard API if available
   useEffect(() => {

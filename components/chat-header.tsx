@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useWindowSize } from 'usehooks-ts';
+import { useWindowSize, useLocalStorage } from 'usehooks-ts';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
@@ -30,6 +30,10 @@ function PureChatHeader({
   // Use client-side only rendering for the buttons to avoid hydration issues
   const [mounted, setMounted] = useState(false);
   const { width: windowWidth } = useWindowSize();
+  
+  // Use local storage for the model to prevent unnecessary rerenders
+  // The default value will be the prop, but changes will be managed through local storage
+  const [localModelId] = useLocalStorage('current-chat-model', selectedModelId);
   
   // Check if we're in a specific chat (not the root /chat page)
   const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
@@ -68,7 +72,7 @@ function PureChatHeader({
 
           {!isReadonly && (
             <ModelSelector
-              selectedModelId={selectedModelId}
+              selectedModelId={localModelId} // Use localModelId instead of prop
               className="order-1 md:order-2"
             />
           )}

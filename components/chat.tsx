@@ -37,6 +37,10 @@ export function Chat({
   const [selectedPersonaId] = useLocalStorage('selected-persona-id', DEFAULT_PERSONA_ID);
   // Track when persona changes to avoid unnecessary reloads
   const [prevPersonaId, setPrevPersonaId] = useState(selectedPersonaId);
+  
+  // Track the model separately to avoid re-initializing the chat when the model changes
+  const [currentModel, setCurrentModel] = useLocalStorage('current-chat-model', selectedChatModel);
+  const [prevModel, setPrevModel] = useState(currentModel);
 
   // Create refs for message container and end element
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,7 @@ export function Chat({
     id,
     body: { 
       id, 
-      selectedChatModel: selectedChatModel,
+      selectedChatModel: currentModel, // Use our tracked model instead of the prop
       personaId: selectedPersonaId, // Send the selected persona ID to the API
       userTimeContext: {
         date: new Date().toDateString(),
@@ -76,6 +80,32 @@ export function Chat({
       toast.error('An error occurred, please try again!');
     },
   });
+
+  // Update currentModel when selectedChatModel changes from props
+  useEffect(() => {
+    if (selectedChatModel !== currentModel) {
+      setCurrentModel(selectedChatModel);
+    }
+  }, [selectedChatModel, currentModel, setCurrentModel]);
+
+  // Handle model changes similar to persona changes
+  useEffect(() => {
+    // Only reload if model changed AND we have messages AND we're not currently generating
+    if (currentModel !== prevModel && messages.length > 0 && status === 'ready') {
+      // Save the new model ID to prevent duplicate reloads
+      setPrevModel(currentModel);
+      
+      // Wait a bit before reloading to avoid race conditions
+      const timeoutId = setTimeout(() => {
+        reload();
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    } else if (currentModel !== prevModel) {
+      // Update the model without reloading if we don't have messages yet or are busy
+      setPrevModel(currentModel);
+    }
+  }, [currentModel, prevModel, reload, messages.length, status]);
 
   // Much safer approach to handling persona changes - only reload when necessary
   // and only when the chat is idle (status === 'ready')

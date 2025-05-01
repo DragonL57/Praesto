@@ -26,11 +26,11 @@ export const pollinationsProvider = createOpenAICompatible({
 
 // Define Pollinations-specific model IDs for better type checking and auto-completion
 type PollinationsChatModelIds =
-  | 'openai-xlarge'   // Large model for chat
+  | 'openai-large'   // Large model for chat
   | (string & {});     // Allow other string model IDs
 
 type PollinationsCompletionModelIds =
-  | 'openai-xlarge'
+  | 'openai-large'
   | (string & {});
 
 type PollinationsEmbeddingModelIds = string & {};
@@ -74,13 +74,13 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         // GPT-4.1 from OpenAI for chat
-        'chat-model': pollinationsProvider.chatModel('openai-xlarge'),
+        'chat-model': pollinationsProvider.chatModel('openai-large'),
         
         // Use gemini 2.0 for title generation (no thinking capability)
         'title-model': google('gemini-2.0-flash'),
         
         // Use openai-xlarge for artifact generation
-        'artifact-model': pollinationsProvider.chatModel('openai-xlarge'),
+        'artifact-model': pollinationsProvider.chatModel('openai-large'),
         
         // Enable thinking for Gemini 2.5 models
         'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
