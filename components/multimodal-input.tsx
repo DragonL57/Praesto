@@ -148,7 +148,7 @@ function PureMultimodalInput({
               inputContainerRef.current.style.paddingRight = '10px';
               
               // Scroll the textarea into view if needed
-              if (textareaRef.current) {
+              if (textareaRef.current && keyboardVisible) {
                 setTimeout(() => textareaRef.current?.focus(), 50);
               }
             } else {
@@ -167,74 +167,12 @@ function PureMultimodalInput({
         });
         
         console.log('VirtualKeyboard API initialized successfully');
-        return;
       } catch (error) {
         console.warn('Failed to initialize VirtualKeyboard API:', error);
         setUsesVirtualKeyboardAPI(false);
       }
     }
   }, [isMobile]);
-
-  // Fallback to viewport height tracking method for browsers without VirtualKeyboard API
-  useEffect(() => {
-    if (!isMobile || usesVirtualKeyboardAPI) return;
-
-    // Function to detect keyboard visibility based on viewport height change
-    const checkKeyboardVisibility = () => {
-      const viewportHeight = window.visualViewport?.height || window.innerHeight;
-      const heightDifference = lastViewportHeight.current - viewportHeight;
-      const keyboardHeight = heightDifference > 100 ? heightDifference : 0;
-      
-      const keyboardVisible = keyboardHeight > 100;
-      setIsKeyboardVisible(keyboardVisible);
-      
-      // Adjust position of input bar
-      if (inputContainerRef.current) {
-        if (keyboardVisible) {
-          // Make the container stick to the top of keyboard
-          inputContainerRef.current.style.position = 'fixed';
-          inputContainerRef.current.style.bottom = '0px';
-          inputContainerRef.current.style.left = '0px';
-          inputContainerRef.current.style.right = '0px';
-          inputContainerRef.current.style.zIndex = '50';
-          inputContainerRef.current.style.transition = 'bottom 0.1s ease-out'; 
-          inputContainerRef.current.style.paddingBottom = '8px'; 
-          inputContainerRef.current.style.paddingLeft = '10px'; 
-          inputContainerRef.current.style.paddingRight = '10px';
-          
-          // Scroll the textarea into view if needed
-          if (textareaRef.current) {
-            setTimeout(() => {
-              textareaRef.current?.focus();
-            }, 50);
-          }
-        } else {
-          // Reset position
-          inputContainerRef.current.style.position = '';
-          inputContainerRef.current.style.bottom = '';
-          inputContainerRef.current.style.left = '';
-          inputContainerRef.current.style.right = '';
-          inputContainerRef.current.style.zIndex = '';
-          inputContainerRef.current.style.transition = '';
-          inputContainerRef.current.style.paddingBottom = '';
-          inputContainerRef.current.style.paddingLeft = '';
-          inputContainerRef.current.style.paddingRight = '';
-        }
-      }
-      
-      lastViewportHeight.current = viewportHeight;
-    };
-
-    // Using visualViewport API if available for better keyboard detection
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', checkKeyboardVisibility);
-      return () => window.visualViewport?.removeEventListener('resize', checkKeyboardVisibility);
-    } else {
-      // Fallback to resize event
-      window.addEventListener('resize', checkKeyboardVisibility);
-      return () => window.removeEventListener('resize', checkKeyboardVisibility);
-    }
-  }, [isMobile, usesVirtualKeyboardAPI]);
 
   useEffect(() => {
     if (textareaRef.current) {
