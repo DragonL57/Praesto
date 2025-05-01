@@ -146,11 +146,6 @@ function PureMultimodalInput({
               inputContainerRef.current.style.paddingBottom = '8px';
               inputContainerRef.current.style.paddingLeft = '10px';
               inputContainerRef.current.style.paddingRight = '10px';
-              
-              // Scroll the textarea into view if needed
-              if (textareaRef.current && keyboardVisible) {
-                setTimeout(() => textareaRef.current?.focus(), 50);
-              }
             } else {
               // Reset position
               inputContainerRef.current.style.position = '';
