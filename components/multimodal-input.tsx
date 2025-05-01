@@ -403,8 +403,9 @@ function PureMultimodalInput({
       className="relative w-full flex flex-col gap-4"
       style={{
         // Add padding to the bottom to push content above the keyboard
-        // Use a fallback value (e.g., 1rem) for browsers without VK API support
-        paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 1rem)`,
+        // Use a fallback value (e.g., 6px) for browsers without VK API support
+        // Reduced extra padding from 0.5rem to 6px
+        paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 6px)`,
         // Add transition for smoother padding change
         transition: 'padding-bottom 0.2s ease-out'
       }}
