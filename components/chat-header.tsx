@@ -92,6 +92,9 @@ function PureChatHeader({
   );
 }
 
-export const ChatHeader = memo(PureChatHeader, (prevProps, nextProps) => {
-  return prevProps.selectedModelId === nextProps.selectedModelId;
+export const ChatHeader = memo(PureChatHeader, (_prevProps, _nextProps) => {
+  // Don't compare based on selectedModelId since we use localModelId internally
+  // Just return true to prevent unnecessary re-renders on model change
+  // Other props will still trigger re-renders as needed
+  return true;
 });
