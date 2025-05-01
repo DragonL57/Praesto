@@ -65,9 +65,10 @@ export function SidebarUserNav({ user }: { user: User }) {
                 <button
                   type="button"
                   className="w-full cursor-pointer"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     signOut({
-                      redirectTo: '/',
+                      callbackUrl: '/',
                     });
                   }}
                 >
