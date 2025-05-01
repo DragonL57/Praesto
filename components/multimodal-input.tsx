@@ -109,14 +109,11 @@ function PureMultimodalInput({
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const inputContainerRef = useRef<HTMLDivElement>(null);
-  const { width, height } = useWindowSize();
+  // Destructure height with an underscore as it's not directly used
+  const { width, height: _height } = useWindowSize();
   const isMobile = useIsMobile();
-  const [_isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const _lastViewportHeight = useRef(height);
-  const [_usesVirtualKeyboardAPI, setUsesVirtualKeyboardAPI] = useState(false);
 
-  // Initialize VirtualKeyboard API if available
+  // Initialize VirtualKeyboard API if available - Simplified
   useEffect(() => {
     if (!isMobile) return;
 
@@ -124,47 +121,11 @@ function PureMultimodalInput({
     if ('virtualKeyboard' in navigator && navigator.virtualKeyboard) {
       try {
         // Opt out of the automatic virtual keyboard behavior
+        // This allows us to use CSS env vars to handle layout adjustments
         navigator.virtualKeyboard.overlaysContent = true;
-        setUsesVirtualKeyboardAPI(true);
-
-        // Listen for keyboard geometry changes
-        navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
-          // Adjust position of input bar based on keyboard geometry
-          if (inputContainerRef.current) {
-            const { height } = (event as VirtualKeyboardGeometryChangeEvent).target.boundingRect;
-            const keyboardVisible = height > 0;
-            setIsKeyboardVisible(keyboardVisible);
-            
-            if (keyboardVisible) {
-              // Make the container stick above the keyboard using fixed positioning
-              inputContainerRef.current.style.position = 'fixed';
-              inputContainerRef.current.style.bottom = `${height}px`;
-              inputContainerRef.current.style.left = '0px';
-              inputContainerRef.current.style.right = '0px';
-              inputContainerRef.current.style.zIndex = '50';
-              inputContainerRef.current.style.transition = 'bottom 0.1s ease-out';
-              inputContainerRef.current.style.paddingBottom = '8px';
-              inputContainerRef.current.style.paddingLeft = '10px';
-              inputContainerRef.current.style.paddingRight = '10px';
-            } else {
-              // Reset position
-              inputContainerRef.current.style.position = '';
-              inputContainerRef.current.style.bottom = '';
-              inputContainerRef.current.style.left = '';
-              inputContainerRef.current.style.right = '';
-              inputContainerRef.current.style.zIndex = '';
-              inputContainerRef.current.style.transition = '';
-              inputContainerRef.current.style.paddingBottom = '';
-              inputContainerRef.current.style.paddingLeft = '';
-              inputContainerRef.current.style.paddingRight = '';
-            }
-          }
-        });
-        
-        console.log('VirtualKeyboard API initialized successfully');
+        console.log('VirtualKeyboard API enabled with overlaysContent=true');
       } catch (error) {
         console.warn('Failed to initialize VirtualKeyboard API:', error);
-        setUsesVirtualKeyboardAPI(false);
       }
     }
   }, [isMobile]);
@@ -438,7 +399,16 @@ function PureMultimodalInput({
   );
 
   return (
-    <div className="relative w-full flex flex-col gap-4" ref={inputContainerRef}>
+    <div 
+      className="relative w-full flex flex-col gap-4"
+      style={{
+        // Add padding to the bottom to push content above the keyboard
+        // Use a fallback value (e.g., 1rem) for browsers without VK API support
+        paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 1rem)`,
+        // Add transition for smoother padding change
+        transition: 'padding-bottom 0.2s ease-out'
+      }}
+    >
       {/* Only show suggestions on desktop (non-mobile) devices and when no messages/attachments */}
       {!isMobile && 
         messages.length === 0 &&
