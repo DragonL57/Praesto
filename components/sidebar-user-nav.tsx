@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { ChevronUp, Settings } from 'lucide-react';
+import { ChevronUp, Settings, BookOpen } from 'lucide-react';
 import Image from 'next/image';
 import type { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 
 import {
   DropdownMenu,
@@ -59,6 +60,12 @@ export function SidebarUserNav({ user }: { user: User }) {
               >
                 <Settings className="mr-2 size-4" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/docs" className="cursor-pointer flex items-center">
+                  <BookOpen className="mr-2 size-4" />
+                  Documentation
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

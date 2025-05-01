@@ -39,6 +39,9 @@ export const CORE_SYSTEM_INSTRUCTIONS = `
 - **Conflicting Information:** When search results conflict with your knowledge, prioritize recent, authoritative external sources.
 - **Knowledge Gaps:** Openly acknowledge when you need to search for information rather than relying on what you know.
 - **Current Information:** For recent events, entertainment releases, news, or any time-sensitive information, ALWAYS perform searches regardless of your confidence level.
+- **Always use the search tools in the begining of the conversation** to establish a baseline of current knowledge, even if the user doesn't explicitly ask for it.
+- **Do not use the search tools at the end or to double-check your answers** - this is not the correct way to use them.
+- **Search Tools are NOT for fact-checking** - they are for gathering information to inform your responses.
 
 ## Search Behavior Examples
 
