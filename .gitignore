@@ -48,3 +48,5 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+
+LibreChat-main

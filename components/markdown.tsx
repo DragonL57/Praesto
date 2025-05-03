@@ -21,13 +21,15 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
       className="table-container my-4"
       style={{
         width: '100%', // Match text container width
+        maxWidth: '100%', // Prevent wrapper from exceeding parent width
         maxHeight: '400px',
         overflowY: 'auto',
-        overflowX: 'scroll',
+        overflowX: 'auto', // Changed from 'scroll' to 'auto' to only show scrollbar when needed
         display: 'block',
         borderRadius: '0.375rem',
         border: '1px solid var(--border)',
         WebkitOverflowScrolling: 'touch',
+        position: 'relative', // Add this to create a positioning context
       }}
     >
       {children}
@@ -172,8 +174,9 @@ const NonMemoizedMarkdown = ({
               <table
                 style={{
                   borderSpacing: 0,
-                  width: '150%', // Force table to be wider than container
                   minWidth: '100%',
+                  width: 'auto', // Changed from fixed 150% to auto
+                  tableLayout: 'auto', // Let browser determine column widths based on content
                 }}
                 {...props}
               >
@@ -201,9 +204,11 @@ const NonMemoizedMarkdown = ({
             <th
               className="px-4 py-2 text-left font-semibold"
               style={{
-                maxWidth: '300px', // Set max width for cell
+                minWidth: '150px', // ADDED: Ensure columns have some minimum width
+                maxWidth: '350px', // INCREASED: from 300px to allow more content
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                padding: '8px 16px', // INCREASED: Added more horizontal padding
               }}
               {...props}
             >
@@ -214,10 +219,12 @@ const NonMemoizedMarkdown = ({
             <td
               className="px-4 py-2"
               style={{
-                maxWidth: '300px', // Set max width for cell
+                minWidth: '150px', // ADDED: Ensure columns have some minimum width
+                maxWidth: '350px', // INCREASED: from 300px to allow more content
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 wordBreak: 'break-word',
+                padding: '8px 16px', // INCREASED: Added more horizontal padding
               }}
               {...props}
             >
