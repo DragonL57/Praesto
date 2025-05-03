@@ -2,7 +2,6 @@
 
 import { startTransition, useCallback, useEffect, useMemo, useOptimistic, useState } from 'react';
 
-import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,13 +28,20 @@ export function ModelSelector({
   // This optimistic state handles immediate UI updates
   const [optimisticModelId, setOptimisticModelId] = useOptimistic(localModelId);
 
-  // Update server cookie without causing UI refresh (debounced)
-  const saveModelCookie = useCallback((modelId: string) => {
-    // Using a zero timeout to move this to the end of the event loop
-    // This prevents the server action from blocking the UI update
-    setTimeout(() => {
-      saveChatModelAsCookie(modelId);
-    }, 0);
+  // Update server cookie without causing UI refresh
+  const saveModelCookie = useCallback(async (modelId: string) => {
+    try {
+      // Use fetch API directly instead of server action to avoid any page transitions
+      await fetch('/api/set-model-cookie', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: modelId }),
+      });
+    } catch (error) {
+      console.error('Failed to save model preference:', error);
+    }
   }, []);
 
   // Sync local storage with server cookie when component mounts
