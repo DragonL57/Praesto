@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback, memo } from 'react';
+import React, { useRef, useEffect, useState, useCallback, memo, useMemo } from 'react';
 import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
@@ -18,6 +18,7 @@ import { StopButton } from './StopButton';
 import { AttachmentsButton } from './AttachmentsButton';
 import { SpeechToTextButton } from './SpeechToTextButton';
 import { ScrollButton } from './ScrollButton';
+import { Greeting } from './Greeting';
 import { uploadFile } from './utils';
 import type { SpeechRecognition } from './types';
 
@@ -61,6 +62,34 @@ function PureMultimodalInput({
   
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
+
+  // Time-based greeting similar to LibreChat implementation
+  const greeting = useMemo(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    const dayOfWeek = now.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    // Early morning (midnight to 4:59 AM)
+    if (hours >= 0 && hours < 5) {
+      return 'Late night';
+    }
+    // Morning (6 AM to 11:59 AM)
+    else if (hours < 12) {
+      if (isWeekend) {
+        return 'Happy weekend morning';
+      }
+      return 'Good morning';
+    }
+    // Afternoon (12 PM to 4:59 PM)
+    else if (hours < 17) {
+      return 'Good afternoon';
+    }
+    // Evening (5 PM to 8:59 PM)
+    else {
+      return 'Good evening';
+    }
+  }, []);
 
   // Initialize VirtualKeyboard API if available - Simplified
   useEffect(() => {
@@ -309,6 +338,9 @@ function PureMultimodalInput({
         />
 
         <div className="relative">
+          {/* Only show greeting when there are no messages */}
+          {isNewChat && <Greeting />}
+          
           {/* Input container with dynamic padding based on attachments */}
           <div className={cx(
             "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm",
@@ -361,12 +393,13 @@ function PureMultimodalInput({
                 name="message-input"
                 id="message-input"
                 className={cx(
-                  'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                  'min-h-[44px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
                   'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
                   'placeholder:text-muted-foreground/70',
                   className,
                 )}
                 style={{
+                  height: 44,
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent'
                 }}
