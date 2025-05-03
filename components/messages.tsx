@@ -1,6 +1,5 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
-import { Greeting } from './greeting';
 import { memo, useEffect, useRef } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
@@ -77,8 +76,6 @@ function PureMessages({
       ref={containerRef}
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
-        {messages.length === 0 && <Greeting />}
-
         {messages.map((message, index) => (
           <div
             key={message.id}

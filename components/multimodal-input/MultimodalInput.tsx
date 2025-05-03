@@ -10,7 +10,6 @@ import equal from 'fast-deep-equal';
 
 import { PreviewAttachment } from '../preview-attachment';
 import { Textarea } from '../ui/textarea';
-import { SuggestedActions } from '../suggested-actions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PersonaSelector from '../persona-selector';
 
@@ -59,6 +58,9 @@ function PureMultimodalInput({
   // Destructure height with an underscore as it's not directly used
   const { width, height: _height } = useWindowSize();
   const isMobile = useIsMobile();
+  
+  // Is this a new chat (no messages)
+  const isNewChat = messages.length === 0;
 
   // Initialize VirtualKeyboard API if available - Simplified
   useEffect(() => {
@@ -267,164 +269,161 @@ function PureMultimodalInput({
     [setAttachments, status],
   );
 
+  // Main wrapper with transition for centering in empty chats
   return (
     <div 
-      className="relative w-full flex flex-col gap-4"
-      style={{
-        // Add padding to the bottom to push content above the keyboard
-        // Use a fallback value (e.g., 1rem) for browsers without VK API support
-        paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 4px)`,
-        // Add transition for smoother padding change
-        transition: 'padding-bottom 0.2s ease-out'
-      }}
+      className={cx(
+        "flex flex-col w-full transition-all duration-500 ease-in-out relative",
+        isNewChat && status === "ready" ? "h-[85vh] justify-center" : "h-auto justify-end"
+      )}
     >
-      {/* Only show suggestions on desktop (non-mobile) devices and when no messages/attachments */}
-      {!isMobile && 
-        messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions append={append} chatId={chatId} />
+      {/* Form wrapper */}
+      <div 
+        className={cx(
+          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out"
+        )}
+        style={{
+          // Add padding to the bottom to push content above the keyboard
+          // Use a fallback value for browsers without VK API support
+          paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 4px)`,
+          transition: 'padding-bottom 0.2s ease-out, transform 0.5s ease-in-out'
+        }}
+      >
+        {messagesContainerRef && messagesEndRef && (
+          <ScrollButton
+            containerRef={messagesContainerRef}
+            endRef={messagesEndRef}
+          />
         )}
 
-      {messagesContainerRef && messagesEndRef && (
-        <ScrollButton
-          containerRef={messagesContainerRef}
-          endRef={messagesEndRef}
+        <input
+          type="file"
+          className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
+          ref={fileInputRef}
+          multiple
+          accept=".jpg,.jpeg,.png,.gif,.pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.pptx,.ppt"
+          onChange={handleFileChange}
+          tabIndex={-1}
+          aria-label="File upload"
+          id="file-upload"
         />
-      )}
 
-      <input
-        type="file"
-        className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
-        ref={fileInputRef}
-        multiple
-        accept=".jpg,.jpeg,.png,.gif,.pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.pptx,.ppt"
-        onChange={handleFileChange}
-        tabIndex={-1}
-        aria-label="File upload"
-        id="file-upload"
-      />
+        <div className="relative">
+          {/* Input container with dynamic padding based on attachments */}
+          <div className={cx(
+            "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm",
+            {
+              "pt-4": attachments.length > 0 || uploadQueue.length > 0
+            }
+          )}>
+            {/* Attachments inside the input bar */}
+            {(attachments.length > 0 || uploadQueue.length > 0) && (
+              <div
+                data-testid="attachments-preview"
+                className="flex flex-row gap-2 overflow-x-auto items-center px-4 pb-2"
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                {attachments.map((attachment, index) => (
+                  <PreviewAttachment 
+                    key={attachment.url} 
+                    attachment={attachment}
+                    onRemove={() => {
+                      setAttachments(currentAttachments => 
+                        currentAttachments.filter((_, i) => i !== index)
+                      );
+                    }}
+                  />
+                ))}
 
-      <div className="relative">
-        {/* Input container with dynamic padding based on attachments */}
-        <div className={cx(
-          "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm",
-          {
-            "pt-4": attachments.length > 0 || uploadQueue.length > 0
-          }
-        )}>
-          {/* Attachments inside the input bar */}
-          {(attachments.length > 0 || uploadQueue.length > 0) && (
-            <div
-              data-testid="attachments-preview"
-              className="flex flex-row gap-2 overflow-x-auto items-center px-4 pb-2"
-              style={{ scrollbarWidth: 'thin' }}
-            >
-              {attachments.map((attachment, index) => (
-                <PreviewAttachment 
-                  key={attachment.url} 
-                  attachment={attachment}
-                  onRemove={() => {
-                    setAttachments(currentAttachments => 
-                      currentAttachments.filter((_, i) => i !== index)
-                    );
-                  }}
-                />
-              ))}
-
-              {uploadQueue.map((filename) => (
-                <PreviewAttachment
-                  key={filename}
-                  attachment={{
-                    url: '',
-                    name: filename,
-                    contentType: '',
-                  }}
-                  isUploading={true}
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* Text input container with proper spacing for buttons */}
-          <div className="relative">
-            <Textarea
-              data-testid="multimodal-input"
-              ref={textareaRef}
-              placeholder="Ask UniTaskAI anything..."
-              value={input}
-              onChange={handleInput}
-              onPaste={handlePaste}
-              name="message-input"
-              id="message-input"
-              className={cx(
-                'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
-                'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
-                'placeholder:text-muted-foreground/70',
-                className,
-              )}
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent'
-              }}
-              rows={2}
-              onKeyDown={(event) => {
-                if (
-                  event.key === 'Enter' &&
-                  !event.shiftKey &&
-                  !event.nativeEvent.isComposing
-                ) {
-                  event.preventDefault();
-
-                  if (status !== 'ready') {
-                    toast.error('Please wait for the model to finish its response!');
-                  } else {
-                    submitForm();
-                  }
-                }
-              }}
-            />
-            {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
-            <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
-          </div>
-        </div>
-
-        {/* Left side - only persona selector */}
-        <div className="absolute bottom-1 left-3 p-2 w-fit flex flex-row justify-start items-center z-10">
-          {/* Background element with rounded corners - smaller to not overlap with border */}
-          <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
-          <div className="relative">
-            <PersonaSelector />
-          </div>
-        </div>
-
-        {/* Right side - attachments, speech-to-text, and send buttons */}
-        <div className="absolute bottom-1 right-3 p-2 w-fit flex flex-row justify-end items-center z-10">
-          {/* Background element with rounded corners - smaller to not overlap with border */}
-          <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
-          <div className="relative flex items-center">
-            <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-            <SpeechToTextButton 
-              setInput={setInput} 
-              status={status} 
-              input={input}
-              recognitionRef={recognitionRef}
-            />
-            {(status === 'submitted' || status === 'streaming') ? (
-              <StopButton stop={stop} setMessages={setMessages} />
-            ) : (
-              <SendButton
-                input={input}
-                submitForm={submitForm}
-                uploadQueue={uploadQueue}
-              />
+                {uploadQueue.map((filename) => (
+                  <PreviewAttachment
+                    key={filename}
+                    attachment={{
+                      url: '',
+                      name: filename,
+                      contentType: '',
+                    }}
+                    isUploading={true}
+                  />
+                ))}
+              </div>
             )}
+            
+            {/* Text input container with proper spacing for buttons */}
+            <div className="relative">
+              <Textarea
+                data-testid="multimodal-input"
+                ref={textareaRef}
+                placeholder="Ask UniTaskAI anything..."
+                value={input}
+                onChange={handleInput}
+                onPaste={handlePaste}
+                name="message-input"
+                id="message-input"
+                className={cx(
+                  'min-h-[24px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                  'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
+                  'placeholder:text-muted-foreground/70',
+                  className,
+                )}
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent'
+                }}
+                rows={1}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
+                  ) {
+                    event.preventDefault();
+
+                    if (status !== 'ready') {
+                      toast.error('Please wait for the model to finish its response!');
+                    } else {
+                      submitForm();
+                    }
+                  }
+                }}
+              />
+              {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
+              <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
+            </div>
           </div>
-        </div>
-        
-        {/* Disclaimer text positioned underneath without affecting layout */}
-        <div className="absolute -bottom-6 inset-x-0 text-center pointer-events-none">
-          <span className="text-xs text-muted-foreground">UniTaskAI can make mistakes, double-check the info.</span>
+
+          {/* Left side - only persona selector */}
+          <div className="absolute bottom-1 left-3 p-2 w-fit flex flex-row justify-start items-center z-10">
+            {/* Background element with rounded corners - smaller to not overlap with border */}
+            <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
+            <div className="relative">
+              <PersonaSelector />
+            </div>
+          </div>
+
+          {/* Right side - attachments, speech-to-text, and send buttons */}
+          <div className="absolute bottom-1 right-3 p-2 w-fit flex flex-row justify-end items-center z-10">
+            {/* Background element with rounded corners - smaller to not overlap with border */}
+            <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
+            <div className="relative flex items-center">
+              <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+              <SpeechToTextButton 
+                setInput={setInput} 
+                status={status} 
+                input={input}
+                recognitionRef={recognitionRef}
+              />
+              {(status === 'submitted' || status === 'streaming') ? (
+                <StopButton stop={stop} setMessages={setMessages} />
+              ) : (
+                <SendButton
+                  input={input}
+                  submitForm={submitForm}
+                  uploadQueue={uploadQueue}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
