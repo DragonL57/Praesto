@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback, memo } from 'react';
+import React, { useRef, useState, useCallback, memo, useEffect } from 'react';
 import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
@@ -19,7 +19,9 @@ import { AttachmentsButton } from './AttachmentsButton';
 import { SpeechToTextButton } from './SpeechToTextButton';
 import { ScrollButton } from './ScrollButton';
 import { Greeting } from './Greeting';
-import { uploadFile } from './utils';
+import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
+import { TextareaAutoResizer, resetTextareaHeight } from './TextareaAutoResizer';
+import { useFileUploadHandler } from './FileUploadHandler';
 import type { SpeechRecognition } from './types';
 
 interface MultimodalInputProps {
@@ -60,8 +62,7 @@ function PureMultimodalInput({
   const _append = append; // Create a local unused variable instead
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Destructure height with an underscore as it's not directly used
-  const { width, height: _height } = useWindowSize();
+  const { width } = useWindowSize();
   const isMobile = useIsMobile();
   
   // State for tracking if input is focused
@@ -72,126 +73,9 @@ function PureMultimodalInput({
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
 
-  // Initialize VirtualKeyboard API if available and handle keyboard height changes
-  useEffect(() => {
-    if (!isMobile) return;
-
-    let keyboardHeight = 0;
-    const handleVirtualKeyboardResize = () => {
-      if (navigator.virtualKeyboard && navigator.virtualKeyboard.boundingRect) {
-        const { height: kbHeight } = navigator.virtualKeyboard.boundingRect;
-        keyboardHeight = kbHeight;
-        
-        document.documentElement.style.setProperty(
-          '--keyboard-height', 
-          `${keyboardHeight}px`
-        );
-      }
-    };
-
-    // Check if the VirtualKeyboard API is available
-    if ('virtualKeyboard' in navigator && navigator.virtualKeyboard) {
-      try {
-        // Opt out of the automatic virtual keyboard behavior
-        // This allows us to use CSS env vars to handle layout adjustments
-        navigator.virtualKeyboard.overlaysContent = true;
-        
-        // Listen for keyboard resize events
-        navigator.virtualKeyboard.addEventListener('geometrychange', handleVirtualKeyboardResize);
-        
-        console.log('VirtualKeyboard API enabled with overlaysContent=true');
-      } catch (error) {
-        console.warn('Failed to initialize VirtualKeyboard API:', error);
-      }
-    }
-    
-    // Fallback for devices without VirtualKeyboard API
-    const handleResize = () => {
-      // Only apply on mobile
-      if (width < 768) {
-        const visualViewport = window.visualViewport;
-        if (!visualViewport) return;
-        
-        // Detect keyboard by comparing visual viewport to window inner height
-        const newKeyboardHeight = Math.max(0, window.innerHeight - visualViewport.height);
-        
-        // If keyboard height changed significantly, update it
-        if (Math.abs(newKeyboardHeight - keyboardHeight) > 50) {
-          keyboardHeight = newKeyboardHeight;
-          document.documentElement.style.setProperty(
-            '--keyboard-height', 
-            `${keyboardHeight}px`
-          );
-        }
-      }
-    };
-    
-    window.visualViewport?.addEventListener('resize', handleResize);
-    window.visualViewport?.addEventListener('scroll', handleResize);
-    
-    return () => {
-      if (navigator.virtualKeyboard) {
-        navigator.virtualKeyboard.removeEventListener('geometrychange', handleVirtualKeyboardResize);
-      }
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.visualViewport?.removeEventListener('scroll', handleResize);
-    };
-  }, [isMobile, width]);
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      adjustHeight();
-      
-      // Only focus on desktop, not on mobile
-      if (!isMobile && width && width >= 768) {
-        textareaRef.current.focus();
-      }
-    }
-  }, [isMobile, width]);
-
-  // Update row count when input changes
-  useEffect(() => {
-    if (textareaRef.current) {
-      const style = window.getComputedStyle(textareaRef.current);
-      const lineHeight = parseFloat(style.lineHeight);
-      setVisualRowCount(Math.max(1, Math.floor(textareaRef.current.scrollHeight / lineHeight)));
-    }
-  }, [input]);
-
-  const adjustHeight = () => {
-    if (textareaRef.current) {
-      // Remove auto-height adjustment to allow scrolling instead
-      // Only adjust height up to a maximum, then enable scrollbar
-      const maxHeight = 200; // Maximum height in pixels before scrolling
-      textareaRef.current.style.height = 'auto';
-      
-      // Set height based on content but cap at maxHeight
-      const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
-      textareaRef.current.style.height = `${newHeight}px`;
-      
-      // If content is larger than maxHeight, ensure scrollbar is visible
-      textareaRef.current.style.overflowY = 
-        textareaRef.current.scrollHeight > maxHeight ? 'auto' : 'hidden';
-    }
-  };
-
-  const resetHeight = () => {
-    if (textareaRef.current) {
-      // First set height to auto to reset any previous height
-      textareaRef.current.style.height = 'auto';
-      
-      // Use setTimeout to ensure this executes after React has updated the DOM with empty content
-      setTimeout(() => {
-        if (textareaRef.current) {
-          // At this point, the textarea should be empty, so its scrollHeight will be minimal
-          textareaRef.current.style.height = 'auto';
-          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-          textareaRef.current.style.overflowY = 'hidden';
-        }
-      }, 0);
-    }
-  };
-
+  // Use VirtualKeyboardHandler to manage keyboard on mobile
+  // (doesn't render anything)
+  
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
     '',
@@ -203,7 +87,6 @@ function PureMultimodalInput({
       // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
       setInput(finalValue);
-      adjustHeight();
     }
     // Only run once after hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,11 +98,17 @@ function PureMultimodalInput({
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
-    adjustHeight();
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+
+  // Use FileUploadHandler for file upload logic
+  const { handleFileChange, handlePaste } = useFileUploadHandler({
+    setAttachments,
+    setUploadQueue,
+    status
+  });
 
   // Create the recognition reference at this level so it can be shared between components
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -239,7 +128,7 @@ function PureMultimodalInput({
 
     setAttachments([]);
     setLocalStorageInput('');
-    resetHeight();
+    resetTextareaHeight(textareaRef);
 
     if (width && width > 768) {
       textareaRef.current?.focus();
@@ -252,90 +141,6 @@ function PureMultimodalInput({
     width,
     chatId,
   ]);
-
-  const handleFileChange = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files || []);
-
-      setUploadQueue(files.map((file) => file.name));
-
-      try {
-        const uploadPromises = files.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined,
-        ) as Attachment[];
-
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
-      } catch (error) {
-        console.error('Error uploading files!', error);
-        toast.error('Failed to upload files, please try again!');
-      } finally {
-        setUploadQueue([]);
-      }
-    },
-    [setAttachments],
-  );
-
-  const handlePaste = useCallback(
-    async (event: React.ClipboardEvent) => {
-      if (status !== 'ready') return;
-
-      const items = event.clipboardData?.items;
-      if (!items) return;
-
-      const imageItems = Array.from(items).filter((item) =>
-        item.type.startsWith('image/'),
-      );
-
-      if (imageItems.length === 0) return;
-
-      // Prevent default paste behavior for images
-      event.preventDefault();
-
-      const imageFiles: File[] = [];
-
-      for (const item of imageItems) {
-        const file = item.getAsFile();
-        if (file) {
-          const timestamp = new Date().getTime();
-          // Create a new file with a simple timestamp as the filename
-          const renamedFile = new File(
-            [file],
-            `${timestamp}.${file.type.split('/')[1] || 'png'}`,
-            { type: file.type },
-          );
-          imageFiles.push(renamedFile);
-        }
-      }
-
-      if (imageFiles.length === 0) return;
-
-      setUploadQueue(imageFiles.map((file) => file.name));
-
-      try {
-        const uploadPromises = imageFiles.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined,
-        ) as Attachment[];
-
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
-      } catch (error) {
-        console.error('Error uploading pasted images!', error);
-        toast.error('Failed to upload pasted image, please try again!');
-      } finally {
-        setUploadQueue([]);
-      }
-    },
-    [setAttachments, status],
-  );
 
   // Handle click on container to focus textarea
   const handleContainerClick = useCallback(() => {
@@ -350,11 +155,23 @@ function PureMultimodalInput({
         isNewChat && status === "ready" ? "h-[85vh] justify-center" : "h-auto justify-end"
       )}
     >
+      {/* Virtual keyboard handler - doesn't render anything */}
+      <VirtualKeyboardHandler isMobile={isMobile} />
+      
+      {/* Textarea auto-resizer - doesn't render anything */}
+      <TextareaAutoResizer 
+        textareaRef={textareaRef}
+        value={input}
+        isMobile={isMobile}
+        width={width}
+        onHeightChange={setVisualRowCount}
+      />
+      
       {/* Form wrapper - fixed to bottom of viewport on mobile */}
       <div 
         className={cx(
           "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out",
-          isMobile && "fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm px-2",
+          isMobile && "fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2",
         )}
         style={{
           // Add padding to the bottom to push content above the keyboard
