@@ -30,8 +30,6 @@ export const Greeting = () => {
     const now = new Date();
     const hours = now.getHours();
     const dayOfWeek = now.getDay();
-    const date = now.getDate();
-    const month = now.getMonth();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
     // Create arrays of diverse greetings for different times of day
@@ -67,18 +65,11 @@ export const Greeting = () => {
       "Hope you had a good day"
     ];
     
-    // Special dates/occasions
-    const isNewYear = month === 0 && date <= 5;
-    const isChristmas = month === 11 && (date >= 24 && date <= 26);
-    const isHalloween = month === 9 && date === 31;
-    const isThanksgiving = month === 10 && dayOfWeek === 4 && date >= 22 && date <= 28;
-    // May 4th - Star Wars Day
-    const isStarWarsDay = month === 4 && date === 4;
-    
     // Use a deterministic approach - no randomness
     const getGreeting = (greetings: string[]) => {
       // Use day of month to select greeting instead of minutes
       // This ensures same greeting for the whole day
+      const date = now.getDate();
       const index = date % greetings.length;
       return greetings[index];
     };
@@ -94,46 +85,34 @@ export const Greeting = () => {
     else if (hours < 12) {
       baseGreeting = getGreeting(morningGreetings);
       
-      // Add weekend variant if it's a weekend
+      // Add weekend variant if it's a weekend - in a more natural way
       if (isWeekend) {
         baseGreeting = hours < 9 ? 
-          `${baseGreeting}, weekend early bird` : 
-          `Happy weekend ${baseGreeting.toLowerCase()}`;
+          `${baseGreeting} on this weekend` : 
+          `${baseGreeting} and happy weekend`;
       }
     }
     // Afternoon (12 PM to 4:59 PM)
     else if (hours < 17) {
       baseGreeting = getGreeting(afternoonGreetings);
       
-      // Add weekend variant for weekends
+      // Add weekend variant for weekends - in a more natural way
       if (isWeekend) {
-        baseGreeting = `Weekend ${baseGreeting.toLowerCase()}`;
+        baseGreeting = `${baseGreeting} and happy weekend`;
       }
     }
     // Evening (5 PM onwards)
     else {
       baseGreeting = getGreeting(eveningGreetings);
       
-      // Add weekend variant for weekend evenings
+      // Add weekend variant for weekend evenings - in a more natural way
       if (isWeekend) {
-        baseGreeting = `Weekend ${baseGreeting.toLowerCase()}`;
+        baseGreeting = `${baseGreeting} and happy weekend`;
       }
     }
     
-    // Override with special occasion greetings if applicable
-    if (isNewYear) {
-      baseGreeting = "Happy New Year";
-    } else if (isChristmas) {
-      baseGreeting = "Merry Christmas";
-    } else if (isHalloween) {
-      baseGreeting = "Happy Halloween";
-    } else if (isThanksgiving) {
-      baseGreeting = "Happy Thanksgiving";
-    } else if (isStarWarsDay) {
-      baseGreeting = "May the 4th be with you";
-    }
-    
     // Add personalization with the user's name if available
+    const date = now.getDate();
     // Use day of month to determine format - even day puts name at end, odd day puts name at beginning
     if (userName) {
       if (date % 2 === 0) {
@@ -152,7 +131,7 @@ export const Greeting = () => {
   if (!mounted) {
     return (
       <div className="text-center mb-4">
-        <div className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+        <div className="text-2xl font-extrabold">
           Welcome
         </div>
       </div>
@@ -162,19 +141,20 @@ export const Greeting = () => {
   return (
     <div className="text-center mb-4">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-2xl font-extrabold"
+        className="text-2xl font-normal"
       >
         <Typewriter 
           text={greeting}
-          speed={40}
+          speed={70}
           initialDelay={300}
+          loop={false}
           showCursor={true}
-          cursorClassName="text-indigo-500 ml-1 font-normal"
-          cursorChar="▌"
-          className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+          cursorChar="_"
+          cursorClassName="ml-1"
+          className="text-foreground dark:text-foreground"
         />
       </motion.div>
     </div>
