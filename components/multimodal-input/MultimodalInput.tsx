@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback, memo, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useCallback, memo } from 'react';
 import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
@@ -49,12 +49,16 @@ function PureMultimodalInput({
   setAttachments,
   messages,
   setMessages,
-  append,
+  append,  // Using the correct parameter name to match the interface
   handleSubmit,
   className,
   messagesContainerRef,
   messagesEndRef,
 }: MultimodalInputProps) {
+  // Mark append as unused with an underscore variable
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _append = append; // Create a local unused variable instead
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Destructure height with an underscore as it's not directly used
   const { width, height: _height } = useWindowSize();
@@ -63,33 +67,8 @@ function PureMultimodalInput({
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
 
-  // Time-based greeting similar to LibreChat implementation
-  const greeting = useMemo(() => {
-    const now = new Date();
-    const hours = now.getHours();
-    const dayOfWeek = now.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-    // Early morning (midnight to 4:59 AM)
-    if (hours >= 0 && hours < 5) {
-      return 'Late night';
-    }
-    // Morning (6 AM to 11:59 AM)
-    else if (hours < 12) {
-      if (isWeekend) {
-        return 'Happy weekend morning';
-      }
-      return 'Good morning';
-    }
-    // Afternoon (12 PM to 4:59 PM)
-    else if (hours < 17) {
-      return 'Good afternoon';
-    }
-    // Evening (5 PM to 8:59 PM)
-    else {
-      return 'Good evening';
-    }
-  }, []);
+  // Time-based greeting similar to LibreChat implementation - removed as we're using the Greeting component
+  // This implementation has been moved to the dedicated Greeting component
 
   // Initialize VirtualKeyboard API if available - Simplified
   useEffect(() => {

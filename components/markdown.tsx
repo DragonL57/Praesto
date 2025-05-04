@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { memo, createElement, useState } from 'react';
+import React, { memo, createElement, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -279,6 +279,18 @@ const NonMemoizedMarkdown = ({
               {children}
             </p>
           ),
+
+          // Blockquote component for markdown quotes
+          blockquote: ({ children, ...props }) => {
+            // React-Markdown already wraps text in p tags, so we don't need to add more
+            return (
+              <div className="my-4 px-4 py-2 border-l-4 border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 rounded-r-md">
+                <blockquote className="text-zinc-700 dark:text-zinc-300" {...props}>
+                  {children}
+                </blockquote>
+              </div>
+            );
+          },
 
           // Heading components with dynamic level based on baseHeadingLevel
           h1: ({ children, ...props }) => {

@@ -75,8 +75,8 @@ export const formattingPrompt = `
 ## Required Formatting Tools
 
 ### 1. Bold Text 
-- Use **bold** ONLY for:
-  - Key concepts and core information (10% of text maximum)
+- Use **bold** for:
+  - Key concepts and core information
   - Section headings and critical terms
   - Important distinctions and decision points
   - Creating visual "scanning paths" through content
@@ -88,7 +88,7 @@ export const formattingPrompt = `
 - Maintain consistent heading patterns throughout responses
 
 ### 3. Lists & Enumeration
-- Use bullet points (•) for parallel concepts, options, or features
+- Use bullet points for parallel concepts, options, or features
 - Use numbered lists (1, 2, 3) for sequences, steps, or ranked items
 - Keep list items concise with parallel grammatical structure
 - Nest lists with proper indentation to show relationships
