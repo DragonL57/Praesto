@@ -6,23 +6,23 @@ import cx from 'classnames';
 // Removing framer-motion animations
 // import { AnimatePresence, motion } from 'framer-motion';
 import type { Vote } from '@/lib/db/schema';
-import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, WebpageLoadingIcon } from './icons';
-import { Markdown } from './markdown';
+import { DocumentToolCall, DocumentToolResult } from '../document';
+import { PencilEditIcon, WebpageLoadingIcon } from '../icons';
+import { Markdown } from '../markdown';
 import { MessageActions } from './message-actions';
-import { PreviewAttachment } from './preview-attachment';
-import { Weather } from './weather';
-import { WebSearch } from './web-search';
-import { WebsiteContent } from './website-content';
-import { YouTubeTranscript } from './youtube-transcript';
+import { PreviewAttachment } from '../preview-attachment';
+import { Weather } from '../weather';
+import { WebSearch } from '../web-search';
+import { WebsiteContent } from '../website-content';
+import { YouTubeTranscript } from '../youtube-transcript';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { MessageEditor } from './message-editor';
-import { DocumentPreview } from './document-preview';
+import { DocumentPreview } from '../document-preview';
 import type { UseChatHelpers } from '@ai-sdk/react';
-import ShinyText from './shiny-text';
+import ShinyText from '../shiny-text';
 
 // Helper function to extract video ID from YouTube URL or ID
 function extractVideoId(urlOrId: string): string {

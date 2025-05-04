@@ -6,7 +6,7 @@ import type { UIMessage } from 'ai';
 import type { UIArtifact } from './artifact';
 import type { UseChatHelpers } from '@ai-sdk/react';
 
-import { PreviewMessage } from './message';
+import { PreviewMessage } from './messages/message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 

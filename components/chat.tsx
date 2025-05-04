@@ -11,7 +11,7 @@ import { fetcher, generateUUID } from '@/lib/utils';
 import { DEFAULT_PERSONA_ID } from '@/lib/ai/personas';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
-import { Messages } from './messages';
+import { Messages } from './messages/messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';

@@ -5,7 +5,7 @@ import { useChat } from '@ai-sdk/react';
 import { useState, useRef } from 'react';
 import useSWR from 'swr';
 import { fetcher, generateUUID } from '@/lib/utils';
-import { Messages } from './messages';
+import { Messages } from './messages/messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
