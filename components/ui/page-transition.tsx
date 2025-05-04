@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+// Create the cn function directly in this file to avoid import issues
+function cn(...inputs: (string | undefined | null | false | Record<string, boolean>)[]) {
+  return twMerge(clsx(inputs));
+}
 
 type PageTransitionProps = {
   children: ReactNode;

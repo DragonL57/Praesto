@@ -64,15 +64,30 @@ function PureMultimodalInput({
   const { width, height: _height } = useWindowSize();
   const isMobile = useIsMobile();
   
+  // State for tracking if input is focused
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  // State for tracking visual row count for expanding textarea
+  const [visualRowCount, setVisualRowCount] = useState(1);
+  
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
 
-  // Time-based greeting similar to LibreChat implementation - removed as we're using the Greeting component
-  // This implementation has been moved to the dedicated Greeting component
-
-  // Initialize VirtualKeyboard API if available - Simplified
+  // Initialize VirtualKeyboard API if available and handle keyboard height changes
   useEffect(() => {
     if (!isMobile) return;
+
+    let keyboardHeight = 0;
+    const handleVirtualKeyboardResize = () => {
+      if (navigator.virtualKeyboard && navigator.virtualKeyboard.boundingRect) {
+        const { height: kbHeight } = navigator.virtualKeyboard.boundingRect;
+        keyboardHeight = kbHeight;
+        
+        document.documentElement.style.setProperty(
+          '--keyboard-height', 
+          `${keyboardHeight}px`
+        );
+      }
+    };
 
     // Check if the VirtualKeyboard API is available
     if ('virtualKeyboard' in navigator && navigator.virtualKeyboard) {
@@ -80,12 +95,48 @@ function PureMultimodalInput({
         // Opt out of the automatic virtual keyboard behavior
         // This allows us to use CSS env vars to handle layout adjustments
         navigator.virtualKeyboard.overlaysContent = true;
+        
+        // Listen for keyboard resize events
+        navigator.virtualKeyboard.addEventListener('geometrychange', handleVirtualKeyboardResize);
+        
         console.log('VirtualKeyboard API enabled with overlaysContent=true');
       } catch (error) {
         console.warn('Failed to initialize VirtualKeyboard API:', error);
       }
     }
-  }, [isMobile]);
+    
+    // Fallback for devices without VirtualKeyboard API
+    const handleResize = () => {
+      // Only apply on mobile
+      if (width < 768) {
+        const visualViewport = window.visualViewport;
+        if (!visualViewport) return;
+        
+        // Detect keyboard by comparing visual viewport to window inner height
+        const newKeyboardHeight = Math.max(0, window.innerHeight - visualViewport.height);
+        
+        // If keyboard height changed significantly, update it
+        if (Math.abs(newKeyboardHeight - keyboardHeight) > 50) {
+          keyboardHeight = newKeyboardHeight;
+          document.documentElement.style.setProperty(
+            '--keyboard-height', 
+            `${keyboardHeight}px`
+          );
+        }
+      }
+    };
+    
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('scroll', handleResize);
+    
+    return () => {
+      if (navigator.virtualKeyboard) {
+        navigator.virtualKeyboard.removeEventListener('geometrychange', handleVirtualKeyboardResize);
+      }
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, [isMobile, width]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -97,6 +148,15 @@ function PureMultimodalInput({
       }
     }
   }, [isMobile, width]);
+
+  // Update row count when input changes
+  useEffect(() => {
+    if (textareaRef.current) {
+      const style = window.getComputedStyle(textareaRef.current);
+      const lineHeight = parseFloat(style.lineHeight);
+      setVisualRowCount(Math.max(1, Math.floor(textareaRef.current.scrollHeight / lineHeight)));
+    }
+  }, [input]);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -277,6 +337,11 @@ function PureMultimodalInput({
     [setAttachments, status],
   );
 
+  // Handle click on container to focus textarea
+  const handleContainerClick = useCallback(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   // Main wrapper with transition for centering in empty chats
   return (
     <div 
@@ -285,15 +350,18 @@ function PureMultimodalInput({
         isNewChat && status === "ready" ? "h-[85vh] justify-center" : "h-auto justify-end"
       )}
     >
-      {/* Form wrapper */}
+      {/* Form wrapper - fixed to bottom of viewport on mobile */}
       <div 
         className={cx(
-          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out"
+          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out",
+          isMobile && "fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm px-2",
         )}
         style={{
           // Add padding to the bottom to push content above the keyboard
-          // Use a fallback value for browsers without VK API support
-          paddingBottom: `calc(env(keyboard-inset-bottom, 0px) + 4px)`,
+          // Use either the VirtualKeyboard API variable or a fallback
+          paddingBottom: isMobile ? 
+            `calc(var(--keyboard-height, env(keyboard-inset-bottom, 0px)) + 8px)` : 
+            '4px',
           transition: 'padding-bottom 0.2s ease-out, transform 0.5s ease-in-out'
         }}
       >
@@ -321,17 +389,30 @@ function PureMultimodalInput({
           {isNewChat && <Greeting />}
           
           {/* Input container with dynamic padding based on attachments */}
-          <div className={cx(
-            "rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm",
-            {
-              "pt-4": attachments.length > 0 || uploadQueue.length > 0
-            }
-          )}>
-            {/* Attachments inside the input bar */}
+          <div 
+            onClick={handleContainerClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleContainerClick();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className={cx(
+              "w-full text-left rounded-3xl overflow-hidden bg-muted dark:border-zinc-700 border border-input shadow-sm transition-shadow duration-200",
+              {
+                "pt-4": attachments.length > 0 || uploadQueue.length > 0,
+                "shadow-lg": isInputFocused,
+                "shadow-md": !isInputFocused
+              }
+            )}
+            aria-label="Focus text input"
+          >
+            {/* Attachments inside the input bar - LibreChat style */}
             {(attachments.length > 0 || uploadQueue.length > 0) && (
               <div
                 data-testid="attachments-preview"
-                className="flex flex-row gap-2 overflow-x-auto items-center px-4 pb-2"
+                className="flex flex-wrap gap-2 items-start px-4 pb-2 max-h-40 overflow-y-auto"
                 style={{ scrollbarWidth: 'thin' }}
               >
                 {attachments.map((attachment, index) => (
@@ -360,7 +441,7 @@ function PureMultimodalInput({
               </div>
             )}
             
-            {/* Text input container with proper spacing for buttons */}
+            {/* Text input container with proper spacing for buttons - LibreChat style */}
             <div className="relative">
               <Textarea
                 data-testid="multimodal-input"
@@ -371,16 +452,20 @@ function PureMultimodalInput({
                 onPaste={handlePaste}
                 name="message-input"
                 id="message-input"
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 className={cx(
                   'min-h-[44px] max-h-[calc(75dvh)] resize-none !text-base bg-transparent pt-4 pl-5 pr-5 border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
                   'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-rounded scrollbar-thumb-slate-400/20 hover:scrollbar-thumb-slate-400/40 dark:scrollbar-thumb-zinc-600/20 dark:hover:scrollbar-thumb-zinc-500/40',
                   'placeholder:text-muted-foreground/70',
+                  visualRowCount > 3 ? 'pl-5' : 'px-5',
                   className,
                 )}
                 style={{
-                  height: 44,
+                  height: 44, // Starting height
                   scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent'
+                  scrollbarColor: 'rgba(148, 163, 184, 0.2) transparent',
+                  overflow: 'hidden', // Start with hidden, will be changed by adjustHeight
                 }}
                 rows={1}
                 onKeyDown={(event) => {
@@ -402,38 +487,37 @@ function PureMultimodalInput({
               {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
               <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
             </div>
-          </div>
 
-          {/* Left side - only persona selector */}
-          <div className="absolute bottom-1 left-3 p-2 w-fit flex flex-row justify-start items-center z-10">
-            {/* Background element with rounded corners - smaller to not overlap with border */}
-            <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
-            <div className="relative">
-              <PersonaSelector />
-            </div>
-          </div>
+            {/* Bottom toolbar with controls - LibreChat style fixed positioning */}
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-2">
+              {/* Left side - only persona selector */}
+              <div className="p-2 flex flex-row justify-start items-center z-10">
+                {/* Background element with rounded corners - smaller to not overlap with border */}
+                <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
+                <div className="relative">
+                  <PersonaSelector />
+                </div>
+              </div>
 
-          {/* Right side - attachments, speech-to-text, and send buttons */}
-          <div className="absolute bottom-1 right-3 p-2 w-fit flex flex-row justify-end items-center z-10">
-            {/* Background element with rounded corners - smaller to not overlap with border */}
-            <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
-            <div className="relative flex items-center">
-              <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-              <SpeechToTextButton 
-                setInput={setInput} 
-                status={status} 
-                input={input}
-                recognitionRef={recognitionRef}
-              />
-              {(status === 'submitted' || status === 'streaming') ? (
-                <StopButton stop={stop} setMessages={setMessages} />
-              ) : (
-                <SendButton
+              {/* Right side - attachments, speech-to-text, and send buttons */}
+              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1">
+                <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+                <SpeechToTextButton 
+                  setInput={setInput} 
+                  status={status} 
                   input={input}
-                  submitForm={submitForm}
-                  uploadQueue={uploadQueue}
+                  recognitionRef={recognitionRef}
                 />
-              )}
+                {(status === 'submitted' || status === 'streaming') ? (
+                  <StopButton stop={stop} setMessages={setMessages} />
+                ) : (
+                  <SendButton
+                    input={input}
+                    submitForm={submitForm}
+                    uploadQueue={uploadQueue}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
