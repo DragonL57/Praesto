@@ -2,6 +2,7 @@ import type React from "react"
 import "@/app/globals.css"
 import "katex/dist/katex.min.css" // Add KaTeX CSS for math rendering
 import "@/public/katex-override.css" // Import KaTeX override CSS
+import "@/public/virtual-keyboard.css" // Import virtual keyboard CSS handling
 import { Inter } from "next/font/google"
 import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"

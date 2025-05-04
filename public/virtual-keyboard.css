@@ -1,0 +1,41 @@
+/* Virtual keyboard adjustments */
+@supports (padding-bottom: env(keyboard-inset-height)) {
+  :root {
+    --keyboard-inset-height: env(keyboard-inset-height, 0px);
+    --keyboard-inset-width: env(keyboard-inset-width, 0px);
+    --keyboard-inset-top: env(keyboard-inset-top, 0px);
+    --keyboard-inset-right: env(keyboard-inset-right, 0px);
+    --keyboard-inset-bottom: env(keyboard-inset-bottom, 0px);
+    --keyboard-inset-left: env(keyboard-inset-left, 0px);
+  }
+  
+  /* Adjust content area when keyboard is visible */
+  .keyboard-visible .input-container {
+    padding-bottom: var(--keyboard-inset-height, var(--keyboard-height, 0px)) !important;
+    transition: padding-bottom 0.2s ease-out;
+  }
+}
+
+/* Ensure content stays in view when keyboard is open */
+@media (max-width: 768px) {
+  :root {
+    height: 100%;
+    /* Ensure no overscroll on keyboard open */
+    overflow: hidden;
+  }
+  
+  body {
+    height: 100%;
+    /* Allow body to scroll when needed */
+    overflow-y: auto;
+    /* Prevent bounce effects that can interfere with keyboard positioning */
+    overscroll-behavior-y: none;
+    position: fixed;
+    width: 100%;
+  }
+  
+  body.keyboard-visible {
+    /* Add a class we can use as a selector for viewport adjustments */
+    --keyboard-is-visible: 1;
+  }
+}

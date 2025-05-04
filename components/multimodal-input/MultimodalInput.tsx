@@ -170,16 +170,19 @@ function PureMultimodalInput({
       {/* Form wrapper - fixed to bottom of viewport on mobile */}
       <div 
         className={cx(
-          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out",
+          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out input-container",
           isMobile && "fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2",
         )}
         style={{
-          // Add padding to the bottom to push content above the keyboard
-          // Use either the VirtualKeyboard API variable or a fallback
+          // Add padding to the bottom to push content above the keyboard using proper env() variables
           paddingBottom: isMobile ? 
-            `calc(var(--keyboard-height, env(keyboard-inset-bottom, 0px)) + 8px)` : 
+            `calc(env(keyboard-inset-height, var(--keyboard-height, 0px)) + 8px)` : 
             '4px',
-          transition: 'padding-bottom 0.2s ease-out, transform 0.5s ease-in-out'
+          // Apply transforms to handle viewport offset on iOS
+          transform: isMobile ? 
+            `translateY(calc(var(--viewport-offset-y, 0px) * -1))` : 
+            'none',
+          transition: 'padding-bottom 0.2s ease-out, transform 0.25s ease-out'
         }}
       >
         {messagesContainerRef && messagesEndRef && (

@@ -23,10 +23,16 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
         const { height: kbHeight } = navigator.virtualKeyboard.boundingRect;
         keyboardHeight = kbHeight;
         
-        document.documentElement.style.setProperty(
-          '--keyboard-height', 
-          `${keyboardHeight}px`
-        );
+        // Set custom properties for keyboard height and visibility
+        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+        document.documentElement.style.setProperty('--keyboard-visible', keyboardHeight > 0 ? '1' : '0');
+        
+        // Add a class to the body for CSS targeting when keyboard is visible
+        if (keyboardHeight > 0) {
+          document.body.classList.add('keyboard-visible');
+        } else {
+          document.body.classList.remove('keyboard-visible');
+        }
       }
     };
 
@@ -59,13 +65,37 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
         // If keyboard height changed significantly, update it
         if (Math.abs(newKeyboardHeight - keyboardHeight) > 50) {
           keyboardHeight = newKeyboardHeight;
-          document.documentElement.style.setProperty(
-            '--keyboard-height', 
-            `${keyboardHeight}px`
-          );
+          
+          // Set custom properties for keyboard height and visibility
+          document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+          document.documentElement.style.setProperty('--keyboard-visible', keyboardHeight > 0 ? '1' : '0');
+          
+          // Update viewport positioning based on visual viewport
+          if (visualViewport) {
+            document.documentElement.style.setProperty('--viewport-offset-y', `${visualViewport.offsetTop}px`);
+          }
+          
+          // Add a class to the body for CSS targeting when keyboard is visible
+          if (keyboardHeight > 0) {
+            document.body.classList.add('keyboard-visible');
+          } else {
+            document.body.classList.remove('keyboard-visible');
+          }
         }
       }
     };
+    
+    // Add CSS to document head for keyboard inset variables fallback
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @supports (padding-bottom: env(keyboard-inset-height)) {
+        body.keyboard-visible .input-container {
+          padding-bottom: env(keyboard-inset-height, var(--keyboard-height)) !important;
+          transition: padding-bottom 0.2s ease-out;
+        }
+      }
+    `;
+    document.head.appendChild(style);
     
     window.visualViewport?.addEventListener('resize', handleResize);
     window.visualViewport?.addEventListener('scroll', handleResize);
@@ -76,6 +106,7 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
       }
       window.visualViewport?.removeEventListener('resize', handleResize);
       window.visualViewport?.removeEventListener('scroll', handleResize);
+      document.head.removeChild(style);
     };
   }, [isMobile, width]);
 
