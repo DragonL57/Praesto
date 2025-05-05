@@ -81,7 +81,7 @@ class DuckDuckGoClient {
     // Check cache first
     const cacheKey = `ddg:${query}:${maxResults}:${region}:${safeSearch}`;
     const cachedResult = searchCache.get(cacheKey);
-    
+
     if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
       console.log('Using cached DuckDuckGo search results');
       return cachedResult.results;
@@ -89,7 +89,8 @@ class DuckDuckGoClient {
 
     try {
       // Add a small delay before making the request to avoid rate limiting
-      await delay(200);
+      // Increased delay from 200ms to 500ms
+      await delay(500);
 
       // Set a custom user agent to appear more like a real browser
       const customHeaders = {
@@ -104,7 +105,7 @@ class DuckDuckGoClient {
       // Use duck-duck-scrape library for better search results
       // Pass the needle options as the third parameter instead of trying to include headers in SearchOptions
       const searchResults = await DDG.search(
-        query, 
+        query,
         {
           safeSearch: safeSearch
             ? DDG.SafeSearchType.MODERATE
@@ -165,18 +166,19 @@ class DuckDuckGoClient {
     // Try to get direct answers if possible
     const results: SearchResult[] = [];
     const cacheKey = `ddg-alt:${query}:${maxResults}:${region}`;
-    
+
     // Check cache first
     const cachedResult = searchCache.get(cacheKey);
     if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
       console.log('Using cached DuckDuckGo alternative search results');
       return cachedResult.results;
     }
-    
+
     try {
       // Add a small delay before making the request to avoid rate limiting
-      await delay(300);
-      
+      // Increased delay from 300ms to 600ms
+      await delay(600);
+
       // Try dictionary definition
       const definitionResults = await DDG.dictionaryDefinition(query);
       // Check if we have results and they have text property (which contains the definition)
@@ -192,13 +194,14 @@ class DuckDuckGoClient {
       // Ignore errors from specific API endpoints
       console.log(`Alternative search approach failed: ${getErrorMessage(error)}`);
     }
-    
+
     // If no direct answers, try a standard web search again with different approach
     if (results.length === 0) {
       try {
         // Add a small delay
-        await delay(300);
-        
+        // Increased delay from 300ms to 600ms
+        await delay(600);
+
         // Use the standard search method with needle options as the third parameter
         const customHeaders = {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -206,7 +209,7 @@ class DuckDuckGoClient {
         };
 
         const webSearch = await DDG.search(
-          query, 
+          query,
           {
             time: DDG.SearchTimeType.ALL,
             region: region.toUpperCase(),
@@ -214,15 +217,15 @@ class DuckDuckGoClient {
           },
           { headers: customHeaders } as NeedleOptions
         );
-        
+
         if (webSearch?.results?.length > 0) {
           for (const result of webSearch.results) {
             if (results.length >= maxResults) break;
-            
+
             results.push({
               title: result.title || "No title",
               href: result.url || "",
-              body: result.description || "No description available" 
+              body: result.description || "No description available"
             });
           }
         }
@@ -231,18 +234,19 @@ class DuckDuckGoClient {
         console.log(`Web search approach failed: ${getErrorMessage(error)}`);
       }
     }
-    
+
     // If still no results, try news search
     if (results.length === 0) {
       try {
         // Add a small delay
-        await delay(300);
-        
+        // Increased delay from 300ms to 600ms
+        await delay(600);
+
         const newsSearch = await DDG.searchNews(query);
         if (newsSearch?.results?.length > 0) {
           for (const result of newsSearch.results) {
             if (results.length >= maxResults) break;
-            
+
             results.push({
               title: result.title || "No title",
               href: result.url || "",
@@ -256,21 +260,21 @@ class DuckDuckGoClient {
         console.log(`News search approach failed: ${getErrorMessage(error)}`);
       }
     }
-    
+
     console.log(`DuckDuckGo Alternative Search: Found ${results.length} results`);
-    
+
     const finalResults = {
       results: results.slice(0, maxResults),
       count: results.length,
       query: query
     };
-    
+
     // Cache the results
     searchCache.set(cacheKey, {
       timestamp: Date.now(),
       results: finalResults
     });
-    
+
     return finalResults;
   }
 }
@@ -301,7 +305,7 @@ class SerperClient {
     // Check cache first
     const cacheKey = `serper:${query}:${maxResults}:${region}:${safeSearch}`;
     const cachedResult = this.cache.get(cacheKey);
-    
+
     if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
       console.log('Using cached Serper search results');
       return cachedResult.results;
@@ -310,7 +314,7 @@ class SerperClient {
     try {
       // Add a small delay before making the request
       await delay(200);
-      
+
       // Set up the request to the Serper API
       const options = {
         method: 'POST',
@@ -383,7 +387,7 @@ class SerperClient {
         count: results.length,
         query: query,
       };
-      
+
       // Cache the results
       this.cache.set(cacheKey, {
         timestamp: Date.now(),
@@ -430,7 +434,7 @@ export const webSearch = tool({
   }) => {
     // Enforce minimum and maximum number of results
     const normalizedMaxResults = Math.min(Math.max(maxResults, 5), 10);
-    
+
     console.log(
       `Web Search: query='${query}', max=${normalizedMaxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
     );
@@ -449,7 +453,7 @@ export const webSearch = tool({
         if (duckResults.results.length > 0) {
           return duckResults;
         }
-        
+
         console.log('DuckDuckGo returned no results, trying Serper');
         // If no results from DuckDuckGo, fall back to Serper
         const serperResults = await serper.search({
