@@ -29,6 +29,8 @@ import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
 // eslint-disable-next-line import/no-unresolved
 import { getYoutubeTranscript } from '@/lib/ai/tools/get-youtube-transcript';
 // eslint-disable-next-line import/no-unresolved
+import { think } from '@/lib/ai/tools/think';
+// eslint-disable-next-line import/no-unresolved
 import { isProductionEnvironment } from '@/lib/constants';
 // eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
@@ -112,28 +114,30 @@ export async function POST(request: Request) {
           maxSteps: 5,
           providerOptions: isGemini25Model
             ? {
-                google: {
-                  thinkingConfig: {
-                    thinkingBudget: 24576, // Maximum thinking budget
-                  },
+              google: {
+                thinkingConfig: {
+                  thinkingBudget: 24576, // Maximum thinking budget
                 },
-              }
+              },
+            }
             : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []
               : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                  'webSearch',
-                  'readWebsiteContent',
-                  'getYoutubeTranscript',
-                ],
+                'think',
+                'getWeather',
+                'createDocument',
+                'updateDocument',
+                'requestSuggestions',
+                'webSearch',
+                'readWebsiteContent',
+                'getYoutubeTranscript',
+              ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
           tools: {
+            think,
             getWeather,
             webSearch,
             readWebsiteContent,
@@ -233,6 +237,7 @@ export async function DELETE(request: Request) {
     return new Response('Chat deleted', { status: 200 });
   } catch {
     return new Response('An error occurred while processing your request!', {
-      status: 500 });
+      status: 500
+    });
   }
 }

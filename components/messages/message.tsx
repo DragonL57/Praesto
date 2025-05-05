@@ -15,6 +15,7 @@ import { Weather } from '../weather';
 import { WebSearch } from '../web-search';
 import { WebsiteContent } from '../website-content';
 import { YouTubeTranscript } from '../youtube-transcript';
+import { Think } from '../think';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -72,6 +73,29 @@ const UserTextWithLineBreaks = ({ text }: { text: string }) => {
     </>
   );
 };
+
+function ThinkIcon({
+  size = 16,
+  className,
+}: { size?: number; className?: string }) {
+  return (
+    <svg
+      height={size}
+      width={size}
+      viewBox="0 0 24 24"
+      className={cn('stroke-current', className)}
+      strokeWidth="2"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+      />
+    </svg>
+  );
+}
 
 const PurePreviewMessage = ({
   chatId,
@@ -135,7 +159,9 @@ const PurePreviewMessage = ({
         if (!textEncounteredNext && nextToolPart && nextToolPart.type === 'tool-invocation' && 'toolInvocation' in nextToolPart) {
           const nextToolName = nextToolPart.toolInvocation.toolName;
           if ((currentToolName === 'webSearch' && nextToolName === 'readWebsiteContent') ||
-              (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent')) {
+              (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent') ||
+              (currentToolName === 'think' && (nextToolName === 'webSearch' || nextToolName === 'readWebsiteContent')) ||
+              ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && nextToolName === 'think')) {
             part.connectNext = true;
           }
         }
@@ -160,8 +186,12 @@ const PurePreviewMessage = ({
         // Connect if a previous tool was found AND no text was encountered before it
         if (!textEncounteredPrev && prevToolPart && prevToolPart.type === 'tool-invocation' && 'toolInvocation' in prevToolPart) {
           const prevToolName = prevToolPart.toolInvocation.toolName;
-          if (currentToolName === 'readWebsiteContent' &&
-              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) {
+          if ((currentToolName === 'readWebsiteContent' &&
+              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
+              (currentToolName === 'think' && 
+              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
+              ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && 
+              prevToolName === 'think')) {
             part.connectPrevious = true;
           }
         }
@@ -379,6 +409,18 @@ const PurePreviewMessage = ({
                             <ShinyText>Getting content from webpage...</ShinyText>
                           </div>
                         </div>
+                      ) : toolName === 'think' ? (
+                        <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
+                          <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                            <ThinkIcon size={16} />
+                            <span>
+                              Structured thinking in progress...
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-center p-4">
+                            <ShinyText>Organizing thoughts and analyzing the problem...</ShinyText>
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                   );
@@ -433,6 +475,13 @@ const PurePreviewMessage = ({
                                 error={result.error}
                                 source={result.source}
                                 fallbackError={result.fallbackError}
+                                connectPrevious={groupPart.connectPrevious}
+                                connectNext={groupPart.connectNext}
+                                inGroup={true}
+                              />
+                            ) : toolName === 'think' ? (
+                              <Think
+                                thought={result.thought}
                                 connectPrevious={groupPart.connectPrevious}
                                 connectNext={groupPart.connectNext}
                                 inGroup={true}
@@ -494,6 +543,12 @@ const PurePreviewMessage = ({
                         hasTimestamps={!toolInvocation.args.combineAll}
                         urlOrId={toolInvocation.args.urlOrId}
                         languages={toolInvocation.args.languages}
+                      />
+                    ) : toolName === 'think' ? (
+                      <Think
+                        thought={result.thought}
+                        connectPrevious={part.connectPrevious}
+                        connectNext={part.connectNext}
                       />
                     ) : (
                       <pre>{JSON.stringify(result, null, 2)}</pre>
