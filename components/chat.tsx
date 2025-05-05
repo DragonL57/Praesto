@@ -181,7 +181,7 @@ export function Chat({
               />
             )}
           </form>
-          <div className="text-center text-xs text-gray-500 mt-0">
+          <div className="text-center text-xs text-white-500 mt-0">
             UniTaskAI can make mistake, double-check the info
           </div>
         </div>

@@ -65,7 +65,7 @@ function PureWebsiteContent({
       ref={contentRef}
       className={cn(
         "bg-background rounded-xl transition-all duration-300 ease-in-out w-full",
-        !inGroup && 'border border-border/50', // Only add border if not in a group
+        !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
         connectPrevious ? 'mt-0' : 'mt-1', // Restore conditional top margin, use mt-1
         connectNext ? 'mb-0' : 'mb-1' // Restore conditional bottom margin, use mb-1
       )}
@@ -76,14 +76,14 @@ function PureWebsiteContent({
           <div className="relative">
             {/* Connect to previous component when connectPrevious is true */}
             {connectPrevious && (
-              <div className="absolute top-[-22px] bottom-0 left-3.5 w-px bg-border/50 h-[22px]"></div> // Using proper format for negative value
+              <div className="absolute top-[-22px] bottom-0 left-3.5 w-[1.5px] bg-border h-[22px]"></div>
             )}
-            <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-muted-foreground z-10 relative">
+            <div className="flex items-center justify-center size-7 rounded-full border-[1.5px] border-border bg-background text-muted-foreground z-10 relative">
               <WebpageIcon size={16} />
             </div>
             {/* Connect to next component when connectNext is true */}
             {connectNext && (
-              <div className="absolute top-7 bottom-[-22px] left-3.5 w-px bg-border/50"></div> // Using proper format for negative value
+              <div className="absolute top-7 bottom-[-22px] left-3.5 w-[1.5px] bg-border"></div>
             )}
           </div>
           <div className="text-sm font-medium">

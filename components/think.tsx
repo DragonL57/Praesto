@@ -46,7 +46,7 @@ function PureThink({
       ref={containerRef}
       className={cn(
         "bg-background rounded-xl transition-all duration-300 ease-in-out w-full",
-        !inGroup && 'border border-border/50', // Only add border if not in a group
+        !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
         connectPrevious ? 'mt-0' : 'mt-1', // Top margin based on connection
         connectNext ? 'mb-0' : 'mb-1' // Bottom margin based on connection
       )}
@@ -70,18 +70,18 @@ function PureThink({
           <div className="relative">
             {/* Connect to previous component when connectPrevious is true */}
             {connectPrevious && (
-              <div className="absolute top-[-22px] bottom-0 left-3.5 w-px bg-border/50 h-[22px]"></div>
+              <div className="absolute top-[-22px] bottom-0 left-3.5 w-[1.5px] bg-border h-[22px]"></div>
             )}
-            <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-muted-foreground z-10 relative">
+            <div className="flex items-center justify-center size-7 rounded-full border-[1.5px] border-border bg-background text-muted-foreground z-10 relative">
               <ThinkIcon size={16} />
             </div>
             {/* Connect to next component when connectNext is true */}
             {connectNext && (
-              <div className="absolute top-7 bottom-[-22px] left-3.5 w-px bg-border/50"></div>
+              <div className="absolute top-7 bottom-[-22px] left-3.5 w-[1.5px] bg-border"></div>
             )}
             {/* Add vertical line when content is expanded */}
             {isExpanded && (
-              <div className="absolute top-7 bottom-0 left-3.5 w-px bg-border/50 h-full"></div>
+              <div className="absolute top-7 bottom-0 left-3.5 w-[1.5px] bg-border h-full"></div>
             )}
           </div>
           <div className="text-sm font-medium flex items-center gap-2">
@@ -108,7 +108,7 @@ function PureThink({
             <div className="px-4 pb-4 pt-0">
               <div className="relative pl-10">
                 {/* Vertical line that perfectly aligns with the icon's vertical line */}
-                <div className="absolute top-0 bottom-0 left-3.5 w-px bg-border/50 h-full"></div>
+                <div className="absolute inset-y-0 left-3.5 w-[1.5px] bg-border h-full"></div>
                 <div className="text-sm text-muted-foreground pl-4 py-1">
                   <Markdown baseHeadingLevel={3}>{thought}</Markdown>
                 </div>

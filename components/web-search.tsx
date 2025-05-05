@@ -102,7 +102,7 @@ function PureWebSearch({ results, query, count: _count, connectNext = false, inG
       ref={resultsContainerRef}
       className={cn(
         'bg-background rounded-xl transition-all duration-300 ease-in-out w-full',
-        !inGroup && 'border border-border/50', // Only add border if not in a group
+        !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
         isExpanded ? '' : 'cursor-pointer',
         connectNext ? 'mb-0' : 'mb-1' // Restore conditional margin, use mb-1 for less space
       )}
@@ -137,15 +137,15 @@ function PureWebSearch({ results, query, count: _count, connectNext = false, inG
       >
         <div className="flex items-center gap-3 text-sm grow">
           <div className="relative flex">
-            <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-muted-foreground z-10">
+            <div className="flex items-center justify-center size-7 rounded-full border-[1.5px] border-border bg-background text-muted-foreground z-10">
               <SearchIcon size={16} />
             </div>
             {isExpanded && safeResults.length > 0 && (
-              <div className="absolute top-7 bottom-0 left-3.5 w-px bg-border/50 h-full"></div>
+              <div className="absolute top-7 bottom-0 left-3.5 w-[1.5px] bg-border h-full"></div>
             )}
             {/* Add connecting line to the next component when connectNext is true */}
             {connectNext && (
-              <div className="absolute top-7 bottom-[-22px] left-3.5 w-px bg-border/50"></div> // Using proper format for negative value
+              <div className="absolute top-7 bottom-[-22px] left-3.5 w-[1.5px] bg-border"></div>
             )}
           </div>
           <div className="text-sm font-medium flex items-center gap-2">
@@ -182,14 +182,14 @@ function PureWebSearch({ results, query, count: _count, connectNext = false, inG
                   >
                     {/* Connecting line */}
                     {!isLastItem && (
-                      <div className="absolute left-3.5 inset-y-0 w-px bg-border/50"></div>
+                      <div className="absolute left-3.5 inset-y-0 w-[1.5px] bg-border"></div>
                     )}
                     <div className="flex items-start gap-2">
                       <div className="relative">
-                        <div className="flex items-center justify-center size-7 rounded-full border border-border/50 bg-background text-xs text-muted-foreground z-10 relative">
+                        <div className="flex items-center justify-center size-7 rounded-full border-[1.5px] border-border bg-background text-xs text-muted-foreground z-10 relative">
                           {index + 1}
                         </div>
-                        <div className="absolute top-3.5 left-0 h-px w-3 bg-border/50"></div>
+                        <div className="absolute top-3.5 left-0 h-px w-3 bg-border"></div>
                       </div>
 
                       <div className="flex-1 min-w-0 pt-0.5">
