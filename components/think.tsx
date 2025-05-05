@@ -18,11 +18,24 @@ function PureThink({
   connectNext = false,
   inGroup = false 
 }: ThinkProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  // Initialize with false (collapsed) state instead of reading from localStorage directly
+  const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Once on mount, check if we should override the initial state with a stored preference
+  useEffect(() => {
+    const storedExpandedState = localStorage.getItem('thinkComponentExpanded');
+    // Only expand if explicitly set to "true" in localStorage
+    if (storedExpandedState === "true") {
+      setIsExpanded(true);
+    }
+  }, []);
 
   const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
+    const newState = !isExpanded;
+    setIsExpanded(newState);
+    // Save preference to localStorage
+    localStorage.setItem('thinkComponentExpanded', newState.toString());
   };
 
   // Handle click outside to collapse
@@ -32,6 +45,8 @@ function PureThink({
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsExpanded(false);
+        // Also update localStorage when collapsing from outside click
+        localStorage.setItem('thinkComponentExpanded', "false");
       }
     };
 

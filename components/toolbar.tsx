@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { BorderTrail } from '@/components/ui/creative-effects/border-trail/border-trail';
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
 import { artifactDefinitions } from './artifact';
 import type { ArtifactKind } from './artifact';
@@ -83,7 +84,7 @@ const Tool = ({
     <Tooltip open={isHovered && !isAnimating}>
       <TooltipTrigger asChild>
         <motion.div
-          className={cx('p-3 rounded-full', {
+          className={cx('p-3 rounded-full relative', {
             'bg-primary !text-primary-foreground': selectedTool === description,
           })}
           onHoverStart={() => {
@@ -110,6 +111,26 @@ const Tool = ({
             handleSelect();
           }}
         >
+          {/* Always show BorderTrail for selected tool, show on hover for others */}
+          {(isHovered || selectedTool === description) && (
+            <BorderTrail 
+              className={cx({
+                "bg-primary/80": selectedTool === description,
+                "bg-primary/50": selectedTool !== description
+              })}
+              size={24}
+              transition={{
+                repeat: Number.POSITIVE_INFINITY,
+                duration: selectedTool === description ? 3 : 5,
+                ease: "linear",
+              }}
+              style={{
+                boxShadow: selectedTool === description 
+                  ? "0px 0px 20px 10px rgb(255 255 255 / 25%)" 
+                  : "0px 0px 15px 5px rgb(255 255 255 / 15%)"
+              }}
+            />
+          )}
           {selectedTool === description ? <ArrowUpIcon /> : icon}
         </motion.div>
       </TooltipTrigger>
@@ -216,6 +237,25 @@ const ReadingLevelSelector = ({
                 }
               }}
             >
+              {(currentLevel !== 2 || !isAnimating) && (
+                <BorderTrail 
+                  className={cx({
+                    "bg-primary/80": currentLevel !== 2,
+                    "bg-primary/40": currentLevel === 2
+                  })}
+                  size={24}
+                  transition={{
+                    repeat: Number.POSITIVE_INFINITY,
+                    duration: currentLevel !== 2 ? 3 : 5,
+                    ease: "linear",
+                  }}
+                  style={{
+                    boxShadow: currentLevel !== 2
+                      ? "0px 0px 20px 10px rgb(255 255 255 / 25%)" 
+                      : "0px 0px 15px 5px rgb(255 255 255 / 15%)"
+                  }}
+                />
+              )}
               {currentLevel === 2 ? <SummarizeIcon /> : <ArrowUpIcon />}
             </motion.div>
           </TooltipTrigger>
@@ -253,7 +293,7 @@ export const Tools = ({
 
   return (
     <motion.div
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-0.5"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -407,18 +447,41 @@ const PureToolbar = ({
         }}
         ref={toolbarRef}
       >
+        {isToolbarVisible && (
+          <div className="absolute inset-0">
+            <BorderTrail 
+              className="bg-primary/40"
+              size={60}
+              style={{
+                boxShadow: "0px 0px 60px 30px rgb(255 255 255 / 10%), 0 0 100px 60px rgb(0 0 0 / 5%)"
+              }}
+            />
+          </div>
+        )}
         {status === 'streaming' ? (
           <motion.div
             key="stop-icon"
             initial={{ scale: 1 }}
             animate={{ scale: 1.4 }}
             exit={{ scale: 1 }}
-            className="p-3"
+            className="p-3 relative"
             onClick={() => {
               stop();
               setMessages((messages) => messages);
             }}
           >
+            <BorderTrail 
+              className="bg-primary/80"
+              size={30}
+              transition={{
+                repeat: Number.POSITIVE_INFINITY,
+                duration: 2,
+                ease: "linear",
+              }}
+              style={{
+                boxShadow: "0px 0px 20px 10px rgb(255 255 255 / 20%)"
+              }}
+            />
             <StopIcon />
           </motion.div>
         ) : selectedTool === 'adjust-reading-level' ? (

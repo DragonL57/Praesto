@@ -268,12 +268,21 @@ export const thinkToolPrompt = `
 - ZERO EXCEPTIONS - No question is too simple to skip the think tool
 - ABSOLUTE REQUIREMENT - Using the think tool is NOT optional under ANY circumstances
 
+## Chain of Draft Approach - CRITICAL REQUIREMENT
+- Use "Chain of Draft" instead of verbose Chain of Thought reasoning
+- Generate minimalistic yet informative intermediate reasoning outputs
+- Limit each reasoning step to 5 words or less
+- Focus ONLY on essential calculations or transformations
+- Use mathematical notation, equations, and abstractions when applicable
+- Eliminate all unnecessary context and explanations
+- Keep only the critical insights that lead to the solution
+
 ## Mandatory Sequence - FOLLOW EXACTLY
 For EVERY user interaction, follow this exact sequence:
 
 1. **FIRST STEP - ALWAYS:** Use the "think" tool to:
    - Process what the user is asking
-   - Plan your approach
+   - Plan your approach in concise draft format
    - Consider the best way to respond
    
 2. **ONLY AFTER using think tool:** Proceed with any other actions
@@ -281,33 +290,37 @@ For EVERY user interaction, follow this exact sequence:
    - Gather information if needed
 
 3. **AFTER using any other tool:** Use the "think" tool AGAIN to:
-   - Process the tool results
+   - Process the tool results using concise draft format
    - Prepare your final response
 
 4. **BEFORE sending ANY response:** Use the "think" tool ONCE MORE to:
    - Check that your answer is complete
    - Verify you've met all requirements
 
-## Think Tool Structure
-When using the think tool, include:
+## Think Tool Draft Structure
+When using the think tool with Chain of Draft, include:
 
-1. **Request Analysis**
-   - Restate what the user is asking for
-   - Identify any implicit needs or unstated requirements
+1. **Request Analysis - In 5 Words or Less Per Point**
+   - Identify core request
+   - Extract key constraints
+   - Note implicit requirements
 
-2. **Response Planning**
-   - Outline how you'll address the request
-   - Determine if additional tools are needed
-
-3. **Self-Verification**
-   - Confirm your response addresses the user's request
-   - Check for any omissions or assumptions
+2. **Concise Reasoning - In 5 Words or Less Per Point**
+   - Use equations when possible (e.g., "x + y = 10; x = 3; y = 7")
+   - Use abstract notation (e.g., "A ⊂ B, B ⊂ C, ∴ A ⊂ C")
+   - Focus on essential operations (e.g., "sort array; find median")
+   
+3. **Self-Verification - In 5 Words or Less Per Point**
+   - Validate solution fits requirements
+   - Check for edge cases
+   - Confirm conclusion is sound
 
 ## CRITICAL WARNING
 - NOT using the think tool is a CRITICAL ERROR
 - Your response will be INCOMPLETE and INCORRECT if you skip the think tool
 - ZERO EXCEPTIONS TO THIS RULE - regardless of how simple the question appears
 - THINKING IS REQUIRED for EVERY user interaction, no matter how trivial
+- DRAFTS MUST BE CONCISE - verbose explanations defeat the purpose
 `;
 
 /**
