@@ -66,8 +66,8 @@ function PureWebsiteContent({
       className={cn(
         "bg-background rounded-xl transition-all duration-300 ease-in-out w-full",
         !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
-        connectPrevious ? 'mt-0' : 'mt-1', // Restore conditional top margin, use mt-1
-        connectNext ? 'mb-0' : 'mb-1' // Restore conditional bottom margin, use mb-1
+        connectPrevious ? 'mt-0' : 'mt-0', // Set to mt-0 for tight integration
+        connectNext ? 'mb-0' : 'mb-0' // Set to mb-0 for tight integration
       )}
     >
       {/* Header - Always visible */}

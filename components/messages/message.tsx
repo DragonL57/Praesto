@@ -265,7 +265,7 @@ const PurePreviewMessage = ({
           },
         )}
       >
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex flex-col gap-1 w-full">
           {message.experimental_attachments && (
             <div
               data-testid={`message-attachments`}
@@ -444,7 +444,7 @@ const PurePreviewMessage = ({
                   
                   // This is a grouped tool set, render a container with all tools in the group
                   return (
-                    <div key={`tool-group-${part.toolIndex}`} className="border-[1.5px] border-border rounded-xl mb-1 overflow-hidden">
+                    <div key={`tool-group-${part.toolIndex}`} className="border-[1.5px] border-border rounded-xl mb-0 overflow-hidden">
                       {toolGroups[part.toolIndex].map((groupPart) => {
                         // Use type assertion to ensure toolInvocation is properly typed
                         if (groupPart.type !== 'tool-invocation' || !groupPart.toolInvocation) {

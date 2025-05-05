@@ -104,7 +104,7 @@ function PureWebSearch({ results, query, count: _count, connectNext = false, inG
         'bg-background rounded-xl transition-all duration-300 ease-in-out w-full',
         !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
         isExpanded ? '' : 'cursor-pointer',
-        connectNext ? 'mb-0' : 'mb-1' // Restore conditional margin, use mb-1 for less space
+        connectNext ? 'mb-0' : 'mb-0' // Set to mb-0 for tighter spacing with content below
       )}
       onClick={!isExpanded ? toggleExpanded : undefined}
       onKeyDown={!isExpanded ? (e) => {
