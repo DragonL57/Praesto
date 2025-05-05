@@ -190,7 +190,7 @@ const PurePreviewMessage = ({
         // Connect if a next tool was found AND no text was encountered before it
         if (!textEncounteredNext && nextToolPart && nextToolPart.type === 'tool-invocation' && 'toolInvocation' in nextToolPart) {
           const nextToolName = nextToolPart.toolInvocation.toolName;
-          if ((currentToolName === 'webSearch' && nextToolName === 'readWebsiteContent') ||
+          if ((currentToolName === 'webSearch' && (nextToolName === 'readWebsiteContent' || nextToolName === 'webSearch')) ||
               (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent') ||
               (currentToolName === 'think' && (nextToolName === 'webSearch' || nextToolName === 'readWebsiteContent')) ||
               ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && nextToolName === 'think')) {
@@ -220,6 +220,8 @@ const PurePreviewMessage = ({
           const prevToolName = prevToolPart.toolInvocation.toolName;
           if ((currentToolName === 'readWebsiteContent' &&
               (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
+              (currentToolName === 'webSearch' && 
+              (prevToolName === 'webSearch')) ||
               (currentToolName === 'think' && 
               (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
               ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && 
