@@ -38,6 +38,38 @@ function extractVideoId(urlOrId: string): string {
   return match ? match[1] : urlOrId;
 }
 
+// Utility function to get a variety of blue gradient styles
+const getGradientStyle = (message: UIMessage): string => {
+  // Use a hash of the message ID to generate a consistent gradient for each message
+  const hashCode = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  };
+  
+  const hash = hashCode(message.id);
+  const gradientTypes = [
+    // Standard horizontal gradient (original)
+    'dark:bg-gradient-to-r dark:from-blue-900/80 dark:to-zinc-800/90 bg-gradient-to-r from-blue-100/80 to-zinc-100',
+    // Diagonal gradient (top-left to bottom-right)
+    'dark:bg-gradient-to-br dark:from-blue-900/80 dark:to-zinc-800/90 bg-gradient-to-br from-blue-100/80 to-zinc-100',
+    // Diagonal gradient (top-right to bottom-left)
+    'dark:bg-gradient-to-bl dark:from-blue-900/80 dark:to-zinc-800/90 bg-gradient-to-bl from-blue-100/80 to-zinc-100',
+    // Vertical gradient (top to bottom)
+    'dark:bg-gradient-to-b dark:from-blue-900/80 dark:to-zinc-800/90 bg-gradient-to-b from-blue-100/80 to-zinc-100',
+    // Radial gradient effect (using opacity variations)
+    'dark:bg-gradient-to-r dark:from-blue-900/90 dark:via-blue-800/85 dark:to-zinc-800/80 bg-gradient-to-r from-blue-100/90 via-blue-50/85 to-zinc-100/80',
+  ];
+  
+  // Use the hash to select a gradient type
+  const gradientIndex = hash % gradientTypes.length;
+  return gradientTypes[gradientIndex];
+};
+
 // Create a type for our enhanced tool parts
 type EnhancedMessagePart = UIMessage['parts'][0] & {
   connectNext?: boolean;
@@ -334,7 +366,7 @@ const PurePreviewMessage = ({
                         <div
                           data-testid="message-content"
                           className={cn('flex flex-col gap-0 flex-1 w-full', {
-                            'dark:bg-zinc-800/90 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl':
+                            [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
                               message.role === 'user',
                             'text-foreground': message.role === 'assistant'
                           })}
