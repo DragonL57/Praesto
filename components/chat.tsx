@@ -161,7 +161,7 @@ export function Chat({
         </div>
 
         <div className="shrink-0">
-          <form className="flex flex-col mx-auto px-4 bg-background pb-2 md:pb-8 w-full md:max-w-3xl relative">
+          <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
             {/* Input component */}
             {!isReadonly && (
               <MultimodalInput
@@ -181,6 +181,9 @@ export function Chat({
               />
             )}
           </form>
+          <div className="text-center text-xs text-gray-500 mt-0">
+            UniTaskAI can make mistake, double-check the info
+          </div>
         </div>
       </div>
 
