@@ -13,6 +13,7 @@ interface WebsiteContentProps {
   fallbackError?: string; // Add fallbackError field to track any errors from fallback
   connectPrevious?: boolean; // Add prop to indicate if this should connect to the previous component
   connectNext?: boolean; // Add prop to indicate if this should connect to the next component
+  inGroup?: boolean; // Add prop to indicate if this is part of a group
 }
 
 function PureWebsiteContent({
@@ -25,6 +26,7 @@ function PureWebsiteContent({
   fallbackError: _fallbackError,
   connectPrevious = false,
   connectNext = false,
+  inGroup = false,
 }: WebsiteContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -63,6 +65,7 @@ function PureWebsiteContent({
       ref={contentRef}
       className={cn(
         "bg-background rounded-xl transition-all duration-300 ease-in-out w-full",
+        !inGroup && 'border border-border/50', // Only add border if not in a group
         connectPrevious ? 'mt-0' : 'mt-1', // Restore conditional top margin, use mt-1
         connectNext ? 'mb-0' : 'mb-1' // Restore conditional bottom margin, use mb-1
       )}

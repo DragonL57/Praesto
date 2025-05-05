@@ -16,6 +16,7 @@ interface WebSearchProps {
   query: string;
   count: number;
   connectNext?: boolean; // Add prop to indicate if this should connect to the next component
+  inGroup?: boolean; // Add prop to indicate if this is part of a group
 }
 
 // Helper function to safely parse HTML content
@@ -46,7 +47,7 @@ const parseHtml = (htmlString: string): string => {
   return decodedString.replace(/<[^>]*>/g, ''); // Simple regex to strip HTML tags
 };
 
-function PureWebSearch({ results, query, count: _count, connectNext = false }: WebSearchProps) {
+function PureWebSearch({ results, query, count: _count, connectNext = false, inGroup = false }: WebSearchProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedResults, setExpandedResults] = useState<Record<string, boolean>>({});
   const resultsContainerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +102,7 @@ function PureWebSearch({ results, query, count: _count, connectNext = false }: W
       ref={resultsContainerRef}
       className={cn(
         'bg-background rounded-xl transition-all duration-300 ease-in-out w-full',
+        !inGroup && 'border border-border/50', // Only add border if not in a group
         isExpanded ? '' : 'cursor-pointer',
         connectNext ? 'mb-0' : 'mb-1' // Restore conditional margin, use mb-1 for less space
       )}

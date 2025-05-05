@@ -42,6 +42,14 @@ type EnhancedMessagePart = UIMessage['parts'][0] & {
   connectNext?: boolean;
   connectPrevious?: boolean;
   toolIndex?: number;
+  // Properly type toolInvocation to avoid TypeScript errors
+  toolInvocation?: {
+    toolName: string;
+    toolCallId: string;
+    state: string;
+    args?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+  };
 };
 
 // Helper function to preserve line breaks in user messages
@@ -87,21 +95,30 @@ const PurePreviewMessage = ({
   // Process message parts to detect consecutive tool invocations
   const processedParts = useMemo(() => {
     const allParts = message.parts || [];
-
-    return allParts.map((part, i) => {
+    
+    // Add a property to identify the start of a group
+    const enhancedParts = allParts.map((part, _i) => {
       const enhancedPart = { ...part } as EnhancedMessagePart;
       enhancedPart.connectNext = false;
       enhancedPart.connectPrevious = false;
+      enhancedPart.toolIndex = -1; // Initialize with -1 (not part of a group)
+      
+      return enhancedPart;
+    });
 
+    // First pass: Mark connections between tools
+    for (let i = 0; i < enhancedParts.length; i++) {
+      const part = enhancedParts[i];
+      
       // Only process tool invocation results
-      if (enhancedPart.type === 'tool-invocation' && enhancedPart.toolInvocation.state === 'result') {
-        const currentToolName = enhancedPart.toolInvocation.toolName;
+      if (part.type === 'tool-invocation' && part.toolInvocation.state === 'result') {
+        const currentToolName = part.toolInvocation.toolName;
 
         // Find the *next* tool invocation result, stopping if text is encountered
         let nextToolPart: EnhancedMessagePart | null = null;
         let textEncounteredNext = false;
-        for (let j = i + 1; j < allParts.length; j++) {
-          const potentialNextPart = allParts[j];
+        for (let j = i + 1; j < enhancedParts.length; j++) {
+          const potentialNextPart = enhancedParts[j];
           // Stop if we hit meaningful text
           if (potentialNextPart.type === 'text' && potentialNextPart.text.trim().length > 0) {
             textEncounteredNext = true;
@@ -109,7 +126,7 @@ const PurePreviewMessage = ({
           }
           // If it's a tool result, we found it
           if (potentialNextPart.type === 'tool-invocation' && 'toolInvocation' in potentialNextPart && potentialNextPart.toolInvocation.state === 'result') {
-            nextToolPart = potentialNextPart as EnhancedMessagePart;
+            nextToolPart = potentialNextPart;
             break;
           }
         }
@@ -119,7 +136,7 @@ const PurePreviewMessage = ({
           const nextToolName = nextToolPart.toolInvocation.toolName;
           if ((currentToolName === 'webSearch' && nextToolName === 'readWebsiteContent') ||
               (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent')) {
-            enhancedPart.connectNext = true;
+            part.connectNext = true;
           }
         }
 
@@ -127,7 +144,7 @@ const PurePreviewMessage = ({
         let prevToolPart: EnhancedMessagePart | null = null;
         let textEncounteredPrev = false;
         for (let j = i - 1; j >= 0; j--) {
-          const potentialPrevPart = allParts[j];
+          const potentialPrevPart = enhancedParts[j];
            // Stop if we hit meaningful text
           if (potentialPrevPart.type === 'text' && potentialPrevPart.text.trim().length > 0) {
             textEncounteredPrev = true;
@@ -135,7 +152,7 @@ const PurePreviewMessage = ({
           }
           // If it's a tool result, we found it
           if (potentialPrevPart.type === 'tool-invocation' && 'toolInvocation' in potentialPrevPart && potentialPrevPart.toolInvocation.state === 'result') {
-            prevToolPart = potentialPrevPart as EnhancedMessagePart;
+            prevToolPart = potentialPrevPart;
             break;
           }
         }
@@ -145,12 +162,62 @@ const PurePreviewMessage = ({
           const prevToolName = prevToolPart.toolInvocation.toolName;
           if (currentToolName === 'readWebsiteContent' &&
               (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) {
-            enhancedPart.connectPrevious = true;
+            part.connectPrevious = true;
           }
         }
       }
-      return enhancedPart;
-    });
+    }
+    
+    // Second pass: Assign group indices to connected tool parts
+    let currentGroupIndex = 0;
+    for (let i = 0; i < enhancedParts.length; i++) {
+      const part = enhancedParts[i];
+      
+      if (part.type === 'tool-invocation' && part.toolInvocation.state === 'result') {
+        // If this is a tool and not already part of a group
+        if (part.toolIndex === -1) {
+          // Start a new group
+          part.toolIndex = currentGroupIndex;
+          
+          // If this connects to next ones, mark them as part of the same group
+          if (part.connectNext) {
+            let j = i + 1;
+            while (j < enhancedParts.length) {
+              const nextPart = enhancedParts[j];
+              
+              // Skip non-tool or non-result parts
+              if (nextPart.type !== 'tool-invocation' || nextPart.toolInvocation.state !== 'result') {
+                j++;
+                continue;
+              }
+              
+              // If this part connects to the previous, add it to the group
+              if (nextPart.connectPrevious) {
+                nextPart.toolIndex = currentGroupIndex;
+                
+                // If this doesn't connect to the next, we're done with this group
+                if (!nextPart.connectNext) {
+                  break;
+                }
+              } else {
+                // If this doesn't connect to the previous, we're done with this group
+                break;
+              }
+              
+              j++;
+            }
+            
+            // Increment the group index for the next group
+            currentGroupIndex++;
+          } else if (!part.connectPrevious) {
+            // If this is a standalone tool (doesn't connect in either direction)
+            currentGroupIndex++;
+          }
+        }
+      }
+    }
+
+    return enhancedParts;
   }, [message.parts]);
 
   return (
@@ -183,123 +250,202 @@ const PurePreviewMessage = ({
             </div>
           )}
 
-          {processedParts.map((part, index) => {
-            const { type } = part;
-            const key = `message-${message.id}-part-${index}`;
+          {(() => {
+            // Group the parts by their tool groups
+            const toolGroups: { [key: number]: EnhancedMessagePart[] } = {};
+            
+            // Collect all tool invocation results into groups
+            processedParts.forEach((part) => {
+              if (part.type === 'tool-invocation' && 
+                  part.toolInvocation.state === 'result' && 
+                  part.toolIndex !== undefined && 
+                  part.toolIndex >= 0) {
+                
+                if (!toolGroups[part.toolIndex]) {
+                  toolGroups[part.toolIndex] = [];
+                }
+                
+                toolGroups[part.toolIndex].push(part);
+              }
+            });
 
-            if (type === 'text') {
-              if (mode === 'view') {
-                return (
-                  <div key={key} className="flex flex-row gap-2 items-start">
-                    {message.role === 'user' && !isReadonly && (
-                      <div className="self-center">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              data-testid="message-edit-button"
-                              variant="ghost"
-                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                              onClick={() => {
-                                setMode('edit');
-                              }}
-                            >
-                              <PencilEditIcon />
-                              <span className="sr-only">Edit message</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit message</TooltipContent>
-                        </Tooltip>
+            // Render the parts, wrapping grouped ones in a container
+            return processedParts.map((part, index) => {
+              const { type } = part;
+              const key = `message-${message.id}-part-${index}`;
+
+              // For non-tool parts or tool calls, render normally
+              if (type !== 'tool-invocation' || part.toolInvocation.state !== 'result') {
+                if (type === 'text') {
+                  if (mode === 'view') {
+                    return (
+                      <div key={key} className="flex flex-row gap-2 items-start">
+                        {message.role === 'user' && !isReadonly && (
+                          <div className="self-center">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  data-testid="message-edit-button"
+                                  variant="ghost"
+                                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                                  onClick={() => {
+                                    setMode('edit');
+                                  }}
+                                >
+                                  <PencilEditIcon />
+                                  <span className="sr-only">Edit message</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit message</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
+
+                        <div
+                          data-testid="message-content"
+                          className={cn('flex flex-col gap-0 flex-1 w-full', {
+                            'dark:bg-zinc-800/90 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl':
+                              message.role === 'user',
+                            'text-foreground': message.role === 'assistant'
+                          })}
+                        >
+                          {message.role === 'user' ? (
+                            <div className="whitespace-pre-wrap break-words">
+                              <UserTextWithLineBreaks text={part.text} />
+                            </div>
+                          ) : (
+                            <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    );
+                  }
 
+                  if (mode === 'edit') {
+                    return (
+                      <div key={key} className="flex flex-row gap-2 items-start">
+                        <div className="size-8" />
+
+                        <MessageEditor
+                          key={message.id}
+                          message={message}
+                          setMode={setMode}
+                          setMessages={setMessages}
+                          reload={reload}
+                        />
+                      </div>
+                    );
+                  }
+                }
+
+                if (type === 'tool-invocation' && part.toolInvocation.state === 'call') {
+                  const { toolInvocation } = part;
+                  const { toolName, toolCallId } = toolInvocation;
+                  const { args } = toolInvocation;
+
+                  return (
                     <div
-                      data-testid="message-content"
-                      className={cn('flex flex-col gap-0 flex-1 w-full', {
-                        'dark:bg-zinc-800/90 bg-zinc-100 dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl':
-                          message.role === 'user',
-                        'text-foreground': message.role === 'assistant'
+                      key={toolCallId}
+                      className={cx({
+                        skeleton: ['getWeather'].includes(toolName),
                       })}
                     >
-                      {message.role === 'user' ? (
-                        <div className="whitespace-pre-wrap break-words">
-                          <UserTextWithLineBreaks text={part.text} />
+                      {toolName === 'getWeather' ? (
+                        <Weather />
+                      ) : toolName === 'createDocument' ? (
+                        <DocumentPreview isReadonly={isReadonly} args={args} />
+                      ) : toolName === 'updateDocument' ? (
+                        <DocumentToolCall
+                          type="update"
+                          args={args}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'requestSuggestions' ? (
+                        <DocumentToolCall
+                          type="request-suggestions"
+                          args={args}
+                          isReadonly={isReadonly}
+                        />
+                      ) : toolName === 'readWebsiteContent' ? (
+                        <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
+                          <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                            <WebpageLoadingIcon size={16} />
+                            <span>
+                              Reading webpage{' '}
+                              <span className="font-medium">{args.url}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-center p-4">
+                            <ShinyText>Getting content from webpage...</ShinyText>
+                          </div>
                         </div>
-                      ) : (
-                        <Markdown baseHeadingLevel={2}>{part.text}</Markdown>
-                      )}
+                      ) : null}
                     </div>
-                  </div>
-                );
+                  );
+                }
+
+                return null;
               }
 
-              if (mode === 'edit') {
-                return (
-                  <div key={key} className="flex flex-row gap-2 items-start">
-                    <div className="size-8" />
-
-                    <MessageEditor
-                      key={message.id}
-                      message={message}
-                      setMode={setMode}
-                      setMessages={setMessages}
-                      reload={reload}
-                    />
-                  </div>
-                );
-              }
-            }
-
-            if (type === 'tool-invocation') {
-              const { toolInvocation } = part;
-              const { toolName, toolCallId, state } = toolInvocation;
-
-              if (state === 'call') {
-                const { args } = toolInvocation;
-
-                return (
-                  <div
-                    key={toolCallId}
-                    className={cx({
-                      skeleton: ['getWeather'].includes(toolName),
-                    })}
-                  >
-                    {toolName === 'getWeather' ? (
-                      <Weather />
-                    ) : toolName === 'createDocument' ? (
-                      <DocumentPreview isReadonly={isReadonly} args={args} />
-                    ) : toolName === 'updateDocument' ? (
-                      <DocumentToolCall
-                        type="update"
-                        args={args}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'requestSuggestions' ? (
-                      <DocumentToolCall
-                        type="request-suggestions"
-                        args={args}
-                        isReadonly={isReadonly}
-                      />
-                    ) : toolName === 'readWebsiteContent' ? (
-                      <div className="flex flex-col gap-4 w-full bg-background border rounded-xl p-4 mb-2">
-                        <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                          <WebpageLoadingIcon size={16} />
-                          <span>
-                            Reading webpage{' '}
-                            <span className="font-medium">{args.url}</span>...
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-center p-4">
-                          <div className="animate-spin rounded-full size-6 border-y-2 border-primary" />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              }
-
-              if (state === 'result') {
+              // For tool results that aren't part of a group or are the first in their group, render them
+              if (part.toolIndex === undefined || part.toolIndex < 0 || 
+                  !toolGroups[part.toolIndex] || 
+                  toolGroups[part.toolIndex][0] === part) {
+                
+                const { toolInvocation } = part;
+                const { toolName, toolCallId } = toolInvocation;
                 const { result } = toolInvocation;
-
+                
+                // If this is the first part of a group with multiple parts, wrap them all
+                if (part.toolIndex !== undefined && part.toolIndex >= 0 && 
+                    toolGroups[part.toolIndex] && toolGroups[part.toolIndex].length > 1) {
+                  
+                  // This is a grouped tool set, render a container with all tools in the group
+                  return (
+                    <div key={`tool-group-${part.toolIndex}`} className="border border-border/50 rounded-xl mb-1 overflow-hidden">
+                      {toolGroups[part.toolIndex].map((groupPart) => {
+                        // Use type assertion to ensure toolInvocation is properly typed
+                        if (groupPart.type !== 'tool-invocation' || !groupPart.toolInvocation) {
+                          return null;
+                        }
+                        
+                        const toolInvocation = groupPart.toolInvocation;
+                        const toolName = toolInvocation.toolName;
+                        const toolCallId = toolInvocation.toolCallId;
+                        const result = toolInvocation.result || {};
+                        
+                        return (
+                          <div key={toolCallId} className="border-0">
+                            {toolName === 'webSearch' ? (
+                              <WebSearch
+                                results={result.results}
+                                query={result.query}
+                                count={result.count}
+                                connectNext={groupPart.connectNext}
+                                inGroup={true}
+                              />
+                            ) : toolName === 'readWebsiteContent' ? (
+                              <WebsiteContent
+                                url={result.url}
+                                content={result.content}
+                                query={result.query}
+                                status={result.status}
+                                error={result.error}
+                                source={result.source}
+                                fallbackError={result.fallbackError}
+                                connectPrevious={groupPart.connectPrevious}
+                                connectNext={groupPart.connectNext}
+                                inGroup={true}
+                              />
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                
+                // This is a standalone tool, render it normally
                 return (
                   <div key={toolCallId}>
                     {toolName === 'getWeather' ? (
@@ -355,10 +501,11 @@ const PurePreviewMessage = ({
                   </div>
                 );
               }
-            }
-
-            return null;
-          })}
+              
+              // For tools that are part of a group but not the first one, skip them as they're rendered with the first one
+              return null;
+            });
+          })()}
 
           {!isReadonly && (
             <MessageActions
