@@ -1,0 +1,12 @@
+Please add the Baloo 2 font files here as mentioned in the original instructions:
+
+- Baloo2-VariableFont_wght.ttf (variable font)
+- static/Baloo2-Regular.ttf
+- static/Baloo2-Medium.ttf
+- static/Baloo2-SemiBold.ttf
+- static/Baloo2-Bold.ttf
+- static/Baloo2-ExtraBold.ttf
+- OFL.txt
+- README.txt
+
+These fonts should be downloaded from Google Fonts or their official source.

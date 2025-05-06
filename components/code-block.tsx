@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// Import both light and dark themes
-import { coldarkDark, oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+// Only import one theme to ensure consistency
+import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
 
@@ -21,7 +21,12 @@ interface CodeProps {
 
 const CodeBlock = memo(({ lang, children }: Props) => {
   const [isCopied, setIsCopied] = useState(false);
-  const { theme } = useTheme();
+  const [clientMounted, setClientMounted] = useState(false);
+
+  // Use useEffect to detect when component is mounted on client
+  useEffect(() => {
+    setClientMounted(true);
+  }, []);
 
   const onCopy = () => {
     navigator.clipboard.writeText(children);
@@ -80,26 +85,34 @@ const CodeBlock = memo(({ lang, children }: Props) => {
         </button>
       </div>
       <div className="w-full max-w-full bg-transparent">
-        <SyntaxHighlighter
-          language={highlighterLang}
-          style={theme === 'dark' ? coldarkDark : oneLight}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            backgroundColor: 'transparent',
-            borderRadius: '0 0 0.375rem 0.375rem',
-          }}
-          showLineNumbers={highlighterLang !== 'text'}
-          wrapLines={true}
-          codeTagProps={{
-            style: {
-              backgroundColor: 'transparent'
-            }
-          }}
-        >
-          {children}
-        </SyntaxHighlighter>
+        {!clientMounted ? (
+          // Pre-render fallback - simple code block without highlighting
+          <pre className="p-4 overflow-auto font-mono text-sm">
+            <code>{children}</code>
+          </pre>
+        ) : (
+          // Client-side only rendering for SyntaxHighlighter
+          <SyntaxHighlighter
+            language={highlighterLang}
+            style={coldarkDark}
+            customStyle={{
+              margin: 0,
+              padding: '1rem',
+              fontSize: '0.875rem',
+              background: 'transparent',
+              borderRadius: '0 0 0.375rem 0.375rem',
+            }}
+            showLineNumbers={highlighterLang !== 'text'}
+            wrapLines={true}
+            codeTagProps={{
+              style: {
+                backgroundColor: 'transparent'
+              }
+            }}
+          >
+            {children}
+          </SyntaxHighlighter>
+        )}
       </div>
     </div>
   );

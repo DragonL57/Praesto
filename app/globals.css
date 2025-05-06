@@ -2,10 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Baloo 2 Font Family */
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/Baloo2-VariableFont_wght.ttf') format('truetype');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Static fonts for browsers that don't support variable fonts */
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/static/Baloo2-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/static/Baloo2-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/static/Baloo2-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/static/Baloo2-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo_2/static/Baloo2-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+  font-family: 'Baloo 2', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
                "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", 
                "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 18px; /* Increasing base font size from default 16px to 18px */
 }
 
 @layer utilities {
@@ -87,6 +138,10 @@ body {
 }
 
 @layer base {
+  html {
+    font-size: 110%; /* Set root font size to 18px (112.5% of the default 16px) */
+  }
+
   * {
     @apply border-border;
   }

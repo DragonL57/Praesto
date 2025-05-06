@@ -3,13 +3,11 @@ import "@/app/globals.css"
 import "katex/dist/katex.min.css" // Add KaTeX CSS for math rendering
 import "@/public/katex-override.css" // Import KaTeX override CSS
 import "@/public/virtual-keyboard.css" // Import virtual keyboard CSS handling
-import { Inter } from "next/font/google"
+// Removing Inter font import
 import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -101,7 +99,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Toaster position="top-center" richColors closeButton />
           <JsonLd

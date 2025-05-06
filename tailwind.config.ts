@@ -24,9 +24,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist)'],
-        mono: ['var(--font-geist-mono)'],
+        sans: ['Baloo 2', 'system-ui', 'sans-serif'],
+        mono: ['monospace'],
         'pf-beau': ['var(--font-pf-beau-sans-pro)', 'sans-serif'],
+        'baloo': ['Baloo 2', 'sans-serif'],
       },
       screens: {
         'toast-mobile': '600px',
