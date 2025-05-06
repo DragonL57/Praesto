@@ -31,6 +31,21 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  icons: {
+    icon: [
+      { url: "/UniTaskAI_logo.png" }
+    ],
+    shortcut: ["/UniTaskAI_logo.png"],
+    apple: [
+      { url: "/UniTaskAI_logo.png" }
+    ],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/UniTaskAI_logo.png",
+      }
+    ]
+  },
   robots: {
     index: true,
     follow: true,
@@ -51,10 +66,10 @@ export const metadata: Metadata = {
     siteName: "UniTaskAI",
     images: [
       {
-        url: "https://www.unitaskai.com/images/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "UniTaskAI workspace preview"
+        url: "/UniTaskAI_logo.png",
+        width: 800,
+        height: 800,
+        alt: "UniTaskAI Logo"
       }
     ]
   },
@@ -62,7 +77,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "UniTaskAI - AI-Powered Workspace",
     description: "Your complete AI assistant for content, code, data, and more",
-    images: ["https://www.unitaskai.com/images/twitter-image.png"],
+    images: ["/UniTaskAI_logo.png"],
     creator: "@unitaskai",
   },
   verification: {

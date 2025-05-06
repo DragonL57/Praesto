@@ -64,14 +64,17 @@ function PureMessages({
     isStreamingRef.current = status === 'streaming';
   }, [messages.length, status, containerRef, endRef]);
 
+  // Check if there are any visible elements that would require scrolling
+  const hasVisibleContent = messages.length > 0 || (status === 'submitted' && messages.length > 0);
+
   return (
     <div
-      className="absolute inset-0 flex flex-col w-full scrollbar-thin scrollbar-thumb-muted-foreground/50 hover:scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+      className={`absolute inset-0 flex flex-col w-full ${hasVisibleContent ? 'scrollbar-thin scrollbar-thumb-muted-foreground/50 hover:scrollbar-thumb-muted-foreground scrollbar-track-transparent' : 'scrollbar-none'}`}
       style={{
-        overflowY: 'auto',
+        overflowY: hasVisibleContent ? 'auto' : 'hidden',
         overflowX: 'hidden',
         right: '0px',
-        scrollbarGutter: 'stable',
+        scrollbarGutter: hasVisibleContent ? 'stable' : 'auto',
       }}
       ref={containerRef}
     >
@@ -107,10 +110,12 @@ function PureMessages({
             </div>
           )}
 
-        <div
-          ref={endRef}
-          className="shrink-0 min-w-[24px] min-h-[24px]"
-        />
+        {hasVisibleContent && (
+          <div
+            ref={endRef}
+            className="shrink-0 min-w-[24px] min-h-[24px]"
+          />
+        )}
       </div>
     </div>
   );

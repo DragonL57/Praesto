@@ -95,6 +95,14 @@ export default function RegisterPage() {
               <form onSubmit={handleSubmit} className="p-6 md:p-8">
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center text-center">
+                    <div className="mb-4">
+                      <Image
+                        src="/UniTaskAI_logo.png"
+                        alt="UniTaskAI Logo"
+                        width={60}
+                        height={60}
+                      />
+                    </div>
                     <h1 className="text-2xl font-bold">Create your account</h1>
                     <p className="text-balance text-muted-foreground">Sign up to get started with UniTaskAI</p>
                   </div>

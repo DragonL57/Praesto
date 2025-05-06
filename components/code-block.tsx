@@ -4,7 +4,6 @@ import { useState, memo, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Only import one theme to ensure consistency
 import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
 
 

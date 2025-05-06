@@ -35,9 +35,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
                 className="flex flex-row gap-3 items-center"
               >
-                <span className="text-xl font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                  UniTaskAI
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-semibold hover:bg-muted rounded-md cursor-pointer">
+                    UniTaskAI
+                  </span>
+                </div>
               </Link>
               <Tooltip>
                 <TooltipTrigger asChild>
