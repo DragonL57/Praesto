@@ -7,6 +7,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { ImagePreviewModal } from './image-preview-modal';
+import { CodeBlock } from './code-block'; // Import the proper CodeBlock component
+import { InlineCode } from './ui/code/inline-code';
 
 // Define custom props to track heading depth
 interface MarkdownProps {
@@ -33,38 +35,6 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {children}
-    </div>
-  );
-};
-
-// Code block component with copy functionality
-const CodeBlockWithCopy = ({ language, children }: { language: string, children: string }) => {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
-  return (
-    <div className="bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md">
-      <div className="flex justify-between items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-t-md">
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {language || 'Text'}
-        </span>
-        <button
-          onClick={handleCopy}
-          className="text-xs bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-md transition-colors"
-        >
-          {isCopied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <div className="w-full max-w-full">
-        <pre className="p-4 m-0 whitespace-pre-wrap break-all">
-          <code className={`language-${language || 'text'} block`}>{children}</code>
-        </pre>
-      </div>
     </div>
   );
 };
@@ -111,19 +81,17 @@ const NonMemoizedMarkdown = ({
             
             if (isInline) {
               return (
-                <code
-                  className="px-1 py-0.5 rounded-sm font-mono text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
-                  {...props}
-                >
+                <InlineCode {...props}>
                   {children}
-                </code>
+                </InlineCode>
               );
             }
             
+            // Use the imported CodeBlock component for syntax highlighting
             return (
-              <CodeBlockWithCopy language={language}>
+              <CodeBlock lang={language}>
                 {String(children)}
-              </CodeBlockWithCopy>
+              </CodeBlock>
             );
           },
 

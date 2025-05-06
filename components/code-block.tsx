@@ -2,8 +2,12 @@
 
 import { useState, memo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// Import both light and dark themes
+import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
+
 
 type Props = {
   lang: string;
@@ -18,6 +22,7 @@ interface CodeProps {
 
 const CodeBlock = memo(({ lang, children }: Props) => {
   const [isCopied, setIsCopied] = useState(false);
+  const { theme } = useTheme();
 
   const onCopy = () => {
     navigator.clipboard.writeText(children);
@@ -25,30 +30,78 @@ const CodeBlock = memo(({ lang, children }: Props) => {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  // Normalize language identifier
+  const normalizedLang = lang?.toLowerCase() || '';
+  // Map common language names to their syntax highlighter identifiers
+  const languageMap: Record<string, string> = {
+    'js': 'javascript',
+    'jsx': 'jsx',
+    'ts': 'typescript',
+    'tsx': 'tsx',
+    'py': 'python',
+    'rb': 'ruby',
+    'go': 'go',
+    'java': 'java',
+    'c': 'c',
+    'cpp': 'cpp',
+    'cs': 'csharp',
+    'php': 'php',
+    'html': 'html',
+    'css': 'css',
+    'json': 'json',
+    'yml': 'yaml',
+    'yaml': 'yaml',
+    'md': 'markdown',
+    'sh': 'bash',
+    'bash': 'bash',
+    'shell': 'bash',
+    'sql': 'sql',
+    'rust': 'rust',
+    'rs': 'rust',
+    'swift': 'swift',
+    'scala': 'scala',
+    'kotlin': 'kotlin',
+    'dart': 'dart',
+  };
+  
+  // Get the correct language identifier or fallback to the original
+  const highlighterLang = languageMap[normalizedLang] || normalizedLang || 'text';
+
   return (
-    <div className="not-prose flex flex-col">
-      <div className="flex justify-between items-center mb-2">
+    <div className="bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md">
+      <div className="flex justify-between items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-t-md">
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {lang}
+          {lang || 'Text'}
         </span>
         <button
           onClick={onCopy}
-          className="text-sm text-blue-500 hover:underline"
+          className="text-xs bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-md transition-colors"
         >
           {isCopied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <SyntaxHighlighter
-        language={lang}
-        style={coldarkDark}
-        customStyle={{
-          borderRadius: '0.5rem',
-          padding: '1rem',
-          fontSize: '0.875rem',
-        }}
-      >
-        {children}
-      </SyntaxHighlighter>
+      <div className="w-full max-w-full bg-transparent">
+        <SyntaxHighlighter
+          language={highlighterLang}
+          style={theme === 'dark' ? coldarkDark : oneLight}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            fontSize: '0.875rem',
+            backgroundColor: 'transparent',
+            borderRadius: '0 0 0.375rem 0.375rem',
+          }}
+          showLineNumbers={highlighterLang !== 'text'}
+          wrapLines={true}
+          codeTagProps={{
+            style: {
+              backgroundColor: 'transparent'
+            }
+          }}
+        >
+          {children}
+        </SyntaxHighlighter>
+      </div>
     </div>
   );
 });
