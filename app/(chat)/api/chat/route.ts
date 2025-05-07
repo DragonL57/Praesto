@@ -107,6 +107,9 @@ export async function POST(request: Request) {
           selectedChatModel === 'google-gemini-pro' ||
           selectedChatModel === 'google-gemini-flash';
 
+        const isXaiGrokModel =
+          selectedChatModel === 'xai-grok-3';
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
@@ -120,7 +123,13 @@ export async function POST(request: Request) {
                 },
               },
             }
-            : undefined,
+            : isXaiGrokModel
+              ? {
+                xai: {
+                  reasoningEffort: 'high',
+                },
+              }
+              : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []

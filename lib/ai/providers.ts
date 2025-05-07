@@ -7,6 +7,7 @@ import {
   chatModel,
   titleModel,
 } from './models.test';
+import { xai } from '@ai-sdk/xai';
 
 // Create the Pollinations.AI OpenAI-compatible provider
 export const pollinationsProvider = createOpenAICompatible({
@@ -64,26 +65,29 @@ export const geminiThinkingConfig = {
 // You can swap openai() for openai.chat(), openai.responses(), etc. per model as needed
 export const myProvider = isTestEnvironment
   ? customProvider({
-      languageModels: {
-        // test models from your mocks/stubs
-        'chat-model': chatModel,
-        'title-model': titleModel,
-        'artifact-model': artifactModel,
-      },
-    })
+    languageModels: {
+      // test models from your mocks/stubs
+      'chat-model': chatModel,
+      'title-model': titleModel,
+      'artifact-model': artifactModel,
+    },
+  })
   : customProvider({
-      languageModels: {
-        // GPT-4.1 from OpenAI for chat
-        'chat-model': pollinationsProvider.chatModel('openai-large'),
-        
-        // Use gemini 2.0 for title generation (no thinking capability)
-        'title-model': google('gemini-2.0-flash'),
-        
-        // Use openai-xlarge for artifact generation
-        'artifact-model': pollinationsProvider.chatModel('openai-large'),
-        
-        // Enable thinking for Gemini 2.5 models
-        'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
-        'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
-      },
-    });
+    languageModels: {
+      // GPT-4.1 from OpenAI for chat
+      'chat-model': pollinationsProvider.chatModel('openai-large'),
+
+      // Use gemini 2.0 for title generation (no thinking capability)
+      'title-model': pollinationsProvider.chatModel('openai'),
+
+      // Use openai-xlarge for artifact generation
+      'artifact-model': pollinationsProvider.chatModel('openai-large'),
+
+      // Enable thinking for Gemini 2.5 models
+      'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
+      'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
+
+      // Add xAI Grok 3 model
+      'xai-grok-3': xai('grok-3'),
+    },
+  });

@@ -22,4 +22,9 @@ export const chatModels: Array<ChatModel> = [
     name: 'Google Gemini Pro',
     description: 'Gemini 2.5 Pro model',
   },
+  {
+    id: 'xai-grok-3',
+    name: 'xAI Grok 3',
+    description: 'Grok 3 model from xAI',
+  },
 ];

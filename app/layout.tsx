@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -133,6 +134,7 @@ export default function RootLayout({
             }}
           />
           {children}
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
