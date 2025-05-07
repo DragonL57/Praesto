@@ -260,10 +260,11 @@ export default function RegisterPage() {
               </form>
               <div className="relative hidden bg-muted md:block">
                 <Image
-                  src="/placeholder.svg"
+                  src="/UniTaskAI_logo.png"
                   alt=""
-                  fill
-                  className="object-cover size-full dark:brightness-[0.2] dark:grayscale"
+                  width="300"
+                  height="200"
+                  className="rounded-lg object-cover"
                 />
               </div>
             </CardContent>

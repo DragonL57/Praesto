@@ -126,7 +126,7 @@ export async function POST(request: Request) {
             : isXaiGrokModel
               ? {
                 xai: {
-                  reasoningEffort: 'high',
+                  reasoningEffort: 'medium',
                 },
               }
               : undefined,

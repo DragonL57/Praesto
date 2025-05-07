@@ -239,8 +239,8 @@ export default function LoginPage() {
               </form>
               <div className="relative hidden bg-muted md:block">
                 <Image
-                  src="/placeholder.svg"
-                  alt=""
+                  src="/UniTaskAI_logo.png"
+                  alt="UniTaskAI Decorative Background"
                   fill
                   className="object-cover size-full dark:brightness-[0.2] dark:grayscale"
                 />
