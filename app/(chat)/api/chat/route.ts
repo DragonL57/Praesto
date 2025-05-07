@@ -209,13 +209,27 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
-        return 'Oops, an error occurred!';
+      onError: (error: unknown) => {
+        console.error('[API CHAT STREAMING ERROR]', error instanceof Error ? error.message : error, error instanceof Error ? error.stack : undefined);
+        if (error instanceof Error) {
+          console.error('[API CHAT STREAMING ERROR] Name:', error.name);
+          console.error('[API CHAT STREAMING ERROR] Message:', error.message);
+          if (error.stack) {
+            console.error('[API CHAT STREAMING ERROR] Stack:', error.stack);
+          }
+          if (error.cause) {
+            console.error('[API CHAT STREAMING ERROR] Cause:', error.cause);
+          }
+        } else {
+          console.error('[API CHAT STREAMING ERROR] (Unknown error type):', error);
+        }
+        return 'An error occurred during streaming. Please try again. (Details logged on server)';
       },
     });
-  } catch {
-    return new Response('An error occurred while processing your request!', {
-      status: 404,
+  } catch (error) {
+    console.error('[API CHAT ROUTE ERROR]', error);
+    return new Response('An error occurred while processing your request. Please try again.', {
+      status: 500,
     });
   }
 }

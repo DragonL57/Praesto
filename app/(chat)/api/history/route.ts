@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
 import type { NextRequest } from 'next/server';
@@ -7,6 +8,7 @@ import { getChatsByUserId } from '@/lib/db/queries';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  await headers(); // Explicitly read headers
   const { searchParams } = request.nextUrl;
 
   const limit = Number.parseInt(searchParams.get('limit') || '10');

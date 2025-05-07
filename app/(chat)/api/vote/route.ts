@@ -1,9 +1,11 @@
+import { headers } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/(auth)/auth';
 // eslint-disable-next-line import/no-unresolved
 import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
+  await headers(); // Explicitly read headers
   const { searchParams } = new URL(request.url);
   const chatId = searchParams.get('chatId');
 
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  await headers(); // Explicitly read headers
   const {
     chatId,
     messageId,
