@@ -3,7 +3,8 @@
 
 import { z } from 'zod';
 
-import { createUser, getUser } from '@/lib/db/queries';
+import { createUser, getUser, setVerificationToken } from '@/lib/db/queries';
+import { generateToken, sendVerificationEmail } from '@/lib/email';
 
 import { signIn } from './auth';
 
@@ -38,32 +39,41 @@ export const login = async (
   try {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    // Renamed to _rememberMe to indicate it's collected but unused for now
-    // This can be used in future implementations
     const _rememberMe = formData.get('remember_me') === 'true';
 
-    // Basic validation just to ensure email format and password presence
     try {
       loginFormSchema.parse({ email, password });
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
-        return { 
+        return {
           status: 'invalid_data',
           message: validationError.errors[0]?.message || 'Invalid email or password format'
         };
       }
     }
 
-    // First check if user exists
     const users = await getUser(email);
     if (users.length === 0) {
-      return { 
+      return {
         status: 'user_not_found',
-        message: 'No account found with this email. Please register first.' 
+        message: 'No account found with this email. Please register first.'
       };
     }
 
-    // Attempt to sign in - this checks password correctness
+    const userFromDbAction = users[0];
+
+    // Check if the user's email has been verified
+    if (!userFromDbAction.emailVerified) {
+      const verificationToken = generateToken();
+      await setVerificationToken(userFromDbAction.id, verificationToken);
+      await sendVerificationEmail(email, verificationToken);
+
+      return {
+        status: 'failed',
+        message: 'Your email is not verified. We sent a new verification email, please check your inbox.'
+      };
+    }
+
     try {
       await signIn('credentials', {
         email: email,
@@ -72,15 +82,21 @@ export const login = async (
         callbackUrl: undefined
       });
       return { status: 'success' };
-    } catch {
-      // If we reach here after verifying the user exists, it's a wrong password
-      return { 
+    } catch (signInError) {
+      // This catch block might be triggered if signIn itself throws an error (e.g., wrong password in authorize)
+      // Or if there are issues related to the dynamic API usage warnings we saw.
+      console.error(`Login action signIn error for ${email}:`, signInError); // Keep this error log
+      // Determine if it was specifically a credentials error (wrong password)
+      // NextAuth might throw a specific error type or code for this, check its docs/behavior
+      // For now, assume it's wrong password if getUser succeeded but signIn failed.
+      return {
         status: 'wrong_password',
-        message: 'Incorrect password. Please try again.' 
+        message: 'Incorrect password. Please try again.' // Or a more generic message if unsure
       };
     }
-  } catch {
-    return { 
+  } catch (outerError) {
+    console.error('Login action outer error:', outerError); // Keep this error log
+    return {
       status: 'failed',
       message: 'An unexpected error occurred. Please try again later.'
     };
@@ -89,12 +105,13 @@ export const login = async (
 
 export interface RegisterActionState {
   status:
-    | 'idle'
-    | 'in_progress'
-    | 'success'
-    | 'failed'
-    | 'user_exists'
-    | 'invalid_data';
+  | 'idle'
+  | 'in_progress'
+  | 'success'
+  | 'failed'
+  | 'user_exists'
+  | 'invalid_data'
+  | 'verification_email_sent';
   message?: string;
 }
 
@@ -106,40 +123,68 @@ export const register = async (
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    // Check if user already exists first - move this before validation
     const existingUser = await getUser(email);
     if (existingUser.length > 0) {
-      return { 
+      return {
         status: 'user_exists',
         message: 'An account with this email already exists. Please sign in instead.'
       };
     }
 
-    // Validate input data with strict password requirements
     try {
       registrationFormSchema.parse({ email, password });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return { 
+        return {
           status: 'invalid_data',
           message: error.errors[0]?.message || 'Please check your email and password requirements'
         };
       }
-      throw error; // Re-throw the error if it's not a ZodError
+      throw error;
     }
 
-    // Create user and sign in
-    await createUser(email, password);
-    await signIn('credentials', {
-      email: email,
-      password: password,
-      redirect: false,
-    });
+    await createUser(email, password, false);
 
-    return { status: 'success' };
+    const users = await getUser(email);
+    if (users.length === 0) {
+      // This should ideally not happen if createUser succeeded
+      console.error('Failed to retrieve user immediately after creation:', email);
+      return {
+        status: 'failed',
+        message: 'Failed to create account. Please try again later.'
+      };
+    }
+
+    const verificationToken = generateToken();
+    await setVerificationToken(users[0].id, verificationToken);
+
+    const emailSent = await sendVerificationEmail(email, verificationToken);
+
+    if (!emailSent) {
+      // Log this failure, but still tell user account was created
+      console.error('Failed to send verification email during registration for:', email);
+      return {
+        status: 'verification_email_sent', // Still treat as success for user creation
+        message: 'Account created, but we couldn\'t send a verification email. Please contact support.'
+      };
+    }
+
+    // Sign in the user automatically (Optional)
+    // Consider if you *want* to sign them in before they verify.
+    // If so, they might hit protected routes that require verification.
+    // await signIn('credentials', {
+    //   email: email,
+    //   password: password, // Note: sending plain password here might be needed by authorize
+    //   redirect: false,
+    // });
+
+    return {
+      status: 'verification_email_sent',
+      message: 'Account created! Please check your email to verify your account.'
+    };
   } catch (error) {
-    console.error('Registration error:', error);
-    return { 
+    console.error('Registration error:', error); // Keep this error log
+    return {
       status: 'failed',
       message: 'Failed to create account. Please try again later.'
     };

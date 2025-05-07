@@ -43,6 +43,20 @@
       "when": 1741934630596,
       "tag": "0005_wooden_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746621550114,
+      "tag": "0006_friendly_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1746627475047,
+      "tag": "0007_bent_warbird",
+      "breakpoints": true
     }
   ]
 }

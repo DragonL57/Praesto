@@ -1,0 +1,32 @@
+# Email Configuration for .env.local
+# Copy these settings to your .env.local file
+
+# Email Configuration - Basic Settings
+EMAIL_HOST="smtp.example.com"
+EMAIL_PORT="587"
+EMAIL_USER="your-email@example.com"
+EMAIL_PASSWORD="your-email-password"
+EMAIL_FROM="noreply@unitaskai.com"
+EMAIL_SECURE="false" # true for 465, false for other ports
+NEXT_PUBLIC_APP_URL="http://localhost:3000" # Used for building email verification links
+
+# Example for Gmail
+# EMAIL_HOST="smtp.gmail.com"
+# EMAIL_PORT="587"
+# EMAIL_USER="your-gmail@gmail.com"
+# EMAIL_PASSWORD="your-app-password" # Generate an app password in Google account settings
+# EMAIL_SECURE="false"
+
+# Example for Mailtrap (testing)
+EMAIL_HOST="smtp.mailtrap.io"
+EMAIL_PORT="2525"
+EMAIL_USER="your-mailtrap-username"
+EMAIL_PASSWORD="your-mailtrap-password"
+EMAIL_SECURE="false"
+
+# Example for SendGrid
+# EMAIL_HOST="smtp.sendgrid.net"
+# EMAIL_PORT="587"
+# EMAIL_USER="apikey" # Use "apikey" as the username
+# EMAIL_PASSWORD="your-sendgrid-api-key"
+# EMAIL_SECURE="false" 

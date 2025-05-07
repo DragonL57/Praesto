@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -18,20 +19,19 @@ import postgres from 'postgres';
 import {
   user,
   chat,
-  type User,
+  type User as ActualDbUser,
   document,
   type Suggestion,
   suggestion,
   message,
   vote,
   type DBMessage,
-  type Chat,
+  type Chat as ActualDbChat,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
+export type User = ActualDbUser;
+export type Chat = ActualDbChat;
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
@@ -46,14 +46,135 @@ export async function getUser(email: string): Promise<Array<User>> {
   }
 }
 
-export async function createUser(email: string, password: string) {
+export async function getUserById(id: string): Promise<User | null> {
+  try {
+    const users = await db.select().from(user).where(eq(user.id, id));
+    return users.length > 0 ? users[0] : null;
+  } catch (error) {
+    console.error('Failed to get user by ID from database');
+    throw error;
+  }
+}
+
+export async function createUser(email: string, password: string, verified: boolean = false) {
   const salt = genSaltSync(10);
   const hash = hashSync(password, salt);
 
   try {
-    return await db.insert(user).values({ email, password: hash });
+    return await db.insert(user).values({
+      email,
+      password: hash,
+      emailVerified: verified
+    });
   } catch (error) {
     console.error('Failed to create user in database');
+    throw error;
+  }
+}
+
+export async function updateUser(id: string, data: Partial<User>) {
+  try {
+    return await db.update(user)
+      .set(data)
+      .where(eq(user.id, id));
+  } catch (error) {
+    console.error('Failed to update user in database');
+    throw error;
+  }
+}
+
+export async function setVerificationToken(userId: string, token: string, expiryMinutes: number = 60) {
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + expiryMinutes);
+
+  try {
+    return await db.update(user)
+      .set({
+        verificationToken: token,
+        verificationTokenExpiry: expiry
+      })
+      .where(eq(user.id, userId));
+  } catch (error) {
+    console.error('Failed to set verification token');
+    throw error;
+  }
+}
+
+export async function verifyEmail(email: string, token: string): Promise<boolean> {
+  try {
+    const users = await db.select().from(user).where(
+      and(
+        eq(user.email, email),
+        eq(user.verificationToken, token),
+        gt(user.verificationTokenExpiry, new Date())
+      )
+    );
+
+    if (users.length === 0) return false;
+
+    await db.update(user)
+      .set({
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      })
+      .where(eq(user.id, users[0].id));
+
+    return true;
+  } catch (error) {
+    console.error('Failed to verify email');
+    throw error;
+  }
+}
+
+export async function setPasswordResetToken(email: string, token: string, expiryMinutes: number = 15) {
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + expiryMinutes);
+
+  try {
+    const users = await db.select().from(user).where(eq(user.email, email));
+    if (users.length === 0) return false;
+
+    await db.update(user)
+      .set({
+        resetPasswordToken: token,
+        resetPasswordTokenExpiry: expiry
+      })
+      .where(eq(user.id, users[0].id));
+
+    return true;
+  } catch (error) {
+    console.error('Failed to set password reset token');
+    throw error;
+  }
+}
+
+export async function resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
+  try {
+    const users = await db.select().from(user).where(
+      and(
+        eq(user.email, email),
+        eq(user.resetPasswordToken, token),
+        gt(user.resetPasswordTokenExpiry, new Date())
+      )
+    );
+
+    if (users.length === 0) return false;
+
+    const salt = genSaltSync(10);
+    const hash = hashSync(newPassword, salt);
+
+    await db.update(user)
+      .set({
+        password: hash,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiry: null
+      })
+      .where(eq(user.id, users[0].id));
+
+    return true;
+  } catch (error) {
+    console.error('Failed to reset password');
     throw error;
   }
 }
@@ -448,8 +569,8 @@ export async function updateChatTimestamp({ id }: { id: string }) {
     } catch (innerError) {
       // If updatedAt column doesn't exist yet, we'll silently catch the error
       // This is a temporary workaround until the migration is properly applied
-      const errorMessage = innerError instanceof Error 
-        ? innerError.message 
+      const errorMessage = innerError instanceof Error
+        ? innerError.message
         : 'Unknown error';
       console.log('Notice: updateChatTimestamp failed:', errorMessage);
     }
@@ -457,5 +578,22 @@ export async function updateChatTimestamp({ id }: { id: string }) {
   } catch (error) {
     console.error('Failed to update chat timestamp in database');
     throw error;
+  }
+}
+
+// Function to delete old, unverified users
+export async function deleteOldUnverifiedUsers(olderThan: Date): Promise<{ count: number }> {
+  try {
+    console.log(`[DB Query] Attempting to delete unverified users created before: ${olderThan.toISOString()}`);
+    const result = await db
+      .delete(user)
+      .where(and(eq(user.emailVerified, false), lt(user.createdAt, olderThan)))
+      .returning({ id: user.id }); // Return IDs of deleted users for counting
+
+    console.log(`[DB Query] Successfully deleted ${result.length} old, unverified users.`);
+    return { count: result.length };
+  } catch (error) {
+    console.error('[DB Query] Error deleting old, unverified users:', error);
+    throw new Error('Failed to delete old, unverified users.');
   }
 }

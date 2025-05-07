@@ -17,16 +17,45 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [email, setEmail] = useState("")
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    console.log('[Forgot Password] Form submitted')
     setIsLoading(true)
+    setError("")
+    console.log('[Forgot Password] Email state:', email)
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      console.log('[Forgot Password] Attempting to send request to /api/auth/forgot-password')
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      console.log('[Forgot Password] Response status:', response.status)
+      console.log('[Forgot Password] Response headers:', response.headers)
+
+      const data = await response.json()
+      console.log('[Forgot Password] Response data:', data)
+
+      if (response.ok) {
+        console.log('[Forgot Password] Request successful')
+        setIsSubmitted(true)
+      } else {
+        console.error('[Forgot Password] Request failed:', data.message || 'Failed to send reset email')
+        setError(data.message || 'Failed to send reset email')
+      }
+    } catch (error) {
+      console.error('[Forgot Password] Catch block error:', error)
+      setError('An error occurred while sending the reset email')
+    } finally {
+      console.log('[Forgot Password] Finally block')
       setIsLoading(false)
-      setIsSubmitted(true)
-    }, 1500)
+    }
   }
 
   return (
@@ -94,7 +123,20 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-12 rounded-full font-medium" disabled={isLoading}>
+                {error && (
+                  <p className="text-center text-sm text-destructive">{error}</p>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 rounded-full font-medium" 
+                  disabled={isLoading}
+                  onClick={() => {
+                    console.log('[Forgot Password Button Clicked]');
+                    // Note: We are keeping the form's onSubmit for the actual submission logic.
+                    // This onClick is just for immediate click feedback.
+                  }}
+                >
                   {isLoading ? "Sending instructions..." : "Send reset instructions"}
                   {!isLoading && <ArrowRight className="ml-2 size-4" />}
                 </Button>
