@@ -107,7 +107,7 @@ function PureThink({
           >
             <div className="px-4 py-2 relative">
               {/* Explicit vertical line that connects with the header icon - using the correct 33px value */}
-              <div className="absolute w-[1.5px] bg-border h-full" style={{ left: '33px' }}></div>
+              <div className="absolute w-[1.5px] bg-border h-full" style={{ left: '31.5px' }}></div>
               
               {/* Content container with proper left padding to align with header text */}
               <div className="pl-10 pr-0">

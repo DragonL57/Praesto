@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'chat-model';
+export const DEFAULT_CHAT_MODEL: string = 'xai-grok-3';
 
 interface ChatModel {
   id: string;
@@ -7,6 +7,11 @@ interface ChatModel {
 }
 
 export const chatModels: Array<ChatModel> = [
+  {
+    id: 'xai-grok-3',
+    name: 'xAI Grok 3',
+    description: 'Grok 3 model from xAI',
+  },
   {
     id: 'chat-model',
     name: 'GPT-4.1',
@@ -21,10 +26,5 @@ export const chatModels: Array<ChatModel> = [
     id: 'google-gemini-pro',
     name: 'Google Gemini Pro',
     description: 'Gemini 2.5 Pro model',
-  },
-  {
-    id: 'xai-grok-3',
-    name: 'xAI Grok 3',
-    description: 'Grok 3 model from xAI',
   },
 ];
