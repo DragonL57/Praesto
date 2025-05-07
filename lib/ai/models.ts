@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'xai-grok-3';
+export const DEFAULT_CHAT_MODEL: string = 'chat-model';
 
 interface ChatModel {
   id: string;
