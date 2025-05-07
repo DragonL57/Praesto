@@ -46,9 +46,9 @@ function PureThink({
       ref={containerRef}
       className={cn(
         "bg-background rounded-xl transition-all duration-300 ease-in-out w-full",
-        !inGroup && 'border-[1.5px] border-border', // Removed /50 opacity to increase contrast
-        connectPrevious ? 'mt-0' : 'mt-0', // Set to mt-0 for tight integration
-        connectNext ? 'mb-0' : 'mb-0' // Set to mb-0 for tight integration
+        !inGroup && 'border-[1.5px] border-border',
+        connectPrevious ? 'mt-0' : 'mt-0',
+        connectNext ? 'mb-0' : 'mb-0'
       )}
     >
       {/* Header */}
@@ -79,7 +79,7 @@ function PureThink({
             {connectNext && (
               <div className="absolute top-7 bottom-[-22px] left-3.5 w-[1.5px] bg-border"></div>
             )}
-            {/* Add vertical line when content is expanded */}
+            {/* Add vertical line when content is expanded - matches how web-search does it */}
             {isExpanded && (
               <div className="absolute top-7 bottom-0 left-3.5 w-[1.5px] bg-border h-full"></div>
             )}
@@ -95,7 +95,7 @@ function PureThink({
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content - Match the structure from web-search.tsx */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -105,11 +105,13 @@ function PureThink({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-0">
-              <div className="relative pl-10">
-                {/* Vertical line that perfectly aligns with the icon's vertical line */}
-                <div className="absolute inset-y-0 left-3.5 w-[1.5px] bg-border h-full"></div>
-                <div className="text-sm text-muted-foreground pl-4 py-1">
+            <div className="px-4 py-2 relative">
+              {/* Explicit vertical line that connects with the header icon - using the correct 33px value */}
+              <div className="absolute w-[1.5px] bg-border h-full" style={{ left: '33px' }}></div>
+              
+              {/* Content container with proper left padding to align with header text */}
+              <div className="pl-10 pr-0">
+                <div className="text-sm text-muted-foreground">
                   <Markdown baseHeadingLevel={3}>{thought}</Markdown>
                 </div>
               </div>

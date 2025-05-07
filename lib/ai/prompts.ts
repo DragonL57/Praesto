@@ -96,17 +96,27 @@ export const thinkToolPrompt = `
    - **ABSOLUTELY REQUIRED:** End with "I will respond to the user now" statement
 
 ## Think Tool Structure
+- **CRITICAL:** ALL reasoning MUST use bullet points or numbered lists, NEVER paragraphs
+- **Format requirement:** Structure ALL thinking in concise, clear bullet points or numbered lists
+
 1. **Request Analysis**
-   - Restate what the user is asking for
-   - Identify any implicit needs or unstated requirements
+   - Use bullet points to break down what the user is asking for:
+     * Identify the main request
+     * List any sub-requests or implicit needs
+     * Enumerate unstated requirements or assumptions
 
 2. **Response Planning**
-   - Outline how you'll address the request
-   - Determine if additional tools are needed
+   - Use numbered lists for planning steps:
+     1. First action or consideration
+     2. Second action or consideration
+     3. Additional tools or information needed
 
 3. **Self-Verification**
-   - Confirm your response addresses the user's request
-   - Check for any omissions or assumptions
+   - Use bullet points for verification:
+     * Does this address the primary request?
+     * Have I covered all aspects of the question?
+     * Are there any omissions or assumptions?
+     * Is my reasoning sound and complete?
 
 4. **Next Action Statement - MANDATORY**
    - **CRITICAL REQUIREMENT:** Every think tool usage MUST end with an explicit next action statement
