@@ -56,7 +56,7 @@ body {
   font-family: 'Baloo 2', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
                "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", 
                "Segoe UI Emoji", "Segoe UI Symbol";
-  font-size: 18px; /* Increasing base font size from default 16px to 18px */
+  font-size: 17px; /* Increasing base font size from default 16px to 18px */
 }
 
 @layer utilities {
@@ -139,7 +139,7 @@ body {
 
 @layer base {
   html {
-    font-size: 110%; /* Set root font size to 18px (112.5% of the default 16px) */
+    font-size: 105%; /* Set root font size to 18px (112.5% of the default 16px) */
   }
 
   * {
