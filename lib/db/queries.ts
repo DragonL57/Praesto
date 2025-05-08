@@ -667,21 +667,38 @@ export async function ensureUserTableSchema() {
   try {
     console.log("[DB] Checking User table schema...");
 
+    // Create a promise that will reject after the timeout
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Database query timed out')), 5000)
+    );
+
     // Check if createdAt column exists
-    const columnCheck = await client`
+    const columnCheckPromise = client`
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_name = 'User' 
       AND column_name = 'createdAt'
     `;
 
+    // Race the query against the timeout
+    const columnCheck = await Promise.race([
+      columnCheckPromise,
+      timeout
+    ]) as any[];
+
     if (columnCheck.length === 0) {
       console.log("[DB] createdAt column missing from User table, adding it now...");
       // Add the createdAt column with a default value of now()
-      await client`
+      const alterTablePromise = client`
         ALTER TABLE "User" 
         ADD COLUMN "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       `;
+
+      await Promise.race([
+        alterTablePromise,
+        timeout
+      ]);
+
       console.log("[DB] Successfully added createdAt column to User table");
     } else {
       console.log("[DB] User table schema is up to date");

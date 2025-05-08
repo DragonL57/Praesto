@@ -10,20 +10,21 @@ import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SessionProvider } from 'next-auth/react'
-import { ensureUserTableSchema } from "@/lib/db/queries"
+// Import the client component for DB schema checking
+import { DbSchemaChecker } from "@/components/db-schema-checker"
 
-// Check and update database schema if needed
-ensureUserTableSchema()
-  .then((result) => {
-    if (result) {
-      console.log('[App] Database schema check completed successfully');
-    } else {
-      console.warn('[App] Database schema check failed, some features may not work correctly');
-    }
-  })
-  .catch((error) => {
-    console.error('[App] Error during database schema check:', error);
-  });
+// Remove the immediate schema check that runs during build
+// ensureUserTableSchema()
+//   .then((result) => {
+//     if (result) {
+//       console.log('[App] Database schema check completed successfully');
+//     } else {
+//       console.warn('[App] Database schema check failed, some features may not work correctly');
+//     }
+//   })
+//   .catch((error) => {
+//     console.error('[App] Error during database schema check:', error);
+//   });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -107,6 +108,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const isProd = process.env.NODE_ENV === 'production'
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -129,28 +132,35 @@ export default function RootLayout({
             `,
           }}
         />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
       </head>
-      <body>
+      <body className="flex min-h-screen flex-col overscroll-none bg-background font-sans text-foreground selection:bg-slate-200 dark:selection:bg-slate-700 antialiased">
         <SessionProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <Toaster position="top-center" richColors closeButton />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <DbSchemaChecker />
             <JsonLd
               data={{
-                "@context": "https://schema.org",
-                "@type": "SoftwareApplication",
-                "name": "UniTaskAI",
-                "applicationCategory": "ProductivityApplication",
-                "operatingSystem": "Web",
-                "offers": {
-                  "@type": "Offer",
-                  "price": "0",
-                  "priceCurrency": "USD"
-                },
-                "description": "AI-powered workspace for content creation, code generation, data analysis, and task automation."
+                '@context': 'https://schema.org',
+                '@type': 'WebApplication',
+                name: 'Presto AI',
+                description: 'Free AI Assistant',
+                url: 'https://praesto.ai',
+                applicationCategory: 'UtilityApplication',
+                genre: 'AI Chat',
+                browserRequirements: 'Requires JavaScript. Requires HTML5.',
+                softwareVersion: '3.0',
               }}
             />
-            {children}
-            <SpeedInsights />
+            <Toaster richColors closeButton position="top-center" />
+            <main className="flex flex-1 flex-col">
+              {children}
+            </main>
+            {isProd && <SpeedInsights />}
           </ThemeProvider>
         </SessionProvider>
       </body>
