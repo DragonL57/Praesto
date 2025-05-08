@@ -57,14 +57,18 @@ export default function RegisterPage() {
         description: state.message || "Please check your email and password requirements.",
       })
       setIsLoading(false)
-    } else if (state.status === "success") {
-      toast({ type: "success", description: "Account created successfully!" })
-      setIsSuccessful(true)
-      router.refresh()
-      // Redirect to /chat after successful registration
+    } else if (state.status === "verification_email_sent") {
+      toast({ 
+        type: "success", 
+        description: state.message || "Account created! Please check your email to verify."
+      });
+      setIsLoading(false);
+      setIsSuccessful(true);
+      router.refresh();
+      // Redirect to /login after successful registration and verification email sent
       setTimeout(() => {
-        router.push("/chat")
-      }, 500) // Small delay to allow refresh to complete
+        router.push("/login"); 
+      }, 1500); // Allow time for user to see the toast
     }
   }, [state, router])
 
@@ -261,10 +265,9 @@ export default function RegisterPage() {
               <div className="relative hidden bg-muted md:block">
                 <Image
                   src="/UniTaskAI_logo.png"
-                  alt=""
-                  width="300"
-                  height="200"
-                  className="rounded-lg object-cover"
+                  alt="UniTaskAI Decorative Background"
+                  fill
+                  className="object-cover w-full h-full dark:brightness-[0.2] dark:grayscale rounded-none"
                 />
               </div>
             </CardContent>
