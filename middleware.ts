@@ -5,7 +5,7 @@ import { authConfig } from '@/app/(auth)/auth.config';
 export default NextAuth(authConfig).auth;
 
 export const config = {
-  // Matcher simplified to focus on core protected areas and auth pages
+  // Update matcher to include auth API routes
   matcher: [
     // Protect the main chat areas
     '/chat/:path*',
@@ -14,8 +14,10 @@ export const config = {
     // Apply middleware logic ALSO to login/register 
     // (e.g., to handle redirecting logged-in users away from them)
     '/login',
-    '/register'
-    // Note: This no longer broadly matches /api routes. Auth.js internal routes
-    // like /api/auth/session should handle their own auth checks.
+    '/register',
+
+    // Include the auth API routes
+    '/api/auth/:path*'
+    // Note: This now includes auth routes but not all API routes
   ],
 };
