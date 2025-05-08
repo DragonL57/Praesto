@@ -10,22 +10,7 @@ import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SessionProvider } from 'next-auth/react'
-// Import the client component for DB schema checking
-import { DbSchemaChecker } from "@/components/db-schema-checker"
 import { auth } from "@/app/(auth)/auth"
-
-// Remove the immediate schema check that runs during build
-// ensureUserTableSchema()
-//   .then((result) => {
-//     if (result) {
-//       console.log('[App] Database schema check completed successfully');
-//     } else {
-//       console.warn('[App] Database schema check failed, some features may not work correctly');
-//     }
-//   })
-//   .catch((error) => {
-//     console.error('[App] Error during database schema check:', error);
-//   });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -145,7 +130,6 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <DbSchemaChecker />
             <JsonLd
               data={{
                 '@context': 'https://schema.org',
