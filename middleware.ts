@@ -5,19 +5,17 @@ import { authConfig } from '@/app/(auth)/auth.config';
 export default NextAuth(authConfig).auth;
 
 export const config = {
-  // Protect API routes and authenticated pages while allowing access to auth pages and landing page
-  // But also check auth pages to redirect authenticated users
+  // Matcher simplified to focus on core protected areas and auth pages
   matcher: [
-    // Protect all API routes by default, EXCEPT:
-    //  - /api/get_transcript (existing exclusion)
-    //  - /api/auth/forgot-password
-    //  - /api/auth/reset-password
-    //  - /api/auth/verify-email
-    //  - /api/cron/cleanup-unverified-users (NEW: cron job exclusion)
-    //  - /api/auth/register (if you have a public registration API endpoint)
-    '/((?!api/get_transcript|api/auth/forgot-password|api/auth/reset-password|api/auth/verify-email|api/cron/cleanup-unverified-users|api/auth/register).*)api/:path*',
+    // Protect the main chat areas
     '/chat/:path*',
+    // Add other protected routes here if needed, e.g., '/admin/:path*'
+
+    // Apply middleware logic ALSO to login/register 
+    // (e.g., to handle redirecting logged-in users away from them)
     '/login',
     '/register'
+    // Note: This no longer broadly matches /api routes. Auth.js internal routes
+    // like /api/auth/session should handle their own auth checks.
   ],
 };

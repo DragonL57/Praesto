@@ -9,10 +9,8 @@ const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
 // GET a single conversation
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const { id } = params;
     
@@ -39,10 +37,8 @@ export async function GET(
 }
 
 // PATCH to update conversation visibility
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const { id } = params;
     const { visibility } = await request.json();

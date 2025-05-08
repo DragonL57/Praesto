@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { signOut } from 'next-auth/react';
 
 interface AdminTopNavProps {
   setSidebarOpen: (open: boolean) => void;
@@ -80,10 +81,14 @@ export function AdminTopNav({ setSidebarOpen }: AdminTopNavProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link href="/api/auth/signout" className="flex items-center w-full">
+                <DropdownMenuItem asChild>
+                  <button
+                    type="button"
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full"
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                  >
                     Sign out
-                  </Link>
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

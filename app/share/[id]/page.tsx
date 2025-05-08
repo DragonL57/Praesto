@@ -16,15 +16,16 @@ export const metadata = {
 };
 
 type PageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-export default async function Page({ params }: PageProps) {
+export default async function Page(props: PageProps) {
+  const params = await props.params;
   // Access the id directly from params
   const { id } = params;
-  
+
   const chat = await getChatById({ id });
 
   if (!chat) {

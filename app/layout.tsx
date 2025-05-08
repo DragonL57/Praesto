@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SessionProvider } from 'next-auth/react'
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -116,26 +117,28 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Toaster position="top-center" richColors closeButton />
-          <JsonLd
-            data={{
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              "name": "UniTaskAI",
-              "applicationCategory": "ProductivityApplication",
-              "operatingSystem": "Web",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              },
-              "description": "AI-powered workspace for content creation, code generation, data analysis, and task automation."
-            }}
-          />
-          {children}
-          <SpeedInsights />
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <Toaster position="top-center" richColors closeButton />
+            <JsonLd
+              data={{
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                "name": "UniTaskAI",
+                "applicationCategory": "ProductivityApplication",
+                "operatingSystem": "Web",
+                "offers": {
+                  "@type": "Offer",
+                  "price": "0",
+                  "priceCurrency": "USD"
+                },
+                "description": "AI-powered workspace for content creation, code generation, data analysis, and task automation."
+              }}
+            />
+            {children}
+            <SpeedInsights />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )

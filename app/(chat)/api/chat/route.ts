@@ -114,7 +114,7 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
           messages,
-          maxSteps: 5,
+          maxSteps: 10,
           providerOptions: isGemini25Model
             ? {
               google: {
@@ -124,11 +124,7 @@ export async function POST(request: Request) {
               },
             }
             : isXaiGrokModel
-              ? {
-                xai: {
-                  reasoningEffort: 'medium',
-                },
-              }
+              ? { /* No specific provider options needed for now */ }
               : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
