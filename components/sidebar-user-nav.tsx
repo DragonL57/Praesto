@@ -24,9 +24,39 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { SettingsCard } from '@/components/settings-card';
+import { toast } from '@/components/toast';
 
 export function SidebarUserNav({ user }: { user: User }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      
+      // Call signOut but don't rely on its redirect
+      await signOut({ redirect: false });
+      
+      // Show a toast for better UX
+      toast({
+        type: "success",
+        description: "Signing out...",
+      });
+      
+      // Use a timeout to ensure the signOut operation has time to complete
+      setTimeout(() => {
+        // Force reload to the home page for a clean state
+        window.location.href = '/';
+      }, 500);
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        type: "error",
+        description: "Could not sign out. Please try again.",
+      });
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <>
@@ -68,18 +98,14 @@ export function SidebarUserNav({ user }: { user: User }) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
+              <DropdownMenuItem>
                 <button
                   type="button"
-                  className="w-full cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signOut({
-                      callbackUrl: '/',
-                    });
-                  }}
+                  className="w-full cursor-pointer flex items-center"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
                 >
-                  Sign out
+                  {isSigningOut ? "Signing out..." : "Sign out"}
                 </button>
               </DropdownMenuItem>
             </DropdownMenuContent>
