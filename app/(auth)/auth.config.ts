@@ -6,6 +6,8 @@ export const authConfig = {
     signIn: '/login',
     newUser: '/',
   },
+  // Add JWT configuration with a secret
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
     // while this file is also used in non-Node.js environments

@@ -5,6 +5,7 @@ import { useState, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -220,10 +221,8 @@ export default function RegisterPage() {
                       className="w-full"
                       onClick={(e) => {
                         e.preventDefault()
-                        toast({
-                          type: "error",
-                          description: "Email/password registration is currently the only supported method. Social login will be available soon."
-                        })
+                        setIsLoading(true)
+                        signIn('google', { callbackUrl: '/chat' })
                       }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -267,7 +266,7 @@ export default function RegisterPage() {
                   src="/UniTaskAI_logo.png"
                   alt="UniTaskAI Decorative Background"
                   fill
-                  className="object-cover w-full h-full dark:brightness-[0.2] dark:grayscale rounded-none"
+                  className="object-cover size-full dark:brightness-[0.2] dark:grayscale rounded-none"
                 />
               </div>
             </CardContent>

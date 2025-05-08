@@ -10,6 +10,20 @@ import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SessionProvider } from 'next-auth/react'
+import { ensureUserTableSchema } from "@/lib/db/queries"
+
+// Check and update database schema if needed
+ensureUserTableSchema()
+  .then((result) => {
+    if (result) {
+      console.log('[App] Database schema check completed successfully');
+    } else {
+      console.warn('[App] Database schema check failed, some features may not work correctly');
+    }
+  })
+  .catch((error) => {
+    console.error('[App] Error during database schema check:', error);
+  });
 
 export const viewport: Viewport = {
   width: "device-width",

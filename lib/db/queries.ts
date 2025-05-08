@@ -10,11 +10,11 @@ import {
   gte,
   inArray,
   lt,
-  sql,
   type SQL,
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { randomBytes } from 'crypto';
 
 import {
   user,
@@ -61,13 +61,77 @@ export async function createUser(email: string, password: string, verified: bool
   const hash = hashSync(password, salt);
 
   try {
-    return await db.insert(user).values({
-      email,
-      password: hash,
-      emailVerified: verified
-    });
+    // First attempt with createdAt field
+    try {
+      return await db.insert(user).values({
+        email,
+        password: hash,
+        emailVerified: verified,
+        createdAt: new Date()
+      });
+    } catch (innerError) {
+      // If createdAt column doesn't exist, try without it
+      const errorMessage = innerError instanceof Error
+        ? innerError.message
+        : 'Unknown error';
+
+      if (errorMessage.includes('column "createdAt" does not exist')) {
+        console.log('Notice: createdAt column missing, trying insert without it');
+        return await db.insert(user).values({
+          email,
+          password: hash,
+          emailVerified: verified
+        });
+      } else {
+        // Re-throw if it's another error
+        throw innerError;
+      }
+    }
   } catch (error) {
-    console.error('Failed to create user in database');
+    console.error('Failed to create user in database', error);
+    throw error;
+  }
+}
+
+export async function createOAuthUser(email: string) {
+  // Generate a secure random password for OAuth users
+  // They won't use this password, but we need to store something in the password field
+  const randomPassword = randomBytes(32).toString('hex');
+
+  try {
+    // First check if the user already exists
+    const existingUsers = await getUser(email);
+    if (existingUsers.length > 0) {
+      // If the user exists but isn't verified, mark them as verified
+      if (!existingUsers[0].emailVerified) {
+        await db.update(user)
+          .set({ emailVerified: true })
+          .where(eq(user.id, existingUsers[0].id));
+      }
+      return existingUsers[0];
+    }
+
+    // Insert user directly with a raw SQL query to avoid schema issues
+    // This bypasses the ORM to ensure it works regardless of column presence
+    const salt = genSaltSync(10);
+    const hash = hashSync(randomPassword, salt);
+
+    // Using raw client query that only uses basic columns we know exist
+    const result = await client`
+      INSERT INTO "User" (
+        id, email, password, "emailVerified"
+      ) VALUES (
+        gen_random_uuid(), ${email}, ${hash}, true
+      ) RETURNING *
+    `;
+
+    if (result && result.length > 0) {
+      return result[0];
+    }
+
+    throw new Error("Failed to create OAuth user with raw SQL");
+  } catch (error) {
+    console.error('Failed to create OAuth user in database', error);
     throw error;
   }
 }
@@ -595,5 +659,38 @@ export async function deleteOldUnverifiedUsers(olderThan: Date): Promise<{ count
   } catch (error) {
     console.error('[DB Query] Error deleting old, unverified users:', error);
     throw new Error('Failed to delete old, unverified users.');
+  }
+}
+
+// Check if createdAt column exists in User table and add it if missing
+export async function ensureUserTableSchema() {
+  try {
+    console.log("[DB] Checking User table schema...");
+
+    // Check if createdAt column exists
+    const columnCheck = await client`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'User' 
+      AND column_name = 'createdAt'
+    `;
+
+    if (columnCheck.length === 0) {
+      console.log("[DB] createdAt column missing from User table, adding it now...");
+      // Add the createdAt column with a default value of now()
+      await client`
+        ALTER TABLE "User" 
+        ADD COLUMN "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+      `;
+      console.log("[DB] Successfully added createdAt column to User table");
+    } else {
+      console.log("[DB] User table schema is up to date");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[DB] Error ensuring User table schema:", error);
+    // Don't throw, just log the error - we want the app to continue even if this fails
+    return false;
   }
 }

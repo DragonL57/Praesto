@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useState, startTransition } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -195,10 +196,8 @@ export default function LoginPage() {
                       className="w-full"
                       onClick={(e) => {
                         e.preventDefault()
-                        toast({
-                          type: "error",
-                          description: "Email/password login is currently the only supported method. Social login will be available soon."
-                        })
+                        setIsLoading(true)
+                        signIn('google', { callbackUrl: '/chat' })
                       }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
