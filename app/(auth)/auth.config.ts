@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: '/login',
     newUser: '/',
@@ -32,7 +33,7 @@ export const authConfig = {
       if (isOnRegister || isOnLogin) {
         return true; // Always allow access to register and login pages
       }
-      
+
       // Allow access to shared chat URLs without authentication
       if (isSharedChat) {
         return true;
