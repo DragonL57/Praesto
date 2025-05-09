@@ -1,4 +1,4 @@
-import { customProvider } from 'ai';
+import { customProvider, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -8,7 +8,6 @@ import {
 } from './models.test';
 import { xai } from '@ai-sdk/xai';
 import { fireworks } from '@ai-sdk/fireworks';
-import { wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 
 // Create the Pollinations.AI OpenAI-compatible provider
 export const pollinationsProvider = createOpenAICompatible({
@@ -84,7 +83,7 @@ export const myProvider = isTestEnvironment
       'artifact-model': pollinationsProvider.chatModel('openai-large'),
 
       // Add xAI Grok 3 model
-      'xai-grok-3': xai('grok-3'),
+      'xai-grok-3': xai('grok-3-fast'),
 
       // Add Fireworks Qwen3 model with reasoning capabilities
       'accounts/fireworks/models/qwen3-235b-a22b': enhancedQwenModel,
