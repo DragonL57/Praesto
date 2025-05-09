@@ -34,20 +34,14 @@ export function SidebarUserNav({ user }: { user: User }) {
     try {
       setIsSigningOut(true);
       
-      // Call signOut but don't rely on its redirect
-      await signOut({ redirect: false });
-      
       // Show a toast for better UX
       toast({
         type: "success",
         description: "Signing out...",
       });
       
-      // Use a timeout to ensure the signOut operation has time to complete
-      setTimeout(() => {
-        // Force reload to the home page for a clean state
-        window.location.href = '/';
-      }, 500);
+      // Use the client-side signOut function instead of direct URL access
+      await signOut({ callbackUrl: '/' });
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
