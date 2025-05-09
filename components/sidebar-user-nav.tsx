@@ -40,8 +40,20 @@ export function SidebarUserNav({ user }: { user: User }) {
         description: "Signing out...",
       });
       
-      // Use the client-side signOut function instead of direct URL access
-      await signOut({ callbackUrl: '/' });
+      // First try normal sign out
+      try {
+        await signOut({ callbackUrl: '/' });
+      } catch (error) {
+        console.error("Standard sign-out failed:", error);
+        
+        // Fallback: try to clear cookies and redirect manually
+        window.location.href = '/';
+        
+        // Force reload after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
