@@ -5,6 +5,17 @@ import type { NextRequest } from 'next/server';
 // In production, you'd want to use Redis or another distributed store
 const rateLimitStore = new Map<string, { count: number, timestamp: number }>();
 
+// Clean up old entries every 30 minutes
+const CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore.entries()) {
+    if (now - record.timestamp > CLEANUP_INTERVAL) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, CLEANUP_INTERVAL);
+
 // Rate limit middleware for auth endpoints
 export function rateLimit(req: NextRequest) {
     // Get client IP from forwarded header or use a fallback
@@ -12,20 +23,38 @@ export function rateLimit(req: NextRequest) {
         req.headers.get('x-real-ip') ||
         'unknown';
     const path = req.nextUrl.pathname;
+    const method = req.method;
 
-    // Only apply rate limiting to authentication endpoints
-    if (!path.startsWith('/api/auth/') &&
-        !path.startsWith('/(auth)/api/auth/') &&
-        path !== '/login' &&
-        path !== '/register') {
+    // Only apply strict rate limiting to auth actions (POST requests)
+    // For login/register page views, apply a much higher limit
+    const isAuthAction = (
+        (path.startsWith('/api/auth/') || path.startsWith('/(auth)/api/auth/')) ||
+        ((path === '/login' || path === '/register') && method === 'POST')
+    );
+    
+    // Don't rate limit normal page views
+    if (!isAuthAction && method === 'GET') {
         return NextResponse.next();
     }
 
     const now = Date.now();
     const windowMs = 15 * 60 * 1000; // 15 minutes
-    const maxRequests = path.includes('forgot-password') ? 3 : 5; // Stricter limits for password reset
+    
+    // Different limits based on the endpoint and method
+    let maxRequests = 20; // Default higher limit for most requests
+    
+    if (isAuthAction) {
+        // Stricter limits for auth actions
+        if (path.includes('forgot-password') && method === 'POST') {
+            maxRequests = 5; // 5 password reset attempts per 15 minutes
+        } else if ((path === '/login' || path === '/api/auth/callback/credentials') && method === 'POST') {
+            maxRequests = 10; // 10 login attempts per 15 minutes
+        } else if (path === '/register' && method === 'POST') {
+            maxRequests = 5; // 5 registration attempts per 15 minutes
+        }
+    }
 
-    const key = `${ip}:${path}`;
+    const key = `${ip}:${path}:${method}`;
     const record = rateLimitStore.get(key) || { count: 0, timestamp: now };
 
     // Reset count if the window has passed
@@ -47,6 +76,7 @@ export function rateLimit(req: NextRequest) {
 
     // If rate limit is exceeded, return 429 Too Many Requests
     if (record.count > maxRequests) {
+        console.log(`Rate limit exceeded for ${key} - count: ${record.count}, limit: ${maxRequests}`);
         return NextResponse.json(
             { success: false, message: 'Too many requests, please try again later.' },
             { status: 429 }
