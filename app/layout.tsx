@@ -10,7 +10,7 @@ import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SessionProvider } from 'next-auth/react'
-import { auth } from "@/app/(auth)/auth"
+import { auth } from "@/app/auth"
 
 export const viewport: Viewport = {
   width: "device-width",

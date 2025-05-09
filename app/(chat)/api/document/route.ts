@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 import type { ArtifactKind } from '@/components/artifact';
 // eslint-disable-next-line import/no-unresolved
 import { deleteDocumentsByIdAfterTimestamp, getDocumentsById, saveDocument, } from '@/lib/db/queries';

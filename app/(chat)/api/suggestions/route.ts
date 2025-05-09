@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { getSuggestionsByDocumentId } from '@/lib/db/queries';
 

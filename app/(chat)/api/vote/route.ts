@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
 

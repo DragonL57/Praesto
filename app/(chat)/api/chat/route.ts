@@ -6,7 +6,7 @@ import {
 } from 'ai';
 import type { UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved

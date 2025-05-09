@@ -38,16 +38,14 @@ export const config = {
   matcher: [
     // Protect the main chat areas
     '/chat/:path*',
-    // Add other protected routes here if needed, e.g., '/admin/:path*'
 
-    // Apply middleware logic ALSO to login/register 
-    // (e.g., to handle redirecting logged-in users away from them)
+    // Apply middleware logic to login/register 
+    // to handle redirecting logged-in users away from them
     '/login',
     '/register',
 
-    // Auth API routes
+    // Use a single standardized auth route pattern 
     '/api/auth/:path*',
-    '/(auth)/api/auth/:path*',
 
     // Exclude other API routes from middleware to prevent conflicts
     '/((?!api/).)*'

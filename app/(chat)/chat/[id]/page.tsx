@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { Chat } from '@/components/chat';
 // eslint-disable-next-line import/no-unresolved

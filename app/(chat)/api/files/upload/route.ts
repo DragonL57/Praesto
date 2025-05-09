@@ -2,7 +2,7 @@ import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 
 // Define a type for Blob with name property
 interface BlobWithFileName extends Blob {
@@ -21,21 +21,21 @@ const FileSchema = z.object({
       (file) => {
         // Logging the content type for debugging
         console.log('File type:', file.type);
-        
+
         // File extension check from name as fallback
         const getExtensionFromName = (name: string) => {
           const parts = name.split('.');
           return parts.length > 1 ? parts.pop()?.toLowerCase() : '';
         };
-        
+
         // Get file name if available from formData
         const fileName = (file as BlobWithFileName).name || '';
         const extension = getExtensionFromName(fileName);
-        
+
         // Check if the content type is in our list of allowed types
         const allowedTypes = [
           // Images
-          'image/jpeg', 
+          'image/jpeg',
           'image/png',
           'image/gif',
           // Documents
@@ -51,12 +51,12 @@ const FileSchema = z.object({
           'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
           'application/vnd.ms-powerpoint', // ppt
         ];
-        
+
         // Also check by file extension for common office formats
         const allowedExtensions = ['pdf', 'docx', 'doc', 'txt', 'csv', 'xlsx', 'xls', 'pptx', 'ppt'];
-        
-        return allowedTypes.includes(file.type) || 
-               (extension && allowedExtensions.includes(extension));
+
+        return allowedTypes.includes(file.type) ||
+          (extension && allowedExtensions.includes(extension));
       },
       {
         message: 'Supported file types: Images (JPEG, PNG, GIF), Documents (PDF, DOCX, DOC, TXT, CSV, XLSX, XLS, PPTX, PPT)',
@@ -78,11 +78,11 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File; // Changed to File for better type safety
-    
+
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
-    
+
     console.log('Uploaded file:', {
       name: file.name,
       type: file.type,
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       const errorMessage = validatedFile.error.errors
         .map((error) => error.message)
         .join(', ');
-      
+
       console.error('File validation failed:', errorMessage, {
         file_type: file.type,
         file_name: file.name

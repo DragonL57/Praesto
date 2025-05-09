@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 import type { NextRequest } from 'next/server';
 // eslint-disable-next-line import/no-unresolved
 import { getChatsByUserId } from '@/lib/db/queries';

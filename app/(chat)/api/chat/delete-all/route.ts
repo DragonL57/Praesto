@@ -1,8 +1,7 @@
 /* eslint-disable import/no-unresolved */
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 import { deleteChatById, getChatsByUserId } from '@/lib/db/queries';
-import { chat, message, vote } from '@/lib/db/schema';
 
 export async function DELETE() {
   try {
@@ -27,10 +26,10 @@ export async function DELETE() {
     }
 
     // Delete each chat (deleteChatById also deletes associated messages and votes)
-    const deletePromises = userChats.map(chat => 
+    const deletePromises = userChats.map(chat =>
       deleteChatById({ id: chat.id })
     );
-    
+
     await Promise.all(deletePromises);
 
     return NextResponse.json({

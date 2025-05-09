@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { getChatById, updateChatTitleById } from '@/lib/db/queries';
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Check if the chat exists and belongs to the user
     const chat = await getChatById({ id });
-    
+
     if (!chat) {
       return new Response('Chat not found', { status: 404 });
     }
