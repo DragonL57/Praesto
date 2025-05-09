@@ -28,7 +28,7 @@ const loginFormSchema = z.object({
 });
 
 export interface LoginActionState {
-  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data' | 'user_not_found' | 'wrong_password';
+  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data' | 'user_not_found' | 'wrong_password' | 'account_locked';
   message?: string;
 }
 
@@ -74,6 +74,17 @@ export const login = async (
       };
     }
 
+    // Check if account is locked
+    if (userFromDbAction.accountLockedUntil && new Date(userFromDbAction.accountLockedUntil) > new Date()) {
+      const unlockTime = new Date(userFromDbAction.accountLockedUntil);
+      const minutesRemaining = Math.ceil((unlockTime.getTime() - Date.now()) / 60000);
+
+      return {
+        status: 'account_locked',
+        message: `Your account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`
+      };
+    }
+
     try {
       await signIn('credentials', {
         email: email,
@@ -83,19 +94,31 @@ export const login = async (
       });
       return { status: 'success' };
     } catch (signInError) {
-      // This catch block might be triggered if signIn itself throws an error (e.g., wrong password in authorize)
-      // Or if there are issues related to the dynamic API usage warnings we saw.
-      console.error(`Login action signIn error for ${email}:`, signInError); // Keep this error log
-      // Determine if it was specifically a credentials error (wrong password)
-      // NextAuth might throw a specific error type or code for this, check its docs/behavior
-      // For now, assume it's wrong password if getUser succeeded but signIn failed.
+      // This catch block might be triggered if signIn itself throws an error
+      console.error(`Login action signIn error for ${email}:`, signInError);
+
+      // Check if account is now locked after this failed attempt
+      const updatedUser = await getUser(email);
+      if (updatedUser.length > 0 &&
+        updatedUser[0].accountLockedUntil &&
+        new Date(updatedUser[0].accountLockedUntil) > new Date()) {
+
+        const unlockTime = new Date(updatedUser[0].accountLockedUntil);
+        const minutesRemaining = Math.ceil((unlockTime.getTime() - Date.now()) / 60000);
+
+        return {
+          status: 'account_locked',
+          message: `Your account has been temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`
+        };
+      }
+
       return {
         status: 'wrong_password',
-        message: 'Incorrect password. Please try again.' // Or a more generic message if unsure
+        message: 'Incorrect password. Please try again.'
       };
     }
   } catch (outerError) {
-    console.error('Login action outer error:', outerError); // Keep this error log
+    console.error('Login action outer error:', outerError);
     return {
       status: 'failed',
       message: 'An unexpected error occurred. Please try again later.'

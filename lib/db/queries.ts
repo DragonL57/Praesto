@@ -661,3 +661,63 @@ export async function deleteOldUnverifiedUsers(olderThan: Date): Promise<{ count
     throw new Error('Failed to delete old, unverified users.');
   }
 }
+
+export async function incrementFailedLoginAttempts(userId: string): Promise<boolean> {
+  try {
+    const userRecord = await getUserById(userId);
+    if (!userRecord) return false;
+
+    // Get current failed attempts or default to 0
+    const failedAttempts = (userRecord.failedLoginAttempts || 0) + 1;
+
+    // Set account lock if threshold reached (5 attempts)
+    const updatedFields: Partial<User> = { failedLoginAttempts: failedAttempts };
+
+    if (failedAttempts >= 5) {
+      // Lock account for 15 minutes
+      const lockUntil = new Date();
+      lockUntil.setMinutes(lockUntil.getMinutes() + 15);
+      updatedFields.accountLockedUntil = lockUntil;
+    }
+
+    await db.update(user)
+      .set(updatedFields)
+      .where(eq(user.id, userId));
+
+    return true;
+  } catch (error) {
+    console.error('Failed to increment failed login attempts', error);
+    return false;
+  }
+}
+
+export async function resetFailedLoginAttempts(userId: string): Promise<boolean> {
+  try {
+    await db.update(user)
+      .set({
+        failedLoginAttempts: 0,
+        accountLockedUntil: null
+      })
+      .where(eq(user.id, userId));
+    return true;
+  } catch (error) {
+    console.error('Failed to reset failed login attempts', error);
+    return false;
+  }
+}
+
+export async function isAccountLocked(userId: string): Promise<boolean> {
+  try {
+    const userRecord = await getUserById(userId);
+    if (!userRecord) return false;
+
+    if (userRecord.accountLockedUntil && new Date(userRecord.accountLockedUntil) > new Date()) {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Failed to check if account is locked', error);
+    return false;
+  }
+}

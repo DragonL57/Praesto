@@ -3,7 +3,13 @@ import { compare } from 'bcrypt-ts';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 
-import { getUser, type User as DbUser } from '@/lib/db/queries';
+import {
+  getUser,
+  isAccountLocked,
+  incrementFailedLoginAttempts,
+  resetFailedLoginAttempts,
+  type User as DbUser
+} from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 
 // It's often recommended to augment NextAuth's types via a d.ts file (e.g., next-auth.d.ts)
@@ -33,8 +39,23 @@ export const {
         if (users.length === 0) return null;
 
         const userFromDb = users[0];
+
+        // Check if the account is locked
+        if (await isAccountLocked(userFromDb.id)) {
+          console.log(`Login attempt for locked account: ${email}`);
+          return null;
+        }
+
         const passwordsMatch = await compare(password, userFromDb.password!);
-        if (!passwordsMatch) return null;
+
+        if (!passwordsMatch) {
+          // Increment failed attempts on password mismatch
+          await incrementFailedLoginAttempts(userFromDb.id);
+          return null;
+        }
+
+        // Reset failed attempts counter on successful login
+        await resetFailedLoginAttempts(userFromDb.id);
 
         return userFromDb;
       },

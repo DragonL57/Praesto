@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -21,6 +22,8 @@ export const user = pgTable('User', {
   resetPasswordToken: varchar('resetPasswordToken', { length: 255 }),
   resetPasswordTokenExpiry: timestamp('resetPasswordTokenExpiry'),
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  failedLoginAttempts: integer('failedLoginAttempts').default(0),
+  accountLockedUntil: timestamp('accountLockedUntil'),
 });
 
 export type User = InferSelectModel<typeof user>;
