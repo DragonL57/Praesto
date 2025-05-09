@@ -446,7 +446,7 @@ function PureArtifact({
               />
             </div>
 
-            <div className="dark:bg-muted bg-background h-full overflow-y-auto !max-w-full items-center">
+            <div className="dark:bg-muted bg-background h-full overflow-y-auto overflow-x-hidden !max-w-full items-center">
               <artifactDefinition.content
                 title={artifact.title}
                 content={
