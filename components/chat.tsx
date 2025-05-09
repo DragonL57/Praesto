@@ -1,10 +1,11 @@
 'use client';
 
-import type { Attachment, UIMessage } from 'ai';
+import type { Attachment, Message as UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useLocalStorage } from 'usehooks-ts';
+import { useModelStorage } from '@/hooks/use-model-storage';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
@@ -39,7 +40,7 @@ export function Chat({
   const [prevPersonaId, setPrevPersonaId] = useState(selectedPersonaId);
   
   // Track the model separately to avoid re-initializing the chat when the model changes
-  const [currentModel, setCurrentModel] = useLocalStorage('current-chat-model', selectedChatModel);
+  const [currentModel, setCurrentModel] = useModelStorage('current-chat-model', selectedChatModel);
   const [prevModel, setPrevModel] = useState(currentModel);
 
   // Create refs for message container and end element

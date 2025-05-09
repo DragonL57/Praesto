@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useWindowSize, useLocalStorage } from 'usehooks-ts';
+import { useWindowSize } from 'usehooks-ts';
+import { useModelStorage } from '@/hooks/use-model-storage';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
@@ -33,7 +34,7 @@ function PureChatHeader({
   
   // Use local storage for the model to prevent unnecessary rerenders
   // The default value will be the prop, but changes will be managed through local storage
-  const [localModelId] = useLocalStorage('current-chat-model', selectedModelId);
+  const [localModelId] = useModelStorage('current-chat-model', selectedModelId);
   
   // Check if we're in a specific chat (not the root /chat page)
   const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
