@@ -21,7 +21,7 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test --workers=4"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.2.12",
+    "@ai-sdk/fireworks": "^0.2.14",
     "@ai-sdk/openai": "^1.2.10",
     "@ai-sdk/openai-compatible": "^0.2.11",
     "@ai-sdk/react": "^1.2.8",

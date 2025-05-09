@@ -103,9 +103,8 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
       execute: (dataStream) => {
-        const isGemini25Model =
-          selectedChatModel === 'google-gemini-pro' ||
-          selectedChatModel === 'google-gemini-flash';
+        const isFireworksQwenModel =
+          selectedChatModel === 'accounts/fireworks/models/qwen3-235b-a22b';
 
         const isXaiGrokModel =
           selectedChatModel === 'xai-grok-3';
@@ -115,12 +114,10 @@ export async function POST(request: Request) {
           system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
           messages,
           maxSteps: 10,
-          providerOptions: isGemini25Model
+          providerOptions: isFireworksQwenModel
             ? {
-              google: {
-                thinkingConfig: {
-                  thinkingBudget: 24576, // Maximum thinking budget
-                },
+              fireworks: {
+                // Any Fireworks-specific options could go here in the future
               },
             }
             : isXaiGrokModel

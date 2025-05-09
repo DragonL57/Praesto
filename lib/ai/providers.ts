@@ -1,5 +1,4 @@
 import { customProvider } from 'ai';
-import { google } from '@ai-sdk/google';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -8,6 +7,8 @@ import {
   titleModel,
 } from './models.test';
 import { xai } from '@ai-sdk/xai';
+import { fireworks } from '@ai-sdk/fireworks';
+import { wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 
 // Create the Pollinations.AI OpenAI-compatible provider
 export const pollinationsProvider = createOpenAICompatible({
@@ -55,12 +56,11 @@ export const typedPollinationsProvider = createOpenAICompatible<
   },
 });
 
-// Export the thinking config to be used when calling the Gemini models
-export const geminiThinkingConfig = {
-  thinkingConfig: {
-    thinkingBudget: 24576, // Maximum thinking budget as requested
-  }
-};
+// Create enhanced reasoning model for Fireworks
+export const enhancedQwenModel = wrapLanguageModel({
+  model: fireworks('accounts/fireworks/models/qwen3-235b-a22b'),
+  middleware: extractReasoningMiddleware({ tagName: 'think' }),
+});
 
 // You can swap openai() for openai.chat(), openai.responses(), etc. per model as needed
 export const myProvider = isTestEnvironment
@@ -83,11 +83,10 @@ export const myProvider = isTestEnvironment
       // Use openai-xlarge for artifact generation
       'artifact-model': pollinationsProvider.chatModel('openai-large'),
 
-      // Enable thinking for Gemini 2.5 models
-      'google-gemini-pro': google('gemini-2.5-pro-exp-03-25'),
-      'google-gemini-flash': google('gemini-2.5-flash-preview-04-17'),
-
       // Add xAI Grok 3 model
       'xai-grok-3': xai('grok-3'),
+
+      // Add Fireworks Qwen3 model with reasoning capabilities
+      'accounts/fireworks/models/qwen3-235b-a22b': enhancedQwenModel,
     },
   });
