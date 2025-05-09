@@ -38,6 +38,9 @@ export default function PersonaSelector({ className }: PersonaSelectorProps) {
   // Add a state to control tooltip visibility
   const [showTooltip, setShowTooltip] = useState(true);
   
+  // State to manage hover for the tooltip trigger
+  const [isHovering, setIsHovering] = useState(false);
+  
   // Reference to the button element
   const buttonRef = useRef<HTMLButtonElement>(null);
   
@@ -76,9 +79,13 @@ export default function PersonaSelector({ className }: PersonaSelectorProps) {
 
   return (
     <TooltipProvider delayDuration={50} skipDelayDuration={0}>
-      <Tooltip open={isOpen ? false : showTooltip ? undefined : false}>
+      <Tooltip open={isOpen ? false : (!showTooltip ? false : isHovering)}>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <TooltipTrigger asChild>
+          <TooltipTrigger
+            asChild
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          >
             <DropdownMenuTrigger
               asChild
               className={cn(
