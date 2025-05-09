@@ -8,12 +8,12 @@ const rateLimitStore = new Map<string, { count: number, timestamp: number }>();
 // Clean up old entries every 30 minutes
 const CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes
 setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (now - record.timestamp > CLEANUP_INTERVAL) {
-      rateLimitStore.delete(key);
+    const now = Date.now();
+    for (const [key, record] of rateLimitStore.entries()) {
+        if (now - record.timestamp > CLEANUP_INTERVAL) {
+            rateLimitStore.delete(key);
+        }
     }
-  }
 }, CLEANUP_INTERVAL);
 
 // Rate limit middleware for auth endpoints
@@ -31,7 +31,7 @@ export function rateLimit(req: NextRequest) {
         (path.startsWith('/api/auth/') || path.startsWith('/(auth)/api/auth/')) ||
         ((path === '/login' || path === '/register') && method === 'POST')
     );
-    
+
     // Don't rate limit normal page views
     if (!isAuthAction && method === 'GET') {
         return NextResponse.next();
@@ -39,10 +39,10 @@ export function rateLimit(req: NextRequest) {
 
     const now = Date.now();
     const windowMs = 15 * 60 * 1000; // 15 minutes
-    
+
     // Different limits based on the endpoint and method
     let maxRequests = 20; // Default higher limit for most requests
-    
+
     if (isAuthAction) {
         // Stricter limits for auth actions
         if (path.includes('forgot-password') && method === 'POST') {

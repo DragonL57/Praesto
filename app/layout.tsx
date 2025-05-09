@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { JsonLd } from "@/components/json-ld"
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { SessionProvider } from 'next-auth/react'
+import { SessionProvider } from '@/components/auth-session-provider'
 import { auth } from "@/app/auth"
 
 export const viewport: Viewport = {
