@@ -24,6 +24,7 @@ import { Edit, MoreHorizontal, Trash, Eye, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { formatDistanceToNow } from 'date-fns';
+import { DeleteUserButton } from "@/app/admin/users/delete-user-button";
 
 interface UsersTableProps {
   searchQuery?: string;
@@ -207,7 +208,10 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
                             <span className="sr-only">Open menu</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => {
+                          // Prevent auto focus which can cause unwanted close
+                          e.preventDefault();
+                        }}>
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem>
                             <Link href={`/admin/users/${user.id}`} className="flex items-center w-full">
@@ -220,9 +224,15 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
                             Edit User
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash className="mr-2 size-4" />
-                            Delete User
+                          <DropdownMenuItem onClick={(e) => {
+                            // Prevent the dropdown from closing when clicking the delete item
+                            e.preventDefault();
+                          }}>
+                            <DeleteUserButton 
+                              userId={user.id} 
+                              email={user.email} 
+                              variant="menuItem" 
+                            />
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
