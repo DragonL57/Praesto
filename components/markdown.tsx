@@ -39,6 +39,14 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Function to escape dollar signs used for currency
+const escapeCurrencyDollarSigns = (text: string): string => {
+  // This regex looks for dollar signs followed by digits (typical for currency)
+  // The regex uses negative lookbehind (?<!\$) to avoid matching double dollar signs ($$) which are used for block math
+  // Negative lookahead (?!\$) ensures we don't match the first dollar sign in $$
+  return text.replace(/(?<!\$)\$(?!\$)(\d+)/g, '\\$$1');
+};
+
 // Simplified component using react-markdown library
 const NonMemoizedMarkdown = ({
   children,
@@ -51,6 +59,9 @@ const NonMemoizedMarkdown = ({
   if (!children || children.trim() === '') {
     return null;
   }
+
+  // Preprocess the content to escape dollar signs used for currency
+  const processedContent = escapeCurrencyDollarSigns(children);
 
   return (
     <>
@@ -334,7 +345,7 @@ const NonMemoizedMarkdown = ({
           },
         }}
       >
-        {children}
+        {processedContent}
       </ReactMarkdown>
 
       {/* Image Preview Modal */}
