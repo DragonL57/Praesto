@@ -29,6 +29,14 @@ import {
   type Chat as ActualDbChat,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
+import {
+  createCachedFunction,
+  getUserCacheTag,
+  getChatCacheTag,
+  getMessageCacheTag,
+  getDocumentCacheTag,
+  getVoteCacheTag
+} from '../cache';
 
 export type User = ActualDbUser;
 export type Chat = ActualDbChat;
@@ -37,21 +45,137 @@ export type Chat = ActualDbChat;
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
-export async function getUser(email: string): Promise<Array<User>> {
-  try {
-    return await db.select().from(user).where(eq(user.email, email));
-  } catch (error) {
-    console.error('Failed to get user from database');
-    throw error;
-  }
-}
-
-export async function getUserById(id: string): Promise<User | null> {
+// Original functions
+async function _getUserById(id: string): Promise<User | null> {
   try {
     const users = await db.select().from(user).where(eq(user.id, id));
     return users.length > 0 ? users[0] : null;
   } catch (error) {
     console.error('Failed to get user by ID from database');
+    throw error;
+  }
+}
+
+async function _getChatById({ id }: { id: string }): Promise<Chat> {
+  try {
+    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+    return selectedChat;
+  } catch (error) {
+    console.error('Failed to get chat by id from database');
+    throw error;
+  }
+}
+
+async function _getMessagesByChatId({ id }: { id: string }): Promise<DBMessage[]> {
+  try {
+    return await db
+      .select()
+      .from(message)
+      .where(eq(message.chatId, id))
+      .orderBy(asc(message.createdAt));
+  } catch (error) {
+    console.error('Failed to get messages by chat id from database', error);
+    throw error;
+  }
+}
+
+async function _getVotesByChatId({ id }: { id: string }) {
+  try {
+    return await db.select().from(vote).where(eq(vote.chatId, id));
+  } catch (error) {
+    console.error('Failed to get votes by chat id from database');
+    throw error;
+  }
+}
+
+async function _getDocumentById({ id }: { id: string }) {
+  try {
+    const [selectedDocument] = await db
+      .select()
+      .from(document)
+      .where(eq(document.id, id))
+      .orderBy(desc(document.createdAt));
+
+    return selectedDocument;
+  } catch (error) {
+    console.error('Failed to get document by id from database');
+    throw error;
+  }
+}
+
+// Initialize cached functions
+// We need to call these immediately to set up the cache
+let getUserById: (id: string) => Promise<User | null>;
+let getChatById: ({ id }: { id: string }) => Promise<Chat>;
+let getMessagesByChatId: ({ id }: { id: string }) => Promise<DBMessage[]>;
+let getVotesByChatId: ({ id }: { id: string }) => Promise<{ chatId: string; messageId: string; isUpvoted: boolean; }[]>;
+let getDocumentById: ({ id }: { id: string }) => Promise<{ id: string; createdAt: Date; title: string; content: string | null; kind: ArtifactKind; userId: string; }>;
+
+// Setup cache functions
+(async () => {
+  const userTag = await getUserCacheTag();
+  const chatTag = await getChatCacheTag();
+  const messageTag = await getMessageCacheTag();
+  const documentTag = await getDocumentCacheTag();
+  const voteTag = await getVoteCacheTag();
+
+  getUserById = await createCachedFunction<[string], User | null>(
+    _getUserById,
+    {
+      revalidate: 300, // 5 minutes
+      tags: [userTag]
+    }
+  );
+
+  getChatById = await createCachedFunction<[{ id: string }], Chat>(
+    _getChatById,
+    {
+      revalidate: 120, // 2 minutes
+      tags: [chatTag]
+    }
+  );
+
+  getMessagesByChatId = await createCachedFunction<[{ id: string }], DBMessage[]>(
+    _getMessagesByChatId,
+    {
+      revalidate: 60, // 1 minute
+      tags: [messageTag, chatTag]
+    }
+  );
+
+  getVotesByChatId = await createCachedFunction<
+    [{ id: string }],
+    { chatId: string; messageId: string; isUpvoted: boolean; }[]
+  >(
+    _getVotesByChatId,
+    {
+      revalidate: 300, // 5 minutes
+      tags: [voteTag, chatTag]
+    }
+  );
+
+  getDocumentById = await createCachedFunction<
+    [{ id: string }],
+    { id: string; createdAt: Date; title: string; content: string | null; kind: ArtifactKind; userId: string; }
+  >(
+    _getDocumentById,
+    {
+      revalidate: 180, // 3 minutes
+      tags: [documentTag]
+    }
+  );
+})();
+
+// Export these functions directly
+export { getUserById, getChatById, getMessagesByChatId, getVotesByChatId, getDocumentById };
+
+// The rest of the file remains unchanged...
+
+export async function getUser(email: string): Promise<Array<User>> {
+  try {
+    return await db.select().from(user).where(eq(user.email, email));
+  } catch (error) {
+    console.error('Failed to get user from database');
     throw error;
   }
 }
@@ -254,13 +378,19 @@ export async function saveChat({
 }) {
   try {
     const now = new Date();
-    return await db.insert(chat).values({
+    const result = await db.insert(chat).values({
       id,
       createdAt: now,
       updatedAt: now,
       userId,
       title,
     });
+
+    // Invalidate relevant caches when a new chat is created
+    const { revalidateTag } = await import('next/cache');
+    await revalidateTag(await getChatCacheTag());
+
+    return result;
   } catch (error) {
     console.error('Failed to save chat in database');
     throw error;
@@ -271,8 +401,17 @@ export async function deleteChatById({ id }: { id: string }) {
   try {
     await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
+    const result = await db.delete(chat).where(eq(chat.id, id));
 
-    return await db.delete(chat).where(eq(chat.id, id));
+    // Invalidate relevant caches when a chat is deleted
+    const { revalidateTag } = await import('next/cache');
+    await Promise.all([
+      revalidateTag(await getChatCacheTag()),
+      revalidateTag(await getMessageCacheTag()),
+      revalidateTag(await getVoteCacheTag())
+    ]);
+
+    return result;
   } catch (error) {
     console.error('Failed to delete chat by id from database');
     throw error;
@@ -347,38 +486,23 @@ export async function getChatsByUserId({
   }
 }
 
-export async function getChatById({ id }: { id: string }) {
-  try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
-    return selectedChat;
-  } catch (error) {
-    console.error('Failed to get chat by id from database');
-    throw error;
-  }
-}
-
 export async function saveMessages({
   messages,
 }: {
   messages: Array<DBMessage>;
 }) {
   try {
-    return await db.insert(message).values(messages);
+    const result = await db.insert(message).values(messages);
+
+    // If messages are added to a chat, invalidate that chat's messages cache
+    if (messages.length > 0) {
+      const { revalidateTag } = await import('next/cache');
+      await revalidateTag(await getMessageCacheTag());
+    }
+
+    return result;
   } catch (error) {
     console.error('Failed to save messages in database', error);
-    throw error;
-  }
-}
-
-export async function getMessagesByChatId({ id }: { id: string }) {
-  try {
-    return await db
-      .select()
-      .from(message)
-      .where(eq(message.chatId, id))
-      .orderBy(asc(message.createdAt));
-  } catch (error) {
-    console.error('Failed to get messages by chat id from database', error);
     throw error;
   }
 }
@@ -398,28 +522,27 @@ export async function voteMessage({
       .from(vote)
       .where(and(eq(vote.messageId, messageId)));
 
+    let result;
     if (existingVote) {
-      return await db
+      result = await db
         .update(vote)
         .set({ isUpvoted: type === 'up' })
         .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+    } else {
+      result = await db.insert(vote).values({
+        chatId,
+        messageId,
+        isUpvoted: type === 'up',
+      });
     }
-    return await db.insert(vote).values({
-      chatId,
-      messageId,
-      isUpvoted: type === 'up',
-    });
+
+    // Invalidate vote cache when a vote is added or updated
+    const { revalidateTag } = await import('next/cache');
+    await revalidateTag(await getVoteCacheTag());
+
+    return result;
   } catch (error) {
     console.error('Failed to upvote message in database', error);
-    throw error;
-  }
-}
-
-export async function getVotesByChatId({ id }: { id: string }) {
-  try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
-  } catch (error) {
-    console.error('Failed to get votes by chat id from database');
     throw error;
   }
 }
@@ -438,7 +561,7 @@ export async function saveDocument({
   userId: string;
 }) {
   try {
-    return await db
+    const result = await db
       .insert(document)
       .values({
         id,
@@ -449,38 +572,14 @@ export async function saveDocument({
         createdAt: new Date(),
       })
       .returning();
+
+    // Invalidate document cache when a new document is created
+    const { revalidateTag } = await import('next/cache');
+    await revalidateTag(await getDocumentCacheTag());
+
+    return result;
   } catch (error) {
     console.error('Failed to save document in database');
-    throw error;
-  }
-}
-
-export async function getDocumentsById({ id }: { id: string }) {
-  try {
-    const documents = await db
-      .select()
-      .from(document)
-      .where(eq(document.id, id))
-      .orderBy(asc(document.createdAt));
-
-    return documents;
-  } catch (error) {
-    console.error('Failed to get document by id from database');
-    throw error;
-  }
-}
-
-export async function getDocumentById({ id }: { id: string }) {
-  try {
-    const [selectedDocument] = await db
-      .select()
-      .from(document)
-      .where(eq(document.id, id))
-      .orderBy(desc(document.createdAt));
-
-    return selectedDocument;
-  } catch (error) {
-    console.error('Failed to get document by id from database');
     throw error;
   }
 }
@@ -600,7 +699,13 @@ export async function updateChatVisiblityById({
   visibility: 'private' | 'public';
 }) {
   try {
-    return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
+    const result = await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
+
+    // Invalidate chat cache when visibility is updated
+    const { revalidateTag } = await import('next/cache');
+    await revalidateTag(await getChatCacheTag());
+
+    return result;
   } catch (error) {
     console.error('Failed to update chat visibility in database');
     throw error;
@@ -615,7 +720,13 @@ export async function updateChatTitleById({
   title: string;
 }) {
   try {
-    return await db.update(chat).set({ title }).where(eq(chat.id, chatId));
+    const result = await db.update(chat).set({ title }).where(eq(chat.id, chatId));
+
+    // Invalidate chat cache when title is updated
+    const { revalidateTag } = await import('next/cache');
+    await revalidateTag(await getChatCacheTag());
+
+    return result;
   } catch (error) {
     console.error('Failed to update chat title in database');
     throw error;

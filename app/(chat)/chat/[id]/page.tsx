@@ -8,7 +8,7 @@ import type { Metadata, ResolvingMetadata } from 'next';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
-import type { DBMessage } from '@/lib/db/schema';
+import type { DBMessage, Chat as ChatType } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
 import { PageTransition } from '@/components/ui/page-transition';
@@ -35,7 +35,7 @@ export async function generateMetadata(
   const chatId = params.id;
 
   // Fetch basic chat info for metadata
-  const chat = await getChatById({ id: chatId }).catch(() => null);
+  const chat = await getChatById({ id: chatId }).catch(() => null) as ChatType | null;
   
   // Get parent metadata for defaults
   const parentMetadata = await parent;
@@ -84,9 +84,9 @@ export default async function Page(
   
   // Parallel data fetching for better performance
   const [chat, session, messagesFromDb, cookieStore] = await Promise.all([
-    getChatById({ id: chatId }).catch(() => null),
+    getChatById({ id: chatId }).catch(() => null) as Promise<ChatType | null>,
     auth(),
-    getMessagesByChatId({ id: chatId }).catch(() => []),
+    getMessagesByChatId({ id: chatId }).catch(() => []) as Promise<DBMessage[]>,
     cookies()
   ]);
 

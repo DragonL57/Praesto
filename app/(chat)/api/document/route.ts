@@ -2,7 +2,7 @@
 import { auth } from '@/app/auth';
 import type { ArtifactKind } from '@/components/artifact';
 // eslint-disable-next-line import/no-unresolved
-import { deleteDocumentsByIdAfterTimestamp, getDocumentsById, saveDocument, } from '@/lib/db/queries';
+import { deleteDocumentsByIdAfterTimestamp, getDocumentById, saveDocument, } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,9 +18,7 @@ export async function GET(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const documents = await getDocumentsById({ id });
-
-  const [document] = documents;
+  const document = await getDocumentById({ id });
 
   if (!document) {
     return new Response('Not found', { status: 404 });
@@ -30,7 +28,7 @@ export async function GET(request: Request) {
     return new Response('Forbidden', { status: 403 });
   }
 
-  return Response.json(documents, { status: 200 });
+  return Response.json([document], { status: 200 });
 }
 
 export async function POST(request: Request) {
@@ -54,12 +52,10 @@ export async function POST(request: Request) {
   }: { content: string; title: string; kind: ArtifactKind } =
     await request.json();
 
-  const documents = await getDocumentsById({ id });
+  const existingDocument = await getDocumentById({ id });
 
-  if (documents.length > 0) {
-    const [document] = documents;
-
-    if (document.userId !== session.user.id) {
+  if (existingDocument) {
+    if (existingDocument.userId !== session.user.id) {
       return new Response('Forbidden', { status: 403 });
     }
   }
@@ -94,9 +90,11 @@ export async function DELETE(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const documents = await getDocumentsById({ id });
+  const document = await getDocumentById({ id });
 
-  const [document] = documents;
+  if (!document) {
+    return new Response('Not found', { status: 404 });
+  }
 
   if (document.userId !== session.user.id) {
     return new Response('Unauthorized', { status: 401 });
