@@ -19,7 +19,7 @@ function pathMatchesPatterns(path: string, patterns: string[]): boolean {
 // AI API endpoints that should bypass most middleware processing
 const AI_API_ENDPOINTS = [
   '/api/chat',
-  '/api/(chat)/api/chat',
+  '/api/vote',
   '/api/get_transcript',
   '/api/document',
 ];
@@ -91,6 +91,7 @@ export const config = {
 
     // Include AI API endpoints to apply optimized middleware
     '/api/chat',
+    '/api/vote',
     '/api/get_transcript',
     '/api/document',
 

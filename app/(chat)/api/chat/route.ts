@@ -70,15 +70,63 @@ export async function POST(request: Request) {
       return new Response('No user message found', { status: 400 });
     }
 
-    const chat = await getChatById({ id });
+    // Try to get the chat, handling possible race conditions with retries
+    let chat = null;
+    let retries = 0;
+    const MAX_RETRIES = 3;
 
+    while (retries < MAX_RETRIES) {
+      try {
+        chat = await getChatById({ id });
+
+        if (!chat) {
+          try {
+            const title = await generateTitleFromUserMessage({
+              message: userMessage,
+            });
+
+            await saveChat({ id, userId: session.user.id, title });
+            // If we successfully created the chat, break the retry loop
+            break;
+          } catch (error) {
+            if (error instanceof Error &&
+              error.message.includes('duplicate key value violates unique constraint')) {
+              // If it's a duplicate key error, another request likely created the chat first
+              // Wait briefly and retry getting the chat
+              await new Promise(resolve => setTimeout(resolve, 100));
+              retries++;
+              continue;
+            }
+            // For other errors, rethrow
+            throw error;
+          }
+        } else {
+          // Check authorization
+          if (chat.userId !== session.user.id) {
+            return new Response('Unauthorized', { status: 401 });
+          }
+          // Chat exists and user is authorized, break the loop
+          break;
+        }
+      } catch (error) {
+        // Handle any errors in getChatById
+        console.error('[Chat creation error]', error);
+        retries++;
+        // If we've tried too many times, throw the error
+        if (retries >= MAX_RETRIES) {
+          throw error;
+        }
+        // Wait briefly before retrying
+        await new Promise(resolve => setTimeout(resolve, 100 * retries));
+      }
+    }
+
+    // Final check - get the chat one more time if needed
     if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message: userMessage,
-      });
-
-      await saveChat({ id, userId: session.user.id, title });
-    } else {
+      chat = await getChatById({ id });
+      if (!chat) {
+        return new Response('Failed to create or retrieve chat', { status: 500 });
+      }
       if (chat.userId !== session.user.id) {
         return new Response('Unauthorized', { status: 401 });
       }
@@ -185,8 +233,8 @@ export async function POST(request: Request) {
 
                 // Update the chat timestamp to move it to the top of the sidebar
                 await updateChatTimestamp({ id });
-              } catch {
-                console.error('Failed to save chat');
+              } catch (error) {
+                console.error('Failed to save chat', error);
               }
             }
           },
