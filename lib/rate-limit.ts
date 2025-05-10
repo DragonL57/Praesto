@@ -5,6 +5,9 @@ import type { NextRequest } from 'next/server';
 // In production, you'd want to use Redis or another distributed store
 const rateLimitStore = new Map<string, { count: number, timestamp: number }>();
 
+// Cache for quick lookups of whether a path should be rate limited
+const pathRateLimitCache = new Map<string, boolean>();
+
 // Clean up old entries every 30 minutes
 const CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes
 setInterval(() => {
@@ -16,14 +19,44 @@ setInterval(() => {
     }
 }, CLEANUP_INTERVAL);
 
+// AI API paths that should have less restrictive rate limiting
+const AI_API_PATHS = [
+    '/api/chat',
+    '/api/get_transcript',
+    '/api/document'
+];
+
+// Quick check if a path is an AI API path (cached for performance)
+function isAiApiPath(path: string): boolean {
+    if (pathRateLimitCache.has(path)) {
+        return pathRateLimitCache.get(path)!;
+    }
+
+    const isAiPath = AI_API_PATHS.some(apiPath =>
+        path === apiPath || path.startsWith(`${apiPath}/`)
+    );
+
+    pathRateLimitCache.set(path, isAiPath);
+    return isAiPath;
+}
+
 // Rate limit middleware for auth endpoints
 export function rateLimit(req: NextRequest) {
+    const path = req.nextUrl.pathname;
+    const method = req.method;
+
+    // Skip rate limiting for AI API GET requests
+    if (isAiApiPath(path) && method === 'GET') {
+        return NextResponse.next();
+    }
+
+    // Higher limits for AI API POST requests (chat completions, etc.)
+    const isAiApiPost = isAiApiPath(path) && method === 'POST';
+
     // Get client IP from forwarded header or use a fallback
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ||
         req.headers.get('x-real-ip') ||
         'unknown';
-    const path = req.nextUrl.pathname;
-    const method = req.method;
 
     // Only apply strict rate limiting to auth actions (POST requests)
     // For login/register page views, apply a much higher limit
@@ -33,7 +66,7 @@ export function rateLimit(req: NextRequest) {
     );
 
     // Don't rate limit normal page views
-    if (!isAuthAction && method === 'GET') {
+    if (!isAuthAction && !isAiApiPost && method === 'GET') {
         return NextResponse.next();
     }
 
@@ -43,7 +76,10 @@ export function rateLimit(req: NextRequest) {
     // Different limits based on the endpoint and method
     let maxRequests = 20; // Default higher limit for most requests
 
-    if (isAuthAction) {
+    if (isAiApiPost) {
+        // Higher limits for AI API endpoints
+        maxRequests = 100; // 100 AI API calls per 15 minutes
+    } else if (isAuthAction) {
         // Stricter limits for auth actions
         if (path.includes('forgot-password') && method === 'POST') {
             maxRequests = 5; // 5 password reset attempts per 15 minutes

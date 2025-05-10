@@ -2,7 +2,7 @@
 
 import type { Attachment, Message as UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useLocalStorage } from 'usehooks-ts';
 import { useModelStorage } from '@/hooks/use-model-storage';
@@ -18,6 +18,9 @@ import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { unstable_serialize } from 'swr/infinite';
 import { getChatHistoryPaginationKey } from './sidebar-history';
+
+// Optimize renders by memoizing input component
+const MemoizedMultimodalInput = memo(MultimodalInput);
 
 export function Chat({
   id,
@@ -47,6 +50,14 @@ export function Chat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Memoize static values to prevent unnecessary re-renders
+  const userTimeContext = useMemo(() => ({
+    date: new Date().toDateString(),
+    time: new Date().toTimeString().split(' ')[0],
+    dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  }), []);
+
   const {
     messages,
     setMessages,
@@ -61,14 +72,9 @@ export function Chat({
     id,
     body: { 
       id, 
-      selectedChatModel: currentModel, // Use our tracked model instead of the prop
-      personaId: selectedPersonaId, // Send the selected persona ID to the API
-      userTimeContext: {
-        date: new Date().toDateString(),
-        time: new Date().toTimeString().split(' ')[0],
-        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }
+      selectedChatModel: currentModel,
+      personaId: selectedPersonaId,
+      userTimeContext
     },
     initialMessages,
     experimental_throttle: 100,
@@ -90,55 +96,43 @@ export function Chat({
     }
   }, [selectedChatModel, currentModel, setCurrentModel]);
 
-  // Handle model changes similar to persona changes
+  // Combine model and persona change handlers into one optimized useEffect
   useEffect(() => {
-    // Only reload if model changed AND we have messages AND we're not currently generating
-    if (currentModel !== prevModel && messages.length > 0 && status === 'ready') {
-      // Save the new model ID to prevent duplicate reloads
-      setPrevModel(currentModel);
-      
-      // Wait a bit before reloading to avoid race conditions
+    // Only take action if something changed and we're not already processing
+    const modelChanged = currentModel !== prevModel;
+    const personaChanged = selectedPersonaId !== prevPersonaId;
+    
+    if (!modelChanged && !personaChanged) return;
+    
+    // Always update the tracking variables to prevent redundant processing
+    if (modelChanged) setPrevModel(currentModel);
+    if (personaChanged) setPrevPersonaId(selectedPersonaId);
+    
+    // Only reload if we have messages and we're in ready state
+    if (messages.length > 0 && status === 'ready') {
       const timeoutId = setTimeout(() => {
         reload();
       }, 300);
       
       return () => clearTimeout(timeoutId);
-    } else if (currentModel !== prevModel) {
-      // Update the model without reloading if we don't have messages yet or are busy
-      setPrevModel(currentModel);
     }
-  }, [currentModel, prevModel, reload, messages.length, status]);
+  }, [currentModel, prevModel, selectedPersonaId, prevPersonaId, reload, messages.length, status]);
 
-  // Much safer approach to handling persona changes - only reload when necessary
-  // and only when the chat is idle (status === 'ready')
-  useEffect(() => {
-    // Only reload if persona changed AND we have messages AND we're not currently in the middle of generating
-    if (selectedPersonaId !== prevPersonaId && messages.length > 0 && status === 'ready') {
-      // Save the new persona ID to prevent duplicate reloads
-      setPrevPersonaId(selectedPersonaId);
-      
-      // Wait a bit before reloading to avoid race conditions
-      const timeoutId = setTimeout(() => {
-        reload();
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
-    } else if (selectedPersonaId !== prevPersonaId) {
-      // Update the ID without reloading if we don't have messages yet or are busy
-      setPrevPersonaId(selectedPersonaId);
-    }
-  }, [selectedPersonaId, prevPersonaId, reload, messages.length, status]);
-
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
-    fetcher,
-  );
+  // Only fetch votes when really needed - memoize the SWR key
+  const votesKey = useMemo(() => 
+    messages.length >= 2 ? `/api/vote?chatId=${id}` : null
+  , [messages.length, id]);
+  
+  const { data: votes } = useSWR<Array<Vote>>(votesKey, fetcher, {
+    revalidateOnFocus: false, // Prevent unnecessary fetches when window regains focus
+    revalidateIfStale: false
+  });
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
   return (
-    <>
+    <div className="contents">
       <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
         <ChatHeader
           chatId={id}
@@ -163,10 +157,9 @@ export function Chat({
         </div>
 
         <div className="shrink-0">
-          <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
-            {/* Input component */}
-            {!isReadonly && (
-              <MultimodalInput
+          {!isReadonly && (
+            <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
+              <MemoizedMultimodalInput
                 chatId={id}
                 input={input}
                 setInput={setInput}
@@ -181,30 +174,33 @@ export function Chat({
                 messagesContainerRef={messagesContainerRef}
                 messagesEndRef={messagesEndRef}
               />
-            )}
-          </form>
+            </form>
+          )}
           <div className="text-center text-xs text-white-500 mt-0">
             UniTaskAI can make mistake, double-check the info
           </div>
         </div>
       </div>
 
-      <Artifact
-        chatId={id}
-        input={input}
-        setInput={setInput}
-        handleSubmit={handleSubmit}
-        status={status}
-        stop={stop}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        append={append}
-        messages={messages}
-        setMessages={setMessages}
-        reload={reload}
-        votes={votes}
-        isReadonly={isReadonly}
-      />
-    </>
+      {/* Only render the Artifact component when it's actually needed */}
+      {isArtifactVisible && (
+        <Artifact
+          chatId={id}
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          status={status}
+          stop={stop}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          append={append}
+          messages={messages}
+          setMessages={setMessages}
+          reload={reload}
+          votes={votes}
+          isReadonly={isReadonly}
+        />
+      )}
+    </div>
   );
 }

@@ -16,32 +16,36 @@ type PageTransitionProps = {
 };
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  // Check for browser environment to avoid SSR issues
-  const isBrowser = typeof window !== 'undefined';
-  const [isVisible, setIsVisible] = useState(isBrowser ? false : true);
+  const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // This only runs on client-side
-    if (isBrowser) {
-      // Set visible after component mounts for the transition to trigger
+    // Set mounted to true after component mounts
+    setMounted(true);
+    
+    // Set visible on the next frame for the transition
+    const timer = setTimeout(() => {
       setIsVisible(true);
-    }
+    }, 10);
+    
     return () => {
-      if (isBrowser) {
-        setIsVisible(false);
-      }
+      clearTimeout(timer);
+      setIsVisible(false);
     };
-  }, [isBrowser]);
+  }, []);
 
-  // No transition on server-side rendering
-  if (!isBrowser) {
+  // SSR render - must match client's initial render
+  if (!mounted) {
     return (
-      <div className={cn("w-full h-full", className)}>
-        {children}
+      <div className="overflow-hidden w-full h-full">
+        <div className="w-full h-full transition-opacity duration-200 ease-out opacity-0">
+          {children}
+        </div>
       </div>
     );
   }
 
+  // Client-side render with transition
   return (
     <div className="overflow-hidden w-full h-full">
       <div
