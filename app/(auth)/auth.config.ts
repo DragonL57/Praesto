@@ -22,9 +22,14 @@ export const authConfig = {
       const isOnLogin = nextUrl.pathname.startsWith('/login');
       const isSharedChat = nextUrl.pathname.match(/^\/chat\/[a-zA-Z0-9-]+$/); // Match shared chat URL pattern
 
-      // Allow access to landing page without authentication
+      // Handle root path:
+      // - If logged in, redirect to /chat
+      // - If not logged in, allow access (app/page.tsx will then redirect to /login)
       if (isRootPath) {
-        return true;
+        if (isLoggedIn) {
+          return Response.redirect(new URL('/chat', nextUrl as unknown as URL));
+        }
+        return true; // Allow access for non-logged-in users (app/page.tsx handles /login redirect)
       }
 
       // Redirect authenticated users from login/register pages to /chat
