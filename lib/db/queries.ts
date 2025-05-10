@@ -375,24 +375,27 @@ export async function saveChat({
   id: string;
   userId: string;
   title: string;
-}) {
+}): Promise<Chat> {
   try {
     const now = new Date();
-    const result = await db.insert(chat).values({
+    const newChats = await db.insert(chat).values({
       id,
       createdAt: now,
       updatedAt: now,
       userId,
       title,
-    });
+    }).returning();
 
     // Invalidate relevant caches when a new chat is created
     const { revalidateTag } = await import('next/cache');
     await revalidateTag(await getChatCacheTag());
 
-    return result;
+    if (newChats.length === 0) {
+      throw new Error('Failed to save chat or retrieve it after saving.');
+    }
+    return newChats[0];
   } catch (error) {
-    console.error('Failed to save chat in database');
+    console.error('Failed to save chat in database', error);
     throw error;
   }
 }

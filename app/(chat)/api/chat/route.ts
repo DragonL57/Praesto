@@ -85,8 +85,7 @@ export async function POST(request: Request) {
               message: userMessage,
             });
 
-            await saveChat({ id, userId: session.user.id, title });
-            // If we successfully created the chat, break the retry loop
+            chat = await saveChat({ id, userId: session.user.id, title });
             break;
           } catch (error) {
             if (error instanceof Error &&
