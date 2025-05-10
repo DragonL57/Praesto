@@ -199,6 +199,11 @@ export async function POST(request: Request) {
               dataStream,
             }),
           },
+          onError: (error) => {
+            console.error('[STREAMTEXT ERROR]', error);
+            // Optionally, if you want to ensure the client also sees an error propagated
+            // dataStream.closeWithError(error); 
+          },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {
