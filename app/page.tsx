@@ -1,17 +1,17 @@
-"use client"
+import { redirect } from "next/navigation";
+// eslint-disable-next-line import/no-unresolved
+import { auth } from "@/app/auth";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+export default async function LandingPage() {
+  const session = await auth();
 
-export default function LandingPage() {
-  const router = useRouter()
+  if (session?.user) {
+    redirect("/chat");
+  } else {
+    redirect("/login");
+  }
 
-  useEffect(() => {
-    // Simple redirect to the login page
-    // The auth middleware will handle redirecting authenticated users to /chat
-    router.push("/login")
-  }, [router])
-
-  // Return an empty div while redirecting
-  return <div className="min-h-dvh"></div>
+  // This part will not be reached due to the redirects,
+  // but returning null or an empty fragment is good practice for async components.
+  return null;
 }
