@@ -192,7 +192,7 @@ const PurePreviewMessage = ({
           const nextToolName = nextToolPart.toolInvocation.toolName;
           if ((currentToolName === 'webSearch' && (nextToolName === 'readWebsiteContent' || nextToolName === 'webSearch')) ||
               (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent') ||
-              (currentToolName === 'think' && (nextToolName === 'webSearch' || nextToolName === 'readWebsiteContent')) ||
+              (currentToolName === 'think' && (nextToolName === 'webSearch' || nextToolName === 'readWebsiteContent' || nextToolName === 'think')) ||
               ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && nextToolName === 'think')) {
             part.connectNext = true;
           }
@@ -223,7 +223,7 @@ const PurePreviewMessage = ({
               (currentToolName === 'webSearch' && 
               (prevToolName === 'webSearch')) ||
               (currentToolName === 'think' && 
-              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
+              (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent' || prevToolName === 'think')) ||
               ((currentToolName === 'webSearch' || currentToolName === 'readWebsiteContent') && 
               prevToolName === 'think')) {
             part.connectPrevious = true;
