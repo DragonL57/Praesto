@@ -99,6 +99,7 @@
     "next-auth": "5.0.0-beta.27",
     "next-themes": "latest",
     "nodemailer": "^6.9.9",
+    "officeparser": "^5.1.1",
     "orderedmap": "^2.1.1",
     "papaparse": "^5.5.2",
     "pdfjs-dist": "^5.1.91",

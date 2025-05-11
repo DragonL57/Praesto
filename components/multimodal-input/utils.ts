@@ -64,56 +64,7 @@ export const uploadFile = async (file: File) => {
     formData.append('file', file);
 
     try {
-        // Determine if the file needs conversion to PDF
-        const needsPdfConversion = (file: File) => {
-            const documentTypes = [
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-                'application/msword', // doc
-                'application/vnd.ms-word',
-                'text/plain',
-                'text/csv',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-                'application/vnd.ms-excel', // xls
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
-                'application/vnd.ms-powerpoint' // ppt
-            ];
-
-            // Check by file extension too
-            const ext = file.name.split('.').pop()?.toLowerCase();
-            const documentExtensions = ['docx', 'doc', 'txt', 'csv', 'xlsx', 'xls', 'pptx', 'ppt'];
-
-            return documentTypes.includes(file.type) ||
-                (ext && documentExtensions.includes(ext));
-        };
-
-        // Check if we need to convert this file to PDF (not an image or already PDF)
-        if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && needsPdfConversion(file)) {
-            // Send to our PDF conversion endpoint silently without toast notifications
-            const pdfResponse = await fetch('/api/files/convert-to-pdf', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (pdfResponse.ok) {
-                const data = await pdfResponse.json();
-
-                return {
-                    url: data.url,
-                    name: data.pathname,
-                    contentType: data.contentType,
-                    originalFile: {
-                        name: file.name,
-                        type: file.type
-                    }
-                };
-            } else {
-                const error = await pdfResponse.json();
-                console.error('Failed to convert document:', error);
-                return undefined;
-            }
-        }
-
-        // For images and PDFs, use the standard upload endpoint
+        // All files now go to the main upload endpoint
         const response = await fetch('/api/files/upload', {
             method: 'POST',
             body: formData,
@@ -121,19 +72,25 @@ export const uploadFile = async (file: File) => {
 
         if (response.ok) {
             const data = await response.json();
-            const { url, pathname, contentType } = data;
-
+            // The /api/files/upload endpoint now returns a richer object
+            // including url, pathname, contentType, size, and originalFilename.
+            // We'll map this to the Attachment-like structure the rest of the client expects.
+            // The 'name' property in Attachment is often used for the blob's pathname.
             return {
-                url,
-                name: pathname,
-                contentType: contentType,
+                url: data.url,
+                name: data.pathname, // Or data.originalFilename if preferred for display name logic elsewhere
+                contentType: data.contentType,
+                size: data.size,
+                originalFilename: data.originalFilename,
             };
         }
-        const { error } = await response.json();
-        console.error(error);
+
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed with no specific error message.' }));
+        console.error('File upload failed:', errorData.error || response.statusText);
         return undefined;
+
     } catch (uploadError) {
-        console.error('Error uploading file:', uploadError);
+        console.error('Error during file upload process:', uploadError);
         return undefined;
     }
 };

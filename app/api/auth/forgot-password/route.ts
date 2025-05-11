@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         try {
             const clonedRequest = request.clone();
             requestBodyForError = await clonedRequest.text();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
             requestBodyForError = 'Failed to clone or read request body for error logging.';
         }

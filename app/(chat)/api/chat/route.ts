@@ -35,6 +35,20 @@ import { isProductionEnvironment } from '@/lib/constants';
 // eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
 
+// Imports for officeparser and file fetching
+import { parseOfficeAsync } from 'officeparser';
+import { Buffer } from 'buffer'; // Node.js Buffer
+// Assuming Vercel Blob client might be needed for fetching private blobs,
+// or a robust fetch for public URLs. For now, standard fetch.
+// import { head } from '@vercel/blob'; // To check existence/metadata if needed
+
+// --- Configuration for Extracted Text Formatting ---
+const ATTACHMENT_TEXT_HEADER_PREFIX = "\n\n--- Content from attachment:";
+const ATTACHMENT_TEXT_FOOTER = "---\n--- End of attachment ---";
+const ATTACHMENT_ERROR_NOTE_PREFIX = "\n\n--- System Note: An error occurred while trying to extract text content from attachment:";
+const ATTACHMENT_ERROR_NOTE_SUFFIX = ". The file might be corrupted, password-protected, or in an unsupported format. ---";
+// --- End of Configuration ---
+
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -70,6 +84,92 @@ export async function POST(request: Request) {
       return new Response('No user message found', { status: 400 });
     }
 
+    // Store a copy of the original user message parts for saving to DB
+    const originalUserMessageParts = userMessage.parts.map(part => ({ ...part }));
+
+    // --- TEXT EXTRACTION FROM ATTACHMENTS ---
+    let combinedUserTextAndAttachments = '';
+
+    // Get the original typed text from the user message parts
+    const originalUserTypedText = userMessage.parts
+      .filter(part => part.type === 'text')
+      .map(part => (part as { type: 'text'; text: string }).text)
+      .join('\n');
+
+    combinedUserTextAndAttachments = originalUserTypedText;
+
+    if (userMessage.experimental_attachments && userMessage.experimental_attachments.length > 0) {
+      for (const attachment of userMessage.experimental_attachments) {
+        if (attachment.url) {
+          try {
+            console.log(`Fetching attachment from URL: ${attachment.url}`);
+            const response = await fetch(attachment.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch file: ${response.statusText}`);
+            }
+            const fileArrayBuffer = await response.arrayBuffer();
+            const fileBuffer = Buffer.from(fileArrayBuffer);
+
+            console.log(`Parsing file: ${attachment.name || 'unknown file'} (${attachment.contentType})`);
+            const extractedText = await parseOfficeAsync(fileBuffer);
+
+            if (extractedText && extractedText.trim().length > 0) {
+              combinedUserTextAndAttachments += `${ATTACHMENT_TEXT_HEADER_PREFIX} ${attachment.name || 'file'} ---\n${extractedText.trim()}${ATTACHMENT_TEXT_FOOTER}`;
+              console.log(`Successfully extracted text from ${attachment.name || 'file'}. Length: ${extractedText.length}`);
+            } else {
+              // This case means parsing was successful, but no text content was found (e.g., an empty .txt file or a PDF with only images).
+              console.log(`No text extracted or text was empty for ${attachment.name || 'file'} (parsing successful).`);
+            }
+          } catch (error) {
+            console.error(`Error processing attachment ${attachment.name || attachment.url}:`, error);
+            // Add a notification to the combined text ONLY when an actual parsing error occurs.
+            combinedUserTextAndAttachments += `${ATTACHMENT_ERROR_NOTE_PREFIX} ${attachment.name || 'file'}${ATTACHMENT_ERROR_NOTE_SUFFIX}`;
+          }
+        }
+      }
+    }
+
+    // Update userMessage.parts to contain a single text part with the combined content.
+    // The attachments themselves are still part of userMessage.experimental_attachments for record-keeping or other UI purposes.
+    if (combinedUserTextAndAttachments !== originalUserTypedText) { // Only update if text was actually added from attachments
+      const nonTextParts = userMessage.parts.filter(part => part.type !== 'text');
+      userMessage.parts = [
+        ...nonTextParts,
+        { type: 'text', text: combinedUserTextAndAttachments }
+      ];
+      console.log('User message parts updated: non-text parts preserved, text consolidated with attachments.');
+      console.log('Final combined text for AI:', combinedUserTextAndAttachments);
+    } else {
+      // If no new text was added from attachments, userMessage.parts already contains the originalUserTypedText.
+      // No change needed to userMessage.parts in this specific text-consolidation step.
+      console.log('No new text from attachments. Original user message parts retained.');
+    }
+    // --- END OF TEXT EXTRACTION ---
+
+    // Prepare messages for streamText:
+    // 1. For the current userMessage, its .parts are already updated with combined text (if attachments were processed).
+    // 2. For ALL user messages in the history (including the current one),
+    //    strip experimental_attachments to avoid SDK errors.
+    const messagesForStreamText = messages.map(msg => {
+      let processedMsg = { ...msg }; // Start with a shallow copy
+
+      // If it's a user message, ensure experimental_attachments is undefined for streamText
+      if (processedMsg.role === 'user') {
+        processedMsg = {
+          ...processedMsg,
+          experimental_attachments: undefined,
+        };
+      }
+
+      // If this specific message is the most recent user message we just processed,
+      // ensure its parts are the ones we potentially modified with extracted text.
+      if (msg.id === userMessage.id) {
+        processedMsg.parts = userMessage.parts;
+      }
+
+      return processedMsg;
+    });
+
     const chat = await getChatById({ id });
 
     if (!chat) {
@@ -90,7 +190,7 @@ export async function POST(request: Request) {
           chatId: id,
           id: userMessage.id,
           role: 'user',
-          parts: userMessage.parts,
+          parts: originalUserMessageParts, // Use the original parts for saving
           attachments: userMessage.experimental_attachments ?? [],
           createdAt: new Date(),
         },
@@ -112,7 +212,7 @@ export async function POST(request: Request) {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
-          messages,
+          messages: messagesForStreamText, // Use the sanitized messages array
           maxSteps: 10,
           providerOptions: isFireworksQwenModel
             ? {

@@ -13,10 +13,9 @@ interface BlobWithFileName extends Blob {
 const FileSchema = z.object({
   file: z
     .instanceof(Blob)
-    .refine((file) => file.size <= 10 * 1024 * 1024, {
-      message: 'File size should be less than 10MB',
+    .refine((file) => file.size <= 25 * 1024 * 1024, {
+      message: 'File size should be less than 25MB',
     })
-    // Update to accept document file types with more permissive matching
     .refine(
       (file) => {
         // Logging the content type for debugging
@@ -28,38 +27,54 @@ const FileSchema = z.object({
           return parts.length > 1 ? parts.pop()?.toLowerCase() : '';
         };
 
-        // Get file name if available from formData
         const fileName = (file as BlobWithFileName).name || '';
         const extension = getExtensionFromName(fileName);
 
-        // Check if the content type is in our list of allowed types
-        const allowedTypes = [
-          // Images
+        // Allowed MIME types - focusing on officeparser and common image formats
+        const allowedMimeTypes = [
+          // officeparser supported
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+          'application/msword', // .doc (though officeparser might be better with .docx)
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+          'application/vnd.ms-powerpoint', // .ppt
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+          'application/vnd.ms-excel', // .xls
+          'application/vnd.oasis.opendocument.text', // .odt
+          'application/vnd.oasis.opendocument.spreadsheet', // .ods
+          'application/vnd.oasis.opendocument.presentation', // .odp
+          'text/plain', // .txt
+          'text/csv', // .csv
+          // Common image types (retained for general use, though not parsed for text by officeparser)
           'image/jpeg',
           'image/png',
           'image/gif',
-          // Documents
-          'application/pdf',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-          'application/msword', // doc
-          'application/vnd.ms-word',
-          'application/vnd.openxmlformats',
-          'text/plain',
-          'text/csv',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-          'application/vnd.ms-excel', // xls
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
-          'application/vnd.ms-powerpoint', // ppt
+          'image/webp',
         ];
 
-        // Also check by file extension for common office formats
-        const allowedExtensions = ['pdf', 'docx', 'doc', 'txt', 'csv', 'xlsx', 'xls', 'pptx', 'ppt'];
+        // Allowed extensions - for fallback and clarity
+        const allowedExtensions = [
+          'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'odt', 'ods', 'odp', 'txt', 'csv',
+          'jpg', 'jpeg', 'png', 'gif', 'webp',
+        ];
 
-        return allowedTypes.includes(file.type) ||
-          (extension && allowedExtensions.includes(extension));
+        // Check by MIME type first, then by extension as a fallback
+        if (allowedMimeTypes.includes(file.type)) {
+          return true;
+        }
+        if (extension && allowedExtensions.includes(extension)) {
+          // If MIME type was generic (e.g., application/octet-stream) but extension is known, allow it.
+          // This helps with files that might not have a precise MIME type from the client.
+          console.log(`Allowing file based on extension: ${extension} for file: ${fileName}`);
+          return true;
+        }
+        // Log rejection if neither matches
+        console.warn(`File type not supported: ${file.type}, extension: ${extension}, name: ${fileName}`);
+        return false;
       },
       {
-        message: 'Supported file types: Images (JPEG, PNG, GIF), Documents (PDF, DOCX, DOC, TXT, CSV, XLSX, XLS, PPTX, PPT)',
+        message:
+          'Supported file types: PDF, Word (docx, doc), PowerPoint (pptx, ppt), Excel (xlsx, xls), OpenDocument (odt, ods, odp), Text (txt, csv), Images (jpeg, png, gif, webp)',
       }
     ),
 });
@@ -83,13 +98,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    console.log('Uploaded file:', {
+    // Add original name to the Blob instance if not already present for schema validation
+    // This is a bit of a workaround because the schema validation might run on a Blob
+    // that doesn't have the .name property directly if it's not cast to File first.
+    // However, 'file' is already cast to 'File' above, which should have 'name'.
+    // For robustness in the schema, we ensure 'name' is available on the object passed to refine.
+    const fileForValidation = file as BlobWithFileName;
+    if (!fileForValidation.name && file.name) {
+      fileForValidation.name = file.name;
+    }
+
+    console.log('Uploaded file details:', {
       name: file.name,
       type: file.type,
       size: file.size
     });
 
-    const validatedFile = FileSchema.safeParse({ file });
+    const validatedFile = FileSchema.safeParse({ file: fileForValidation });
 
     if (!validatedFile.success) {
       const errorMessage = validatedFile.error.errors
@@ -104,16 +129,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Get filename from formData since Blob doesn't have name property
     const filename = file.name;
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
+      // Upload to Vercel Blob
+      const blobResult = await put(filename, fileBuffer, {
         access: 'public',
+        contentType: file.type,
       });
 
-      return NextResponse.json(data);
+      // Ensure the response includes all necessary fields: url, pathname, contentType, size
+      // The 'blobResult' from @vercel/blob put already contains:
+      // url, downloadUrl, pathname, contentType, contentDisposition
+      // We also want to include the original file size.
+      return NextResponse.json({
+        ...blobResult,
+        size: file.size,
+        originalFilename: file.name
+      });
     } catch (error) {
       console.error('Upload to blob storage failed:', error);
       return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
