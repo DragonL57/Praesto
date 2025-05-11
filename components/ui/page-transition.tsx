@@ -16,38 +16,26 @@ type PageTransitionProps = {
 };
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  // Check for browser environment to avoid SSR issues
-  const isBrowser = typeof window !== 'undefined';
-  const [isVisible, setIsVisible] = useState(isBrowser ? false : true);
+  const [startTransition, setStartTransition] = useState(false);
 
   useEffect(() => {
-    // This only runs on client-side
-    if (isBrowser) {
-      // Set visible after component mounts for the transition to trigger
-      setIsVisible(true);
-    }
-    return () => {
-      if (isBrowser) {
-        setIsVisible(false);
-      }
-    };
-  }, [isBrowser]);
+    // Set to true to start transition after initial mount
+    // Using requestAnimationFrame to ensure it happens after the browser has painted the initial state
+    const animationFrameId = requestAnimationFrame(() => {
+      setStartTransition(true);
+    });
+    return () => cancelAnimationFrame(animationFrameId);
+  }, []);
 
-  // No transition on server-side rendering
-  if (!isBrowser) {
-    return (
-      <div className={cn("w-full h-full", className)}>
-        {children}
-      </div>
-    );
-  }
-
+  // Always render the same DOM structure.
+  // The initial state (opacity-0) should be consistent between server and client.
+  // Then, useEffect will trigger startTransition to true, causing a fade-in.
   return (
     <div className="overflow-hidden w-full h-full">
       <div
         className={cn(
           'w-full h-full transition-opacity duration-200 ease-out',
-          isVisible ? 'opacity-100' : 'opacity-0',
+          startTransition ? 'opacity-100' : 'opacity-0', // Start with opacity-0, then transition to opacity-100
           className,
         )}
       >

@@ -39,15 +39,19 @@ export const config = {
     // Protect the main chat areas
     '/chat/:path*',
 
-    // Apply middleware logic to login/register 
+    // Apply middleware logic to login/register
     // to handle redirecting logged-in users away from them
     '/login',
     '/register',
 
-    // Use a single standardized auth route pattern 
+    // Explicitly include /api/chat for testing middleware's auth handling
+    '/api/chat/:path*',
+
+    // Use a single standardized auth route pattern for NextAuth's own APIs
     '/api/auth/:path*',
 
-    // Exclude other API routes from middleware to prevent conflicts
+    // Exclude other API routes from middleware to prevent conflicts (original logic for non-api)
+    // This rule might need to be adjusted if we want to protect more /api routes via middleware
     '/((?!api/).)*'
   ],
 };
