@@ -309,7 +309,7 @@ function PureMultimodalInput({
             </div>
 
             {/* Bottom toolbar with controls - LibreChat style fixed positioning */}
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-2">
+            <div className="absolute inset-x-0.5 bottom-0.5 flex items-center justify-between p-1">
               {/* Left side - only persona selector */}
               <div className="p-2 flex flex-row justify-start items-center z-10">
                 {/* Background element with rounded corners - smaller to not overlap with border */}
