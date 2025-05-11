@@ -2,10 +2,9 @@
 
 import type { Attachment, Message as UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useLocalStorage } from 'usehooks-ts';
-import { useModelStorage } from '@/hooks/use-model-storage';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
@@ -22,7 +21,7 @@ import { getChatHistoryPaginationKey } from './sidebar-history';
 export function Chat({
   id,
   initialMessages,
-  selectedChatModel,
+  selectedChatModel: initialSelectedChatModel,
   selectedVisibilityType,
   isReadonly,
 }: {
@@ -34,16 +33,13 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
-  // Get the selected persona from localStorage
   const [selectedPersonaId] = useLocalStorage('selected-persona-id', DEFAULT_PERSONA_ID);
-  // Track when persona changes to avoid unnecessary reloads
-  const [prevPersonaId, setPrevPersonaId] = useState(selectedPersonaId);
-  
-  // Track the model separately to avoid re-initializing the chat when the model changes
-  const [currentModel, setCurrentModel] = useModelStorage('current-chat-model', selectedChatModel);
-  const [prevModel, setPrevModel] = useState(currentModel);
 
-  // Create refs for message container and end element
+  const [globallySelectedModelId] = useLocalStorage(
+    'selected-chat-model-id',
+    initialSelectedChatModel
+  );
+
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,8 +57,8 @@ export function Chat({
     id,
     body: { 
       id, 
-      selectedChatModel: currentModel, // Use our tracked model instead of the prop
-      personaId: selectedPersonaId, // Send the selected persona ID to the API
+      selectedChatModel: globallySelectedModelId,
+      personaId: selectedPersonaId,
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
@@ -83,52 +79,6 @@ export function Chat({
     },
   });
 
-  // Update currentModel when selectedChatModel changes from props
-  useEffect(() => {
-    if (selectedChatModel !== currentModel) {
-      setCurrentModel(selectedChatModel);
-    }
-  }, [selectedChatModel, currentModel, setCurrentModel]);
-
-  // Handle model changes similar to persona changes
-  useEffect(() => {
-    // Only reload if model changed AND we have messages AND we're not currently generating
-    if (currentModel !== prevModel && messages.length > 0 && status === 'ready') {
-      // Save the new model ID to prevent duplicate reloads
-      setPrevModel(currentModel);
-      
-      // Wait a bit before reloading to avoid race conditions
-      const timeoutId = setTimeout(() => {
-        reload();
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
-    } else if (currentModel !== prevModel) {
-      // Update the model without reloading if we don't have messages yet or are busy
-      setPrevModel(currentModel);
-    }
-  }, [currentModel, prevModel, reload, messages.length, status]);
-
-  // Much safer approach to handling persona changes - only reload when necessary
-  // and only when the chat is idle (status === 'ready')
-  useEffect(() => {
-    // Only reload if persona changed AND we have messages AND we're not currently in the middle of generating
-    if (selectedPersonaId !== prevPersonaId && messages.length > 0 && status === 'ready') {
-      // Save the new persona ID to prevent duplicate reloads
-      setPrevPersonaId(selectedPersonaId);
-      
-      // Wait a bit before reloading to avoid race conditions
-      const timeoutId = setTimeout(() => {
-        reload();
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
-    } else if (selectedPersonaId !== prevPersonaId) {
-      // Update the ID without reloading if we don't have messages yet or are busy
-      setPrevPersonaId(selectedPersonaId);
-    }
-  }, [selectedPersonaId, prevPersonaId, reload, messages.length, status]);
-
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
     fetcher,
@@ -142,7 +92,7 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
         <ChatHeader
           chatId={id}
-          selectedModelId={selectedChatModel}
+          selectedModelId={initialSelectedChatModel}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />

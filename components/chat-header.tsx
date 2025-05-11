@@ -1,22 +1,20 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useWindowSize } from 'usehooks-ts';
-import { useModelStorage } from '@/hooks/use-model-storage';
-
-import { ModelSelector } from '@/components/model-selector';
-import { SidebarToggle } from '@/components/sidebar-toggle';
-import { Button } from '@/components/ui/button';
-import { PlusIcon } from './icons';
+import { useWindowSize, useLocalStorage } from 'usehooks-ts';
 import { useSidebar } from './ui/sidebar';
+import { SidebarToggle } from '@/components/sidebar-toggle';
 import { memo, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType } from './visibility-selector';
 import { ShareDialog } from './share-dialog';
+import { PlusIcon } from './icons';
+import { Button } from '@/components/ui/button';
+import { ModelSelector } from '@/components/model-selector';
 
 function PureChatHeader({
   chatId,
-  selectedModelId,
+  selectedModelId: initialSelectedModelId,
   selectedVisibilityType,
   isReadonly,
 }: {
@@ -28,18 +26,16 @@ function PureChatHeader({
   const router = useRouter();
   const pathname = usePathname();
   const { open } = useSidebar();
-  // Use client-side only rendering for the buttons to avoid hydration issues
   const [mounted, setMounted] = useState(false);
   const { width: windowWidth } = useWindowSize();
   
-  // Use local storage for the model to prevent unnecessary rerenders
-  // The default value will be the prop, but changes will be managed through local storage
-  const [localModelId] = useModelStorage('current-chat-model', selectedModelId);
-  
-  // Check if we're in a specific chat (not the root /chat page)
+  const [globallySelectedModelId] = useLocalStorage(
+    'selected-chat-model-id',
+    initialSelectedModelId
+  );
+
   const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
 
-  // Only render dynamic content after hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -73,7 +69,7 @@ function PureChatHeader({
 
           {!isReadonly && (
             <ModelSelector
-              selectedModelId={localModelId} // Use localModelId instead of prop
+              selectedModelId={globallySelectedModelId}
               className="order-1 md:order-2"
             />
           )}
@@ -94,8 +90,5 @@ function PureChatHeader({
 }
 
 export const ChatHeader = memo(PureChatHeader, (_prevProps, _nextProps) => {
-  // Don't compare based on selectedModelId since we use localModelId internally
-  // Just return true to prevent unnecessary re-renders on model change
-  // Other props will still trigger re-renders as needed
   return true;
 });
