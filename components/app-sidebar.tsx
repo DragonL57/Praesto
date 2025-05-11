@@ -36,8 +36,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 className="flex flex-row gap-3 items-center"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-semibold hover:bg-muted rounded-md cursor-pointer">
-                    UniTaskAI
+                  <span className="p-2 text-xl font-semibold hover:bg-muted rounded-md cursor-pointer">
+                    UniTask<span className="text-[hsl(var(--primary))]">AI</span>
                   </span>
                 </div>
               </Link>

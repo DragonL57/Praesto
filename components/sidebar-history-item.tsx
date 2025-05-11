@@ -126,7 +126,6 @@ const PureChatItem = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="h-8 text-sm"
-            autoFocus
             disabled={isSaving}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !isSaving) {

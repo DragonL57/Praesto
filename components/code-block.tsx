@@ -71,7 +71,7 @@ const CodeBlock = memo(({ lang, children }: Props) => {
   const highlighterLang = languageMap[normalizedLang] || normalizedLang || 'text';
 
   return (
-    <div className="bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md w-full">
+    <div className="my-4 bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md w-full">
       <div className="flex justify-between items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-t-md">
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {lang || 'Text'}
@@ -102,7 +102,7 @@ const CodeBlock = memo(({ lang, children }: Props) => {
               borderRadius: '0 0 0.375rem 0.375rem',
             }}
             showLineNumbers={highlighterLang !== 'text'}
-            wrapLines={true}
+            wrapLines={false}
             codeTagProps={{
               style: {
                 backgroundColor: 'transparent'
