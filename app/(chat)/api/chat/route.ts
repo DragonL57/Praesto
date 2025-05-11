@@ -99,6 +99,11 @@ export async function POST(request: Request) {
     combinedUserTextAndAttachments = originalUserTypedText;
 
     if (userMessage.experimental_attachments && userMessage.experimental_attachments.length > 0) {
+      const imageAttachments = userMessage.experimental_attachments.filter(att => att.contentType?.startsWith('image/'));
+      const documentAttachments = userMessage.experimental_attachments.filter(att => !att.contentType?.startsWith('image/'));
+
+      console.log(`Processing attachments: ${imageAttachments.length} images, ${documentAttachments.length} documents`);
+
       for (const attachment of userMessage.experimental_attachments) {
         if (attachment.url) {
           // Skip text extraction for image files - modern AI models can process these directly
@@ -155,6 +160,12 @@ export async function POST(request: Request) {
     // Prepare messages for streamText:
     // 1. For the current userMessage, its .parts are already updated with combined text (if attachments were processed).
     // 2. For user messages, preserve image attachments but remove non-image attachments
+    // 
+    // Mixed-attachment case handled as follows:
+    // - Image attachments: Preserved in experimental_attachments field for direct model viewing
+    // - Document attachments: Their extracted text is included in the message text part
+    //   with appropriate headers/footers, while the original attachments are filtered out
+    //   to avoid redundancy (since their content is already in the message text)
     const messagesForStreamText = messages.map(msg => {
       let processedMsg = { ...msg }; // Start with a shallow copy
 
@@ -226,11 +237,23 @@ export async function POST(request: Request) {
         const isXaiGrokModel =
           selectedChatModel === 'xai-grok-3';
 
+        const isOpenAILarge =
+          selectedChatModel === 'openai-large' || selectedChatModel === 'chat-model';
+
+        // Prepare model options based on selected model
+        let modelOptions = {};
+        if (isOpenAILarge) {
+          modelOptions = {
+            maxTokens: 8192 // Set max token limit to 8192 for openai-large/chat-model
+          };
+        }
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
           messages: messagesForStreamText, // Use the sanitized messages array
           maxSteps: 10,
+          ...modelOptions, // Apply model-specific options
           providerOptions: isFireworksQwenModel
             ? {
               fireworks: {
@@ -239,7 +262,14 @@ export async function POST(request: Request) {
             }
             : isXaiGrokModel
               ? { /* No specific provider options needed for now */ }
-              : undefined,
+              : isOpenAILarge
+                ? {
+                  openai: {
+                    // OpenAI-compatible provider specific options
+                    maxTokens: 8192
+                  }
+                }
+                : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []

@@ -27,7 +27,7 @@ export const pollinationsProvider = createOpenAICompatible({
 
 // Define Pollinations-specific model IDs for better type checking and auto-completion
 type PollinationsChatModelIds =
-  | 'openai-large'   // Large model for chat
+  | 'openai-large'   // Large model for chat (GPT-4.1)
   | (string & {});     // Allow other string model IDs
 
 type PollinationsCompletionModelIds =
