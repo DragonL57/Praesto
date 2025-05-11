@@ -101,6 +101,12 @@ export async function POST(request: Request) {
     if (userMessage.experimental_attachments && userMessage.experimental_attachments.length > 0) {
       for (const attachment of userMessage.experimental_attachments) {
         if (attachment.url) {
+          // Skip text extraction for image files - modern AI models can process these directly
+          if (attachment.contentType?.startsWith('image/')) {
+            console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType})`);
+            continue;
+          }
+
           try {
             console.log(`Fetching attachment from URL: ${attachment.url}`);
             const response = await fetch(attachment.url);
@@ -148,13 +154,24 @@ export async function POST(request: Request) {
 
     // Prepare messages for streamText:
     // 1. For the current userMessage, its .parts are already updated with combined text (if attachments were processed).
-    // 2. For ALL user messages in the history (including the current one),
-    //    strip experimental_attachments to avoid SDK errors.
+    // 2. For user messages, preserve image attachments but remove non-image attachments
     const messagesForStreamText = messages.map(msg => {
       let processedMsg = { ...msg }; // Start with a shallow copy
 
-      // If it's a user message, ensure experimental_attachments is undefined for streamText
-      if (processedMsg.role === 'user') {
+      // If it's a user message, handle attachments appropriately
+      if (processedMsg.role === 'user' && msg.experimental_attachments) {
+        // Filter to keep only image attachments
+        const imageAttachments = msg.experimental_attachments.filter(
+          attachment => attachment.contentType?.startsWith('image/')
+        );
+
+        // If there are image attachments, keep them; otherwise set to undefined
+        processedMsg = {
+          ...processedMsg,
+          experimental_attachments: imageAttachments.length > 0 ? imageAttachments : undefined,
+        };
+      } else if (processedMsg.role === 'user') {
+        // If user message but no attachments, ensure experimental_attachments is undefined
         processedMsg = {
           ...processedMsg,
           experimental_attachments: undefined,
@@ -297,6 +314,17 @@ export async function POST(request: Request) {
         });
 
         result.consumeStream();
+
+        // Log information about image attachments being sent to the model
+        const imageAttachments = messagesForStreamText
+          .filter(msg => msg.role === 'user' && msg.experimental_attachments?.length)
+          .flatMap(msg => msg.experimental_attachments || [])
+          .filter(attachment => attachment.contentType?.startsWith('image/'));
+
+        if (imageAttachments.length > 0) {
+          console.log(`Sending ${imageAttachments.length} image attachments to the model:`,
+            imageAttachments.map(img => `${img.name} (${img.contentType})`));
+        }
 
         result.mergeIntoDataStream(dataStream, {
           sendReasoning: true,
