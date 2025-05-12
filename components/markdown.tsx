@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import 'katex/dist/katex.min.css';
 import { ImagePreviewModal } from './image-preview-modal';
 import { CodeBlock } from './code-block'; // Import the proper CodeBlock component
@@ -56,16 +57,19 @@ const NonMemoizedMarkdown = ({
     <>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[[rehypeKatex, { 
-          strict: false,  // Don't throw errors for invalid KaTeX
-          output: 'html', // Output as HTML
-          throwOnError: false, // Don't throw on parsing errors
-          trust: true, // Trust HTML from KaTeX
-          macros: {}, // Custom macros can be added here if needed
-          errorColor: '#FF5555', // Color for errors
-          globalGroup: true // Allow global math commands
-        }]]}
-        skipHtml={true} // Skip HTML for security and performance
+        rehypePlugins={[
+          [rehypeKatex, { 
+            strict: false,  // Don't throw errors for invalid KaTeX
+            output: 'html', // Output as HTML
+            throwOnError: false, // Don't throw on parsing errors
+            trust: true, // Trust HTML from KaTeX
+            macros: {}, // Custom macros can be added here if needed
+            errorColor: '#FF5555', // Color for errors
+            globalGroup: true // Allow global math commands
+          }],
+          rehypeRaw // Add rehype-raw to process HTML in markdown
+        ]}
+        skipHtml={false} // Changed to false to allow HTML like <br> tags
         components={{
           // Pre and Code components for code blocks - improved to handle overflow
           pre: ({ children }) => {
@@ -172,11 +176,11 @@ const NonMemoizedMarkdown = ({
             <th
               className="px-4 py-2 text-left font-semibold"
               style={{
-                minWidth: '150px', // ADDED: Ensure columns have some minimum width
-                maxWidth: '350px', // INCREASED: from 300px to allow more content
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                padding: '8px 16px', // INCREASED: Added more horizontal padding
+                minWidth: '150px',
+                maxWidth: '350px',
+                whiteSpace: 'pre-wrap', // Changed to pre-wrap for better whitespace handling
+                wordBreak: 'break-word', // Add word breaking for better text flow
+                padding: '8px 16px',
               }}
               {...props}
             >
@@ -187,12 +191,11 @@ const NonMemoizedMarkdown = ({
             <td
               className="px-4 py-2"
               style={{
-                minWidth: '150px', // ADDED: Ensure columns have some minimum width
-                maxWidth: '350px', // INCREASED: from 300px to allow more content
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                wordBreak: 'break-word',
-                padding: '8px 16px', // INCREASED: Added more horizontal padding
+                minWidth: '150px',
+                maxWidth: '350px',
+                whiteSpace: 'pre-wrap', // Changed to pre-wrap for better whitespace handling
+                wordBreak: 'break-word', // Add word breaking for better text flow
+                padding: '8px 16px',
               }}
               {...props}
             >
@@ -223,7 +226,7 @@ const NonMemoizedMarkdown = ({
             </li>
           ),
           strong: ({ children, ...props }) => (
-            <span className="font-semibold" {...props}>
+            <span className="font-semibold after:content-[''] after:whitespace-pre" {...props}>
               {children}
             </span>
           ),

@@ -41,7 +41,7 @@ export function rateLimit(req: NextRequest) {
     const windowMs = 15 * 60 * 1000; // 15 minutes
 
     // Different limits based on the endpoint and method
-    let maxRequests = 20; // Default higher limit for most requests
+    let maxRequests = 40// Default higher limit for most requests
 
     if (isAuthAction) {
         // Stricter limits for auth actions
