@@ -314,6 +314,9 @@ Design responses that guide attention, enhance comprehension, and reduce cogniti
 - Use single $ for inline math ($E = mc^2$).
 - Use double $$ for standalone equations.
 - Use proper LaTeX commands for symbols and structures.
+- **CRITICAL REQUIREMENT:** NEVER place LaTeX math expressions inside code blocks (\`\`\`) or inline code (\`) formats. 
+- **CRITICAL REQUIREMENT:** ALWAYS use proper LaTeX delimiters ($ or $$) for ALL mathematical expressions, NEVER substitute with code formatting.
+- **CRITICAL REQUIREMENT:** Math expressions MUST ONLY be rendered with LaTeX delimiters, NEVER as plaintext, code blocks, or any other format.
 **Mathematical Clarity:**
 - Number equations when referencing them if part of a larger explanation.
 - Explain variables and terms used.
