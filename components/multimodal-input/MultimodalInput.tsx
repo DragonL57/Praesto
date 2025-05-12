@@ -11,7 +11,6 @@ import equal from 'fast-deep-equal';
 import { PreviewAttachment } from '../preview-attachment';
 import { Textarea } from '../ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
-import PersonaSelector from '../persona-selector';
 
 import { SendButton } from './SendButton';
 import { StopButton } from './StopButton';
@@ -314,9 +313,6 @@ function PureMultimodalInput({
               <div className="p-2 flex flex-row justify-start items-center z-10">
                 {/* Background element with rounded corners - smaller to not overlap with border */}
                 <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
-                <div className="relative">
-                  <PersonaSelector />
-                </div>
               </div>
 
               {/* Right side - attachments, speech-to-text, and send buttons */}

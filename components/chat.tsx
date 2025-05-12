@@ -8,7 +8,6 @@ import { useLocalStorage } from 'usehooks-ts';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
-import { DEFAULT_PERSONA_ID } from '@/lib/ai/personas';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages/messages';
@@ -33,8 +32,6 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
-  const [selectedPersonaId] = useLocalStorage('selected-persona-id', DEFAULT_PERSONA_ID);
-
   const [globallySelectedModelId] = useLocalStorage(
     'selected-chat-model-id',
     initialSelectedChatModel
@@ -58,7 +55,6 @@ export function Chat({
     body: { 
       id, 
       selectedChatModel: globallySelectedModelId,
-      personaId: selectedPersonaId,
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
