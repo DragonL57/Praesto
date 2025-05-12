@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo, useEffect } from 'react';
+import { useRef, memo, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Only import one theme to ensure consistency
 import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -19,18 +19,26 @@ interface CodeProps {
 }
 
 const CodeBlock = memo(({ lang, children }: Props) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const [clientMounted, setClientMounted] = useState(false);
-
-  // Use useEffect to detect when component is mounted on client
-  useEffect(() => {
-    setClientMounted(true);
-  }, []);
-
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentRef = useRef<HTMLPreElement>(null);
+  const isCopiedRef = useRef<HTMLSpanElement>(null);
+  
+  // Handle copy functionality without using state
   const onCopy = () => {
-    navigator.clipboard.writeText(children);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+    
+    navigator.clipboard.writeText(String(children));
+    
+    if (isCopiedRef.current) {
+      isCopiedRef.current.textContent = 'Copied!';
+      copyTimeoutRef.current = setTimeout(() => {
+        if (isCopiedRef.current) {
+          isCopiedRef.current.textContent = 'Copy';
+        }
+      }, 2000);
+    }
   };
 
   // Normalize language identifier
@@ -70,8 +78,21 @@ const CodeBlock = memo(({ lang, children }: Props) => {
   // Get the correct language identifier or fallback to the original
   const highlighterLang = languageMap[normalizedLang] || normalizedLang || 'text';
 
+  // Use effect to apply syntax highlighting once, without re-renders
+  useEffect(() => {
+    // Clean up on unmount
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="my-4 bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md w-full">
+    <div
+      className="my-4 bg-zinc-100 dark:bg-[#161616] text-zinc-900 dark:text-zinc-100 rounded-md w-full"
+      style={{ contain: 'content' }}
+    >
       <div className="flex justify-between items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-t-md">
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {lang || 'Text'}
@@ -80,41 +101,46 @@ const CodeBlock = memo(({ lang, children }: Props) => {
           onClick={onCopy}
           className="text-xs bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-md transition-colors"
         >
-          {isCopied ? 'Copied!' : 'Copy'}
+          <span ref={isCopiedRef}>Copy</span>
         </button>
       </div>
-      <div className="w-full max-w-full bg-transparent overflow-auto">
-        {!clientMounted ? (
-          // Pre-render fallback - simple code block without highlighting
-          <pre className="p-4 overflow-auto font-mono text-sm">
-            <code>{children}</code>
-          </pre>
-        ) : (
-          // Client-side only rendering for SyntaxHighlighter
-          <SyntaxHighlighter
-            language={highlighterLang}
-            style={coldarkDark}
-            customStyle={{
-              margin: 0,
-              padding: '1rem',
-              fontSize: '0.875rem',
-              background: 'transparent',
-              borderRadius: '0 0 0.375rem 0.375rem',
-            }}
-            showLineNumbers={highlighterLang !== 'text'}
-            wrapLines={false}
-            codeTagProps={{
-              style: {
-                backgroundColor: 'transparent'
-              }
-            }}
-          >
-            {children}
-          </SyntaxHighlighter>
-        )}
+      <div 
+        className="w-full max-w-full bg-transparent overflow-auto"
+      >
+        <SyntaxHighlighter
+          language={highlighterLang}
+          style={coldarkDark}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            fontSize: '0.875rem',
+            background: 'transparent',
+            borderRadius: '0 0 0.375rem 0.375rem',
+          }}
+          showLineNumbers={highlighterLang !== 'text'}
+          wrapLines={false}
+          codeTagProps={{
+            style: {
+              backgroundColor: 'transparent'
+            }
+          }}
+        >
+          {String(children)}
+        </SyntaxHighlighter>
       </div>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Super strict equality check to prevent unnecessary re-renders
+  // Only re-render if the language or content actually changes
+  if (prevProps.lang !== nextProps.lang) return false;
+  
+  // For content, we'll do a length check first (faster)
+  // This helps in cases where the content is streaming in
+  if (prevProps.children.length !== nextProps.children.length) return false;
+  
+  // If the lengths are the same, we'll do a full equality check
+  return prevProps.children === nextProps.children;
 });
 
 // Add display name to fix ESLint warning
