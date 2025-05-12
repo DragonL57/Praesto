@@ -20,7 +20,6 @@ interface CodeProps {
 
 const CodeBlock = memo(({ lang, children }: Props) => {
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const contentRef = useRef<HTMLPreElement>(null);
   const isCopiedRef = useRef<HTMLSpanElement>(null);
   
   // Handle copy functionality without using state
