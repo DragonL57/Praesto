@@ -15,7 +15,7 @@ import { auth } from "@/app/auth"
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  userScalable: true,
 }
 
 export const metadata: Metadata = {

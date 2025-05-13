@@ -73,7 +73,7 @@ body {
     --card-foreground: 240 10% 10%;
     --popover: 0 0% 95%;
     --popover-foreground: 240 10% 10%;
-    --primary: 221 70% 55%; /* Adjusted blue for better contrast on light background */
+    --primary: 221 70% 50%; /* Adjusted blue for better contrast on light background - further darkened */
     --primary-foreground: 0 0% 98%;
     --secondary: 210 5% 93%; /* Subtle secondary */
     --secondary-foreground: 240 5% 10%;
