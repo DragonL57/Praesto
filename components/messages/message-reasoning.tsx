@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   ChevronDownIcon,
-  LoaderIcon,
 } from '../icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Markdown } from '../markdown';
@@ -34,23 +33,21 @@ export function MessageReasoning({
   isLoading,
   content,
 }: MessageReasoningProps) {
-  const [isOverallExpanded, setIsOverallExpanded] = useState(false);
-  const prevLoadingRef = useRef(isLoading);
-  const prevContentLengthRef = useRef(content.length);
+  // Always expand during loading, auto-collapse immediately when phase 1 ends
+  const [isOverallExpanded, setIsOverallExpanded] = useState(isLoading);
+  const prevContentLengthRef = useRef(0);
   
-  // Auto-expand during loading, auto-collapse when done
+  // Auto-collapse as soon as content stops growing (phase 1 ends and phase 2 begins)
   useEffect(() => {
-    if (isLoading && !prevLoadingRef.current) {
-      // Only auto-expand when loading starts
+    // Always expand when loading
+    if (isLoading) {
       setIsOverallExpanded(true);
-    } else if (!isLoading && prevLoadingRef.current && content.length > 0) {
-      // Only auto-collapse when loading completes
+      prevContentLengthRef.current = content.length;
+    } 
+    // We're not loading anymore (phase 1 is complete), collapse immediately
+    else if (!isLoading) {
       setIsOverallExpanded(false);
     }
-    
-    // Update refs for next comparison
-    prevLoadingRef.current = isLoading;
-    prevContentLengthRef.current = content.length;
   }, [isLoading, content.length]);
 
   const variants = {
@@ -91,33 +88,39 @@ export function MessageReasoning({
   // Custom loading animation for spinner
   const loadingCircleAnimation = isLoading ? "animate-pulse" : "";
 
+  // Only render the component if there's something to show
+  if (!isLoading && !hasContent) return null;
+
   return (
     <div className="flex flex-col mb-2">
-      {/* Main toggle button */} 
+      {/* Main toggle button - always visible when loading */} 
       { (isLoading || hasContent) && currentToggleButtonTitle && (
         <button
           type="button"
           data-testid="message-reasoning-header-toggle"
-          className="flex flex-row gap-2 items-center w-full cursor-pointer p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 my-1"
+          className={`flex flex-row gap-2 items-center w-full cursor-pointer p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-200 ${isLoading ? 'my-1' : 'my-0.5'} group`}
           onClick={() => {
             setIsOverallExpanded(!isOverallExpanded);
           }}
         >
           {isLoading ? (
             <div className="flex items-center justify-center size-4">
-              <div className={`h-2 w-2 bg-blue-500 rounded-full ${loadingCircleAnimation}`}></div>
+              <div className={`size-2 bg-blue-500 rounded-full ${loadingCircleAnimation}`}></div>
             </div>
           ) : (
-            <ChevronDownIcon />
+            <div className={`text-zinc-400 dark:text-zinc-500 transition-transform duration-200 ${isOverallExpanded ? 'rotate-180' : ''} group-hover:text-blue-500 dark:group-hover:text-blue-400`}>
+              <ChevronDownIcon />
+            </div>
           )}
-          <div className="font-medium text-sm text-zinc-600 dark:text-zinc-400 grow text-left">
+          <div className={`font-medium text-sm ${isLoading ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400'} group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors duration-200 grow text-left`}>
             {currentToggleButtonTitle}
           </div>
         </button>
       )}
 
       <AnimatePresence initial={false}>
-        {isOverallExpanded && hasContent && (
+        {/* Always show when loading, regardless of content */}
+        {(isOverallExpanded && (isLoading || hasContent)) && (
           <motion.div
             data-testid="message-reasoning-content"
             key="reasoning-content"
@@ -127,23 +130,30 @@ export function MessageReasoning({
             variants={variants}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
-            className="relative pl-6 flex flex-col gap-3 py-1 text-sm"
+            className="relative pl-6 flex flex-col gap-1.5 py-0.5 text-sm text-zinc-500 dark:text-zinc-400"
           >
-            <div className="absolute left-[10px] inset-y-0 w-px bg-zinc-300 dark:bg-zinc-600"></div>
+            <div className="absolute left-[10px] inset-y-0 w-px bg-zinc-300 dark:bg-zinc-700"></div>
 
+            {/* Actual content items */}
             {content.map((item, index) => {
               const itemKey = `reasoning-item-${index}`;
               return (
-                <div key={itemKey} className="relative flex flex-col gap-1">
+                <motion.div 
+                  key={itemKey} 
+                  className="relative flex flex-col gap-0.5"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
                   {typeof item === 'string' ? (
                     <>
-                      <div className="ml-0 pt-1">
+                      <div className="ml-0 prose-sm prose-zinc dark:prose-invert prose-p:my-0.5 prose-p:leading-tight prose-ul:my-0.5 prose-li:my-0 prose-li:leading-tight">
                         <Markdown key={`reasoning-text-${index}`}>{item}</Markdown>
                       </div>
                     </>
                   ) : item.type === 'webSearch' ? (
                     <>
-                      <div className="ml-0 pt-1">
+                      <div className="ml-0">
                         <WebSearch
                           key={`reasoning-search-${index}`}
                           results={item.data.results}
@@ -154,13 +164,12 @@ export function MessageReasoning({
                       </div>
                     </>
                   ) : null}
-                </div>
+                </motion.div>
               );
             })}
           </motion.div>
         )}
       </AnimatePresence>
-      
     </div>
   );
 }

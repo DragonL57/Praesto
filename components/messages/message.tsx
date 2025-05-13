@@ -21,7 +21,6 @@ import { MessageEditor } from './message-editor';
 import { DocumentPreview } from '../document-preview';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { MessageReasoning } from './message-reasoning';
-import ShinyText from '../shiny-text';
 
 // Define types needed for reasoning elements, mirroring message-reasoning.tsx
 interface WebSearchResult {
@@ -329,8 +328,8 @@ const PurePreviewMessage = ({
       data-role={message.role}
     >
       {/* 3. Render MessageReasoning with the consolidated elements */}
-      {message.role === 'assistant' && reasoningElements && reasoningElements.length > 0 && (
-        <MessageReasoning content={reasoningElements} isLoading={isLoading} />
+      {message.role === 'assistant' && (isLoading || (reasoningElements && reasoningElements.length > 0)) && (
+        <MessageReasoning content={reasoningElements || []} isLoading={isLoading} />
       )}
 
       <div
@@ -555,9 +554,7 @@ export const ThinkingMessage = () => {
     >
       <div className="flex gap-4 w-full">
         <div className="flex flex-col gap-2 w-full">
-          <div className="flex flex-col gap-4 text-muted-foreground">
-            <ShinyText>Thinking, wait a bit...</ShinyText>
-          </div>
+          {/* Removed the shiny thinking text to rely on the reasoning header instead */}
         </div>
       </div>
     </div>
