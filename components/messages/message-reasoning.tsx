@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronDownIcon,
 } from '../icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimate } from 'framer-motion';
 import { Markdown } from '../markdown';
 import { WebSearch } from '../web-search';
 import { WebsiteContent } from '../website-content';
@@ -47,7 +47,7 @@ export function MessageReasoning({
 }: MessageReasoningProps) {
   // Always expand during loading, auto-collapse immediately when phase 1 ends
   const [isOverallExpanded, setIsOverallExpanded] = useState(isLoading && !hasResponseStarted);
-  const scrollableContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollableContentRef, animateScrollableContent] = useAnimate();
   
   // Force immediate collapse when phase 2 starts (hasResponseStarted becomes true)
   useEffect(() => {
@@ -62,10 +62,14 @@ export function MessageReasoning({
 
   // Auto-scroll to bottom when new content is added and container is expanded
   useEffect(() => {
-    if (isOverallExpanded && scrollableContainerRef.current) {
-      scrollableContainerRef.current.scrollTop = scrollableContainerRef.current.scrollHeight;
+    if (isOverallExpanded && scrollableContentRef.current) {
+      animateScrollableContent(
+        scrollableContentRef.current,
+        { scrollTop: scrollableContentRef.current.scrollHeight },
+        { duration: 0.4, ease: 'easeInOut' }
+      );
     }
-  }, [content, isOverallExpanded]);
+  }, [content, isOverallExpanded, animateScrollableContent, scrollableContentRef]);
 
   const variants = {
     collapsed: {
@@ -136,7 +140,7 @@ export function MessageReasoning({
           <motion.div
             data-testid="message-reasoning-content"
             key="reasoning-content"
-            ref={scrollableContainerRef}
+            ref={scrollableContentRef}
             initial="collapsed"
             animate="expanded"
             exit="collapsed"
@@ -153,9 +157,9 @@ export function MessageReasoning({
                   <motion.div 
                     key={itemKey} 
                     className="relative flex flex-col gap-0.5"
-                    initial={{ opacity: 0, y: 5 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
                   >
                     {typeof item === 'string' ? (
                       <div className="ml-0 prose-sm prose-zinc dark:prose-invert prose-p:my-0.5 prose-p:leading-tight prose-ul:my-0.5 prose-li:my-0 prose-li:leading-tight">

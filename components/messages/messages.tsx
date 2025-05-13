@@ -40,20 +40,40 @@ function PureMessages({
   
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const isStreamingRef = useRef<boolean>(status === 'streaming');
+  const lastUserMessageIdRef = useRef<string | null>(null); // Ref for the last user message ID
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
     const container = containerRef.current;
-    const end = endRef.current;
+    if (!container) return;
 
-    if (container && end) {
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+
+    // 1. Handle new user message: scroll it to the top
+    if (lastMessage && lastMessage.role === 'user' && lastMessage.id !== lastUserMessageIdRef.current) {
+      const userMessageElement = document.querySelector(`[data-message-id="${lastMessage.id}"]`);
+      if (userMessageElement) {
+        requestAnimationFrame(() => {
+          userMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+      lastUserMessageIdRef.current = lastMessage.id;
+      // After scrolling user message, update prevMessagesLength and isStreamingRef and exit
+      prevMessagesLengthRef.current = messages.length;
+      isStreamingRef.current = status === 'streaming';
+      return;
+    }
+
+    // 2. Handle AI streaming or other new messages (scroll to bottom)
+    const end = endRef.current;
+    if (end) {
+      // Original conditions for scrolling to bottom, excluding the new user message case handled above
       const shouldScrollToBottom =
-        messages.length > prevMessagesLengthRef.current || // New message added
+        (messages.length > prevMessagesLengthRef.current && (!lastMessage || lastMessage.role !== 'user' || lastMessage.id === lastUserMessageIdRef.current)) || // New non-user message or same user message
         (status === 'streaming' && !isStreamingRef.current) || // Streaming just started
-        (status === 'streaming' && isStreamingRef.current); // Continued streaming
+        (status === 'streaming' && isStreamingRef.current);    // Continued streaming
 
       if (shouldScrollToBottom) {
-        // Use requestAnimationFrame for smoother scrolling
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
@@ -62,7 +82,7 @@ function PureMessages({
 
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
-  }, [messages.length, status, containerRef, endRef]);
+  }, [messages, status, containerRef, endRef]); // Ensure `messages` object itself is a dependency
 
   // Check if there are any visible elements that would require scrolling
   const hasVisibleContent = messages.length > 0 || (status === 'submitted' && messages.length > 0);
@@ -82,6 +102,7 @@ function PureMessages({
         {messages.map((message, index) => (
           <div
             key={message.id}
+            data-message-id={message.id} // Add data-message-id for selection
             className="transition-opacity duration-300 ease-in-out"
           >
             <PreviewMessage
