@@ -33,7 +33,19 @@ interface WebSearchData {
   query: string;
   count: number;
 }
-type ReasoningContentItem = string | { type: 'webSearch'; data: WebSearchData };
+
+// Define data structure for Fetched Page Info (for WebsiteContent component)
+interface FetchedPageInfoData {
+  url: string;
+  query?: string | null; // query is optional in WebsiteContentProps
+  // The 'content' from readWebsiteContent result is not stored here, as WebsiteContent doesn't display it
+  // 'status' for WebsiteContent will be hardcoded to 'success' when rendering
+}
+
+type ReasoningContentItem = 
+  | string 
+  | { type: 'webSearch'; data: WebSearchData } 
+  | { type: 'fetchedPageInfo'; data: FetchedPageInfoData };
 
 // Re-add interface for Reasoning details
 interface ReasoningDetail {
@@ -200,12 +212,17 @@ const PurePreviewMessage = ({
                 filterIndices.add(index);
               }
             }
-            // iii) Handle 'readWebsiteContent' results (add content as text)
+            // iii) Handle 'readWebsiteContent' results (add as FetchedPageInfoData)
             else if (toolName === 'readWebsiteContent') {
-              const webContentResult = result as { content?: string; url?: string }; // Type assertion
-              if (typeof webContentResult.content === 'string' && webContentResult.content.trim()) {
-                const urlContext = webContentResult.url ? `Fetched content from ${webContentResult.url}:\n\n` : `Fetched website content:\n\n`;
-                elements.push(urlContext + webContentResult.content.trim());
+              const webContentResult = result as { content?: string; url?: string, query?: string }; // content is part of the tool output but not used by WebsiteContent
+              if (webContentResult.url) { // Only need URL for WebsiteContent
+                elements.push({
+                  type: 'fetchedPageInfo',
+                  data: {
+                    url: webContentResult.url,
+                    query: webContentResult.query, // Pass query if available
+                  }
+                });
                 filterIndices.add(index);
               }
             }
@@ -329,7 +346,29 @@ const PurePreviewMessage = ({
     >
       {/* 3. Render MessageReasoning with the consolidated elements */}
       {message.role === 'assistant' && (isLoading || (reasoningElements && reasoningElements.length > 0)) && (
-        <MessageReasoning content={reasoningElements || []} isLoading={isLoading} />
+        <MessageReasoning 
+          content={reasoningElements || []} 
+          isLoading={isLoading} 
+          hasResponseStarted={
+            // Phase 2 has started if there's any visible text or tool results from the assistant
+            processedParts.some(part => {
+              // Check for text content
+              if (part.type === 'text' && 
+                  typeof part.text === 'string' && 
+                  part.text.trim().length > 0) {
+                return true;
+              }
+              // Check for tool results that aren't reasoning tools
+              if (part.type === 'tool-invocation' && 
+                  part.toolInvocation?.state === 'result' && 
+                  part.toolInvocation.toolName && 
+                  !['think', 'webSearch', 'readWebsiteContent'].includes(part.toolInvocation.toolName)) {
+                return true;
+              }
+              return false;
+            })
+          } 
+        />
       )}
 
       <div

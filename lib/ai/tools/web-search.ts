@@ -65,7 +65,7 @@ class BraveSearchClient {
 
   async search({
     query,
-    maxResults = 10,
+    maxResults = 20,
     region = 'us',
     safeSearch = true,
   }: {
@@ -193,7 +193,7 @@ class SerperClient {
 
   async search({
     query,
-    maxResults = 10,
+    maxResults = 20,
     region = 'us',
     safeSearch = true,
   }: {
@@ -317,10 +317,10 @@ export const webSearch = tool({
     query: z.string().describe('The search query'),
     maxResults: z
       .number()
-      .min(10)
-      .max(10)
-      .default(10)
-      .describe('The number of results to return (default: 10)'),
+      .min(20)
+      .max(20)
+      .default(20)
+      .describe('The number of results to return (default: 20)'),
     region: z
       .string()
       .default('us')
@@ -332,12 +332,12 @@ export const webSearch = tool({
   }),
   execute: async ({
     query,
-    maxResults: _maxResults = 10, // Prefix with underscore to mark as deliberately unused
+    maxResults: _maxResults = 20, // Prefix with underscore to mark as deliberately unused
     region = 'us',
     safeSearch = true,
   }) => {
     // Always use 10 results
-    const normalizedMaxResults = 10;
+    const normalizedMaxResults = 20;
 
     console.log(
       `Web Search: query='${query}', max=${normalizedMaxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
