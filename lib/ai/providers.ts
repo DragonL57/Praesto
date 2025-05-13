@@ -1,4 +1,4 @@
-import { customProvider, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
+import { customProvider } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -56,10 +56,11 @@ export const typedPollinationsProvider = createOpenAICompatible<
 });
 
 // Create enhanced reasoning model for Fireworks
-export const enhancedQwenModel = wrapLanguageModel({
-  model: fireworks('accounts/fireworks/models/qwen3-235b-a22b'),
-  middleware: extractReasoningMiddleware({ tagName: 'think' }),
-});
+export const enhancedQwenModel = fireworks('accounts/fireworks/models/qwen3-235b-a22b');
+// export const enhancedQwenModel = wrapLanguageModel({
+//   model: fireworks('accounts/fireworks/models/qwen3-235b-a22b'),
+//   middleware: extractReasoningMiddleware({ tagName: 'think' }),
+// });
 
 // You can swap openai() for openai.chat(), openai.responses(), etc. per model as needed
 export const myProvider = isTestEnvironment

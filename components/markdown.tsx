@@ -71,6 +71,12 @@ const NonMemoizedMarkdown = ({
         ]}
         skipHtml={false} // Changed to false to allow HTML like <br> tags
         components={{
+          // Remove the component mapping for 'think'
+          /*
+          // @ts-expect-error // rehypeRaw might produce 'think' nodes for non-standard tags
+          think: () => null,
+          */
+
           // Pre and Code components for code blocks - improved to handle overflow
           pre: ({ children }) => {
             // The actual rendering is handled by the code component below

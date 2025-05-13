@@ -57,13 +57,11 @@ export async function POST(request: Request) {
       id,
       messages,
       selectedChatModel,
-      personaId,
       userTimeContext,
     }: {
       id: string;
       messages: Array<UIMessage>;
       selectedChatModel: string;
-      personaId?: string;
       userTimeContext?: {
         date: string;
         time: string;
@@ -250,7 +248,7 @@ export async function POST(request: Request) {
 
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, personaId, userTimeContext }),
+          system: systemPrompt({ selectedChatModel, userTimeContext }),
           messages: messagesForStreamText, // Use the sanitized messages array
           maxSteps: 10,
           ...modelOptions, // Apply model-specific options
