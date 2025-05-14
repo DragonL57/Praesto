@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
@@ -41,6 +41,42 @@ function PureMessages({
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const isStreamingRef = useRef<boolean>(status === 'streaming');
   const lastUserMessageIdRef = useRef<string | null>(null); // Ref for the last user message ID
+  const [userHasScrolledUp, setUserHasScrolledUp] = useState(false); // New state
+
+  // Effect to detect user scroll and update userHasScrolledUp state
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const SCROLL_UP_THRESHOLD = 100; // Pixels from bottom to consider "scrolled up"
+    let scrollTimeout: NodeJS.Timeout | null = null;
+
+    const handleScroll = () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      // Debounce scroll event slightly to avoid excessive state updates
+      scrollTimeout = setTimeout(() => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const distanceScrolledFromBottom = scrollHeight - clientHeight - scrollTop;
+
+        if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
+          if (!userHasScrolledUp) setUserHasScrolledUp(true);
+        } else {
+          // If user is close to the bottom (e.g., within 5px), consider them "at bottom"
+          if (userHasScrolledUp && distanceScrolledFromBottom < 5) {
+            setUserHasScrolledUp(false);
+          }
+        }
+      }, 50); 
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [containerRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
@@ -49,7 +85,6 @@ function PureMessages({
 
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
-    // 1. Handle new user message: scroll it to the top
     if (lastMessage && lastMessage.role === 'user' && lastMessage.id !== lastUserMessageIdRef.current) {
       const userMessageElement = document.querySelector(`[data-message-id="${lastMessage.id}"]`);
       if (userMessageElement) {
@@ -58,22 +93,20 @@ function PureMessages({
         });
       }
       lastUserMessageIdRef.current = lastMessage.id;
-      // After scrolling user message, update prevMessagesLength and isStreamingRef and exit
+      setUserHasScrolledUp(false); // Reset user scroll state when new user message is sent
       prevMessagesLengthRef.current = messages.length;
       isStreamingRef.current = status === 'streaming';
       return;
     }
 
-    // 2. Handle AI streaming or other new messages (scroll to bottom)
     const end = endRef.current;
     if (end) {
-      // Original conditions for scrolling to bottom, excluding the new user message case handled above
       const shouldScrollToBottom =
-        (messages.length > prevMessagesLengthRef.current && (!lastMessage || lastMessage.role !== 'user' || lastMessage.id === lastUserMessageIdRef.current)) || // New non-user message or same user message
-        (status === 'streaming' && !isStreamingRef.current) || // Streaming just started
-        (status === 'streaming' && isStreamingRef.current);    // Continued streaming
+        (messages.length > prevMessagesLengthRef.current && (!lastMessage || lastMessage.role !== 'user' || lastMessage.id === lastUserMessageIdRef.current)) ||
+        (status === 'streaming' && !isStreamingRef.current) ||
+        (status === 'streaming' && isStreamingRef.current);
 
-      if (shouldScrollToBottom) {
+      if (shouldScrollToBottom && !userHasScrolledUp) { // Modified condition
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
@@ -82,7 +115,7 @@ function PureMessages({
 
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
-  }, [messages, status, containerRef, endRef]); // Ensure `messages` object itself is a dependency
+  }, [messages, status, containerRef, endRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies
 
   // Check if there are any visible elements that would require scrolling
   const hasVisibleContent = messages.length > 0 || (status === 'submitted' && messages.length > 0);
