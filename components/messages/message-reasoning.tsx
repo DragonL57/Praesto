@@ -63,11 +63,69 @@ export function MessageReasoning({
   // Auto-scroll to bottom when new content is added and container is expanded
   useEffect(() => {
     if (isOverallExpanded && scrollableContentRef.current) {
+      // Immediate scroll attempt
+      scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
+      
+      // Also use animation for smoother experience
       animateScrollableContent(
         scrollableContentRef.current,
         { scrollTop: scrollableContentRef.current.scrollHeight },
-        { duration: 0.4, ease: 'easeInOut' }
+        { duration: 0.3, ease: 'easeInOut' }
       );
+      
+      // Additional scroll attempt after a short delay to ensure all content is rendered
+      const timeoutId = setTimeout(() => {
+        if (scrollableContentRef.current) {
+          scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
+        }
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [content, isOverallExpanded, animateScrollableContent, scrollableContentRef]);
+
+  // Use MutationObserver to detect DOM changes within the container
+  useEffect(() => {
+    if (isOverallExpanded && scrollableContentRef.current) {
+      const observerCallback = () => {
+        if (scrollableContentRef.current) {
+          scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
+        }
+      };
+      
+      const observer = new MutationObserver(observerCallback);
+      
+      observer.observe(scrollableContentRef.current, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+      
+      return () => observer.disconnect();
+    }
+  }, [isOverallExpanded, scrollableContentRef]);
+
+  // Auto-scroll to bottom when new content is added and container is expanded
+  useEffect(() => {
+    if (isOverallExpanded && scrollableContentRef.current) {
+      // Immediate scroll attempt
+      scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
+      
+      // Also use animation for smoother experience
+      animateScrollableContent(
+        scrollableContentRef.current,
+        { scrollTop: scrollableContentRef.current.scrollHeight },
+        { duration: 0.3, ease: 'easeInOut' }
+      );
+      
+      // Additional scroll attempt after a short delay to ensure all content is rendered
+      const timeoutId = setTimeout(() => {
+        if (scrollableContentRef.current) {
+          scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
+        }
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [content, isOverallExpanded, animateScrollableContent, scrollableContentRef]);
 
