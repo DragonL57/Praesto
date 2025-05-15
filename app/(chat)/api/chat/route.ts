@@ -10,6 +10,8 @@ import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
+import { reasoningSystemPrompt } from '@/lib/ai/reasoning-prompts';
+// eslint-disable-next-line import/no-unresolved
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
@@ -232,11 +234,10 @@ export async function POST(request: Request) {
         const isFireworksQwenModel =
           selectedChatModel === 'accounts/fireworks/models/qwen3-235b-a22b';
 
-        const isXaiGrokModel =
-          selectedChatModel === 'xai-grok-3';
-
         const isOpenAILarge =
           selectedChatModel === 'openai-large' || selectedChatModel === 'chat-model';
+
+        const isChatModelReasoning = selectedChatModel === 'chat-model-reasoning';
 
         // Prepare model options based on selected model
         let modelOptions = {};
@@ -244,11 +245,18 @@ export async function POST(request: Request) {
           modelOptions = {
             maxTokens: 8192 // Set max token limit to 8192 for openai-large/chat-model
           };
+        } else if (isFireworksQwenModel) {
+          modelOptions = {
+            maxTokens: 16000, // Set max token limit to 16000 for Fireworks Qwen model
+            temperature: 0.8 // Set temperature for Fireworks Qwen model
+          };
         }
 
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, userTimeContext }),
+          system: isChatModelReasoning
+            ? reasoningSystemPrompt({ selectedChatModel, userTimeContext })
+            : systemPrompt({ selectedChatModel, userTimeContext }),
           messages: messagesForStreamText, // Use the sanitized messages array
           maxSteps: 10,
           ...modelOptions, // Apply model-specific options
@@ -256,21 +264,28 @@ export async function POST(request: Request) {
             ? {
               fireworks: {
                 // Any Fireworks-specific options could go here in the future
+                temperature: 0.8 // Also set temperature in providerOptions for Fireworks
               },
             }
-            : isXaiGrokModel
-              ? { /* No specific provider options needed for now */ }
-              : isOpenAILarge
-                ? {
-                  openai: {
-                    // OpenAI-compatible provider specific options
-                    maxTokens: 8192
-                  }
+            : isOpenAILarge
+              ? {
+                openai: {
+                  // OpenAI-compatible provider specific options
+                  maxTokens: 8192
                 }
-                : undefined,
+              }
+              : undefined,
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
-              ? []
+              ? [ // Ensure 'think' is not listed here for chat-model-reasoning
+                'getWeather',
+                'createDocument',
+                'updateDocument',
+                'requestSuggestions',
+                'webSearch',
+                'readWebsiteContent',
+                'getYoutubeTranscript',
+              ]
               : [
                 'think',
                 'getWeather',

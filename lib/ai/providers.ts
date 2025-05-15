@@ -1,4 +1,4 @@
-import { customProvider } from 'ai';
+import { customProvider , wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -6,7 +6,6 @@ import {
   chatModel,
   titleModel,
 } from './models.test';
-import { xai } from '@ai-sdk/xai';
 import { fireworks } from '@ai-sdk/fireworks';
 
 // Create the Pollinations.AI OpenAI-compatible provider
@@ -56,11 +55,11 @@ export const typedPollinationsProvider = createOpenAICompatible<
 });
 
 // Create enhanced reasoning model for Fireworks
-export const enhancedQwenModel = fireworks('accounts/fireworks/models/qwen3-235b-a22b');
-// export const enhancedQwenModel = wrapLanguageModel({
-//   model: fireworks('accounts/fireworks/models/qwen3-235b-a22b'),
-//   middleware: extractReasoningMiddleware({ tagName: 'think' }),
-// });
+export const enhancedQwenModel = wrapLanguageModel({
+  model: fireworks('accounts/fireworks/models/qwen3-235b-a22b'),
+  middleware: extractReasoningMiddleware({ tagName: 'think' }),
+});
+
 
 // You can swap openai() for openai.chat(), openai.responses(), etc. per model as needed
 export const myProvider = isTestEnvironment
@@ -70,6 +69,7 @@ export const myProvider = isTestEnvironment
       'chat-model': chatModel,
       'title-model': titleModel,
       'artifact-model': artifactModel,
+      'chat-model-reasoning': enhancedQwenModel,
     },
   })
   : customProvider({
@@ -77,16 +77,13 @@ export const myProvider = isTestEnvironment
       // GPT-4.1 from OpenAI for chat
       'chat-model': pollinationsProvider.chatModel('openai-large'),
 
-      // Use gemini 2.0 for title generation (no thinking capability)
+      // Use gpt-4.1-mini for title generation
       'title-model': pollinationsProvider.chatModel('openai'),
 
-      // Use openai-xlarge for artifact generation
-      'artifact-model': pollinationsProvider.chatModel('openai-large'),
-
-      // Add xAI Grok 3 model
-      'xai-grok-3': xai('grok-3-fast'),
+      // Use qwen3 for artifact generation
+      'artifact-model': enhancedQwenModel,
 
       // Add Fireworks Qwen3 model with reasoning capabilities
-      'accounts/fireworks/models/qwen3-235b-a22b': enhancedQwenModel,
+      'chat-model-reasoning': enhancedQwenModel,
     },
   });
