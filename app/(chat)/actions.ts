@@ -2,17 +2,11 @@
 
 import { generateText } from 'ai';
 import type { Message } from 'ai';
-import { cookies } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
 import { deleteMessagesByChatIdAfterTimestamp, getMessageById, updateChatVisiblityById, } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 // eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
-
-export async function saveChatModelAsCookie(model: string) {
-  const cookieStore = await cookies();
-  cookieStore.set('chat-model', model);
-}
 
 export async function generateTitleFromUserMessage({
   message,
@@ -34,7 +28,7 @@ export async function generateTitleFromUserMessage({
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
   const [message] = await getMessageById({ id });
-  
+
   // Check if message exists before accessing its properties
   if (!message) {
     console.error(`No message found with id: ${id}`);

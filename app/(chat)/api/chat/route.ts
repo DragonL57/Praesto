@@ -12,6 +12,8 @@ import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
 import { reasoningSystemPrompt } from '@/lib/ai/reasoning-prompts';
 // eslint-disable-next-line import/no-unresolved
+import { ROUTER_SYSTEM_PROMPT } from '@/lib/ai/router-prompt';
+// eslint-disable-next-line import/no-unresolved
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
@@ -58,12 +60,10 @@ export async function POST(request: Request) {
     const {
       id,
       messages,
-      selectedChatModel,
       userTimeContext,
     }: {
       id: string;
       messages: Array<UIMessage>;
-      selectedChatModel: string;
       userTimeContext?: {
         date: string;
         time: string;
@@ -230,14 +230,75 @@ export async function POST(request: Request) {
     await updateChatTimestamp({ id });
 
     return createDataStreamResponse({
-      execute: (dataStream) => {
+      execute: async (dataStream) => {
+        let finalSelectedChatModel = 'chat-model'; // Default to chat-model initially
+        const userQueryText = messagesForStreamText.find(msg => msg.role === 'user')?.parts.find(part => part.type === 'text')?.text || '';
+
+        // Check for image attachments first
+        const hasImageAttachment = messagesForStreamText.some(msg =>
+          msg.role === 'user' &&
+          msg.experimental_attachments &&
+          msg.experimental_attachments.some(att => att.contentType?.startsWith('image/'))
+        );
+
+        if (hasImageAttachment) {
+          console.log('Image attachment detected, routing to chat-model.');
+          finalSelectedChatModel = 'chat-model'; // Force to normal chat model if image is present
+        } else {
+          // If no image, call the router model
+          try {
+            console.log('No image attachment, calling router model.');
+            // Use the Pollinations OpenAI-compatible model for routing
+            const routerAPI = myProvider.languageModel('title-model'); // 'title-model' maps to pollinationsProvider.chatModel('openai')
+            const routerUserMessageContent = userQueryText; // Content for the router
+            const routerMessages: Array<UIMessage> = [
+              {
+                id: generateUUID(),
+                role: 'user',
+                content: routerUserMessageContent, // Add content field
+                parts: [{ type: 'text', text: routerUserMessageContent }]
+              }
+            ];
+
+            // Await the full text content from the stream
+            let routerResponseText = '';
+            const stream = await streamText({
+              model: routerAPI,
+              system: ROUTER_SYSTEM_PROMPT,
+              messages: routerMessages,
+              maxTokens: 75, // Expecting a short JSON response, increased slightly for safety
+            });
+            for await (const delta of stream.textStream) {
+              routerResponseText += delta;
+            }
+
+            if (routerResponseText) {
+              console.log('Router model response:', routerResponseText);
+              const parsedRouterResponse = JSON.parse(routerResponseText);
+              if (parsedRouterResponse.chosen_model) {
+                finalSelectedChatModel = parsedRouterResponse.chosen_model;
+                console.log('Router chose model:', finalSelectedChatModel);
+              } else {
+                console.warn('Router response did not contain chosen_model, defaulting to chat-model.');
+                finalSelectedChatModel = 'chat-model';
+              }
+            } else {
+              console.warn('Router model returned empty response, defaulting to chat-model.');
+              finalSelectedChatModel = 'chat-model';
+            }
+          } catch (e) {
+            console.error('Error calling or parsing router model response:', e);
+            finalSelectedChatModel = 'chat-model'; // Default to chat-model on error
+          }
+        }
+
         const isFireworksQwenModel =
-          selectedChatModel === 'accounts/fireworks/models/qwen3-235b-a22b';
+          finalSelectedChatModel === 'accounts/fireworks/models/qwen3-235b-a22b';
 
         const isOpenAILarge =
-          selectedChatModel === 'openai-large' || selectedChatModel === 'chat-model';
+          finalSelectedChatModel === 'openai-large' || finalSelectedChatModel === 'chat-model';
 
-        const isChatModelReasoning = selectedChatModel === 'chat-model-reasoning';
+        const isChatModelReasoning = finalSelectedChatModel === 'chat-model-reasoning';
 
         // Prepare model options based on selected model
         let modelOptions = {};
@@ -253,10 +314,10 @@ export async function POST(request: Request) {
         }
 
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
+          model: myProvider.languageModel(finalSelectedChatModel),
           system: isChatModelReasoning
-            ? reasoningSystemPrompt({ selectedChatModel, userTimeContext })
-            : systemPrompt({ selectedChatModel, userTimeContext }),
+            ? reasoningSystemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext })
+            : systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
           messages: messagesForStreamText, // Use the sanitized messages array
           maxSteps: 10,
           ...modelOptions, // Apply model-specific options
@@ -276,7 +337,7 @@ export async function POST(request: Request) {
               }
               : undefined,
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
+            finalSelectedChatModel === 'chat-model-reasoning'
               ? [ // Ensure 'think' is not listed here for chat-model-reasoning
                 'getWeather',
                 'createDocument',

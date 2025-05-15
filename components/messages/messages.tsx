@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { AnimatePresence } from 'framer-motion';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
 
@@ -156,13 +157,19 @@ function PureMessages({
           </div>
         ))}
 
-        {status === 'submitted' &&
-          messages.length > 0 &&
-          messages[messages.length - 1].role === 'user' && (
-            <div className="transition-opacity duration-300 ease-in-out">
-              <ThinkingMessage />
-            </div>
+        <AnimatePresence>
+          {status === 'submitted' &&
+            messages.length > 0 &&
+            messages[messages.length - 1].role === 'user' && (
+              <div 
+                key="thinking-message-wrapper" 
+                className="thinking-message-wrapper mb-3 animate-fadeIn"
+                style={{ position: 'relative' }}
+              >
+                <ThinkingMessage />
+              </div>
           )}
+        </AnimatePresence>
 
         {hasVisibleContent && (
           <div

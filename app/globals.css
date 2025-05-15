@@ -219,3 +219,32 @@ body {
   vertical-align: baseline !important;
   line-height: 1 !important;
 }
+
+/* Animation and layout fixes */
+.prevent-layout-shift {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.stable-height-container {
+  position: relative;
+  box-sizing: border-box;
+  contain: layout paint;
+}
+
+/* Thinking message transition */
+.thinking-message-wrapper {
+  transition: opacity 0.3s ease-in-out;
+  opacity: 1;
+}
+
+.thinking-message-wrapper.exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Simple fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

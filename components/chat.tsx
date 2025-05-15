@@ -4,7 +4,6 @@ import type { Attachment, Message as UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useState, useRef } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
-import { useLocalStorage } from 'usehooks-ts';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
@@ -20,22 +19,15 @@ import { getChatHistoryPaginationKey } from './sidebar-history';
 export function Chat({
   id,
   initialMessages,
-  selectedChatModel: initialSelectedChatModel,
   selectedVisibilityType,
   isReadonly,
 }: {
   id: string;
   initialMessages: Array<UIMessage>;
-  selectedChatModel: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
-
-  const [globallySelectedModelId] = useLocalStorage(
-    'selected-chat-model-id',
-    initialSelectedChatModel
-  );
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +46,6 @@ export function Chat({
     id,
     body: { 
       id, 
-      selectedChatModel: globallySelectedModelId,
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
@@ -88,7 +79,6 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
         <ChatHeader
           chatId={id}
-          selectedModelId={initialSelectedChatModel}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />

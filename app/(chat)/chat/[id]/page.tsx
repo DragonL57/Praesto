@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/auth';
@@ -9,7 +8,6 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { DataStreamHandler } from '@/components/data-stream-handler';
 // eslint-disable-next-line import/no-unresolved
-import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
@@ -54,30 +52,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     }));
   }
 
-  const cookieStore = await cookies();
-  const chatModelFromCookie = cookieStore.get('chat-model');
-
-  if (!chatModelFromCookie) {
-    return (
-      <PageTransition>
-        <Chat
-          id={chat.id}
-          initialMessages={convertToUIMessages(messagesFromDb)}
-          selectedChatModel={DEFAULT_CHAT_MODEL}
-          selectedVisibilityType={chat.visibility}
-          isReadonly={!session?.user || session.user.id !== chat.userId}
-        />
-        <DataStreamHandler id={id} />
-      </PageTransition>
-    );
-  }
-
   return (
     <PageTransition>
       <Chat
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
-        selectedChatModel={chatModelFromCookie.value}
         selectedVisibilityType={chat.visibility}
         isReadonly={!session?.user || session.user.id !== chat.userId}
       />

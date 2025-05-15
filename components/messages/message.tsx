@@ -1,10 +1,8 @@
 'use client';
 
-import React, { memo, useState, useMemo } from 'react';
+import React, { memo, useState, useMemo, useEffect } from 'react';
 import type { UIMessage } from 'ai';
 import cx from 'classnames';
-// Removing framer-motion animations
-// import { AnimatePresence, motion } from 'framer-motion';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from '../document';
 import { PencilEditIcon } from '../icons';
@@ -584,16 +582,72 @@ export const PreviewMessage = memo(
 );
 
 export const ThinkingMessage = () => {
-  const role = 'assistant';
+  const [currentDisplay, setCurrentDisplay] = useState({
+    text: 'Routing models...',
+    iconType: 'spinner' as 'spinner' | 'tick' | 'chevron',
+  });
+  const [isExiting, setIsExiting] = useState(false);
+  const [, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // Set initialized immediately
+    setIsInitialized(true);
+    
+    // Show "Routing complete" after a short delay
+    const timer1 = setTimeout(() => {
+      setCurrentDisplay({
+        text: 'Routing complete',
+        iconType: 'tick',
+      });
+
+      // Show "Thinking, wait a bit..." after another short delay
+      const timer2 = setTimeout(() => {
+        setCurrentDisplay({
+          text: 'Thinking, wait a bit...',
+          iconType: 'spinner',
+        });
+      }, 750); // Reduced time for checkmark display for better UX
+
+      return () => clearTimeout(timer2);
+    }, 750); // Reduced time for "Routing models..." display
+
+    return () => clearTimeout(timer1);
+  }, []);
+
+  // Add cleanup effect for smooth exit
+  useEffect(() => {
+    return () => {
+      setIsExiting(true);
+    };
+  }, []);
+
   return (
-    <div
-      data-testid="message-assistant-loading"
-      className="w-full mx-auto max-w-3xl px-4 group/message opacity-80 transition-opacity duration-300 ease-in-out"
-      data-role={role}
-    >
-      <div className="flex gap-4 w-full">
-        <div className="flex flex-col gap-2 w-full">
-          {/* Removed the shiny thinking text to rely on the reasoning header instead */}
+    <div className={`w-full mx-auto max-w-3xl px-4 thinking-message-wrapper ${isExiting ? 'exiting' : ''}`}>
+      <div 
+        className={`flex flex-row gap-2 items-center w-full cursor-pointer py-1.5 pr-1.5 pl-[6px] rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-200 ${currentDisplay.iconType === 'spinner' ? 'my-1' : 'my-0.5'} group stable-height-container`}
+      >
+        {currentDisplay.iconType === 'spinner' ? (
+          <div className="flex items-center justify-center size-4">
+            <svg className="animate-spin size-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : currentDisplay.iconType === 'tick' ? (
+          <div className="flex items-center justify-center size-4 text-green-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="size-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        ) : (
+          <div className="size-4 flex items-center justify-center text-zinc-400 dark:text-zinc-500 transition-transform duration-200 rotate-180 group-hover:text-blue-500 dark:group-hover:text-blue-400">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4">
+              <path d="M8.71005 11.71L11.3001 14.3C11.6901 14.69 12.3201 14.69 12.7101 14.3L15.3001 11.71C15.9301 11.08 15.4801 10 14.5901 10H9.41005C8.52005 10 8.08005 11.08 8.71005 11.71Z" fill="currentColor"/>
+            </svg>
+          </div>
+        )}
+        <div className={`font-medium text-sm ${currentDisplay.iconType === 'spinner' ? 'text-blue-600 dark:text-blue-400' : currentDisplay.iconType === 'tick' ? 'text-green-600 dark:text-green-400' : 'text-zinc-600 dark:text-zinc-400'} group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors duration-200 grow text-left min-w-0`}>
+          {currentDisplay.text}
         </div>
       </div>
     </div>
