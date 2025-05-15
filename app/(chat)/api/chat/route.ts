@@ -281,7 +281,7 @@ export async function POST(request: Request) {
                 'readWebsiteContent',
                 'getYoutubeTranscript',
               ],
-          experimental_transform: smoothStream({ chunking: 'word' }),
+          experimental_transform: smoothStream({ chunking: 'line' }),
           experimental_generateMessageId: generateUUID,
           tools: {
             think,
