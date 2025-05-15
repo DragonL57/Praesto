@@ -57,12 +57,22 @@ const ATTACHMENT_ERROR_NOTE_SUFFIX = ". The file might be corrupted, password-pr
 
 export const maxDuration = 60;
 
+// Define an interface for the expected 'data' object from the frontend
+interface RequestData {
+  useReasoning?: boolean;
+}
+
 export async function POST(request: Request) {
   try {
+    // First, get the full JSON body
+    const requestBody = await request.json();
+
+    // Destructure known top-level properties
     const {
       id,
       messages,
       userTimeContext,
+      data, // This will be our object containing useReasoning
     }: {
       id: string;
       messages: Array<UIMessage>;
@@ -72,7 +82,11 @@ export async function POST(request: Request) {
         dayOfWeek: string;
         timeZone: string;
       };
-    } = await request.json();
+      data?: RequestData; // Make data optional and use the interface
+    } = requestBody;
+
+    // Extract useReasoning from the nested data object
+    const useReasoning = data?.useReasoning === true; // Default to false if not present or not true
 
     const session = await auth();
 
@@ -233,66 +247,84 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        let finalSelectedChatModel = 'chat-model'; // Default to chat-model initially
+        let finalSelectedChatModel: string;
         let imageTranscriptionForReasoning: string | null = null;
 
-        const userMessageForRouter = messagesForStreamText.find(msg => msg.role === 'user');
-        let routerMessagesForAPI: Array<UIMessage>;
+        if (useReasoning === true) {
+          finalSelectedChatModel = 'chat-model-reasoning';
+          console.log('Reasoning toggle is ON. Using chat-model-reasoning.');
 
-        if (userMessageForRouter) {
-          // The userMessageForRouter is already a UIMessage with text in .parts 
-          // and image(s) in .experimental_attachments (if any).
-          // streamText will pass this appropriately to a vision-capable routerAPI.
-          routerMessagesForAPI = [userMessageForRouter];
-          const routerImageAttachmentCount = userMessageForRouter.experimental_attachments?.filter(att => att.contentType?.startsWith('image/')).length || 0;
-          if (routerImageAttachmentCount > 0) {
-            console.log(`Router will receive a user message with ${routerImageAttachmentCount} image attachment(s).`);
-          }
-        } else {
-          // Fallback, though unlikely given prior checks for userMessage
-          routerMessagesForAPI = [{
-            id: generateUUID(),
-            role: 'user',
-            content: '', // Add required content property
-            parts: [{ type: 'text', text: '' }]
-          }];
-        }
+          // Check if there's a user message with images that would need transcription
+          const userMessageForTranscription = messagesForStreamText.find(
+            msg => msg.role === 'user' && msg.experimental_attachments && msg.experimental_attachments.some(att => att.contentType?.startsWith('image/'))
+          );
 
-        try {
-          console.log('Attempting to call router model with text and potentially images.');
-          // IMPORTANT: Assuming 'title-model' is vision-capable (e.g., an alias for openai-large or similar).
-          // If not, this should be changed to a known vision model like 'openai-large'.
-          const routerAPI = myProvider.languageModel('title-model');
+          if (userMessageForTranscription) {
+            console.log('Reasoning model selected and images found in user message. Calling router for image transcription.');
 
-          let routerResponseText = '';
-          const stream = await streamText({
-            model: routerAPI,
-            system: ROUTER_SYSTEM_PROMPT,
-            messages: routerMessagesForAPI,
-            maxTokens: 250,
-          });
-          for await (const delta of stream.textStream) {
-            routerResponseText += delta;
-          }
+            // The userMessageForRouter should already have images if userMessageForTranscription is true.
+            // We just need any user message to pass to the router, preferably the most recent one.
+            const routerMessageInput = messagesForStreamText.find(msg => msg.id === userMessage.id) || userMessageForTranscription;
+            let routerMessagesForAPI: Array<UIMessage>;
 
-          if (routerResponseText) {
-            console.log('Router model response:', routerResponseText);
-            const parsedRouterResponse = JSON.parse(routerResponseText);
-            if (parsedRouterResponse.chosen_model) {
-              finalSelectedChatModel = parsedRouterResponse.chosen_model;
-              imageTranscriptionForReasoning = parsedRouterResponse.image_transcription || null;
-              console.log('Router chose model:', finalSelectedChatModel, 'Image Transcription:', imageTranscriptionForReasoning);
+            if (routerMessageInput) {
+              // Ensure parts exist, even if empty text, for the UIMessage type
+              const textPart = routerMessageInput.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
+              const textContent = textPart ? textPart.text : '';
+
+              routerMessagesForAPI = [{
+                ...routerMessageInput, // Spread the original message to keep attachments
+                parts: [{ type: 'text', text: textContent }], // Ensure parts has at least a text part
+              }];
+
+              const routerImageAttachmentCount = routerMessageInput.experimental_attachments?.filter(att => att.contentType?.startsWith('image/')).length || 0;
+              if (routerImageAttachmentCount > 0) {
+                console.log(`Router will receive a user message with ${routerImageAttachmentCount} image attachment(s) for transcription.`);
+              }
             } else {
-              console.warn('Router response did not contain chosen_model, defaulting to chat-model.');
-              finalSelectedChatModel = 'chat-model';
+              // Fallback, though highly unlikely if userMessageForTranscription was found
+              console.warn('Could not find suitable user message for router input despite images being present. Creating a dummy message.');
+              routerMessagesForAPI = [{
+                id: generateUUID(),
+                role: 'user',
+                content: '', // Add required content property
+                parts: [{ type: 'text', text: '' }]
+              }];
+            }
+
+            try {
+              const routerAPI = myProvider.languageModel('title-model'); // Assuming title-model is vision capable
+              let routerResponseText = '';
+              const stream = await streamText({
+                model: routerAPI,
+                system: ROUTER_SYSTEM_PROMPT,
+                messages: routerMessagesForAPI, // Send message with images
+                maxTokens: 250,
+              });
+              for await (const delta of stream.textStream) {
+                routerResponseText += delta;
+              }
+
+              if (routerResponseText) {
+                console.log('Router model response (for transcription):', routerResponseText);
+                const parsedRouterResponse = JSON.parse(routerResponseText);
+                imageTranscriptionForReasoning = parsedRouterResponse.image_transcription || null;
+                console.log('Image Transcription for reasoning model:', imageTranscriptionForReasoning);
+                // The router's chosen_model is ignored as the toggle dictates the finalSelectedChatModel
+              } else {
+                console.warn('Router model returned empty response for transcription.');
+              }
+            } catch (e) {
+              console.error('Error calling or parsing router model response for transcription:', e);
+              // imageTranscriptionForReasoning remains null
             }
           } else {
-            console.warn('Router model returned empty response, defaulting to chat-model.');
-            finalSelectedChatModel = 'chat-model';
+            console.log('Reasoning model selected, but no images found in user message that require transcription. Skipping router call.');
           }
-        } catch (e) {
-          console.error('Error calling or parsing router model response:', e);
+        } else {
           finalSelectedChatModel = 'chat-model';
+          console.log('Reasoning toggle is OFF or not present. Using chat-model.');
+          // imageTranscriptionForReasoning remains null, and router is not called.
         }
 
         const finalModelMessages = messagesForStreamText.map(msg => ({

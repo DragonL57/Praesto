@@ -22,6 +22,7 @@ import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
 import { TextareaAutoResizer, resetTextareaHeight } from './TextareaAutoResizer';
 import { useFileUploadHandler } from './FileUploadHandler';
 import type { SpeechRecognition } from './types';
+import { Button } from '@/components/ui/button';
 
 interface MultimodalInputProps {
   chatId: string;
@@ -50,7 +51,7 @@ function PureMultimodalInput({
   setAttachments,
   messages,
   setMessages,
-  append,  // Using the correct parameter name to match the interface
+  append,
   handleSubmit,
   className,
   messagesContainerRef,
@@ -69,8 +70,18 @@ function PureMultimodalInput({
   // State for tracking visual row count for expanding textarea
   const [visualRowCount, setVisualRowCount] = useState(1);
   
+  // State for the new reasoning toggle
+  const [useReasoning, setUseReasoning] = useState(false);
+  
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
+
+  // Define the set of statuses where the StopButton should be active
+  const activeStopButtonStatuses: UseChatHelpers['status'][] = [
+    'generating' as UseChatHelpers['status'],
+    'submitted' as UseChatHelpers['status'],
+    'streaming' as UseChatHelpers['status'],
+  ];
 
   // Use VirtualKeyboardHandler to manage keyboard on mobile
   // (doesn't render anything)
@@ -121,9 +132,12 @@ function PureMultimodalInput({
       recognitionRef.current = null;
     }
 
-    handleSubmit(undefined, {
+    const chatRequestOptions = {
       experimental_attachments: attachments,
-    });
+      data: { useReasoning },
+    };
+
+    handleSubmit(undefined, chatRequestOptions);
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -139,6 +153,7 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
+    useReasoning,
   ]);
 
   // Handle click on container to focus textarea
@@ -307,29 +322,52 @@ function PureMultimodalInput({
               <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
             </div>
 
-            {/* Bottom toolbar with controls - LibreChat style fixed positioning */}
+            {/* Bottom toolbar with controls - ensure SendButton and StopButton are here */}
             <div className="absolute inset-x-0.5 bottom-0.5 flex items-center justify-between p-1">
-              {/* Left side - only persona selector */}
-              <div className="p-2 flex flex-row justify-start items-center z-10">
-                {/* Background element with rounded corners - smaller to not overlap with border */}
-                <span className="absolute inset-px bg-muted dark:bg-muted rounded-full"></span>
+              {/* Left side - Persona selector and other potential future buttons */}
+              <div className="p-2 flex flex-row justify-start items-center z-10 gap-1">
+                {/* Background element with rounded corners */}
+                <span className="absolute inset-px bg-muted dark:bg-muted rounded-full pointer-events-none"></span>
+                {/* Reasoning Toggle Button - Text-based Pill Button */}
+                <Button
+                  type="button" // Prevent form submission
+                  variant="outline" // Base styling for OFF state
+                  size="sm"
+                  onClick={() => setUseReasoning(prev => !prev)}
+                  className={cx(
+                    "h-auto px-3 py-1.5 rounded-full transition-colors duration-150 relative z-10", // Base shape and positioning
+                    useReasoning ?
+                      // ON State: Blue toggle look
+                      "bg-primary/10 border-primary text-primary hover:bg-primary/20 hover:text-primary" :
+                      // OFF State: Transparent background, dimmed text. Relies on variant="outline" for border and standard hover.
+                      "bg-transparent text-foreground/70",
+                  )}
+                  title={useReasoning ? "Disable Reasoning Model" : "Enable Reasoning Model"}
+                  aria-pressed={useReasoning}
+                  disabled={status !== 'ready'}
+                >
+                  Reasoning
+                </Button>
               </div>
 
-              {/* Right side - attachments, speech-to-text, and send buttons */}
-              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1">
-                <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-                <SpeechToTextButton 
-                  setInput={setInput} 
-                  status={status} 
-                  input={input}
-                  recognitionRef={recognitionRef}
+              {/* Right side - attachments, speech-to-text, and send/stop buttons */}
+              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1 relative">
+                <AttachmentsButton
+                  fileInputRef={fileInputRef}
+                  status={status} // Correctly pass status, internal logic handles disabling
                 />
-                {(status === 'submitted' || status === 'streaming') ? (
+                <SpeechToTextButton
+                  recognitionRef={recognitionRef}
+                  setInput={setInput}
+                  status={status}
+                  // input={input} // Optional prop, can be omitted if not strictly needed by SpeechToTextButton's logic
+                />
+                {activeStopButtonStatuses.includes(status) ? (
                   <StopButton stop={stop} setMessages={setMessages} />
                 ) : (
                   <SendButton
-                    input={input}
                     submitForm={submitForm}
+                    input={input}
                     uploadQueue={uploadQueue}
                   />
                 )}
