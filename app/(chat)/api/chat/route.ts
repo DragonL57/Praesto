@@ -3,6 +3,8 @@ import {
   createDataStreamResponse,
   smoothStream,
   streamText,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
 } from 'ai';
 import type { UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
@@ -232,64 +234,97 @@ export async function POST(request: Request) {
     return createDataStreamResponse({
       execute: async (dataStream) => {
         let finalSelectedChatModel = 'chat-model'; // Default to chat-model initially
-        const userQueryText = messagesForStreamText.find(msg => msg.role === 'user')?.parts.find(part => part.type === 'text')?.text || '';
+        let imageTranscriptionForReasoning: string | null = null;
 
-        // Check for image attachments first
-        const hasImageAttachment = messagesForStreamText.some(msg =>
-          msg.role === 'user' &&
-          msg.experimental_attachments &&
-          msg.experimental_attachments.some(att => att.contentType?.startsWith('image/'))
-        );
+        const userMessageForRouter = messagesForStreamText.find(msg => msg.role === 'user');
+        let routerMessagesForAPI: Array<UIMessage>;
 
-        if (hasImageAttachment) {
-          console.log('Image attachment detected, routing to chat-model.');
-          finalSelectedChatModel = 'chat-model'; // Force to normal chat model if image is present
+        if (userMessageForRouter) {
+          // The userMessageForRouter is already a UIMessage with text in .parts 
+          // and image(s) in .experimental_attachments (if any).
+          // streamText will pass this appropriately to a vision-capable routerAPI.
+          routerMessagesForAPI = [userMessageForRouter];
+          const routerImageAttachmentCount = userMessageForRouter.experimental_attachments?.filter(att => att.contentType?.startsWith('image/')).length || 0;
+          if (routerImageAttachmentCount > 0) {
+            console.log(`Router will receive a user message with ${routerImageAttachmentCount} image attachment(s).`);
+          }
         } else {
-          // If no image, call the router model
-          try {
-            console.log('No image attachment, calling router model.');
-            // Use the Pollinations OpenAI-compatible model for routing
-            const routerAPI = myProvider.languageModel('title-model'); // 'title-model' maps to pollinationsProvider.chatModel('openai')
-            const routerUserMessageContent = userQueryText; // Content for the router
-            const routerMessages: Array<UIMessage> = [
-              {
-                id: generateUUID(),
-                role: 'user',
-                content: routerUserMessageContent, // Add content field
-                parts: [{ type: 'text', text: routerUserMessageContent }]
-              }
-            ];
+          // Fallback, though unlikely given prior checks for userMessage
+          routerMessagesForAPI = [{
+            id: generateUUID(),
+            role: 'user',
+            content: '', // Add required content property
+            parts: [{ type: 'text', text: '' }]
+          }];
+        }
 
-            // Await the full text content from the stream
-            let routerResponseText = '';
-            const stream = await streamText({
-              model: routerAPI,
-              system: ROUTER_SYSTEM_PROMPT,
-              messages: routerMessages,
-              maxTokens: 75, // Expecting a short JSON response, increased slightly for safety
-            });
-            for await (const delta of stream.textStream) {
-              routerResponseText += delta;
-            }
+        try {
+          console.log('Attempting to call router model with text and potentially images.');
+          // IMPORTANT: Assuming 'title-model' is vision-capable (e.g., an alias for openai-large or similar).
+          // If not, this should be changed to a known vision model like 'openai-large'.
+          const routerAPI = myProvider.languageModel('title-model');
 
-            if (routerResponseText) {
-              console.log('Router model response:', routerResponseText);
-              const parsedRouterResponse = JSON.parse(routerResponseText);
-              if (parsedRouterResponse.chosen_model) {
-                finalSelectedChatModel = parsedRouterResponse.chosen_model;
-                console.log('Router chose model:', finalSelectedChatModel);
-              } else {
-                console.warn('Router response did not contain chosen_model, defaulting to chat-model.');
-                finalSelectedChatModel = 'chat-model';
-              }
+          let routerResponseText = '';
+          const stream = await streamText({
+            model: routerAPI,
+            system: ROUTER_SYSTEM_PROMPT,
+            messages: routerMessagesForAPI,
+            maxTokens: 250,
+          });
+          for await (const delta of stream.textStream) {
+            routerResponseText += delta;
+          }
+
+          if (routerResponseText) {
+            console.log('Router model response:', routerResponseText);
+            const parsedRouterResponse = JSON.parse(routerResponseText);
+            if (parsedRouterResponse.chosen_model) {
+              finalSelectedChatModel = parsedRouterResponse.chosen_model;
+              imageTranscriptionForReasoning = parsedRouterResponse.image_transcription || null;
+              console.log('Router chose model:', finalSelectedChatModel, 'Image Transcription:', imageTranscriptionForReasoning);
             } else {
-              console.warn('Router model returned empty response, defaulting to chat-model.');
+              console.warn('Router response did not contain chosen_model, defaulting to chat-model.');
               finalSelectedChatModel = 'chat-model';
             }
-          } catch (e) {
-            console.error('Error calling or parsing router model response:', e);
-            finalSelectedChatModel = 'chat-model'; // Default to chat-model on error
+          } else {
+            console.warn('Router model returned empty response, defaulting to chat-model.');
+            finalSelectedChatModel = 'chat-model';
           }
+        } catch (e) {
+          console.error('Error calling or parsing router model response:', e);
+          finalSelectedChatModel = 'chat-model';
+        }
+
+        const finalModelMessages = messagesForStreamText.map(msg => ({
+          ...msg,
+          parts: [...msg.parts],
+          experimental_attachments: msg.experimental_attachments ? [...msg.experimental_attachments] : undefined
+        }));
+
+        if (finalSelectedChatModel === 'chat-model-reasoning') {
+          // Append transcription to the last user message
+          if (imageTranscriptionForReasoning) {
+            const lastUserMsgIndex = finalModelMessages.map(m => m.role).lastIndexOf('user');
+            if (lastUserMsgIndex !== -1) {
+              const userMsgToModify = finalModelMessages[lastUserMsgIndex];
+              const currentText = userMsgToModify.parts.find(p => p.type === 'text')?.text || '';
+              const newText = `${currentText}\n\n--- Image Content Analysis ---\n${imageTranscriptionForReasoning}\n--- End of Image Content Analysis ---`;
+
+              const textPartIndex = userMsgToModify.parts.findIndex(p => p.type === 'text');
+              if (textPartIndex !== -1) {
+                userMsgToModify.parts[textPartIndex] = { type: 'text', text: newText };
+              } else {
+                userMsgToModify.parts.push({ type: 'text', text: newText });
+              }
+              console.log('Appended image transcription to the last user message for reasoning model.');
+            }
+          }
+
+          // CRUCIAL: Remove attachments from ALL messages if routing to reasoning model
+          for (const msg of finalModelMessages) {
+            msg.experimental_attachments = undefined;
+          }
+          console.log('Removed image attachments from ALL messages for reasoning model.');
         }
 
         const isFireworksQwenModel =
@@ -309,36 +344,43 @@ export async function POST(request: Request) {
         } else if (isFireworksQwenModel) {
           modelOptions = {
             maxTokens: 16000, // Set max token limit to 16000 for Fireworks Qwen model
-            temperature: 0.8 // Set temperature for Fireworks Qwen model
+            temperature: 0.6 // Set temperature for Fireworks Qwen model
           };
         }
 
+        let modelInstance = myProvider.languageModel(finalSelectedChatModel);
+
+        if (isFireworksQwenModel) {
+          modelInstance = wrapLanguageModel({
+            model: modelInstance,
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          });
+        }
+
         const result = streamText({
-          model: myProvider.languageModel(finalSelectedChatModel),
+          model: modelInstance,
           system: isChatModelReasoning
             ? reasoningSystemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext })
             : systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
-          messages: messagesForStreamText, // Use the sanitized messages array
+          messages: finalModelMessages,
           maxSteps: 10,
-          ...modelOptions, // Apply model-specific options
+          ...modelOptions,
           providerOptions: isFireworksQwenModel
             ? {
               fireworks: {
-                // Any Fireworks-specific options could go here in the future
                 temperature: 0.8 // Also set temperature in providerOptions for Fireworks
               },
             }
             : isOpenAILarge
               ? {
                 openai: {
-                  // OpenAI-compatible provider specific options
                   maxTokens: 8192
                 }
               }
               : undefined,
           experimental_activeTools:
             finalSelectedChatModel === 'chat-model-reasoning'
-              ? [ // Ensure 'think' is not listed here for chat-model-reasoning
+              ? [
                 'getWeather',
                 'createDocument',
                 'updateDocument',
@@ -420,14 +462,14 @@ export async function POST(request: Request) {
         result.consumeStream();
 
         // Log information about image attachments being sent to the model
-        const imageAttachments = messagesForStreamText
+        const finalImageAttachmentsForLogging = finalModelMessages
           .filter(msg => msg.role === 'user' && msg.experimental_attachments?.length)
           .flatMap(msg => msg.experimental_attachments || [])
           .filter(attachment => attachment.contentType?.startsWith('image/'));
 
-        if (imageAttachments.length > 0) {
-          console.log(`Sending ${imageAttachments.length} image attachments to the model:`,
-            imageAttachments.map(img => `${img.name} (${img.contentType})`));
+        if (finalImageAttachmentsForLogging.length > 0) {
+          console.log(`Sending ${finalImageAttachmentsForLogging.length} image attachments to the final model (${finalSelectedChatModel}):`,
+            finalImageAttachmentsForLogging.map(img => `${img.name} (${img.contentType})`));
         }
 
         result.mergeIntoDataStream(dataStream, {
