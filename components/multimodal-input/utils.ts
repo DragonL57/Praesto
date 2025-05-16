@@ -1,3 +1,6 @@
+import { upload } from '@vercel/blob/client';
+import type { Attachment } from 'ai';
+
 // Utility functions for multimodal input components
 
 /**
@@ -55,42 +58,29 @@ export const detectUserLanguage = (): string => {
 };
 
 /**
- * Uploads a file to the server
+ * Uploads a file to Vercel Blob directly from the client.
  * @param file The file to upload
- * @returns The uploaded attachment or undefined if upload failed
+ * @returns The uploaded attachment (conforming to ai.Attachment) or undefined if upload failed
  */
-export const uploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
+export const uploadFile = async (file: File): Promise<Attachment | undefined> => {
     try {
-        // All files now go to the main upload endpoint
-        const response = await fetch('/api/files/upload', {
-            method: 'POST',
-            body: formData,
+        const newBlob = await upload(file.name, file, {
+            access: 'public',
+            handleUploadUrl: '/api/files/upload', // Our backend route for token generation
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            // The /api/files/upload endpoint now returns a richer object
-            // including url, pathname, contentType, size, and originalFilename.
-            // We'll map this to the Attachment-like structure the rest of the client expects.
-            // The 'name' property in Attachment is often used for the blob's pathname.
-            return {
-                url: data.url,
-                name: data.pathname, // Or data.originalFilename if preferred for display name logic elsewhere
-                contentType: data.contentType,
-                size: data.size,
-                originalFilename: data.originalFilename,
-            };
-        }
-
-        const errorData = await response.json().catch(() => ({ error: 'Upload failed with no specific error message.' }));
-        console.error('File upload failed:', errorData.error || response.statusText);
-        return undefined;
-
-    } catch (uploadError) {
-        console.error('Error during file upload process:', uploadError);
+        // Map PutBlobResult to the ai.Attachment structure.
+        // `newBlob` contains: url, downloadUrl, pathname, contentType, contentDisposition.
+        // `ai.Attachment` expects: url, name (optional), contentType (optional).
+        return {
+            url: newBlob.url,
+            name: file.name, // Use original file name for the attachment's name property
+            contentType: newBlob.contentType, // Pass along contentType from Vercel Blob
+            // `size` and `originalFilename` (as a separate field) are not part of ai.Attachment
+        };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Client-side upload failed.';
+        console.error('Error during client-side file upload to Vercel Blob:', errorMessage, error);
         return undefined;
     }
 };

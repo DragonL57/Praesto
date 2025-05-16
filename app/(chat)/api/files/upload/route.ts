@@ -1,165 +1,108 @@
-import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/auth';
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
-// Define a type for Blob with name property
-interface BlobWithFileName extends Blob {
-  name?: string;
-}
+// Define the maximum file size (e.g., 25MB)
+const MAX_FILE_SIZE_MB = 25;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-// Use Blob instead of File since File is not available in Node.js environment
-const FileSchema = z.object({
-  file: z
-    .instanceof(Blob)
-    .refine((file) => file.size <= 25 * 1024 * 1024, {
-      message: 'File size should be less than 25MB',
-    })
-    .refine(
-      (file) => {
-        // Logging the content type for debugging
-        console.log('File type:', file.type);
+// Allowed MIME types and extensions
+const allowedMimeTypes = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/msword', // .doc
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+  'application/vnd.ms-powerpoint', // .ppt
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.ms-excel', // .xls
+  'application/vnd.oasis.opendocument.text', // .odt
+  'application/vnd.oasis.opendocument.spreadsheet', // .ods
+  'application/vnd.oasis.opendocument.presentation', // .odp
+  'text/plain', // .txt
+  'text/csv', // .csv
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
 
-        // File extension check from name as fallback
-        const getExtensionFromName = (name: string) => {
-          const parts = name.split('.');
-          return parts.length > 1 ? parts.pop()?.toLowerCase() : '';
-        };
-
-        const fileName = (file as BlobWithFileName).name || '';
-        const extension = getExtensionFromName(fileName);
-
-        // Allowed MIME types - focusing on officeparser and common image formats
-        const allowedMimeTypes = [
-          // officeparser supported
-          'application/pdf',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-          'application/msword', // .doc (though officeparser might be better with .docx)
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-          'application/vnd.ms-powerpoint', // .ppt
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-          'application/vnd.ms-excel', // .xls
-          'application/vnd.oasis.opendocument.text', // .odt
-          'application/vnd.oasis.opendocument.spreadsheet', // .ods
-          'application/vnd.oasis.opendocument.presentation', // .odp
-          'text/plain', // .txt
-          'text/csv', // .csv
-          // Common image types (retained for general use, though not parsed for text by officeparser)
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp',
-        ];
-
-        // Allowed extensions - for fallback and clarity
-        const allowedExtensions = [
-          'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'odt', 'ods', 'odp', 'txt', 'csv',
-          'jpg', 'jpeg', 'png', 'gif', 'webp',
-        ];
-
-        // Check by MIME type first, then by extension as a fallback
-        if (allowedMimeTypes.includes(file.type)) {
-          return true;
-        }
-        if (extension && allowedExtensions.includes(extension)) {
-          // If MIME type was generic (e.g., application/octet-stream) but extension is known, allow it.
-          // This helps with files that might not have a precise MIME type from the client.
-          console.log(`Allowing file based on extension: ${extension} for file: ${fileName}`);
-          return true;
-        }
-        // Log rejection if neither matches
-        console.warn(`File type not supported: ${file.type}, extension: ${extension}, name: ${fileName}`);
-        return false;
-      },
-      {
-        message:
-          'Supported file types: PDF, Word (docx, doc), PowerPoint (pptx, ppt), Excel (xlsx, xls), OpenDocument (odt, ods, odp), Text (txt, csv), Images (jpeg, png, gif, webp)',
-      }
-    ),
-});
+// const allowedExtensions = [ // This is no longer used with client-side uploads and handleUpload
+//   'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'odt', 'ods', 'odp', 'txt', 'csv',
+//   'jpg', 'jpeg', 'png', 'gif', 'webp',
+// ];
 
 export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (request.body === null) {
-    return new Response('Request body is empty', { status: 400 });
-  }
+  const body = (await request.json()) as HandleUploadBody;
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File; // Changed to File for better type safety
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (_pathname /*, clientPayload */) => {
+        // Check authentication
+        const session = await auth(); // Using request object might be needed if auth() depends on it
+        if (!session || !session.user) {
+          throw new Error('Unauthorized: User not authenticated.');
+        }
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
+        // Here you can add additional checks based on pathname or clientPayload if needed
+        // For example, ensure the user has permission to upload to this specific path.
+        // const userCanUpload = canUserUpload(session.user, pathname);
+        // if (!userCanUpload) {
+        //   throw new Error('User does not have permission for this upload.');
+        // }
 
-    // Add original name to the Blob instance if not already present for schema validation
-    // This is a bit of a workaround because the schema validation might run on a Blob
-    // that doesn't have the .name property directly if it's not cast to File first.
-    // However, 'file' is already cast to 'File' above, which should have 'name'.
-    // For robustness in the schema, we ensure 'name' is available on the object passed to refine.
-    const fileForValidation = file as BlobWithFileName;
-    if (!fileForValidation.name && file.name) {
-      fileForValidation.name = file.name;
-    }
+        return {
+          allowedContentTypes: allowedMimeTypes,
+          maximumFileSizeInBytes: MAX_FILE_SIZE_BYTES,
+          tokenPayload: JSON.stringify({
+            userId: session.user.id, // Example: include userId in the token payload
+            // originalPathname: pathname, // could be useful
+          }),
+          // You can also set a validity period for the token if needed
+          // validUntil: Date.now() + 60 * 60 * 1000, // 1 hour from now
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // This callback is invoked after the file is successfully uploaded to Vercel Blob.
+        // It's useful for updating your database with the blob's URL and other metadata.
+        console.log('Blob upload completed:', blob);
+        console.log('Token payload received:', tokenPayload); // Log the raw tokenPayload
 
-    console.log('Uploaded file details (pre-validation):', {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      objectKeys: Object.keys(fileForValidation), // Log all keys of the object being validated
-      fileNameForValidation: fileForValidation.name, // Specifically log the name used in validation
-      fileTypeForValidation: fileForValidation.type, // Specifically log the type used in validation
+        try {
+          if (typeof tokenPayload !== 'string') {
+            console.warn('onUploadCompleted: tokenPayload is not a string or is missing.', tokenPayload);
+            // Decide how to handle this: throw error, or proceed if userId is not strictly necessary here
+            // For now, let's assume if there's no valid tokenPayload, we can't get userId.
+            throw new Error('Invalid or missing tokenPayload for completed upload.');
+          }
+          const { userId } = JSON.parse(tokenPayload);
+          // Example: Update your database
+          // await db.users.update({
+          //   where: { id: userId },
+          //   data: { [blob.pathname]: blob.url }, // Storing URL based on pathname or a specific field
+          // });
+          console.log(`File uploaded by user ${userId}: ${blob.url}`);
+        } catch (error) {
+          console.error('Error processing upload completion:', error);
+          // Even if this part fails, the file is already in Vercel Blob.
+          // Handle this error carefully, e.g., by logging or queuing a retry for DB update.
+          // Throwing an error here might cause issues if Vercel Blob expects a 200 OK.
+          // The Vercel guide suggests that "The webhook will retry 5 times waiting for a 200".
+          // So, if this can fail, ensure it's idempotent or handle retries gracefully.
+          throw new Error('Could not complete post-upload processing.');
+        }
+      },
     });
 
-    const validatedFile = FileSchema.safeParse({ file: fileForValidation });
-
-    if (!validatedFile.success) {
-      const errorMessage = validatedFile.error.errors
-        .map((error) => error.message)
-        .join(', ');
-
-      console.error('File validation failed:', errorMessage, {
-        file_type: file.type,
-        file_name: file.name
-      });
-
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
-    }
-
-    const filename = file.name;
-    const fileBuffer = await file.arrayBuffer();
-
-    try {
-      // Upload to Vercel Blob
-      const blobResult = await put(filename, fileBuffer, {
-        access: 'public',
-        contentType: file.type,
-      });
-
-      // Ensure the response includes all necessary fields: url, pathname, contentType, size
-      // The 'blobResult' from @vercel/blob put already contains:
-      // url, downloadUrl, pathname, contentType, contentDisposition
-      // We also want to include the original file size.
-      return NextResponse.json({
-        ...blobResult,
-        size: file.size,
-        originalFilename: file.name
-      });
-    } catch (error) {
-      console.error('Upload to blob storage failed:', error);
-      return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
-    }
-  } catch (error) {
-    console.error('Request processing failed:', error);
+    return NextResponse.json(jsonResponse);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    console.error('handleUpload error:', message, error);
     return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 },
+      { error: message },
+      { status: 400 }, // The Vercel Blob client SDK expects a 400 for errors during token generation.
     );
   }
 }
