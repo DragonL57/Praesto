@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, memo, useEffect } from 'react';
+import { useRef, memo, useEffect, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// Only import one theme to ensure consistency
-import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+// Import both dark and light themes from the 'one' family
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import type { ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 
 
 type Props = {
@@ -21,6 +22,12 @@ interface CodeProps {
 const CodeBlock = memo(({ lang, children }: Props) => {
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isCopiedRef = useRef<HTMLSpanElement>(null);
+  const { resolvedTheme } = useTheme();
+  const [currentSyntaxTheme, setCurrentSyntaxTheme] = useState(oneLight);
+  
+  useEffect(() => {
+    setCurrentSyntaxTheme(resolvedTheme === 'dark' ? oneDark : oneLight);
+  }, [resolvedTheme]);
   
   // Handle copy functionality without using state
   const onCopy = () => {
@@ -108,7 +115,7 @@ const CodeBlock = memo(({ lang, children }: Props) => {
       >
         <SyntaxHighlighter
           language={highlighterLang}
-          style={coldarkDark}
+          style={currentSyntaxTheme}
           customStyle={{
             margin: 0,
             padding: '1rem',
