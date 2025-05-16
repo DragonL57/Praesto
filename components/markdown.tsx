@@ -15,7 +15,13 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'; // Import HoverCard components
-import { Info } from 'lucide-react'; // For icons
+import { Info, CalendarDays } from 'lucide-react'; // For icons
+import {
+  formatDistanceToNowStrict, 
+  parseISO, 
+  differenceInCalendarDays, 
+  format
+} from 'date-fns'; // Added more date-fns functions
 
 // Define a more specific type for HAST nodes with properties
 interface HastNodeWithProperties {
@@ -73,6 +79,7 @@ interface Metadata {
   favicon?: string | null;
   image?: string | null;
   author?: string | null;
+  publishedDate?: string | null; // Added publishedDate
   error?: string | null; // To store potential errors from API
 }
 
@@ -83,7 +90,7 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const fetchMetadata = async () => {
-    if (!url || metadata || isLoading) return; // Don't fetch if no URL, already fetched, or already loading
+    if (!url || metadata || isLoading) return;
     setIsLoading(true);
     try {
       const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
@@ -101,11 +108,6 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
     }
   };
 
-  // Prefetch on mount or when URL changes (optional, could also be on hover card open)
-  // useEffect(() => {
-  //  fetchMetadata();
-  // }, [url]);
-
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open && !metadata && !isLoading) {
@@ -113,10 +115,31 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
     }
   };
   
-  // Fallback Favicon (simple initial)
   const FallbackFavicon = () => (
     <Info className="size-4 text-gray-400" />
   );
+
+  const getRelativeDate = (dateString?: string | null) => {
+    if (!dateString) return null;
+    try {
+      const date = parseISO(dateString);
+      const now = new Date();
+      
+      const relativeTime = formatDistanceToNowStrict(date, { addSuffix: true });
+      const diffDays = differenceInCalendarDays(now, date);
+
+      if (diffDays >= 3) {
+        const absoluteDate = format(date, 'MMM d, yyyy');
+        return `${relativeTime} (${absoluteDate})`;
+      }
+      
+      return relativeTime; // For less than 3 days ago, or if it's a future date (relativeTime handles this)
+
+    } catch (e) {
+      console.error("Error parsing date for relative format:", e);
+      return dateString; // Fallback to original string if parsing fails
+    }
+  };
 
   return (
     <HoverCard openDelay={200} closeDelay={100} onOpenChange={handleOpenChange} open={isOpen}>
@@ -127,8 +150,6 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center px-[6px] py-px mx-0.5 text-xs font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline align-middle"
           aria-label={`Source ${num} - ${url}`}
-          // Remove native title if using HoverCard
-          // title={displayTitle} 
         >
           {num}
         </a>
@@ -165,6 +186,12 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
             )}
             {metadata.author && (
               <p className="text-xs text-gray-500 dark:text-gray-400">By: {metadata.author}</p>
+            )}
+            {metadata.publishedDate && (
+              <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                <CalendarDays className="size-3.5" />
+                <span>{getRelativeDate(metadata.publishedDate)}</span>
+              </div>
             )}
           </div>
         )}
