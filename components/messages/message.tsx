@@ -5,7 +5,7 @@ import type { UIMessage } from 'ai';
 import cx from 'classnames';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from '../document';
-import { PencilEditIcon } from '../icons';
+import { PencilEditIcon, CopyIcon } from '../icons';
 import { Markdown } from '../markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from '../preview-attachment';
@@ -14,11 +14,13 @@ import { YouTubeTranscript } from '../youtube-transcript';
 import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger , TooltipProvider } from '../ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from '../document-preview';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { MessageReasoning } from './message-reasoning';
+import { useCopyToClipboard } from 'usehooks-ts';
+import { toast } from 'sonner';
 
 // Define types needed for reasoning elements, mirroring message-reasoning.tsx
 interface WebSearchResult {
@@ -155,6 +157,7 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [_, copyToClipboard] = useCopyToClipboard();
 
   // 1. Consolidate reasoning elements (text, web search results) for MessageReasoning
   const { reasoningElements, indicesToFilter } = useMemo(() => {
@@ -336,6 +339,26 @@ const PurePreviewMessage = ({
     return enhancedParts;
   }, [message.parts, message.role, indicesToFilter]); // Add indicesToFilter dependency
 
+  const handleCopy = async () => {
+    // User messages typically have one text part.
+    // Find the first text part to ensure we get the content.
+    const userTextPart = message.parts?.find(part => part.type === 'text');
+    // Ensure the 'text' property exists and is a string.
+    const textToCopy = (userTextPart && typeof userTextPart.text === 'string') ? userTextPart.text : null;
+
+    if (textToCopy && textToCopy.trim()) {
+      try {
+        await copyToClipboard(textToCopy.trim());
+        toast.success('Copied to clipboard!');
+      } catch (error) {
+        toast.error('Failed to copy text.');
+        console.error('Failed to copy text: ', error);
+      }
+    } else {
+      toast.error("There's no text to copy!");
+    }
+  };
+
   return (
     <div
       data-testid={`message-${message.role}`}
@@ -417,26 +440,6 @@ const PurePreviewMessage = ({
                   if (mode === 'view') {
                     return (
                       <div key={key} className="flex flex-row gap-2 items-start">
-                        {message.role === 'user' && !isReadonly && (
-                          <div className="self-center">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  data-testid="message-edit-button"
-                                  variant="ghost"
-                                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                                  onClick={() => {
-                                    setMode('edit');
-                                  }}
-                                >
-                                  <PencilEditIcon />
-                                  <span className="sr-only">Edit message</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Edit message</TooltipContent>
-                            </Tooltip>
-                          </div>
-                        )}
                         <div
                           data-testid="message-content"
                           className={cn('flex flex-col gap-0 flex-1 w-full', {
@@ -555,17 +558,60 @@ const PurePreviewMessage = ({
             });
           })()}
 
-          {!isReadonly && (
-            <MessageActions
-              key={`action-${message.id}`}
-              chatId={chatId}
-              message={message}
-              vote={vote}
-              isLoading={isLoading}
-            />
+          {!isReadonly && message.role === 'assistant' && (
+            <div className="flex justify-start mt-1">
+              <MessageActions
+                key={`action-${message.id}`}
+                chatId={chatId}
+                message={message}
+                vote={vote}
+                isLoading={isLoading}
+              />
+            </div>
           )}
         </div>
       </div>
+
+      {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
+      {message.role === 'user' && !isReadonly && mode === 'view' && (
+        <div className="flex justify-end items-center mt-1">
+          <TooltipProvider delayDuration={0}>
+            {/* COPY BUTTON */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-testid="message-copy-button"
+                  variant="ghost"
+                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
+                  onClick={handleCopy}
+                >
+                  <CopyIcon />
+                  <span className="sr-only">Copy message</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy message</TooltipContent>
+            </Tooltip>
+
+            {/* EDIT BUTTON */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-testid="message-edit-button"
+                  variant="ghost"
+                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                  onClick={() => {
+                    setMode('edit');
+                  }}
+                >
+                  <PencilEditIcon />
+                  <span className="sr-only">Edit message</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit message</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
     </div>
   );
 };
