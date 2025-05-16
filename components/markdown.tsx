@@ -23,16 +23,15 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
     <div
       className="table-container my-4"
       style={{
-        width: '100%', // Match text container width
-        maxWidth: '100%', // Prevent wrapper from exceeding parent width
+        width: '100%',
+        maxWidth: '100%',
         maxHeight: '400px',
         overflowY: 'auto',
-        overflowX: 'auto', // Changed from 'scroll' to 'auto' to only show scrollbar when needed
+        overflowX: 'auto',
         display: 'block',
-        borderRadius: '0.375rem',
         border: '1px solid var(--border)',
         WebkitOverflowScrolling: 'touch',
-        position: 'relative', // Add this to create a positioning context
+        position: 'relative',
       }}
     >
       {children}
@@ -146,15 +145,16 @@ const NonMemoizedMarkdown = ({
             );
           },
 
-          // Table components with improved overflow handling
+          // Restore the original table component renderers
           table: ({ children, ...props }) => (
             <TableWrapper>
               <table
                 style={{
+                  borderCollapse: 'collapse',
                   borderSpacing: 0,
-                  minWidth: '100%',
-                  width: 'auto', // Changed from fixed 150% to auto
-                  tableLayout: 'auto', // Let browser determine column widths based on content
+                  minWidth: '250%',
+                  width: 'auto',
+                  tableLayout: 'auto',
                 }}
                 {...props}
               >
@@ -165,7 +165,7 @@ const NonMemoizedMarkdown = ({
 
           thead: ({ children, ...props }) => (
             <thead
-              className="bg-zinc-50 dark:bg-zinc-800"
+              className="bg-zinc-100 dark:bg-zinc-800"
               style={{ position: 'sticky', top: 0, zIndex: 1 }}
               {...props}
             >
@@ -174,19 +174,19 @@ const NonMemoizedMarkdown = ({
           ),
           tbody: ({ children, ...props }) => <tbody {...props}>{children}</tbody>,
           tr: ({ children, ...props }) => (
-            <tr className="border-b dark:border-zinc-700" {...props}>
+            <tr {...props}>
               {children}
             </tr>
           ),
           th: ({ children, ...props }) => (
             <th
-              className="px-4 py-2 text-left font-semibold"
+              className="px-4 py-2 text-left font-semibold border-x border-zinc-300 dark:border-zinc-700"
               style={{
-                minWidth: '150px',
                 maxWidth: '350px',
-                whiteSpace: 'pre-wrap', // Changed to pre-wrap for better whitespace handling
-                wordBreak: 'break-word', // Add word breaking for better text flow
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
                 padding: '8px 16px',
+                boxShadow: 'inset 0 1px 0 0 hsl(var(--border)), inset 0 -1px 0 0 hsl(var(--border))',
               }}
               {...props}
             >
@@ -195,12 +195,11 @@ const NonMemoizedMarkdown = ({
           ),
           td: ({ children, ...props }) => (
             <td
-              className="px-4 py-2"
+              className="px-4 py-2 border border-zinc-300 dark:border-zinc-700"
               style={{
-                minWidth: '150px',
                 maxWidth: '350px',
-                whiteSpace: 'pre-wrap', // Changed to pre-wrap for better whitespace handling
-                wordBreak: 'break-word', // Add word breaking for better text flow
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
                 padding: '8px 16px',
               }}
               {...props}
