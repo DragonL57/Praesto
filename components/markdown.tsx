@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import React, { memo, createElement, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -10,6 +10,27 @@ import 'katex/dist/katex.min.css';
 import { ImagePreviewModal } from './image-preview-modal';
 import { CodeBlock } from './code-block'; // Import the proper CodeBlock component
 import { InlineCode } from './ui/code/inline-code';
+
+// Define a more specific type for HAST nodes with properties
+interface HastNodeWithProperties {
+  type: string;
+  tagName?: string;
+  properties?: {
+    num?: string;
+    url?: string;
+    [key: string]: unknown; // Allow other properties but type them as unknown
+  };
+  children?: HastNodeWithProperties[];
+  value?: string; // For text nodes
+}
+
+// Define our custom components type, extending the base and adding 'citation-button'
+interface CustomMarkdownComponents extends Components {
+  'citation-button'?: React.FC<{
+      node?: HastNodeWithProperties;
+      [key: string]: unknown;
+  }>;
+}
 
 // Define custom props to track heading depth
 interface MarkdownProps {
@@ -36,6 +57,21 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
     >
       {children}
     </div>
+  );
+};
+
+// Define the new CitationButton component
+const CitationButton = ({ num, url }: { num: string; url: string }) => {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center justify-center px-[6px] py-px mx-0.2 text-xs font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline"
+      aria-label={`Source ${num}`}
+    >
+      {num}
+    </a>
   );
 };
 
@@ -102,6 +138,17 @@ const NonMemoizedMarkdown = ({
                 {String(children)}
               </CodeBlock>
             );
+          },
+
+          'citation-button': ({ node }: { node?: HastNodeWithProperties }) => {
+            const num = node?.properties?.num;
+            const url = node?.properties?.url;
+            // Ensure num and url are strings before passing to CitationButton
+            if (typeof num === 'string' && typeof url === 'string') {
+              return <CitationButton num={num} url={url} />;
+            }
+            // Fallback for malformed or missing attributes
+            return <span style={{ color: 'red', fontWeight: 'bold' }}>[Citation Error]</span>;
           },
 
           // Image component with lazy loading and full screen preview
@@ -348,7 +395,7 @@ const NonMemoizedMarkdown = ({
               children,
             );
           },
-        }}
+        } as CustomMarkdownComponents}
       >
         {children}
       </ReactMarkdown>
