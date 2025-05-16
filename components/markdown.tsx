@@ -165,7 +165,7 @@ const NonMemoizedMarkdown = ({
 
           thead: ({ children, ...props }) => (
             <thead
-              className="bg-zinc-100 dark:bg-zinc-800"
+              className="bg-zinc-200 dark:bg-zinc-700"
               style={{ position: 'sticky', top: 0, zIndex: 1 }}
               {...props}
             >
@@ -173,14 +173,21 @@ const NonMemoizedMarkdown = ({
             </thead>
           ),
           tbody: ({ children, ...props }) => <tbody {...props}>{children}</tbody>,
-          tr: ({ children, ...props }) => (
-            <tr {...props}>
-              {children}
-            </tr>
-          ),
+          tr: ({ children, ...props }) => {
+            const rowIndex = props.node?.position?.start?.line; 
+            const isEven = rowIndex ? rowIndex % 2 === 0 : false;
+            // Applying a zinc-based gray stripe for consistency with existing header styles
+            const rowClassName = isEven ? "bg-zinc-100 dark:bg-zinc-800" : "";
+
+            return (
+              <tr className={rowClassName} {...props}>
+                {children}
+              </tr>
+            );
+          },
           th: ({ children, ...props }) => (
             <th
-              className="px-4 py-2 text-left font-semibold border-x border-zinc-300 dark:border-zinc-700"
+              className="px-4 py-2 text-center font-semibold border-x border-zinc-300 dark:border-zinc-700"
               style={{
                 maxWidth: '300px',
                 whiteSpace: 'pre-wrap',
