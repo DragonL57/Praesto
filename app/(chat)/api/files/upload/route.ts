@@ -108,10 +108,13 @@ export async function POST(request: Request) {
       fileForValidation.name = file.name;
     }
 
-    console.log('Uploaded file details:', {
+    console.log('Uploaded file details (pre-validation):', {
       name: file.name,
       type: file.type,
-      size: file.size
+      size: file.size,
+      objectKeys: Object.keys(fileForValidation), // Log all keys of the object being validated
+      fileNameForValidation: fileForValidation.name, // Specifically log the name used in validation
+      fileTypeForValidation: fileForValidation.type, // Specifically log the type used in validation
     });
 
     const validatedFile = FileSchema.safeParse({ file: fileForValidation });
