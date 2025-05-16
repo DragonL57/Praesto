@@ -10,6 +10,12 @@ import 'katex/dist/katex.min.css';
 import { ImagePreviewModal } from './image-preview-modal';
 import { CodeBlock } from './code-block'; // Import the proper CodeBlock component
 import { InlineCode } from './ui/code/inline-code';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'; // Import HoverCard components
+import { Info } from 'lucide-react'; // For icons
 
 // Define a more specific type for HAST nodes with properties
 interface HastNodeWithProperties {
@@ -60,18 +66,110 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+interface Metadata {
+  title?: string | null;
+  siteName?: string | null;
+  description?: string | null;
+  favicon?: string | null;
+  image?: string | null;
+  author?: string | null;
+  error?: string | null; // To store potential errors from API
+}
+
 // Define the new CitationButton component
 const CitationButton = ({ num, url }: { num: string; url: string }) => {
+  const [metadata, setMetadata] = useState<Metadata | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const fetchMetadata = async () => {
+    if (!url || metadata || isLoading) return; // Don't fetch if no URL, already fetched, or already loading
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
+      const data: Metadata = await response.json();
+      if (response.ok) {
+        setMetadata(data);
+      } else {
+        setMetadata({ error: data.error || 'Failed to fetch metadata' });
+      }
+    } catch (error) {
+      console.error("Error fetching citation metadata:", error);
+      setMetadata({ error: 'Error fetching metadata' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Prefetch on mount or when URL changes (optional, could also be on hover card open)
+  // useEffect(() => {
+  //  fetchMetadata();
+  // }, [url]);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open && !metadata && !isLoading) {
+      fetchMetadata();
+    }
+  };
+  
+  // Fallback Favicon (simple initial)
+  const FallbackFavicon = () => (
+    <Info className="size-4 text-gray-400" />
+  );
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center justify-center px-[6px] py-px mx-0.2 text-xs font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline"
-      aria-label={`Source ${num}`}
-    >
-      {num}
-    </a>
+    <HoverCard openDelay={200} closeDelay={100} onOpenChange={handleOpenChange} open={isOpen}>
+      <HoverCardTrigger asChild>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center px-[6px] py-px mx-0.5 text-xs font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline align-middle"
+          aria-label={`Source ${num} - ${url}`}
+          // Remove native title if using HoverCard
+          // title={displayTitle} 
+        >
+          {num}
+        </a>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 p-3 shadow-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg z-[60]" sideOffset={5}>
+        {isLoading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading metadata...</div>}
+        {metadata?.error && <div className="text-sm text-red-500">Error: {metadata.error}</div>}
+        {metadata && !metadata.error && (
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              {metadata.favicon ? (
+                <Image 
+                  src={metadata.favicon} 
+                  alt={metadata.siteName || 'Favicon'} 
+                  width={16} 
+                  height={16} 
+                  className="rounded-sm"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; /* Hide on error, or replace with fallback */ }}
+                />
+              ) : <FallbackFavicon />}
+              <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">
+                {metadata.siteName || new URL(url).hostname}
+              </h4>
+            </div>
+            {metadata.title && (
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">
+                {metadata.title}
+              </p>
+            )}
+            {metadata.description && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-h-20 overflow-hidden text-ellipsis">
+                    {metadata.description}
+                </p>
+            )}
+            {metadata.author && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">By: {metadata.author}</p>
+            )}
+          </div>
+        )}
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
