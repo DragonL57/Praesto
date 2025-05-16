@@ -12,10 +12,11 @@ import { z } from 'zod';
  * Based on Anthropic's research: https://www.anthropic.com/engineering/claude-think-tool
  */
 export const think = tool({
-    description: 'Use this tool to think through complex problems step by step. ' +
-        'It creates space for structured thinking when analyzing tool outputs, ' +
-        'following complex policies, or making sequential decisions. ' +
-        'Your thoughts are visible to the user and help explain your reasoning process.',
+    description: 'This tool is MANDATORY for internal, step-by-step reasoning, planning, and processing tool outputs (Phase 1). ' +
+        'Articulate your detailed analysis, plan, and evaluation of information here. ' +
+        'The final output of this tool is NOT the direct response to the user. ' +
+        'After your final "think" step (which must end with "I will respond to the user now"), you MUST generate a separate, user-facing natural language response (Phase 2). ' +
+        'While your thoughts are visible to the user during this process, they are part of your internal monologue, not the final answer.',
     parameters: z.object({
         thought: z.string().describe('Your detailed, step-by-step thought process. Break down complex reasoning into clear steps. Include analyzing options, evaluating evidence, or making structured decisions.'),
     }),
