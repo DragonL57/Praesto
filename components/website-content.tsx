@@ -48,18 +48,20 @@ function PureWebsiteContent({
   // For 'success' status, it just shows "Reading:" and the pill.
 
   return (
-    <div className="my-2 p-3 rounded-md bg-background border border-border">
+    <div className="my-2 p-3 rounded-md bg-background">
       <h3 className={cn("text-sm font-medium mb-2 flex items-center", titleColor)}>
-        {titleText} <span className="font-semibold ml-1.5 text-gray-800 dark:text-gray-200 truncate" title={url}>{domain}</span>
+        {titleText}
+        <div className="ml-1.5 flex items-center">
+          <SitePill 
+            domain={domain} 
+            faviconUrl={getFaviconUrl(domain)} 
+            originalUrl={url}
+          />
+        </div>
         {/* LoaderIcon removed, MessageReasoning header handles overall loading state */}
       </h3>
-      <div className="flex flex-wrap gap-2 items-center">
-        <SitePill 
-          domain={domain} 
-          faviconUrl={getFaviconUrl(domain)} 
-          originalUrl={url}
-        />
-      </div>
+      {/* SitePill moved into h3, so this div can be removed if empty or repurposed for other content if needed later */}
+      {/* <div className="flex flex-wrap gap-2 items-center"></div> */}
       {status === 'error' && _error && (
         <p className="text-xs text-red-500 dark:text-red-400 mt-1">{_error}</p>
       )}

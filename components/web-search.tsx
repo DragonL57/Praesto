@@ -49,7 +49,7 @@ function PureWebSearch({ results, query }: WebSearchProps) {
   const remainingPillsCount = safeResults.length - pillsToDisplay.length;
 
   return (
-    <div className="my-2 p-3 rounded-md bg-background border border-border">
+    <div className="my-2 p-3 rounded-md bg-background">
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
         Searched for: <span className="font-semibold ml-1.5 text-gray-800 dark:text-gray-200 truncate" title={query}>&quot;{query}&quot;</span>
       </h3>
