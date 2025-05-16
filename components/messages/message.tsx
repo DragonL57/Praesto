@@ -688,39 +688,13 @@ export const PreviewMessage = memo(
 
 export const ThinkingMessage = () => {
   const [currentDisplay, setCurrentDisplay] = useState({
-    text: 'Routing models...',
+    text: 'Thinking, wait a bit...',
     iconType: 'spinner' as 'spinner' | 'tick' | 'chevron',
   });
   const [isExiting, setIsExiting] = useState(false);
-  const [, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Set initialized immediately
-    setIsInitialized(true);
-    
-    // Show "Routing complete" after a short delay
-    const timer1 = setTimeout(() => {
-      setCurrentDisplay({
-        text: 'Routing complete',
-        iconType: 'tick',
-      });
-
-      // Show "Thinking, wait a bit..." after another short delay
-      const timer2 = setTimeout(() => {
-        setCurrentDisplay({
-          text: 'Thinking, wait a bit...',
-          iconType: 'spinner',
-        });
-      }, 750); // Reduced time for checkmark display for better UX
-
-      return () => clearTimeout(timer2);
-    }, 750); // Reduced time for "Routing models..." display
-
-    return () => clearTimeout(timer1);
-  }, []);
-
-  // Add cleanup effect for smooth exit
-  useEffect(() => {
+    // Cleanup for exiting animation
     return () => {
       setIsExiting(true);
     };
