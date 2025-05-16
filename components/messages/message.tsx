@@ -6,6 +6,7 @@ import cx from 'classnames';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from '../document';
 import { PencilEditIcon, CopyIcon } from '../icons';
+import { RefreshCwIcon } from 'lucide-react';
 import { Markdown } from '../markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from '../preview-attachment';
@@ -21,6 +22,7 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import { MessageReasoning } from './message-reasoning';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
+import { deleteTrailingMessages } from '@/app/(chat)/actions';
 
 // Define types needed for reasoning elements, mirroring message-reasoning.tsx
 interface WebSearchResult {
@@ -139,15 +141,7 @@ const UserTextWithLineBreaks = ({ text }: { text: string }) => {
   );
 };
 
-const PurePreviewMessage = ({
-  chatId,
-  message,
-  vote,
-  isLoading,
-  setMessages,
-  reload,
-  isReadonly,
-}: {
+export interface PurePreviewMessageProps {
   chatId: string;
   message: UIMessage;
   vote: Vote | undefined;
@@ -155,466 +149,531 @@ const PurePreviewMessage = ({
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
-}) => {
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const [_, copyToClipboard] = useCopyToClipboard();
+}
 
-  // 1. Consolidate reasoning elements (text, web search results) for MessageReasoning
-  const { reasoningElements, indicesToFilter } = useMemo(() => {
-    const elements: ReasoningContentItem[] = [];
-    const filterIndices = new Set<number>();
-    const thinkTagRegex = new RegExp('<think>([\\s\\S]*?)<\\/think>', 'i');
+const PurePreviewMessage = memo<PurePreviewMessageProps>(
+  ({ chatId, message, vote, isLoading, setMessages, reload, isReadonly }) => {
+    const [mode, setMode] = useState<'view' | 'edit'>('view');
+    const [, copyFn] = useCopyToClipboard();
+    const [isRetrying, setIsRetrying] = useState(false);
 
-    if (message.parts && message.parts.length > 0) {
-      message.parts.forEach((part, index) => {
-        // a) Check for dedicated reasoning parts
-        if (part.type === 'reasoning') {
-        const potentialReasoningPart = part as { reasoning?: unknown, details?: unknown };
-          let content = '';
-        if (typeof potentialReasoningPart.reasoning === 'string') {
-            content = potentialReasoningPart.reasoning;
-          } else if (Array.isArray(potentialReasoningPart.details)) {
-            content = (potentialReasoningPart.details as Array<unknown>)
-              .map((detail: unknown) => {
-                const d = detail as ReasoningDetail;
-                return d.type === 'text' && d.text ? d.text : '';
-              }).join('');
-          }
-          if (content.trim()) {
-            elements.push(content.trim());
-            filterIndices.add(index);
-          }
-        }
-        // b) Check for embedded <think> tags in text parts (assistant only)
-        else if (message.role === 'assistant' && part.type === 'text' && typeof part.text === 'string') {
-          const thinkMatch = part.text.match(thinkTagRegex);
-          if (thinkMatch && thinkMatch[1]) {
-            elements.push(thinkMatch[1].trim());
-            // Text part itself isn't filtered, just cleaned later
-          }
-        }
-        // c) Check for tool results to include in reasoning
-        else if (part.type === 'tool-invocation' && part.toolInvocation?.state === 'result') {
-          const { toolName, result } = part.toolInvocation;
-          if (result && typeof result === 'object') { 
-            // i) Handle 'think' tool results (add as text)
-            if (toolName === 'think') {
-              const thought = (result as ThinkToolResult).thought;
-              if (typeof thought === 'string' && thought.trim()) {
-                elements.push(thought.trim());
-                filterIndices.add(index);
-              }
-            }
-            // ii) Handle 'webSearch' tool results (add as structured data)
-            else if (toolName === 'webSearch') {
-              const searchResult = result as { results: WebSearchResult[]; query: string; count: number; }; // Type assertion
-              if (searchResult.results && searchResult.query && typeof searchResult.count === 'number') {
-                elements.push({ type: 'webSearch', data: searchResult });
-                filterIndices.add(index);
-              }
-            }
-            // iii) Handle 'readWebsiteContent' results (add as FetchedPageInfoData)
-            else if (toolName === 'readWebsiteContent') {
-              const webContentResult = result as { content?: string; url?: string, query?: string }; // content is part of the tool output but not used by WebsiteContent
-              if (webContentResult.url) { // Only need URL for WebsiteContent
-                elements.push({
-                  type: 'fetchedPageInfo',
-                  data: {
-                    url: webContentResult.url,
-                    query: webContentResult.query, // Pass query if available
-                  }
-                });
-                filterIndices.add(index);
-              }
-            }
-          } // End check if result is object
-        } // End check for tool-invocation result
-      });
-    }
-    return {
-      reasoningElements: elements,
-      indicesToFilter: filterIndices
-    };
-  }, [message.parts, message.role]);
+    // 1. Consolidate reasoning elements (text, web search results) for MessageReasoning
+    const { reasoningElements, indicesToFilter } = useMemo(() => {
+      const elements: ReasoningContentItem[] = [];
+      const filterIndices = new Set<number>();
+      const thinkTagRegex = new RegExp('<think>([\\s\\S]*?)<\\/think>', 'i');
 
-  // 2. Prepare parts for main display: Filter out handled elements, clean text, apply grouping
-  const processedParts = useMemo(() => {
-    const thinkTagRegexForReplace = new RegExp('<think>[\\s\\S]*?<\\/think>', 'i');
-    // Step 2a: Filter and clean parts
-    const partsForMainFlow = message.parts
-      ?.map((originalPart, originalIndex) => {
-        if (indicesToFilter.has(originalIndex)) {
-          return null;
-        }
-        if (message.role === 'assistant' && originalPart.type === 'text' && typeof originalPart.text === 'string') {
-          const cleanedText = originalPart.text.replace(thinkTagRegexForReplace, '').trim();
-          if (cleanedText.length === 0 && message.parts.length > 1) {
+      if (message.parts && message.parts.length > 0) {
+        message.parts.forEach((part, index) => {
+          // a) Check for dedicated reasoning parts
+          if (part.type === 'reasoning') {
+          const potentialReasoningPart = part as { reasoning?: unknown, details?: unknown };
+            let content = '';
+          if (typeof potentialReasoningPart.reasoning === 'string') {
+              content = potentialReasoningPart.reasoning;
+            } else if (Array.isArray(potentialReasoningPart.details)) {
+              content = (potentialReasoningPart.details as Array<unknown>)
+                .map((detail: unknown) => {
+                  const d = detail as ReasoningDetail;
+                  return d.type === 'text' && d.text ? d.text : '';
+                }).join('');
+            }
+            if (content.trim()) {
+              elements.push(content.trim());
+              filterIndices.add(index);
+            }
+          }
+          // b) Check for embedded <think> tags in text parts (assistant only)
+          else if (message.role === 'assistant' && part.type === 'text' && typeof part.text === 'string') {
+            const thinkMatch = part.text.match(thinkTagRegex);
+            if (thinkMatch && thinkMatch[1]) {
+              elements.push(thinkMatch[1].trim());
+              // Text part itself isn't filtered, just cleaned later
+            }
+          }
+          // c) Check for tool results to include in reasoning
+          else if (part.type === 'tool-invocation' && part.toolInvocation?.state === 'result') {
+            const { toolName, result } = part.toolInvocation;
+            if (result && typeof result === 'object') { 
+              // i) Handle 'think' tool results (add as text)
+              if (toolName === 'think') {
+                const thought = (result as ThinkToolResult).thought;
+                if (typeof thought === 'string' && thought.trim()) {
+                  elements.push(thought.trim());
+                  filterIndices.add(index);
+                }
+              }
+              // ii) Handle 'webSearch' tool results (add as structured data)
+              else if (toolName === 'webSearch') {
+                const searchResult = result as { results: WebSearchResult[]; query: string; count: number; }; // Type assertion
+                if (searchResult.results && searchResult.query && typeof searchResult.count === 'number') {
+                  elements.push({ type: 'webSearch', data: searchResult });
+                  filterIndices.add(index);
+                }
+              }
+              // iii) Handle 'readWebsiteContent' results (add as FetchedPageInfoData)
+              else if (toolName === 'readWebsiteContent') {
+                const webContentResult = result as { content?: string; url?: string, query?: string }; // content is part of the tool output but not used by WebsiteContent
+                if (webContentResult.url) { // Only need URL for WebsiteContent
+                  elements.push({
+                    type: 'fetchedPageInfo',
+                    data: {
+                      url: webContentResult.url,
+                      query: webContentResult.query, // Pass query if available
+                    }
+                  });
+                  filterIndices.add(index);
+                }
+              }
+            } // End check if result is object
+          } // End check for tool-invocation result
+        });
+      }
+      return {
+        reasoningElements: elements,
+        indicesToFilter: filterIndices
+      };
+    }, [message.parts, message.role]);
+
+    // 2. Prepare parts for main display: Filter out handled elements, clean text, apply grouping
+    const processedParts = useMemo(() => {
+      const thinkTagRegexForReplace = new RegExp('<think>[\\s\\S]*?<\\/think>', 'i');
+      // Step 2a: Filter and clean parts
+      const partsForMainFlow = message.parts
+        ?.map((originalPart, originalIndex) => {
+          if (indicesToFilter.has(originalIndex)) {
             return null;
           }
-          return { ...originalPart, text: cleanedText };
-        }
-        return { ...originalPart };
-      })
-      .filter(part => part !== null) as Array<UIMessage['parts'][0]>;
-    
-    // Step 2b: Apply tool grouping logic (remains the same)
-    const enhancedParts = partsForMainFlow.map((part, _i) => {
-      const enhancedPart = { ...part } as EnhancedMessagePart;
-      enhancedPart.connectNext = false;
-      enhancedPart.connectPrevious = false;
-      enhancedPart.toolIndex = -1;
-      return enhancedPart;
-    });
-
-    // Grouping logic (First pass: Mark connections - unchanged)
-    for (let i = 0; i < enhancedParts.length; i++) {
-      const part = enhancedParts[i];
-      if (part.type === 'tool-invocation' && part.toolInvocation?.state === 'result') { // Add safe navigation
-        const currentToolName = part.toolInvocation.toolName;
-        let nextToolPart: EnhancedMessagePart | null = null;
-        let textEncounteredNext = false;
-        for (let j = i + 1; j < enhancedParts.length; j++) {
-          const potentialNextPart = enhancedParts[j];
-          if (potentialNextPart.type === 'text' && potentialNextPart.text?.trim().length > 0) { 
-            textEncounteredNext = true; break;
-          }
-          if (potentialNextPart.type === 'tool-invocation' && potentialNextPart.toolInvocation && potentialNextPart.toolInvocation.state === 'result') {
-            nextToolPart = potentialNextPart; break;
-          }
-        }
-        if (!textEncounteredNext && nextToolPart && nextToolPart.type === 'tool-invocation' && nextToolPart.toolInvocation) { 
-          const nextToolName = nextToolPart.toolInvocation.toolName;
-          if ((currentToolName === 'webSearch' && (nextToolName === 'readWebsiteContent' || nextToolName === 'webSearch')) ||
-              (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent')) {
-            part.connectNext = true;
-          }
-        }
-        let prevToolPart: EnhancedMessagePart | null = null;
-        let textEncounteredPrev = false;
-        for (let j = i - 1; j >= 0; j--) {
-          const potentialPrevPart = enhancedParts[j];
-          if (potentialPrevPart.type === 'text' && potentialPrevPart.text?.trim().length > 0) { 
-            textEncounteredPrev = true; break;
-          }
-          if (potentialPrevPart.type === 'tool-invocation' && potentialPrevPart.toolInvocation && potentialPrevPart.toolInvocation.state === 'result') {
-            prevToolPart = potentialPrevPart; break;
-          }
-        }
-        if (!textEncounteredPrev && prevToolPart && prevToolPart.type === 'tool-invocation' && prevToolPart.toolInvocation) { 
-          const prevToolName = prevToolPart.toolInvocation.toolName;
-          if ((currentToolName === 'readWebsiteContent' && (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
-              (currentToolName === 'webSearch' && prevToolName === 'webSearch')) {
-            part.connectPrevious = true;
-          }
-        }
-      }
-    }
-    
-    // Grouping logic (Second pass: Assign group indices - unchanged)
-    let currentGroupIndex = 0;
-    for (let i = 0; i < enhancedParts.length; i++) {
-      const part = enhancedParts[i];
-       if (part.type === 'tool-invocation' && part.toolInvocation && part.toolInvocation.state === 'result') {
-        if (part.toolIndex === -1) {
-          part.toolIndex = currentGroupIndex;
-          if (part.connectNext) {
-            let j = i + 1;
-            while (j < enhancedParts.length) {
-              const nextPart = enhancedParts[j];
-               if (nextPart.type !== 'tool-invocation' || !nextPart.toolInvocation || nextPart.toolInvocation.state !== 'result') { j++; continue; }
-              if (nextPart.connectPrevious) {
-                nextPart.toolIndex = currentGroupIndex;
-                 if (!nextPart.connectNext) break;
-               } else { break; }
-              j++;
+          if (message.role === 'assistant' && originalPart.type === 'text' && typeof originalPart.text === 'string') {
+            const cleanedText = originalPart.text.replace(thinkTagRegexForReplace, '').trim();
+            if (cleanedText.length === 0 && message.parts.length > 1) {
+              return null;
             }
-            currentGroupIndex++;
-          } else if (!part.connectPrevious) {
-            currentGroupIndex++;
+            return { ...originalPart, text: cleanedText };
+          }
+          return { ...originalPart };
+        })
+        .filter(part => part !== null) as Array<UIMessage['parts'][0]>;
+      
+      // Step 2b: Apply tool grouping logic (remains the same)
+      const enhancedParts = partsForMainFlow.map((part, _i) => {
+        const enhancedPart = { ...part } as EnhancedMessagePart;
+        enhancedPart.connectNext = false;
+        enhancedPart.connectPrevious = false;
+        enhancedPart.toolIndex = -1;
+        return enhancedPart;
+      });
+
+      // Grouping logic (First pass: Mark connections - unchanged)
+      for (let i = 0; i < enhancedParts.length; i++) {
+        const part = enhancedParts[i];
+        if (part.type === 'tool-invocation' && part.toolInvocation?.state === 'result') { // Add safe navigation
+          const currentToolName = part.toolInvocation.toolName;
+          let nextToolPart: EnhancedMessagePart | null = null;
+          let textEncounteredNext = false;
+          for (let j = i + 1; j < enhancedParts.length; j++) {
+            const potentialNextPart = enhancedParts[j];
+            if (potentialNextPart.type === 'text' && potentialNextPart.text?.trim().length > 0) { 
+              textEncounteredNext = true; break;
+            }
+            if (potentialNextPart.type === 'tool-invocation' && potentialNextPart.toolInvocation && potentialNextPart.toolInvocation.state === 'result') {
+              nextToolPart = potentialNextPart; break;
+            }
+          }
+          if (!textEncounteredNext && nextToolPart && nextToolPart.type === 'tool-invocation' && nextToolPart.toolInvocation) { 
+            const nextToolName = nextToolPart.toolInvocation.toolName;
+            if ((currentToolName === 'webSearch' && (nextToolName === 'readWebsiteContent' || nextToolName === 'webSearch')) ||
+                (currentToolName === 'readWebsiteContent' && nextToolName === 'readWebsiteContent')) {
+              part.connectNext = true;
+            }
+          }
+          let prevToolPart: EnhancedMessagePart | null = null;
+          let textEncounteredPrev = false;
+          for (let j = i - 1; j >= 0; j--) {
+            const potentialPrevPart = enhancedParts[j];
+            if (potentialPrevPart.type === 'text' && potentialPrevPart.text?.trim().length > 0) { 
+              textEncounteredPrev = true; break;
+            }
+            if (potentialPrevPart.type === 'tool-invocation' && potentialPrevPart.toolInvocation && potentialPrevPart.toolInvocation.state === 'result') {
+              prevToolPart = potentialPrevPart; break;
+            }
+          }
+          if (!textEncounteredPrev && prevToolPart && prevToolPart.type === 'tool-invocation' && prevToolPart.toolInvocation) { 
+            const prevToolName = prevToolPart.toolInvocation.toolName;
+            if ((currentToolName === 'readWebsiteContent' && (prevToolName === 'webSearch' || prevToolName === 'readWebsiteContent')) ||
+                (currentToolName === 'webSearch' && prevToolName === 'webSearch')) {
+              part.connectPrevious = true;
+            }
           }
         }
       }
-    }
-
-    return enhancedParts;
-  }, [message.parts, message.role, indicesToFilter]); // Add indicesToFilter dependency
-
-  const handleCopy = async () => {
-    // User messages typically have one text part.
-    // Find the first text part to ensure we get the content.
-    const userTextPart = message.parts?.find(part => part.type === 'text');
-    // Ensure the 'text' property exists and is a string.
-    const textToCopy = (userTextPart && typeof userTextPart.text === 'string') ? userTextPart.text : null;
-
-    if (textToCopy && textToCopy.trim()) {
-      try {
-        await copyToClipboard(textToCopy.trim());
-        toast.success('Copied to clipboard!');
-      } catch (error) {
-        toast.error('Failed to copy text.');
-        console.error('Failed to copy text: ', error);
+      
+      // Grouping logic (Second pass: Assign group indices - unchanged)
+      let currentGroupIndex = 0;
+      for (let i = 0; i < enhancedParts.length; i++) {
+        const part = enhancedParts[i];
+         if (part.type === 'tool-invocation' && part.toolInvocation && part.toolInvocation.state === 'result') {
+          if (part.toolIndex === -1) {
+            part.toolIndex = currentGroupIndex;
+            if (part.connectNext) {
+              let j = i + 1;
+              while (j < enhancedParts.length) {
+                const nextPart = enhancedParts[j];
+                 if (nextPart.type !== 'tool-invocation' || !nextPart.toolInvocation || nextPart.toolInvocation.state !== 'result') { j++; continue; }
+                if (nextPart.connectPrevious) {
+                  nextPart.toolIndex = currentGroupIndex;
+                   if (!nextPart.connectNext) break;
+                 } else { break; }
+                j++;
+              }
+              currentGroupIndex++;
+            } else if (!part.connectPrevious) {
+              currentGroupIndex++;
+            }
+          }
+        }
       }
-    } else {
-      toast.error("There's no text to copy!");
-    }
-  };
 
-  return (
-    <div
-      data-testid={`message-${message.role}`}
-      className="w-full mx-auto max-w-3xl px-4 group/message transition-opacity duration-300 ease-in-out"
-      data-role={message.role}
-    >
-      {/* 3. Render MessageReasoning with the consolidated elements */}
-      {message.role === 'assistant' && (isLoading || (reasoningElements && reasoningElements.length > 0)) && (
-        <MessageReasoning 
-          content={reasoningElements || []} 
-          isLoading={isLoading} 
-          hasResponseStarted={
-            // Phase 2 has started if there's any visible text or tool results from the assistant
-            processedParts.some(part => {
-              // Check for text content
-              if (part.type === 'text' && 
-                  typeof part.text === 'string' && 
-                  part.text.trim().length > 0) {
-                return true;
-              }
-              // Check for tool results that aren't reasoning tools
-              if (part.type === 'tool-invocation' && 
-                  part.toolInvocation?.state === 'result' && 
-                  part.toolInvocation.toolName && 
-                  !['think', 'webSearch', 'readWebsiteContent'].includes(part.toolInvocation.toolName)) {
-                return true;
-              }
-              return false;
-            })
-          } 
-        />
-      )}
+      return enhancedParts;
+    }, [message.parts, message.role, indicesToFilter]); // Add indicesToFilter dependency
 
+    const handleCopy = async () => {
+      // User messages typically have one text part.
+      // Find the first text part to ensure we get the content.
+      const userTextPart = message.parts?.find(part => part.type === 'text');
+      // Ensure the 'text' property exists and is a string.
+      const textToCopy = (userTextPart && typeof userTextPart.text === 'string') ? userTextPart.text : null;
+
+      if (textToCopy && textToCopy.trim()) {
+        try {
+          await copyFn(textToCopy.trim());
+          toast.success('Copied to clipboard!');
+        } catch (error) {
+          toast.error('Failed to copy text.');
+          console.error('Failed to copy text: ', error);
+        }
+      } else {
+        toast.error("There's no text to copy!");
+      }
+    };
+
+    const handleRetry = async () => {
+      if (message.role === 'user' && reload && setMessages) {
+        setIsRetrying(true);
+        try {
+          // 1. Delete trailing messages from DB (and associated votes)
+          await deleteTrailingMessages({ id: message.id });
+
+          // 2. Update client-side messages state
+          setMessages(prevMessages => {
+            const messageIndex = prevMessages.findIndex(m => m.id === message.id);
+            if (messageIndex !== -1) {
+              // Keep messages up to and including the current user message
+              return prevMessages.slice(0, messageIndex + 1);
+            }
+            return prevMessages; // Should not happen if message.id is valid
+          });
+
+          // 3. Trigger a new generation from the AI
+          await reload(); 
+        } catch (error) {
+          console.error('Failed to retry message:', error);
+          toast.error('Failed to retry. Please try again.');
+        } finally {
+          setIsRetrying(false);
+        }
+      }
+    };
+
+    const isUserMessage = message.role === 'user';
+
+    return (
       <div
-        className={cn(
-          'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl',
-          {
-            'w-full': mode === 'edit',
-            'group-data-[role=user]/message:w-fit': mode !== 'edit',
-          },
-        )}
+        data-testid={`message-${message.role}`}
+        className="w-full mx-auto max-w-3xl px-4 group/message transition-opacity duration-300 ease-in-out"
+        data-role={message.role}
       >
-        <div className="flex flex-col gap-1 w-full">
-          {message.experimental_attachments && (
-            <div
-              data-testid={`message-attachments`}
-              className="flex flex-row justify-end gap-2"
-            >
-              {message.experimental_attachments.map((attachment) => (
-                <PreviewAttachment
-                  key={attachment.url}
-                  attachment={attachment}
-                />
-              ))}
-            </div>
+        {/* 3. Render MessageReasoning with the consolidated elements */}
+        {message.role === 'assistant' && (isLoading || (reasoningElements && reasoningElements.length > 0)) && (
+          <MessageReasoning 
+            content={reasoningElements || []} 
+            isLoading={isLoading} 
+            hasResponseStarted={
+              // Phase 2 has started if there's any visible text or tool results from the assistant
+              processedParts.some(part => {
+                // Check for text content
+                if (part.type === 'text' && 
+                    typeof part.text === 'string' && 
+                    part.text.trim().length > 0) {
+                  return true;
+                }
+                // Check for tool results that aren't reasoning tools
+                if (part.type === 'tool-invocation' && 
+                    part.toolInvocation?.state === 'result' && 
+                    part.toolInvocation.toolName && 
+                    !['think', 'webSearch', 'readWebsiteContent'].includes(part.toolInvocation.toolName)) {
+                  return true;
+                }
+                return false;
+              })
+            } 
+          />
+        )}
+
+        <div
+          className={cn(
+            'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl',
+            {
+              'w-full': mode === 'edit',
+              'group-data-[role=user]/message:w-fit': mode !== 'edit',
+            },
           )}
+        >
+          <div className="flex flex-col gap-1 w-full">
+            {message.experimental_attachments && (
+              <div
+                data-testid={`message-attachments`}
+                className="flex flex-row justify-end gap-2"
+              >
+                {message.experimental_attachments.map((attachment) => (
+                  <PreviewAttachment
+                    key={attachment.url}
+                    attachment={attachment}
+                  />
+                ))}
+              </div>
+            )}
 
-          {(() => {
-            const toolGroups: { [key: number]: EnhancedMessagePart[] } = {};
-            processedParts.forEach((part) => {
-              if (part.type === 'tool-invocation' && 
-                  part.toolInvocation && 
-                  part.toolInvocation.state === 'result' && 
-                  part.toolIndex !== undefined && 
-                  part.toolIndex >= 0) {
-                if (!toolGroups[part.toolIndex]) toolGroups[part.toolIndex] = [];
-                toolGroups[part.toolIndex].push(part);
-              }
-            });
-
-            return processedParts.map((part, index) => {
-              const { type } = part;
-              const key = `message-${message.id}-part-${index}`;
-
-              // A: Render non-tool-result parts
-              if (type !== 'tool-invocation' || part.toolInvocation?.state !== 'result') {
-                if (type === 'text') {
-                  if (part.text?.trim().length === 0) return null; 
-                  if (mode === 'view') {
-                    return (
-                      <div key={key} className="flex flex-row gap-2 items-start">
-                        <div
-                          data-testid="message-content"
-                          className={cn('flex flex-col gap-0 flex-1 w-full', {
-                            [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
-                              message.role === 'user',
-                            'text-foreground': message.role === 'assistant'
-                          })}
-                        >
-                          {message.role === 'user' ? (
-                            <div className="whitespace-pre-wrap break-words">
-                              <UserTextWithLineBreaks text={part.text!} />
-                            </div>
-                          ) : (
-                            <Markdown baseHeadingLevel={2}>{part.text!}</Markdown>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                  if (mode === 'edit') {
-                    return (
-                      <div key={key} className="flex flex-row gap-2 items-start">
-                        <div className="size-8" />
-                        <MessageEditor
-                          key={message.id}
-                          message={message}
-                          setMode={setMode}
-                          setMessages={setMessages}
-                          reload={reload}
-                        />
-                      </div>
-                    );
-                  }
+            {(() => {
+              const toolGroups: { [key: number]: EnhancedMessagePart[] } = {};
+              processedParts.forEach((part) => {
+                if (part.type === 'tool-invocation' && 
+                    part.toolInvocation && 
+                    part.toolInvocation.state === 'result' && 
+                    part.toolIndex !== undefined && 
+                    part.toolIndex >= 0) {
+                  if (!toolGroups[part.toolIndex]) toolGroups[part.toolIndex] = [];
+                  toolGroups[part.toolIndex].push(part);
                 }
-                if (type === 'tool-invocation' && part.toolInvocation?.state === 'call') {
-                  const { toolInvocation } = part;
-                   if (!toolInvocation) return null; 
-                   const { toolName, toolCallId, args } = toolInvocation;
-                   // Only render tool calls NOT handled by reasoning (think, webSearch, readWebsiteContent)
-                   if (['think', 'webSearch', 'readWebsiteContent'].includes(toolName)) return null;
-                   
-                   // Render other tool calls (Weather, Document, etc.)
-                  return (
-                     <div key={toolCallId} className={cx({ skeleton: ['getWeather'].includes(toolName) })} >
-                       {toolName === 'getWeather' ? ( <Weather />
-                       ) : toolName === 'createDocument' ? ( <DocumentPreview isReadonly={isReadonly} args={args} />
-                       ) : toolName === 'updateDocument' ? ( <DocumentToolCall type="update" args={args} isReadonly={isReadonly} />
-                       ) : toolName === 'requestSuggestions' ? ( <DocumentToolCall type="request-suggestions" args={args} isReadonly={isReadonly} />
-                       ) : null} { /* Other non-reasoning tool calls rendered here */ }
-                    </div>
-                  );
-                }
-                return null;
-              }
+              });
 
-              // B: Render tool results (grouped or standalone)
-              // Skip if part of a group but not the first item OR if handled by reasoning
-              if (part.toolIndex !== undefined && part.toolIndex >= 0 && toolGroups[part.toolIndex]?.[0] !== part) {
-                return null;
-              }
-              if (!part.toolInvocation) return null; 
-                
-              // Skip rendering tools handled by MessageReasoning
-              const toolNameForResult = part.toolInvocation.toolName;
-              if (['think', 'webSearch', 'readWebsiteContent'].includes(toolNameForResult)) {
-                          return null;
-                        }
-                        
-              // Check if it's a group (for tools NOT handled by reasoning)
-              const isGroup = part.toolIndex !== undefined && part.toolIndex >= 0 && toolGroups[part.toolIndex]?.length > 1;
-              
-              if (isGroup) {
-                 const currentToolGroup = toolGroups[part.toolIndex!]; 
-                 if (!currentToolGroup) return null; 
-                 return (
-                   <div key={`tool-group-${part.toolIndex}`} className="border-[1.5px] border-border rounded-xl mb-0 overflow-hidden"> 
-                     {currentToolGroup.map((groupPart: EnhancedMessagePart) => { 
-                       if (groupPart.type !== 'tool-invocation' || !groupPart.toolInvocation) return null; 
-                       const inv = groupPart.toolInvocation;
-                       const _res = inv.result || {}; 
-                       if (['think', 'webSearch', 'readWebsiteContent'].includes(inv.toolName)) return null;
-                        return (
-                         <div key={inv.toolCallId} className="border-0"> 
-                           { /* Render grouped non-reasoning tools like Weather, Docs etc. if they can be grouped */ }
-                           {/* Example: if (inv.toolName === 'getWeather') return <Weather ...inGroup={true}/>; */}
-                           {/* Placeholder for now */}
-                           <pre>Grouped: {inv.toolName} Result</pre> 
+              return processedParts.map((part, index) => {
+                const { type } = part;
+                const key = `message-${message.id}-part-${index}`;
+
+                // A: Render non-tool-result parts
+                if (type !== 'tool-invocation' || part.toolInvocation?.state !== 'result') {
+                  if (type === 'text') {
+                    if (part.text?.trim().length === 0) return null; 
+                    if (mode === 'view') {
+                      return (
+                        <div key={key} className="flex flex-row gap-2 items-start">
+                          <div
+                            data-testid="message-content"
+                            className={cn('flex flex-col gap-0 flex-1 w-full', {
+                              [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
+                                message.role === 'user',
+                              'text-foreground': message.role === 'assistant'
+                            })}
+                          >
+                            {message.role === 'user' ? (
+                              <div className="whitespace-pre-wrap break-words">
+                                <UserTextWithLineBreaks text={part.text!} />
+                              </div>
+                            ) : (
+                              <Markdown baseHeadingLevel={2}>{part.text!}</Markdown>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    }
+                    if (mode === 'edit') {
+                      return (
+                        <div key={key} className="flex flex-row gap-2 items-start">
+                          <div className="size-8" />
+                          <MessageEditor
+                            key={message.id}
+                            message={message}
+                            setMode={setMode}
+                            setMessages={setMessages}
+                            reload={reload}
+                          />
+                        </div>
+                      );
+                    }
+                  }
+                  if (type === 'tool-invocation' && part.toolInvocation?.state === 'call') {
+                    const { toolInvocation } = part;
+                     if (!toolInvocation) return null; 
+                     const { toolName, toolCallId, args } = toolInvocation;
+                     // Only render tool calls NOT handled by reasoning (think, webSearch, readWebsiteContent)
+                     if (['think', 'webSearch', 'readWebsiteContent'].includes(toolName)) return null;
+                     
+                     // Render other tool calls (Weather, Document, etc.)
+                    return (
+                       <div key={toolCallId} className={cx({ skeleton: ['getWeather'].includes(toolName) })} >
+                         {toolName === 'getWeather' ? ( <Weather />
+                         ) : toolName === 'createDocument' ? ( <DocumentPreview isReadonly={isReadonly} args={args} />
+                         ) : toolName === 'updateDocument' ? ( <DocumentToolCall type="update" args={args} isReadonly={isReadonly} />
+                         ) : toolName === 'requestSuggestions' ? ( <DocumentToolCall type="request-suggestions" args={args} isReadonly={isReadonly} />
+                         ) : null} { /* Other non-reasoning tool calls rendered here */ }
                     </div>
                   );
-              } else {
-                // Render Standalone Tool Result (for tools NOT handled by reasoning)
-                const { toolInvocation } = part;
-                const { toolName, toolCallId } = toolInvocation;
-                const result = toolInvocation.result || {};
+                  }
+                  return null;
+                }
+
+                // B: Render tool results (grouped or standalone)
+                // Skip if part of a group but not the first item OR if handled by reasoning
+                if (part.toolIndex !== undefined && part.toolIndex >= 0 && toolGroups[part.toolIndex]?.[0] !== part) {
+                  return null;
+                }
+                if (!part.toolInvocation) return null; 
+                  
+                // Skip rendering tools handled by MessageReasoning
+                const toolNameForResult = part.toolInvocation.toolName;
+                if (['think', 'webSearch', 'readWebsiteContent'].includes(toolNameForResult)) {
+                            return null;
+                          }
+                          
+                // Check if it's a group (for tools NOT handled by reasoning)
+                const isGroup = part.toolIndex !== undefined && part.toolIndex >= 0 && toolGroups[part.toolIndex]?.length > 1;
                 
-                // Final check: Ensure it's not a reasoning-handled tool
-                if (['think', 'webSearch', 'readWebsiteContent'].includes(toolName)) return null;
-                
-                // Render standalone results for Weather, Docs, YouTube, etc.
-                return (
-                  <div key={toolCallId} className={cx({ 'border-[1.5px] border-border rounded-xl mb-0': !['getYoutubeTranscript'].includes(toolName) }, 'relative')} >
-                    {toolName === 'getWeather' ? ( <Weather weatherAtLocation={result} />
-                    ) : toolName === 'createDocument' ? ( <DocumentPreview isReadonly={isReadonly} result={result} />
-                    ) : toolName === 'updateDocument' ? ( <DocumentToolResult type="update" result={result} isReadonly={isReadonly} />
-                    ) : toolName === 'requestSuggestions' ? ( <DocumentToolResult type="request-suggestions" result={result} isReadonly={isReadonly} />
-                    ) : toolName === 'getYoutubeTranscript' ? ( <YouTubeTranscript transcript={result} videoId={extractVideoId(String(toolInvocation.args?.urlOrId))} title={String(toolInvocation.args?.urlOrId)} hasTimestamps={!toolInvocation.args?.combineAll} urlOrId={String(toolInvocation.args?.urlOrId)} languages={toolInvocation.args?.languages as string[] | undefined} />
+                if (isGroup) {
+                   const currentToolGroup = toolGroups[part.toolIndex!]; 
+                   if (!currentToolGroup) return null; 
+                   return (
+                     <div key={`tool-group-${part.toolIndex}`} className="border-[1.5px] border-border rounded-xl mb-0 overflow-hidden"> 
+                       {currentToolGroup.map((groupPart: EnhancedMessagePart) => { 
+                         if (groupPart.type !== 'tool-invocation' || !groupPart.toolInvocation) return null; 
+                         const inv = groupPart.toolInvocation;
+                         const _res = inv.result || {}; 
+                         if (['think', 'webSearch', 'readWebsiteContent'].includes(inv.toolName)) return null;
+                          return (
+                           <div key={inv.toolCallId} className="border-0"> 
+                             { /* Render grouped non-reasoning tools like Weather, Docs etc. if they can be grouped */ }
+                             {/* Example: if (inv.toolName === 'getWeather') return <Weather ...inGroup={true}/>; */}
+                             {/* Placeholder for now */}
+                             <pre>Grouped: {inv.toolName} Result</pre> 
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                } else {
+                  // Render Standalone Tool Result (for tools NOT handled by reasoning)
+                  const { toolInvocation } = part;
+                  const { toolName, toolCallId } = toolInvocation;
+                  const result = toolInvocation.result || {};
+                  
+                  // Final check: Ensure it's not a reasoning-handled tool
+                  if (['think', 'webSearch', 'readWebsiteContent'].includes(toolName)) return null;
+                  
+                  // Render standalone results for Weather, Docs, YouTube, etc.
+                  return (
+                    <div key={toolCallId} className={cx({ 'border-[1.5px] border-border rounded-xl mb-0': !['getYoutubeTranscript'].includes(toolName) }, 'relative')} >
+                      {toolName === 'getWeather' ? ( <Weather weatherAtLocation={result} />
+                      ) : toolName === 'createDocument' ? ( <DocumentPreview isReadonly={isReadonly} result={result} />
+                      ) : toolName === 'updateDocument' ? ( <DocumentToolResult type="update" result={result} isReadonly={isReadonly} />
+                      ) : toolName === 'requestSuggestions' ? ( <DocumentToolResult type="request-suggestions" result={result} isReadonly={isReadonly} />
+                      ) : toolName === 'getYoutubeTranscript' ? ( <YouTubeTranscript transcript={result} videoId={extractVideoId(String(toolInvocation.args?.urlOrId))} title={String(toolInvocation.args?.urlOrId)} hasTimestamps={!toolInvocation.args?.combineAll} urlOrId={String(toolInvocation.args?.urlOrId)} languages={toolInvocation.args?.languages as string[] | undefined} />
+                      ) : (
+                        <pre>{JSON.stringify(result, null, 2)}</pre>
+                      )}
+                    </div>
+                  );
+                }
+              });
+            })()}
+
+            {!isReadonly && message.role === 'assistant' && (
+              <div className="flex justify-start mt-1">
+                <MessageActions
+                  key={`action-${message.id}`}
+                  chatId={chatId}
+                  message={message}
+                  vote={vote}
+                  isLoading={isLoading}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
+        {isUserMessage && mode !== 'edit' && !isReadonly && (
+          <div className="flex justify-end items-center gap-1 mt-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200">
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground"
+                    onClick={handleRetry}
+                    disabled={isRetrying}
+                  >
+                    {isRetrying ? (
+                      <div className="flex items-center justify-center size-4">
+                        <svg className="animate-spin size-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
                     ) : (
-                      <pre>{JSON.stringify(result, null, 2)}</pre>
+                      <RefreshCwIcon className="size-4" />
                     )}
-                  </div>
-                );
-              }
-            });
-          })()}
+                    <span className="sr-only">Retry generation</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="center">
+                  Retry generation
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider delayDuration={0}>
+              {/* COPY BUTTON */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-testid="message-copy-button"
+                    variant="ghost"
+                    className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
+                    onClick={handleCopy}
+                  >
+                    <CopyIcon />
+                    <span className="sr-only">Copy message</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Copy message</TooltipContent>
+              </Tooltip>
 
-          {!isReadonly && message.role === 'assistant' && (
-            <div className="flex justify-start mt-1">
-              <MessageActions
-                key={`action-${message.id}`}
-                chatId={chatId}
-                message={message}
-                vote={vote}
-                isLoading={isLoading}
-              />
-            </div>
-          )}
-        </div>
+              {/* EDIT BUTTON */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-testid="message-edit-button"
+                    variant="ghost"
+                    className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                    onClick={() => {
+                      setMode('edit');
+                    }}
+                  >
+                    <PencilEditIcon />
+                    <span className="sr-only">Edit message</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit message</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </div>
+    );
+  }
+);
 
-      {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
-      {message.role === 'user' && !isReadonly && mode === 'view' && (
-        <div className="flex justify-end items-center mt-1">
-          <TooltipProvider delayDuration={0}>
-            {/* COPY BUTTON */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-testid="message-copy-button"
-                  variant="ghost"
-                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
-                  onClick={handleCopy}
-                >
-                  <CopyIcon />
-                  <span className="sr-only">Copy message</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Copy message</TooltipContent>
-            </Tooltip>
-
-            {/* EDIT BUTTON */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-testid="message-edit-button"
-                  variant="ghost"
-                  className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                  onClick={() => {
-                    setMode('edit');
-                  }}
-                >
-                  <PencilEditIcon />
-                  <span className="sr-only">Edit message</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit message</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
-    </div>
-  );
-};
+PurePreviewMessage.displayName = 'PurePreviewMessage';
 
 export const PreviewMessage = memo(
   PurePreviewMessage,

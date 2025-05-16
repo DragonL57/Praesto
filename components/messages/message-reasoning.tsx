@@ -222,11 +222,9 @@ export function MessageReasoning({
             exit="collapsed"
             variants={variants}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="relative flex flex-col py-0.5 text-sm text-zinc-500 dark:text-zinc-400 w-full overflow-auto max-h-[30rem] min-h-4"
+            className="relative flex flex-col py-0.5 text-sm text-zinc-500 dark:text-zinc-400 w-full border border-zinc-300 dark:border-zinc-700 rounded-md p-3"
           >
-            <div className="relative pl-6 flex flex-col gap-1.5">
-              <div className="absolute left-[10px] inset-y-0 w-px bg-zinc-300 dark:bg-zinc-700"></div>
-
+            <div className="relative flex flex-col gap-1.5">
               {content.map((item, index) => {
                 const itemKey = `reasoning-item-${index}`;
                 return (

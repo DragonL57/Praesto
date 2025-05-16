@@ -174,10 +174,11 @@ const NonMemoizedMarkdown = ({
           ),
           tbody: ({ children, ...props }) => <tbody {...props}>{children}</tbody>,
           tr: ({ children, ...props }) => {
-            const rowIndex = props.node?.position?.start?.line; 
-            const isEven = rowIndex ? rowIndex % 2 === 0 : false;
-            // Applying a zinc-based gray stripe for consistency with existing header styles
-            const rowClassName = isEven ? "bg-zinc-100 dark:bg-zinc-800" : "";
+            // Use Tailwind's `even:` variant for striping.
+            // This makes the 2nd, 4th, etc., rows in tbody have the specified background,
+            // ensuring the first data row has the default background and the second gets the color, then alternates.
+            // The "dark:even:bg-zinc-800" ensures dark mode compatibility.
+            const rowClassName = "even:bg-zinc-100 dark:even:bg-zinc-800";
 
             return (
               <tr className={rowClassName} {...props}>
