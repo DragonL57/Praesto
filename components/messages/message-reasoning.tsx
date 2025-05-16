@@ -49,48 +49,37 @@ export function MessageReasoning({
   overrideTitle,
   iconType,
 }: MessageReasoningProps) {
-  // Always expand during loading, auto-collapse immediately when phase 1 ends
   const [isOverallExpanded, setIsOverallExpanded] = useState(
     overrideTitle ? true : (isLoading && !hasResponseStarted)
   );
   const [scrollableContentRef, animateScrollableContent] = useAnimate();
   
-  // Force immediate collapse when phase 2 starts (hasResponseStarted becomes true)
   useEffect(() => {
     if (isLoading && !hasResponseStarted) {
       setIsOverallExpanded(true);
     } 
-    // If we have any content from phase 2, collapse immediately
     else if (hasResponseStarted) {
       setIsOverallExpanded(false);
     }
   }, [isLoading, hasResponseStarted]);
 
-  // Auto-scroll to bottom when new content is added and container is expanded
   useEffect(() => {
     if (isOverallExpanded && scrollableContentRef.current) {
-      // Immediate scroll attempt
       scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
-      
-      // Also use animation for smoother experience
       animateScrollableContent(
         scrollableContentRef.current,
         { scrollTop: scrollableContentRef.current.scrollHeight },
         { duration: 0.3, ease: 'easeInOut' }
       );
-      
-      // Additional scroll attempt after a short delay to ensure all content is rendered
       const timeoutId = setTimeout(() => {
         if (scrollableContentRef.current) {
           scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
         }
       }, 100);
-      
       return () => clearTimeout(timeoutId);
     }
   }, [content, isOverallExpanded, animateScrollableContent, scrollableContentRef]);
 
-  // Use MutationObserver to detect DOM changes within the container
   useEffect(() => {
     if (isOverallExpanded && scrollableContentRef.current) {
       const observerCallback = () => {
@@ -98,42 +87,15 @@ export function MessageReasoning({
           scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
         }
       };
-      
       const observer = new MutationObserver(observerCallback);
-      
       observer.observe(scrollableContentRef.current, {
         childList: true,
         subtree: true,
         characterData: true
       });
-      
       return () => observer.disconnect();
     }
   }, [isOverallExpanded, scrollableContentRef]);
-
-  // Auto-scroll to bottom when new content is added and container is expanded
-  useEffect(() => {
-    if (isOverallExpanded && scrollableContentRef.current) {
-      // Immediate scroll attempt
-      scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
-      
-      // Also use animation for smoother experience
-      animateScrollableContent(
-        scrollableContentRef.current,
-        { scrollTop: scrollableContentRef.current.scrollHeight },
-        { duration: 0.3, ease: 'easeInOut' }
-      );
-      
-      // Additional scroll attempt after a short delay to ensure all content is rendered
-      const timeoutId = setTimeout(() => {
-        if (scrollableContentRef.current) {
-          scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight;
-        }
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [content, isOverallExpanded, animateScrollableContent, scrollableContentRef]);
 
   const variants = {
     collapsed: {
@@ -147,21 +109,18 @@ export function MessageReasoning({
   };
 
   const hasContent = content && content.length > 0;
-
-  // Determine the actual icon to display based on props or internal state
   const currentIconType = iconType || ((isLoading && !hasResponseStarted) ? 'spinner' : 'chevron');
 
-  // Determine the title for the main toggle button
   const toggleButtonTitle = () => {
     if (overrideTitle) return overrideTitle;
     if (isLoading && !hasResponseStarted) return "Thinking, wait a bit...";
-    // Count thoughts and searches for a more descriptive title
-    const thoughtCount = content.filter(item => typeof item === 'string').length;
-    const searchCount = content.filter(item => typeof item === 'object' && (item.type === 'webSearch' || item.type === 'fetchedPageInfo')).length;
     
+    const thoughtCount = content.filter(item => typeof item === 'string').length;
+    const toolCallCount = content.filter(item => typeof item === 'object').length;
+
     const parts: string[] = [];
     if (thoughtCount > 0) parts.push(`${thoughtCount} Thought${thoughtCount > 1 ? 's' : ''}`);
-    if (searchCount > 0) parts.push(`${searchCount} Search${searchCount > 1 ? 'es' : ''}`);
+    if (toolCallCount > 0) parts.push(`${toolCallCount} Tool Call${toolCallCount > 1 ? 's' : ''}`);
     if (parts.length === 0 && hasContent) return "Reasoning Steps";
     if (parts.length === 0 && !hasContent) return "";
 
@@ -170,22 +129,20 @@ export function MessageReasoning({
 
   const currentToggleButtonTitle = toggleButtonTitle();
 
-  // Only render the component if there's something to show or if we have an override title
   if (!overrideTitle && !isLoading && !hasContent && !hasResponseStarted) return null;
+
+  const toolIsLoading = isLoading && !hasResponseStarted;
 
   return (
     <div className="flex flex-col mb-2 prevent-layout-shift" style={{ 
       minHeight: overrideTitle ? '40px' : 'auto',
     }}>
-      {/* Main toggle button - always visible when loading or has override */} 
       { (overrideTitle || isLoading || hasContent) && currentToggleButtonTitle && (
         <button
           type="button"
           data-testid="message-reasoning-header-toggle"
           className={`flex flex-row gap-2 items-center w-full cursor-pointer py-1.5 pr-1.5 pl-[6px] rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-200 ${currentIconType === 'spinner' ? 'my-1' : 'my-0.5'} group stable-height-container`}
-          onClick={() => {
-            setIsOverallExpanded(!isOverallExpanded);
-          }}
+          onClick={() => setIsOverallExpanded(!isOverallExpanded)}
         >
           {currentIconType === 'spinner' ? (
             <div className="flex items-center justify-center size-4">
@@ -214,60 +171,71 @@ export function MessageReasoning({
       <AnimatePresence initial={false}>
         {(isOverallExpanded && (overrideTitle || isLoading || hasContent)) && (
           <motion.div
-            data-testid="message-reasoning-content"
             key="reasoning-content"
-            ref={scrollableContentRef}
             initial="collapsed"
             animate="expanded"
             exit="collapsed"
             variants={variants}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="relative flex flex-col py-0.5 text-sm text-zinc-500 dark:text-zinc-400 w-full border border-zinc-300 dark:border-zinc-700 rounded-md p-3"
+            className="overflow-hidden border border-zinc-300 dark:border-zinc-700 rounded-md w-full"
+            data-testid="message-reasoning-content-area-outer"
           >
-            <div className="relative flex flex-col gap-1.5">
+            <div 
+              ref={scrollableContentRef} 
+              className="p-3 text-sm"
+              data-testid="message-reasoning-content-area-inner"
+            >
               {content.map((item, index) => {
                 const itemKey = `reasoning-item-${index}`;
-                return (
-                  <motion.div 
-                    key={itemKey} 
-                    className="relative flex flex-col gap-0.5"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
-                  >
-                    {typeof item === 'string' ? (
-                      <div className="ml-0 prose-sm prose-zinc dark:prose-invert prose-p:my-0.5 prose-p:leading-tight prose-ul:my-0.5 prose-li:my-0 prose-li:leading-tight">
+                if (typeof item === 'string') {
+                  return (
+                    <motion.div 
+                        key={itemKey} 
+                        className="relative flex flex-col gap-0.5 my-2"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+                    >
+                        <div className="ml-0 prose-sm prose-zinc dark:prose-invert prose-p:my-0.5 prose-p:leading-tight prose-ul:my-0.5 prose-li:my-0 prose-li:leading-tight">
                         <Markdown key={`reasoning-text-${index}`}>{item}</Markdown>
-                      </div>
-                    ) : item.type === 'webSearch' ? (
-                      <>
-                        <div className="ml-0">
-                          <WebSearch
-                            key={`reasoning-search-${index}`}
-                            results={item.data.results}
-                            query={item.data.query}
-                            count={item.data.count}
-                            inGroup={true}
-                          />
                         </div>
-                      </>
-                    ) : item.type === 'fetchedPageInfo' ? (
-                      <>
-                        <div className="ml-0">
-                          <WebsiteContent 
-                            key={`fetched-page-${index}`}
-                            url={item.data.url}
-                            query={item.data.query}
-                            content="" // WebsiteContent doesn't display full content string
-                            status="success" // Hardcode status as it's just an info display here
-                            inGroup={true}
-                          />
-                        </div>
-                      </>
-                    ) : null}
-                  </motion.div>
-                );
+                    </motion.div>
+                  );
+                } else if (item.type === 'webSearch') {
+                  return (
+                    <motion.div 
+                      key={itemKey} 
+                      className="my-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+                    >
+                      <WebSearch {...item.data} />
+                    </motion.div>
+                  );
+                } else if (item.type === 'fetchedPageInfo') {
+                  return (
+                    <motion.div 
+                      key={itemKey}
+                      className="my-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+                    >
+                      <WebsiteContent 
+                        url={item.data.url} 
+                        query={item.data.query} 
+                        status={toolIsLoading ? 'loading' : 'success'} 
+                        error={undefined}
+                      />
+                    </motion.div>
+                  );
+                }
+                return null;
               })}
+              {(content.length === 0 && isLoading && !hasResponseStarted) && (
+                <div className="text-sm text-gray-500 dark:text-gray-400 p-3">Processing...</div>
+              )}
             </div>
           </motion.div>
         )}
