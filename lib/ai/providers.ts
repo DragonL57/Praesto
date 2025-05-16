@@ -81,7 +81,7 @@ export const myProvider = isTestEnvironment
       'title-model': pollinationsProvider.chatModel('openai'),
 
       // Use qwen3 for artifact generation
-      'artifact-model': enhancedQwenModel,
+      'artifact-model': pollinationsProvider.chatModel('openai-large'),
 
       // Add Fireworks Qwen3 model with reasoning capabilities
       'chat-model-reasoning': enhancedQwenModel,
