@@ -233,7 +233,7 @@ function PureMultimodalInput({
             role="button"
             tabIndex={0}
             className={cx(
-              "w-full text-left rounded-3xl overflow-hidden bg-background dark:border-zinc-700 border border-input shadow-md transition-shadow duration-200",
+              "w-full text-left rounded-3xl overflow-hidden bg-background dark:bg-zinc-800 dark:border-zinc-600 border border-input shadow-md transition-shadow duration-200",
               {
                 "pt-4": attachments.length > 0 || uploadQueue.length > 0,
                 "shadow-lg": isInputFocused,
@@ -327,7 +327,7 @@ function PureMultimodalInput({
               {/* Left side - Persona selector and other potential future buttons */}
               <div className="p-2 flex flex-row justify-start items-center z-10 gap-1">
                 {/* Background element with rounded corners */}
-                <span className="absolute inset-px bg-backround  dark:bg-backround  rounded-full pointer-events-none"></span>
+                <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none"></span>
                 {/* Reasoning Toggle Button - Text-based Pill Button */}
                 <Button
                   type="button" // Prevent form submission
