@@ -371,7 +371,8 @@ export async function POST(request: Request) {
         let modelOptions = {};
         if (isOpenAILarge) {
           modelOptions = {
-            maxTokens: 8192 // Set max token limit to 8192 for openai-large/chat-model
+            maxTokens: 8192, // Set max token limit to 8192 for openai-large/chat-model
+            temperature: 1 // Set temperature for openai-large/chat-model
           };
         } else if (isFireworksQwenModel) {
           modelOptions = {

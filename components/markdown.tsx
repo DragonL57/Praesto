@@ -22,6 +22,8 @@ import {
   differenceInCalendarDays, 
   format
 } from 'date-fns'; // Added more date-fns functions
+import { SuggestionButton } from './suggestion-button'; // Added import
+import type { UseChatHelpers } from '@ai-sdk/react'; // Added import for append type
 
 // Define a more specific type for HAST nodes with properties
 interface HastNodeWithProperties {
@@ -36,10 +38,15 @@ interface HastNodeWithProperties {
   value?: string; // For text nodes
 }
 
-// Define our custom components type, extending the base and adding 'citation-button'
+// Define our custom components type, extending the base and adding 'citation-button' and 'suggestion-button'
 interface CustomMarkdownComponents extends Components {
   'citation-button'?: React.FC<{
       node?: HastNodeWithProperties;
+      [key: string]: unknown;
+  }>;
+  'suggestion-button'?: React.FC<{
+      node?: HastNodeWithProperties;
+      append?: UseChatHelpers['append']; // Added append here
       [key: string]: unknown;
   }>;
 }
@@ -48,6 +55,7 @@ interface CustomMarkdownComponents extends Components {
 interface MarkdownProps {
   children: string;
   baseHeadingLevel?: number;
+  append?: UseChatHelpers['append']; // Added append prop
 }
 
 // Component to handle table overflow with proper scrollbars
@@ -204,6 +212,7 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
 const NonMemoizedMarkdown = ({
   children,
   baseHeadingLevel = 1,
+  append, // Destructure append
 }: MarkdownProps) => {
   // State to track image preview modal - defined before any conditional returns
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
@@ -265,15 +274,20 @@ const NonMemoizedMarkdown = ({
             );
           },
 
-          'citation-button': ({ node }: { node?: HastNodeWithProperties }) => {
-            const num = node?.properties?.num;
-            const url = node?.properties?.url;
-            // Ensure num and url are strings before passing to CitationButton
-            if (typeof num === 'string' && typeof url === 'string') {
-              return <CitationButton num={num} url={url} />;
-            }
-            // Fallback for malformed or missing attributes
-            return <span style={{ color: 'red', fontWeight: 'bold' }}>[Citation Error]</span>;
+          'citation-button': ({ node, ...props }) => {
+            if (!node || !node.properties) return null;
+            const num = node.properties.num as string;
+            const url = node.properties.url as string;
+            if (!num || !url) return null;
+            return <CitationButton num={num} url={url} />;
+          },
+
+          'suggestion-button': ({ node, ...props }) => {
+            if (!node || !node.properties || !append) return null; // Check for append
+            const text = node.properties.text as string;
+            const query = node.properties.query as string;
+            if (!text || !query) return null;
+            return <SuggestionButton text={text} query={query} append={append} />;
           },
 
           // Image component with lazy loading and full screen preview
@@ -541,12 +555,12 @@ const NonMemoizedMarkdown = ({
 // Add display name to the non-memoized component
 NonMemoizedMarkdown.displayName = 'NonMemoizedMarkdown';
 
-// Memoize the component for better performance
+// Finally, memoize the component
 export const Markdown = memo(
   NonMemoizedMarkdown,
-  (prevProps, _nextProps) =>
-    prevProps.children === _nextProps.children &&
-    prevProps.baseHeadingLevel === _nextProps.baseHeadingLevel,
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children &&
+    prevProps.baseHeadingLevel === nextProps.baseHeadingLevel,
 );
 
 // Add display name to the memoized component

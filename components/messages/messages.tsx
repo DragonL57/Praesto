@@ -15,6 +15,7 @@ interface MessagesProps {
   messages: Array<UIMessage>;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
+  append: UseChatHelpers['append'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
   messagesContainerRef?: React.RefObject<HTMLDivElement>;
@@ -28,6 +29,7 @@ function PureMessages({
   messages,
   setMessages,
   reload,
+  append,
   isReadonly,
   messagesContainerRef: externalContainerRef,
   messagesEndRef: externalEndRef,
@@ -152,6 +154,7 @@ function PureMessages({
               }
               setMessages={setMessages}
               reload={reload}
+              append={append}
               isReadonly={isReadonly}
             />
           </div>

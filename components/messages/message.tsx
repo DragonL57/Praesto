@@ -148,11 +148,12 @@ export interface PurePreviewMessageProps {
   isLoading: boolean;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
+  append: UseChatHelpers['append'];
   isReadonly: boolean;
 }
 
 const PurePreviewMessage = memo<PurePreviewMessageProps>(
-  ({ chatId, message, vote, isLoading, setMessages, reload, isReadonly }) => {
+  ({ chatId, message, vote, isLoading, setMessages, reload, append, isReadonly }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [, copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
@@ -481,7 +482,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                               <UserTextWithLineBreaks text={part.text!} />
                             </div>
                           ) : (
-                            <Markdown baseHeadingLevel={2}>{part.text!}</Markdown>
+                            <Markdown baseHeadingLevel={2} append={append}>{part.text!}</Markdown>
                           )}
                         </div>
                       </div>
@@ -675,16 +676,33 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
 
 PurePreviewMessage.displayName = 'PurePreviewMessage';
 
-export const PreviewMessage = memo(
+export interface PreviewMessageProps extends Omit<PurePreviewMessageProps, 'isReadonly'> {
+  isReadonly: boolean;
+}
+
+// Re-memoize PurePreviewMessage with the new append prop
+const MemoizedPurePreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.id !== nextProps.message.id) return false;
-    if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
-    return true;
-  },
+    return (
+      prevProps.chatId === nextProps.chatId &&
+      equal(prevProps.message, nextProps.message) && // Use deep equal for message object
+      equal(prevProps.vote, nextProps.vote) &&         // Deep equal for vote
+      prevProps.isLoading === nextProps.isLoading &&
+      prevProps.setMessages === nextProps.setMessages &&
+      prevProps.reload === nextProps.reload &&
+      prevProps.append === nextProps.append &&
+      prevProps.isReadonly === nextProps.isReadonly
+    );
+  }
 );
+
+// Use the memoized version in PreviewMessage
+export const PreviewMessage: React.FC<PreviewMessageProps> = (props) => {
+  return <MemoizedPurePreviewMessage {...props} />;
+};
+
+PreviewMessage.displayName = 'PreviewMessage';
 
 export const ThinkingMessage = () => {
   const [currentDisplay] = useState({
@@ -694,6 +712,11 @@ export const ThinkingMessage = () => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
+    // Example of how you might change display state over time
+    // const timer1 = setTimeout(() => setCurrentDisplay({ text: 'Analyzing...', iconType: 'spinner' }), 2000);
+    // const timer2 = setTimeout(() => setCurrentDisplay({ text: 'Almost there...', iconType: 'tick' }), 5000);
+    // return () => { clearTimeout(timer1); clearTimeout(timer2); };
+
     // Cleanup for exiting animation
     return () => {
       setIsExiting(true);
