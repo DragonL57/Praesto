@@ -143,6 +143,7 @@ export function Chat({
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}
+        isPanelVisible={isArtifactVisible}
       />
     </>
   );

@@ -113,14 +113,14 @@ export function ScrollButton({ containerRef, endRef }: ScrollButtonProps) {
   }
 
   return (
-    <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div className="absolute -top-12 right-1 z-50 pointer-events-none">
       <Button
         onClick={scrollToBottom}
-        className={`rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all duration-300 size-8 p-0 pointer-events-auto ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+        className={`rounded-full shadow-lg bg-foreground/80 hover:bg-muted-foreground/80 transition-all duration-300 size-8 p-0 pointer-events-auto ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
         size="icon"
         aria-label="Scroll to bottom"
       >
-        <LuArrowDownToLine size={16} className="text-primary-foreground" />
+        <LuArrowDownToLine size={16} className="text-muted" />
       </Button>
     </div>
   );

@@ -19,6 +19,7 @@ interface ArtifactMessagesProps {
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   artifactStatus: UIArtifact['status'];
+  isPanelVisible?: boolean;
 }
 
 function PureArtifactMessages({
@@ -29,6 +30,7 @@ function PureArtifactMessages({
   setMessages,
   reload,
   isReadonly,
+  isPanelVisible,
 }: ArtifactMessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -60,11 +62,11 @@ function PureArtifactMessages({
         className="shrink-0 min-w-[24px] min-h-[24px]"
       />
       
-      {/* Use our custom ScrollToBottomButton component instead of relying on auto-scroll */}
-      {messages.length > 2 && (
+      {messages.length > 2 && !isPanelVisible && (
         <ScrollToBottomButton 
           containerRef={messagesContainerRef}
           endRef={messagesEndRef}
+          isArtifactOpen={isPanelVisible}
         />
       )}
     </div>

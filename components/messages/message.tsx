@@ -571,7 +571,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 
                 // Render standalone results for Weather, Docs, YouTube, etc.
                 return (
-                  <div key={toolCallId} className={cx({ 'border-[1.5px] border-border rounded-xl mb-0': !['getYoutubeTranscript'].includes(toolName) }, 'relative')} >
+                  <div key={toolCallId} className={cx({ 'border-[1.5px] border-border rounded-xl mb-0': !['getYoutubeTranscript', 'updateDocument', 'createDocument', 'requestSuggestions'].includes(toolName) }, 'relative')} >
                     {toolName === 'getWeather' ? ( <Weather weatherAtLocation={result} />
                     ) : toolName === 'createDocument' ? ( <DocumentPreview isReadonly={isReadonly} result={result} />
                     ) : toolName === 'updateDocument' ? ( <DocumentToolResult type="update" result={result} isReadonly={isReadonly} />

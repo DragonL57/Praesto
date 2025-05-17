@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { BorderTrail } from '@/components/ui/creative-effects/border-trail/border-trail';
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
 import { artifactDefinitions } from './artifact';
 import type { ArtifactKind } from './artifact';
@@ -112,7 +111,7 @@ const Tool = ({
           }}
         >
           {/* Always show BorderTrail for selected tool, show on hover for others */}
-          {(isHovered || selectedTool === description) && (
+          {/* {(isHovered || selectedTool === description) && (
             <BorderTrail 
               className={cx({
                 "bg-primary/80": selectedTool === description,
@@ -130,7 +129,7 @@ const Tool = ({
                   : "0px 0px 15px 5px rgb(255 255 255 / 15%)"
               }}
             />
-          )}
+          )} */}
           {selectedTool === description ? <ArrowUpIcon /> : icon}
         </motion.div>
       </TooltipTrigger>
@@ -237,7 +236,7 @@ const ReadingLevelSelector = ({
                 }
               }}
             >
-              {(currentLevel !== 2 || !isAnimating) && (
+              {/* {(currentLevel !== 2 || !isAnimating) && (
                 <BorderTrail 
                   className={cx({
                     "bg-primary/80": currentLevel !== 2,
@@ -255,7 +254,7 @@ const ReadingLevelSelector = ({
                       : "0px 0px 15px 5px rgb(255 255 255 / 15%)"
                   }}
                 />
-              )}
+              )} */}
               {currentLevel === 2 ? <SummarizeIcon /> : <ArrowUpIcon />}
             </motion.div>
           </TooltipTrigger>
@@ -447,7 +446,7 @@ const PureToolbar = ({
         }}
         ref={toolbarRef}
       >
-        {isToolbarVisible && (
+        {/* {isToolbarVisible && (
           <div className="absolute inset-0">
             <BorderTrail 
               className="bg-primary/40"
@@ -457,7 +456,7 @@ const PureToolbar = ({
               }}
             />
           </div>
-        )}
+        )} */}
         {status === 'streaming' ? (
           <motion.div
             key="stop-icon"
@@ -470,7 +469,7 @@ const PureToolbar = ({
               setMessages((messages) => messages);
             }}
           >
-            <BorderTrail 
+            {/* <BorderTrail 
               className="bg-primary/80"
               size={30}
               transition={{
@@ -481,7 +480,7 @@ const PureToolbar = ({
               style={{
                 boxShadow: "0px 0px 20px 10px rgb(255 255 255 / 20%)"
               }}
-            />
+            /> */}
             <StopIcon />
           </motion.div>
         ) : selectedTool === 'adjust-reading-level' ? (

@@ -3,15 +3,18 @@
 import { Button } from './ui/button';
 import { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { LuArrowDownToLine } from "react-icons/lu";
+import { cn } from '@/lib/utils';
 
 interface ScrollToBottomButtonProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   endRef: React.RefObject<HTMLDivElement | null>;
+  isArtifactOpen?: boolean;
 }
 
 function PureScrollToBottomButton({
   containerRef,
   endRef,
+  isArtifactOpen,
 }: ScrollToBottomButtonProps) {
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [shouldRender, setShouldRender] = useState<boolean>(false);
@@ -118,7 +121,14 @@ function PureScrollToBottomButton({
   }
 
   return (
-    <div className="fixed w-full max-w-3xl left-1/2 -translate-x-1/2 bottom-[70px] md:bottom-[86px] z-50 flex justify-center items-center px-4 pointer-events-none">
+    <div 
+      className={cn(
+        "fixed z-50 flex items-center px-4 pointer-events-none bottom-[70px] md:bottom-[86px]",
+        isArtifactOpen
+          ? "left-4 justify-start"
+          : "w-full max-w-3xl left-1/2 -translate-x-1/2 justify-center"
+      )}
+    >
       <Button
         onClick={scrollToBottom}
         className={`rounded-full shadow-lg bg-muted-foreground/70 hover:bg-muted-foreground transition-all duration-300 size-10 p-0 pointer-events-auto ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
