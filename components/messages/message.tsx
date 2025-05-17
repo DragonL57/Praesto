@@ -687,7 +687,7 @@ export const PreviewMessage = memo(
 );
 
 export const ThinkingMessage = () => {
-  const [currentDisplay, setCurrentDisplay] = useState({
+  const [currentDisplay] = useState({
     text: 'Thinking, wait a bit...',
     iconType: 'spinner' as 'spinner' | 'tick' | 'chevron',
   });

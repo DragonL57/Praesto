@@ -68,18 +68,29 @@ class BraveSearchClient {
     maxResults = 20,
     region = 'us',
     safeSearch = true,
+    search_lang,
+    freshness,
+    result_filter,
+    summary
   }: {
     query: string;
     maxResults?: number;
     region?: string;
     safeSearch?: boolean;
+    search_lang?: string;
+    freshness?: string;
+    result_filter?: string;
+    summary?: boolean;
   }) {
-    console.log(
-      `Brave Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
-    );
+    let logParams = `Brave Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`;
+    if (search_lang) logParams += `, search_lang=${search_lang}`;
+    if (freshness) logParams += `, freshness=${freshness}`;
+    if (result_filter) logParams += `, result_filter=${result_filter}`;
+    if (summary !== undefined) logParams += `, summary=${summary}`;
+    console.log(logParams);
 
     // Check cache first
-    const cacheKey = `brave:${query}:${maxResults}:${region}:${safeSearch}`;
+    const cacheKey = `brave:${query}:${maxResults}:${region}:${safeSearch}:${search_lang || ''}:${freshness || ''}:${result_filter || ''}:${summary !== undefined ? summary : ''}`;
     const cachedResult = searchCache.get(cacheKey);
 
     if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
@@ -99,6 +110,19 @@ class BraveSearchClient {
       url.searchParams.append('safesearch', safeSearch ? 'moderate' : 'off');
       url.searchParams.append('extra_snippets', 'true');
 
+      if (search_lang) {
+        url.searchParams.append('search_lang', search_lang);
+      }
+      if (freshness) {
+        url.searchParams.append('freshness', freshness);
+      }
+      if (result_filter) {
+        url.searchParams.append('result_filter', result_filter);
+      }
+      if (summary !== undefined) {
+        url.searchParams.append('summary', String(summary));
+      }
+
       // Make the request to Brave Search API
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -112,7 +136,7 @@ class BraveSearchClient {
 
       if (!response.ok) {
         throw new Error(
-          `Brave Search API error: ${response.status} ${response.statusText}`,
+          `Brave Search API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -128,7 +152,19 @@ class BraveSearchClient {
           results.push({
             title: result.title || 'No title',
             href: result.url || '',
-            body: result.description || 'No description available',
+            body: result.description || result.snippet || (result.meta_url && result.meta_url.path) || 'No description available',
+          });
+        }
+      }
+
+      // Process summary if available
+      if (data.summarizer && data.summarizer.results && data.summarizer.results.length > 0 && results.length < maxResults) {
+        const summaryText = data.summarizer.results[0].text;
+        if (summaryText) {
+          results.unshift({ // Add summary to the beginning of results
+            title: 'Search Summary',
+            href: '', // Summaries don't have a direct URL
+            body: summaryText,
           });
         }
       }
@@ -159,8 +195,45 @@ class BraveSearchClient {
         }
       }
 
+      // Add discussions if available
+      if (data.discussions && data.discussions.results && Array.isArray(data.discussions.results) && results.length < maxResults) {
+        for (const discussion of data.discussions.results) {
+          if (results.length >= maxResults) break;
+          results.push({
+            title: discussion.title || 'Discussion',
+            href: discussion.url || '',
+            body: discussion.description || 'No description available',
+          });
+        }
+      }
+
+      // Add videos if available
+      if (data.videos && data.videos.results && Array.isArray(data.videos.results) && results.length < maxResults) {
+        for (const video of data.videos.results) {
+          if (results.length >= maxResults) break;
+          results.push({
+            title: video.title || 'Video',
+            href: video.url || '',
+            body: video.description || 'No description available',
+          });
+        }
+      }
+
+      // Add news if available
+      if (data.news && data.news.results && Array.isArray(data.news.results) && results.length < maxResults) {
+        for (const news_item of data.news.results) {
+          if (results.length >= maxResults) break;
+          results.push({
+            title: news_item.title || 'News',
+            href: news_item.url || '',
+            body: news_item.description || 'No description available',
+          });
+        }
+      }
+
+
       console.log(
-        `Brave Search Complete: Found ${results.length} results`,
+        `Brave Search Complete: Found ${results.length} results`
       );
 
       const finalResults = {
@@ -196,18 +269,27 @@ class SerperClient {
     maxResults = 20,
     region = 'us',
     safeSearch = true,
+    search_lang, // Added for consistency, basic mapping for 'hl'
+    freshness,   // Added for consistency, basic mapping for 'tbs'
+    // result_filter and summary are not directly supported by Serper in the same way
   }: {
     query: string;
     maxResults?: number;
     region?: string;
     safeSearch?: boolean;
+    search_lang?: string;
+    freshness?: string;
+    // result_filter?: string; // Not directly mapped
+    // summary?: boolean; // Not directly mapped
   }) {
-    console.log(
-      `Serper (Google) Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
-    );
+    let logParams = `Serper (Google) Search: query='${query}', max=${maxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`;
+    if (search_lang) logParams += `, search_lang=${search_lang}`;
+    if (freshness) logParams += `, freshness=${freshness}`;
+    console.log(logParams);
+
 
     // Check cache first
-    const cacheKey = `serper:${query}:${maxResults}:${region}:${safeSearch}`;
+    const cacheKey = `serper:${query}:${maxResults}:${region}:${safeSearch}:${search_lang || ''}:${freshness || ''}`;
     const cachedResult = this.cache.get(cacheKey);
 
     if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
@@ -219,6 +301,31 @@ class SerperClient {
       // Add a small delay before making the request
       await delay(200);
 
+      const serperPayload: Record<string, string | number> = {
+        q: query,
+        gl: region,
+        hl: search_lang || 'en', // Default to 'en' if not provided
+        num: maxResults,
+        safe: safeSearch ? 'active' : 'off',
+      };
+
+      // Basic freshness mapping for Serper (qdr: h, w, m, y)
+      if (freshness) {
+        const freshnessLower = freshness.toLowerCase();
+        if (freshnessLower === 'pd') {
+          serperPayload.tbs = 'qdr:h'; // Past 24 hours
+        } else if (freshnessLower === 'pw') {
+          serperPayload.tbs = 'qdr:w'; // Past week
+        } else if (freshnessLower === 'pm') {
+          serperPayload.tbs = 'qdr:m'; // Past month
+        } else if (freshnessLower === 'py') {
+          serperPayload.tbs = 'qdr:y'; // Past year
+        }
+        // Note: Serper's custom date range (YYYY-MM-DDtoYYYY-MM-DD) needs different 'tbs' format,
+        // e.g., cdr:1,cd_min:MM/DD/YYYY,cd_max:MM/DD/YYYY. This is not implemented here for simplicity.
+      }
+
+
       // Set up the request to the Serper API
       const options = {
         method: 'POST',
@@ -226,13 +333,7 @@ class SerperClient {
           'X-API-KEY': '5b106638ab76499468577a6a8844cacfa7d38551',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          q: query,
-          gl: region, // Google country code
-          hl: 'en', // Language
-          num: maxResults,
-          safe: safeSearch ? 'active' : 'off',
-        }),
+        body: JSON.stringify(serperPayload),
       };
 
       // Make the request to the Serper API
@@ -240,7 +341,7 @@ class SerperClient {
 
       if (!response.ok) {
         throw new Error(
-          `Serper API error: ${response.status} ${response.statusText}`,
+          `Serper API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -284,6 +385,31 @@ class SerperClient {
         });
       }
 
+      // Add news if available (Serper often includes news in organic or has a 'news' key)
+      if (data.news && Array.isArray(data.news) && results.length < maxResults) {
+        for (const news_item of data.news) {
+          if (results.length >= maxResults) break;
+          results.push({
+            title: news_item.title || 'News',
+            href: news_item.link || '',
+            body: news_item.snippet || 'No description available',
+          });
+        }
+      }
+
+      // Add videos if available (Serper often includes videos in organic or has a 'videos' key)
+      if (data.videos && Array.isArray(data.videos) && results.length < maxResults) {
+        for (const video_item of data.videos) {
+          if (results.length >= maxResults) break;
+          results.push({
+            title: video_item.title || 'Video',
+            href: video_item.link || '',
+            body: video_item.snippet || 'No description available',
+          });
+        }
+      }
+
+
       console.log(`Serper Search Complete: Found ${results.length} results`);
 
       const finalResults = {
@@ -312,36 +438,59 @@ const serper = new SerperClient();
 
 export const webSearch = tool({
   description:
-    'Perform a web search using Brave Search (with Google as fallback) and return the results',
+    'Perform a web search using Brave Search (with Google as fallback) and return the results. Supports advanced parameters for targeted searches.',
   parameters: z.object({
     query: z.string().describe('The search query'),
     maxResults: z
       .number()
-      .min(20)
-      .max(20)
-      .default(20)
-      .describe('The number of results to return (default: 20)'),
+      .min(1) // Allow smaller requests if needed, though Brave might still return more up to its cap
+      .max(20) // Brave's documented max for 'count'
+      .default(10) // Sensible default
+      .describe('The desired number of results to return (default: 10, max: 20)'),
     region: z
       .string()
       .default('us')
-      .describe('The region for the search (default: "us")'),
+      .describe('The 2-character country code for the search region (default: "us"). Example: "de" for Germany.'),
     safeSearch: z
       .boolean()
       .default(true)
-      .describe('Whether to enable safe search'),
+      .describe('Whether to enable safe search (filters explicit content). Default: true.'),
+    search_lang: z
+      .string()
+      .optional()
+      .describe('Optional: The 2-character language code for the search results (e.g., "en", "es", "fr").'),
+    freshness: z
+      .string()
+      .optional()
+      .describe("Optional: Filter search results by when they were discovered. Supported values: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year), or a date range like 'YYYY-MM-DDtoYYYY-MM-DD'."),
+    result_filter: z
+      .string()
+      .optional()
+      .describe("Optional: Comma-delimited string of result types to include (e.g., 'news,web', 'videos'). Supported types: discussions, faq, infobox, news, query, summarizer, videos, web, locations."),
+    summary: z
+      .boolean()
+      .optional()
+      .describe('Optional: Whether to request a summary of the search results from the Brave Search API. Default: false.'),
   }),
   execute: async ({
     query,
-    maxResults: _maxResults = 20, // Prefix with underscore to mark as deliberately unused
+    maxResults = 10,
     region = 'us',
     safeSearch = true,
+    search_lang,
+    freshness,
+    result_filter,
+    summary = false, // Default summary to false
   }) => {
-    // Always use 10 results
-    const normalizedMaxResults = 20;
+    // Normalize maxResults for internal use, respecting Brave's cap.
+    // The Zod schema now has default(10) and max(20).
+    const normalizedMaxResults = Math.min(maxResults, 20);
 
-    console.log(
-      `Web Search: query='${query}', max=${normalizedMaxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}`,
-    );
+    let logParams = `Web Search: query='${query}', max=${normalizedMaxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}, summary=${summary}`;
+    if (search_lang) logParams += `, search_lang=${search_lang}`;
+    if (freshness) logParams += `, freshness=${freshness}`;
+    if (result_filter) logParams += `, result_filter=${result_filter}`;
+    console.log(logParams);
 
     try {
       // Try Brave Search first
@@ -351,6 +500,10 @@ export const webSearch = tool({
           maxResults: normalizedMaxResults,
           region,
           safeSearch,
+          search_lang,
+          freshness,
+          result_filter,
+          summary
         });
 
         // If we got at least some results, return them
@@ -365,11 +518,13 @@ export const webSearch = tool({
           maxResults: normalizedMaxResults,
           region,
           safeSearch,
+          search_lang, // Pass along for consistency
+          freshness,   // Pass along for consistency
         });
         return serperResults;
       } catch (braveError: unknown) {
         console.error(
-          `Brave search failed: ${getErrorMessage(braveError)}, falling back to Serper`,
+          `Brave search failed: ${getErrorMessage(braveError)}, falling back to Serper`
         );
         // Fall back to Serper if Brave fails
         const serperResults = await serper.search({
@@ -377,6 +532,8 @@ export const webSearch = tool({
           maxResults: normalizedMaxResults,
           region,
           safeSearch,
+          search_lang, // Pass along for consistency
+          freshness,   // Pass along for consistency
         });
         return serperResults;
       }
@@ -392,7 +549,7 @@ export const webSearch = tool({
         ],
         count: 0,
         query: query,
-        error: `Search error: ${getErrorMessage(error)}`,
+        // error: `Search error: ${getErrorMessage(error)}`, // This was causing a type error with the 'ai' package's tool definition.
       };
     }
   },

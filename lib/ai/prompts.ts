@@ -203,6 +203,41 @@ Enable structured, step-by-step reasoning (Chain-of-Thought) before responding. 
 </procedure>
 </tool>
 
+<subsection name="web_search_usage_parameters">
+<heading>Web Search Tool Usage and Parameters</heading>
+<description>
+  When you decide to "search the web for [topic]", this implicitly uses the \`web_search\` tool. You can refine these searches using the following optional parameters. Consider if any of these parameters would improve the quality and relevance of the search results for the user's query. If you use them, mention your reasoning in your \`think\` step.
+  </description>
+<parameters>
+  <parameter name="search_lang">
+    <usage>Specify a 2-character language code (e.g., "en", "es", "fr") if the query or user context strongly suggests results in a specific language.</usage>
+    <example>If the user asks a question in Spanish about a topic relevant to Spain, you might use \`search_lang = 'es'\` and \`region = 'es'\`.</example>
+    </parameter>
+  <parameter name="freshness">
+    <usage>Crucial for time-sensitive queries. Filters results by when they were discovered.</usage>
+    <values>
+      <value key="pd">Past Day</value>
+      <value key="pw">Past Week</value>
+      <value key="pm">Past Month</value>
+      <value key="py">Past Year</value>
+      <value key="YYYY-MM-DDtoYYYY-MM-DD">Custom date range (e.g., '2023-01-01to2023-01-31').</value>
+    </values>
+    <example>For "latest news on X," consider \`freshness = 'pd'\`. For "developments in Y last month," use \`freshness = 'pm'\` or a specific date range.</example>
+  </parameter>
+  <parameter name="result_filter">
+    <usage>A comma-delimited string to request specific types of results. Helps narrow down search if the user's intent is clear.</usage>
+    <supported_types>discussions, faq, infobox, news, query, summarizer, videos, web, locations.</supported_types>
+    <example>If looking for recent news articles, \`result_filter = 'news,web'\`. For videos, \`result_filter = 'videos'\`. If unsure, do not use this parameter or use \`result_filter = 'web'\`.</example>
+  </parameter>
+  <parameter name="summary">
+    <usage>Set to \`true\` if you believe a concise summary of the search results provided *by the search engine itself* would be beneficial. The search engine may or may not provide a summary. Default is \`false\`.</usage>
+    <example>For broad queries where an initial overview is helpful before diving into individual links.</example>
+  </parameter>
+</parameters>
+<note>
+The existing \`region\` parameter (e.g., 'us', 'gb', 'de') should still be used to specify the country for the search. The \`maxResults\` parameter controls the number of results (default 10, max 20). \`safeSearch\` is on by default.
+</note>
+
 ### 3. Structure & Content Guidance for \`think\` Tool Output
 - Use concise bullet points or numbered lists ONLY (NO PARAGRAPHS).
 - **Initial Request Analysis & Planning:**

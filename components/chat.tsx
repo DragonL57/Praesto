@@ -83,44 +83,47 @@ export function Chat({
           isReadonly={isReadonly}
         />
 
-        <div className="flex-1 overflow-hidden relative w-full">
-          <Messages
-            chatId={id}
-            status={status}
-            votes={votes}
-            messages={messages}
-            setMessages={setMessages}
-            reload={reload}
-            isReadonly={isReadonly}
-            isArtifactVisible={isArtifactVisible}
-            messagesContainerRef={messagesContainerRef}
-            messagesEndRef={messagesEndRef}
-          />
-        </div>
+        <div className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}>
+          <div className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}>
+            <Messages
+              chatId={id}
+              status={status}
+              votes={votes}
+              messages={messages}
+              setMessages={setMessages}
+              reload={reload}
+              isReadonly={isReadonly}
+              isArtifactVisible={isArtifactVisible}
+              messagesContainerRef={messagesContainerRef}
+              messagesEndRef={messagesEndRef}
+            />
+          </div>
 
-        <div className="shrink-0">
-          <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
-            {/* Input component */}
-            {!isReadonly && (
-              <MultimodalInput
-                chatId={id}
-                input={input}
-                setInput={setInput}
-                handleSubmit={handleSubmit}
-                status={status}
-                stop={stop}
-                attachments={attachments}
-                setAttachments={setAttachments}
-                messages={messages}
-                setMessages={setMessages}
-                append={append}
-                messagesContainerRef={messagesContainerRef}
-                messagesEndRef={messagesEndRef}
-              />
+          <div className={`shrink-0 ${messages.length === 0 ? 'pb-[20vh]' : ''}`}>
+            <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
+              {!isReadonly && (
+                <MultimodalInput
+                  chatId={id}
+                  input={input}
+                  setInput={setInput}
+                  handleSubmit={handleSubmit}
+                  status={status}
+                  stop={stop}
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                  messages={messages}
+                  setMessages={setMessages}
+                  append={append}
+                  messagesContainerRef={messagesContainerRef}
+                  messagesEndRef={messagesEndRef}
+                />
+              )}
+            </form>
+            {messages.length > 0 && (
+              <div className="text-center text-xs text-white-500 mt-0">
+                UniTaskAI can make mistake, double-check the info
+              </div>
             )}
-          </form>
-          <div className="text-center text-xs text-white-500 mt-0">
-            UniTaskAI can make mistake, double-check the info
           </div>
         </div>
       </div>
