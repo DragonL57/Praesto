@@ -23,6 +23,27 @@ interface MessagesProps {
   messagesEndRef?: React.RefObject<HTMLDivElement>;
 }
 
+// Throttle utility
+function throttle<T extends (...args: unknown[]) => void>(func: T, limit: number): T {
+  let inThrottle = false;
+  let lastArgs: unknown[] | null = null;
+  return function(this: unknown, ...args: unknown[]) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+        if (lastArgs) {
+          func.apply(this, lastArgs);
+          lastArgs = null;
+        }
+      }, limit);
+    } else {
+      lastArgs = args;
+    }
+  } as T;
+}
+
 function PureMessages({
   chatId,
   status,
@@ -87,35 +108,26 @@ function PureMessages({
     if (!container) return;
 
     const SCROLL_UP_THRESHOLD = 100; // Pixels from bottom to consider "scrolled up"
-    let scrollTimeout: NodeJS.Timeout | null = null;
+    const handleScroll = throttle(() => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceScrolledFromBottom = scrollHeight - clientHeight - scrollTop;
 
-    const handleScroll = () => {
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
+      if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
+        if (!userHasScrolledUp) setUserHasScrolledUp(true);
+      } else {
+        // If user is close to the bottom (e.g., within 5px), consider them "at bottom"
+        if (userHasScrolledUp && distanceScrolledFromBottom < 5) {
+          setUserHasScrolledUp(false);
+        }
       }
-      // Debounce scroll event slightly to avoid excessive state updates
-      scrollTimeout = setTimeout(() => {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const distanceScrolledFromBottom = scrollHeight - clientHeight - scrollTop;
-
-        if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
-          if (!userHasScrolledUp) setUserHasScrolledUp(true);
-        } else {
-          // If user is close to the bottom (e.g., within 5px), consider them "at bottom"
-          if (userHasScrolledUp && distanceScrolledFromBottom < 5) {
-            setUserHasScrolledUp(false);
-          }
-        }
-        // Infinite scroll: if scrolled to top, load more
-        if (scrollTop === 0 && hasMore && !isLoadingMore) {
-          handleLoadMore();
-        }
-      }, 50); 
-    };
+      // Infinite scroll: if scrolled to top, load more
+      if (scrollTop === 0 && hasMore && !isLoadingMore) {
+        handleLoadMore();
+      }
+    }, 50);
 
     container.addEventListener('scroll', handleScroll);
     return () => {
-      if (scrollTimeout) clearTimeout(scrollTimeout);
       container.removeEventListener('scroll', handleScroll);
     };
   }, [containerRef, userHasScrolledUp, handleLoadMore, hasMore, isLoadingMore]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)

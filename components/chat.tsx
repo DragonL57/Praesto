@@ -35,7 +35,7 @@ export function Chat({
 
   const [globallySelectedModelId, setGloballySelectedModelId] = useLocalStorage(
     'chat-model',
-    initialSelectedChatModelFromServer || DEFAULT_CHAT_MODEL_ID
+    () => initialSelectedChatModelFromServer || DEFAULT_CHAT_MODEL_ID
   );
 
   useEffect(() => {
