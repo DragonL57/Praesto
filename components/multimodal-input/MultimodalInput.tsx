@@ -351,14 +351,14 @@ function PureMultimodalInput({
               <div className="p-2 flex flex-row justify-start items-center z-10 gap-1">
                 {/* Background element with rounded corners */}
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none"></span>
-              </div>
-
-              {/* Right side - attachments, speech-to-text, and send/stop buttons */}
-              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1 relative">
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
                   status={status} // Correctly pass status, internal logic handles disabling
                 />
+              </div>
+
+              {/* Right side - speech-to-text, and send/stop buttons */}
+              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1 relative">
                 <SpeechToTextButton
                   recognitionRef={recognitionRef}
                   setInput={setInput}

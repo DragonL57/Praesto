@@ -38,7 +38,6 @@ function PureSpeechToTextButton({
 
   // Available languages for speech recognition - wrapped in useMemo to prevent recreation on each render
   const languages = useMemo(() => [
-    { value: 'auto', label: 'Auto-detect language' },
     { value: 'en-US', label: 'English (US)' },
     { value: 'en-GB', label: 'English (UK)' },
     { value: 'es-ES', label: 'Spanish' },
@@ -64,15 +63,12 @@ function PureSpeechToTextButton({
       setSpeechSupported(false);
       return;
     }
-    
-    // Check on-device availability for the current language
-    if (selectedLanguage !== 'auto') {
+    // Only check on-device availability for the current language (no 'auto')
+    if (selectedLanguage) {
       try {
-        // Only check if the browser supports the new API
         if (typeof SpeechRecognition.availableOnDevice === 'function') {
           SpeechRecognition.availableOnDevice(selectedLanguage)
             .then(status => {
-              // Fix the TypeScript error by using an explicit updater function with the correct type
               setDeviceLanguageStatus(status);
             })
             .catch(error => {
@@ -125,19 +121,15 @@ function PureSpeechToTextButton({
 
   // Install the language for on-device recognition if needed
   const installLanguageIfNeeded = useCallback(async () => {
-    if (selectedLanguage === 'auto' || deviceLanguageStatus !== 'downloadable') return true;
-    
+    if (deviceLanguageStatus !== 'downloadable') return true;
     try {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
       if (SpeechRecognition && typeof SpeechRecognition.installOnDevice === 'function') {
         toast.info(`Downloading ${selectedLanguage} for on-device recognition...`, {
           duration: 3000,
           id: "installing-language"
         });
-        
         const success = await SpeechRecognition.installOnDevice(selectedLanguage);
-        
         if (success) {
           setDeviceLanguageStatus('available');
           toast.success(`${selectedLanguage} installed for on-device recognition`);
@@ -159,36 +151,6 @@ function PureSpeechToTextButton({
   
   // Reference for startRecognition to break circular dependency
   const startRecognitionRef = useRef<StartRecognitionFn | null>(null);
-
-  // Handle restart for auto-detect language when it's not working well
-  const restartRecognitionIfNeeded = useCallback(() => {
-    // If we've been listening for some time without results, try restarting
-    const now = Date.now();
-    const timeElapsed = now - sessionStartTimeRef.current;
-    
-    // If we're in auto mode and no successful transcripts after 3 seconds
-    if (selectedLanguage === 'auto' && timeElapsed > 3000 && transcriptBufferRef.current === '') {
-      recognitionAttemptsRef.current += 1;
-      
-      // Only try a restart a limited number of times
-      if (recognitionAttemptsRef.current <= 2) {
-        if (recognitionRef.current) {
-          recognitionRef.current.stop();
-          
-          // Small delay before starting again
-          setTimeout(() => {
-            if (isListening && startRecognitionRef.current) { // Check if we're still in listening mode
-              startRecognitionRef.current();
-              toast.info("Restarting speech recognition for better language detection...", {
-                id: "speech-restart",
-                duration: 1500
-              });
-            }
-          }, 300);
-        }
-      }
-    }
-  }, [selectedLanguage, isListening, recognitionRef]);
 
   // Function to start the speech recognition
   const startRecognition: StartRecognitionFn = useCallback(async () => {
@@ -221,17 +183,7 @@ function PureSpeechToTextButton({
       }
       
       // Configure language
-      if (selectedLanguage !== 'auto') {
-        recognition.lang = selectedLanguage;
-      }
-      
-      // If in auto mode and not first attempt, try browser's improved detection
-      if (selectedLanguage === 'auto' && recognitionAttemptsRef.current > 0) {
-        // Let browser try its best with no constraints
-      } 
-      
-      // Session start time for auto-detection monitoring
-      sessionStartTimeRef.current = Date.now();
+      recognition.lang = selectedLanguage;
       
       recognition.onstart = () => {
         setIsListening(true);
@@ -252,30 +204,19 @@ function PureSpeechToTextButton({
       };
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        // Get the latest result
-        const lastResultIndex = event.results.length - 1;
-        const result = event.results[lastResultIndex];
-        const transcript = result[0].transcript;
-        
-        // Update the input field with either interim or final results
-        // This makes the input appear faster and more responsive
-        updateInputWithTranscript(transcript, result.isFinal);
-        
-        // If we got results in auto mode, consider the detection successful
-        if (selectedLanguage === 'auto' && transcript.trim().length > 0) {
-          // Reset restart counter since we're getting results
-          recognitionAttemptsRef.current = 0;
+        // Accumulate all transcripts so far
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullTranscript += event.results[i][0].transcript;
         }
+        // Use the isFinal flag of the last result
+        const lastResultIndex = event.results.length - 1;
+        const isFinal = event.results[lastResultIndex].isFinal;
+        updateInputWithTranscript(fullTranscript, isFinal);
       };
-      
-      // Set up interval to check if we need to restart for better auto-detection
-      const autoDetectInterval = selectedLanguage === 'auto' ? 
-        setInterval(restartRecognitionIfNeeded, 3000) : null;
       
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error', event.error);
-        
-        // Handle specific error cases
         if (event.error === 'language-not-supported') {
           toast.error(`Language ${selectedLanguage} is not supported. Try a different language.`);
         } 
@@ -285,21 +226,14 @@ function PureSpeechToTextButton({
         else if (recognitionMode === 'ondevice-only' && event.error === 'network') {
           toast.error("On-device recognition failed. Try switching to cloud recognition.");
         }
-        // Only show general error toast for non-auto mode or serious errors
-        else if (selectedLanguage !== 'auto' || 
-            (event.error !== 'no-speech' && event.error !== 'aborted')) {
+        else {
           toast.error(`Speech recognition error: ${event.error}`);
         }
-        
-        // Clean up
         setIsListening(false);
-        if (autoDetectInterval) clearInterval(autoDetectInterval);
       };
       
       recognition.onend = () => {
-        // Clean up
         setIsListening(false);
-        if (autoDetectInterval) clearInterval(autoDetectInterval);
       };
       
       recognition.start();
@@ -310,7 +244,7 @@ function PureSpeechToTextButton({
       toast.error("Failed to start speech recognition");
       return false;
     }
-  }, [deviceLanguageStatus, installLanguageIfNeeded, languages, recognitionMode, restartRecognitionIfNeeded, selectedLanguage, updateInputWithTranscript, recognitionRef]);
+  }, [deviceLanguageStatus, installLanguageIfNeeded, languages, recognitionMode, selectedLanguage, updateInputWithTranscript, recognitionRef]);
 
   // Store the startRecognition function in the ref to break the circular dependency
   useEffect(() => {

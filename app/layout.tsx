@@ -143,7 +143,7 @@ export default async function RootLayout({
                 softwareVersion: '3.0',
               }}
             />
-            <Toaster richColors closeButton position="top-center" />
+            <Toaster richColors closeButton={false} position="top-center" />
             <main className="flex flex-1 flex-col">
               {children}
             </main>
