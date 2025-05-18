@@ -16,11 +16,11 @@ export const chatModels: ChatModel[] = [
     name: 'GPT-4.1',
     description: 'GPT-4.1 from OpenAI',
   },
-  {
-    id: 'chat-model-reasoning',
-    name: 'Qwen3 235B',
-    description: 'Qwen3 235B reasoning model from Fireworks',
-  },
+  // {
+  //   id: 'chat-model-reasoning',
+  //   name: 'Qwen3 235B',
+  //   description: 'Qwen3 235B reasoning model from Fireworks',
+  // },
   {
     id: 'gemini-2.5-flash-preview-04-17',
     name: 'Gemini 2.5 Flash (Preview)',
