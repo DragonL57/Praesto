@@ -1,5 +1,6 @@
 import { LoaderIcon } from './icons';
 import cn from 'classnames';
+import { useState } from 'react';
 
 interface ImageEditorProps {
   title: string;
@@ -16,6 +17,19 @@ export function ImageEditor({
   status,
   isInline,
 }: ImageEditorProps) {
+  const [imgLoading, setImgLoading] = useState(true);
+  const showSpinner = status === 'streaming' || imgLoading;
+
+  // Determine the correct src for the image
+  let imgSrc = content;
+  if (content.startsWith('http')) {
+    imgSrc = content;
+  } else if (content.startsWith('data:image')) {
+    imgSrc = content;
+  } else {
+    imgSrc = `data:image/png;base64,${content}`;
+  }
+
   return (
     <div
       className={cn('flex flex-row items-center justify-center w-full', {
@@ -23,7 +37,7 @@ export function ImageEditor({
         'h-[200px]': isInline,
       })}
     >
-      {status === 'streaming' ? (
+      {showSpinner ? (
         <div className="flex flex-row gap-4 items-center">
           {!isInline && (
             <div className="animate-spin">
@@ -32,17 +46,18 @@ export function ImageEditor({
           )}
           <div>Generating Image...</div>
         </div>
-      ) : (
-        <picture>
-          <img
-            className={cn('w-full h-fit max-w-[800px]', {
-              'p-0 md:p-20': !isInline,
-            })}
-            src={`data:image/png;base64,${content}`}
-            alt={title}
-          />
-        </picture>
-      )}
+      ) : null}
+      <picture style={{ display: showSpinner ? 'none' : undefined }}>
+        <img
+          className={cn('w-full h-fit max-w-[800px]', {
+            'p-0 md:p-20': !isInline,
+          })}
+          src={imgSrc}
+          alt={title}
+          onLoad={() => setImgLoading(false)}
+          onError={() => setImgLoading(false)}
+        />
+      </picture>
     </div>
   );
 }

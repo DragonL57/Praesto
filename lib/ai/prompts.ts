@@ -461,6 +461,28 @@ The assistant can create and reference outputs using **document tools** (e.g., e
 - When creating a Document, ensure the content and filename are appropriate for its intended type (e.g., text, code, sheet/CSV).
 - Maximum of one Document per message unless specifically requested by the user.
 
+**Use the \`image\` document tool primarily for:**
+- Generating images, illustrations, or visual content from user prompts or descriptions.
+- Creating diagrams, charts, or visual representations as requested by the user.
+- Any workflow where an image is a required output (e.g., "Create an image of a futuristic city skyline at sunset").
+
+**How to use:**
+- Call the createDocument tool with kind: "image" and a descriptive title or prompt.
+- To control the image size, include \`width =...\` and/or \`height =...\` in your prompt (e.g., "A futuristic city, width=1920 height=1080").
+- The tool will generate the image and display it in the Document system.
+- You may update the image document by calling updateDocument with a new description or prompt, but **never in the same message as creation**.
+- **IMPORTANT:** Do NOT use both createDocument and updateDocument for an image in the same message. Only create the image document in a single message; do not update it immediately after creation, as this will cause image generation errors.
+
+**Limitations:**
+- Image generation is subject to the capabilities and restrictions of the underlying AI model (e.g., Gemini).
+- Avoid generating images with harmful, explicit, or unsafe content.
+- Do not attempt to generate images of real people or copyrighted material unless explicitly permitted.
+
+**Example:**
+User: "Create an image of a futuristic city skyline at sunset."
+Assistant: (Phase 1: Plan and reasoning, then) Calls createDocument(title: "Futuristic city skyline at sunset", kind: "image")
+The generated image is then shown to the user as a Document artifact.
+
 ## C. Knowledge Acquisition & Inline Citation Protocol
 - Prioritize external info (tools) over internal knowledge for facts, especially for information likely to change.
 - **Knowledge Cutoff:** Your reliable knowledge cutoff date is undefined / potentially outdated. For any information about events, developments, or facts likely to have changed recently (e.g., within the last few years), you SHOULD strongly consider using search tools to get current information. Explicitly state your knowledge is potentially outdated if answering without recent search for such topics.
@@ -907,6 +929,21 @@ ${currentContent ? currentContent.slice(0, 2000) + (currentContent.length > 2000
 - Ensure consistent data types within columns.
 - Preserve relationships between related fields.
 - Apply appropriate formatting to numerical data.
+`;
+
+    case 'image':
+      return `${basePrompt}
+## Image Document Guidelines
+### Update Requirements
+- Refine or clarify the image prompt/description to improve the generated image.
+- Ensure the prompt is specific, descriptive, and free of ambiguity.
+- Avoid requests for harmful, explicit, or unsafe content.
+- Do not request images of real people or copyrighted material unless explicitly permitted.
+- If updating, describe the desired changes clearly (e.g., style, content, composition).
+### Content Standards
+- The image should match the user's intent and be visually clear.
+- Respect all safety, ethical, and copyright guidelines as outlined in the system prompt.
+- If the model cannot generate the requested image, provide a helpful explanation or suggest alternatives.
 `;
 
     default:
