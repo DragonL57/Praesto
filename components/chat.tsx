@@ -117,7 +117,7 @@ export function Chat({
             />
           </div>
 
-          <div className={`shrink-0 ${messages.length === 0 ? 'pb-[20vh]' : ''}`}>
+          <div className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}>
             <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
               {!isReadonly && (
                 <MultimodalInput

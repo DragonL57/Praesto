@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { memo, createElement, useState } from 'react';
+import React, { memo, createElement, useState, Children, isValidElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -444,11 +444,34 @@ const NonMemoizedMarkdown = ({
           ),
 
           // Paragraphs
-          p: ({ children, ...props }) => (
-            <p className="my-2 break-words" {...props}>
-              {children}
-            </p>
-          ),
+          p: ({ children, ...props }) => {
+            // If any child is a block element (e.g., a citation button or hover card), use a div instead of p
+            const getTypeName = (type: unknown): string | undefined => {
+              if (typeof type === 'string') return type;
+              if (typeof type === 'function' && 'displayName' in type) return (type as { displayName?: string }).displayName;
+              if (typeof type === 'object' && type && 'displayName' in type) return (type as { displayName?: string }).displayName;
+              if (typeof type === 'function' && 'name' in type) return (type as { name?: string }).name;
+              if (typeof type === 'object' && type && 'name' in type) return (type as { name?: string }).name;
+              return undefined;
+            };
+            const hasBlock = Children.toArray(children).some(
+              (child) =>
+                isValidElement(child) &&
+                [
+                  'div',
+                  'HoverCard',
+                  'HoverCardContent',
+                  'CitationButton',
+                  'citation-button',
+                ].includes(getTypeName(child.type) || '')
+            );
+            const Tag = hasBlock ? 'div' : 'p';
+            return (
+              <Tag className="my-2 break-words" {...props}>
+                {children}
+              </Tag>
+            );
+          },
 
           // Blockquote component for markdown quotes
           blockquote: ({ children, ...props }) => {

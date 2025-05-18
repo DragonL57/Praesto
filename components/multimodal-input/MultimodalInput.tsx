@@ -22,6 +22,8 @@ import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
 import { TextareaAutoResizer, resetTextareaHeight } from './TextareaAutoResizer';
 import { useFileUploadHandler } from './FileUploadHandler';
 import type { SpeechRecognition } from './types';
+import { ImageIcon, GPSIcon, GlobeIcon } from '../icons';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card';
 
 interface MultimodalInputProps {
   chatId: string;
@@ -154,6 +156,33 @@ function PureMultimodalInput({
   const handleContainerClick = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
+
+  // Pills config
+  const pills = [
+    {
+      key: 'create-image',
+      label: 'Create Images',
+      icon: <span className="mr-2"><ImageIcon size={18} /></span>,
+      prompt: 'Pixelate a frog in a wizard robe holding a glowing staff, standing in a swamp at night.'
+    },
+    {
+      key: 'check-weather',
+      label: 'Check Weather',
+      icon: <span className="mr-2"><GPSIcon size={18} /></span>,
+      prompt: "What's the weather like today in my location?"
+    },
+    {
+      key: 'latest-news',
+      label: 'Latest News',
+      icon: <span className="mr-2"><GlobeIcon size={18} /></span>,
+      prompt: 'Show me the latest news headlines.'
+    },
+  ];
+
+  // Send prompt to AI
+  const handlePillClick = (prompt: string) => {
+    append({ role: 'user', content: prompt });
+  };
 
   // Main wrapper with transition for centering in empty chats
   return (
@@ -349,6 +378,30 @@ function PureMultimodalInput({
             </div>
           </div>
         </div>
+
+        {/* Pills row below the input bar for new chats */}
+        {isNewChat && (
+          <div className="flex flex-row justify-center gap-2">
+            {pills.map((pill) => (
+              <HoverCard key={pill.key} openDelay={200} closeDelay={100}>
+                <HoverCardTrigger asChild>
+                  <button
+                    className="px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-base font-medium text-zinc-700 dark:text-zinc-200 shadow hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center"
+                    onClick={() => handlePillClick(pill.prompt)}
+                    type="button"
+                  >
+                    {pill.icon}
+                    {pill.label}
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80 p-3 shadow-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg z-[60] text-center" sideOffset={5}>
+                  <div className="text-base font-semibold mb-2">Prompt Preview</div>
+                  <div className="text-zinc-700 dark:text-zinc-200">{pill.prompt}</div>
+                </HoverCardContent>
+              </HoverCard>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

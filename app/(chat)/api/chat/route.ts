@@ -10,8 +10,6 @@ import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
-// eslint-disable-next-line import/no-unresolved
-// eslint-disable-next-line import/no-unresolved
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
