@@ -1,13 +1,10 @@
 import type { UIMessage } from 'ai';
-import { PreviewMessage, ThinkingMessage } from './message';
+import { PreviewMessage, ThinkingMessage, MessageSkeleton } from './message';
 import { memo, useEffect, useRef, useState, useCallback } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence } from 'framer-motion';
-import { useVirtualizer } from '@tanstack/react-virtual';
-// Removing framer-motion for better performance
-// import { motion, AnimatePresence } from 'framer-motion';
 
 interface MessagesProps {
   chatId: string;
@@ -70,15 +67,6 @@ function PureMessages({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [currentOffset, setCurrentOffset] = useState(messages.length);
-
-  // Virtualization setup
-  const parentRef = containerRef;
-  const rowVirtualizer = useVirtualizer({
-    count: messages.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80, // average message height in px
-    overscan: 8,
-  });
 
   // Infinite scroll: load more when scrolled to top
   const handleLoadMore = useCallback(async () => {
@@ -183,53 +171,40 @@ function PureMessages({
         right: '0px',
         scrollbarGutter: hasVisibleContent ? 'stable' : 'auto',
       }}
-      ref={parentRef}
+      ref={containerRef}
     >
-      <div
-        style={{
-          height: `${rowVirtualizer.getTotalSize()}px`,
-          position: 'relative',
-        }}
-        className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full"
-      >
+      <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
         {isLoadingMore && (
-          <div className="text-center text-xs text-muted-foreground mb-2">Loading more...</div>
+          <>
+            {[...Array(3)].map((_, i) => (
+              <MessageSkeleton key={`skeleton-${i}`} />
+            ))}
+          </>
         )}
-        {rowVirtualizer.getVirtualItems().map(virtualRow => {
-          const index = virtualRow.index;
-          const message = messages[index];
-          return (
-            <div
-              key={message.id}
-              data-message-id={message.id}
-              className="transition-opacity duration-300 ease-in-out"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`
-              }}
-            >
-              <PreviewMessage
-                chatId={chatId}
-                message={message}
-                isLoading={
-                  status === 'streaming' && messages.length - 1 === index
-                }
-                vote={
-                  votes
-                    ? votes.find((vote) => vote.messageId === message.id)
-                    : undefined
-                }
-                setMessages={setMessages}
-                reload={reload}
-                append={append}
-                isReadonly={isReadonly}
-              />
-            </div>
-          );
-        })}
+        {messages.map((message, index) => (
+          <div
+            key={message.id}
+            data-message-id={message.id}
+            className="transition-opacity duration-300 ease-in-out"
+          >
+            <PreviewMessage
+              chatId={chatId}
+              message={message}
+              isLoading={
+                status === 'streaming' && messages.length - 1 === index
+              }
+              vote={
+                votes
+                  ? votes.find((vote) => vote.messageId === message.id)
+                  : undefined
+              }
+              setMessages={setMessages}
+              reload={reload}
+              append={append}
+              isReadonly={isReadonly}
+            />
+          </div>
+        ))}
 
         <AnimatePresence>
           {status === 'submitted' &&

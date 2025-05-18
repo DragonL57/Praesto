@@ -9,7 +9,7 @@ import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
-import { MultimodalInput } from './multimodal-input';
+import { MultimodalInput, InputSkeleton } from './multimodal-input';
 import { Messages } from './messages/messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
@@ -136,6 +136,7 @@ export function Chat({
                   messagesEndRef={messagesEndRef}
                 />
               )}
+              {isReadonly && <InputSkeleton />}
             </form>
             {messages.length > 0 && (
               <div className="text-center text-xs text-white-500 mt-0">

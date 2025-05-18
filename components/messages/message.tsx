@@ -755,3 +755,17 @@ export const ThinkingMessage = () => {
     </div>
   );
 };
+
+// Skeleton loader for message
+export function MessageSkeleton() {
+  return (
+    <div className="w-full mx-auto max-w-3xl px-4 my-2">
+      <div className="flex flex-row gap-2 items-center w-full py-3 px-4 rounded-xl bg-muted animate-pulse">
+        <div className="flex-1">
+          <div className="h-4 bg-gray-300 dark:bg-zinc-700 rounded w-3/4 mb-2" />
+          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+        </div>
+      </div>
+    </div>
+  );
+}
