@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState, useCallback } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
@@ -45,6 +45,31 @@ function PureMessages({
   const isStreamingRef = useRef<boolean>(status === 'streaming');
   const lastUserMessageIdRef = useRef<string | null>(null); // Ref for the last user message ID
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false); // New state
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentOffset, setCurrentOffset] = useState(messages.length);
+
+  // Infinite scroll: load more when scrolled to top
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await fetch(`/app/(chat)/api/chat?chatId=${chatId}&limit=30&offset=${currentOffset}`);
+      const data = await res.json();
+      if (Array.isArray(data.messages) && data.messages.length > 0) {
+        setMessages((prev) => [...data.messages, ...prev]);
+        setCurrentOffset(currentOffset + data.messages.length);
+        if (data.messages.length < 30) setHasMore(false);
+      } else {
+        setHasMore(false);
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      // Optionally handle error
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [chatId, currentOffset, hasMore, isLoadingMore, setMessages]);
 
   // Effect to detect user scroll and update userHasScrolledUp state
   useEffect(() => {
@@ -71,6 +96,10 @@ function PureMessages({
             setUserHasScrolledUp(false);
           }
         }
+        // Infinite scroll: if scrolled to top, load more
+        if (scrollTop === 0 && hasMore && !isLoadingMore) {
+          handleLoadMore();
+        }
       }, 50); 
     };
 
@@ -79,7 +108,7 @@ function PureMessages({
       if (scrollTimeout) clearTimeout(scrollTimeout);
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [containerRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)
+  }, [containerRef, userHasScrolledUp, handleLoadMore, hasMore, isLoadingMore]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
@@ -135,6 +164,9 @@ function PureMessages({
       ref={containerRef}
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
+        {isLoadingMore && (
+          <div className="text-center text-xs text-muted-foreground mb-2">Loading more...</div>
+        )}
         {messages.map((message, index) => (
           <div
             key={message.id}

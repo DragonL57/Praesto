@@ -37,8 +37,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     }
   }
 
+  // Fetch only the latest 30 messages for initial load (pagination)
   const messagesFromDb = await getMessagesByChatId({
     id,
+    limit: 30, // Only fetch the latest 30 messages for performance; can be made dynamic
   });
 
   function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {

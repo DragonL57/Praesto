@@ -10,7 +10,7 @@ import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
-import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
+import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp, getMessagesByChatId } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -408,5 +408,31 @@ export async function DELETE(request: Request) {
     return new Response('An error occurred while processing your request!', {
       status: 500
     });
+  }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const chatId = searchParams.get('chatId');
+  const limit = searchParams.get('limit');
+  const offset = searchParams.get('offset');
+
+  if (!chatId) {
+    return new Response(JSON.stringify({ error: 'Missing chatId parameter' }), { status: 400 });
+  }
+
+  try {
+    const messages = await getMessagesByChatId({
+      id: chatId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+    });
+    return new Response(JSON.stringify({ messages }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Failed to fetch messages:', error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch messages' }), { status: 500 });
   }
 }
