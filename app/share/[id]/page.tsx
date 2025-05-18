@@ -4,7 +4,7 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
 import { DataStreamHandler } from '@/components/data-stream-handler';
 // eslint-disable-next-line import/no-unresolved
-import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
 import { SharedChat } from '@/components/shared-chat';
@@ -58,7 +58,7 @@ export default async function Page(props: PageProps) {
       <SharedChat
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
-        selectedChatModel={DEFAULT_CHAT_MODEL}
+        selectedChatModel={DEFAULT_CHAT_MODEL_ID}
         _selectedVisibilityType="public"
         isReadonly={true}
       />
