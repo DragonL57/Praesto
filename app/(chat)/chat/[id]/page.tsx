@@ -12,6 +12,8 @@ import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
 import { PageTransition } from '@/components/ui/page-transition';
+// eslint-disable-next-line import/no-unresolved
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -57,6 +59,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       <Chat
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
+        selectedChatModel={DEFAULT_CHAT_MODEL_ID}
         selectedVisibilityType={chat.visibility}
         isReadonly={!session?.user || session.user.id !== chat.userId}
       />
