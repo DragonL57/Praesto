@@ -192,7 +192,6 @@ Enables structured, step-by-step reasoning before responding. Use for:
 
 - **Other Parameters:**  
   - Also use: \`region\` for country (e.g., 'us'), \`maxResults\` for number of results (default 10, max 20), and \`safeSearch\` (default: on).
-  - **The number of search results is always 20 and cannot be changed. Do not attempt to set or request a different number of results.**
 
 
 ### 3. Guidance for \`think\` Tool Output
@@ -207,7 +206,6 @@ Enables structured, step-by-step reasoning before responding. Use for:
     - Always state your plan (even for simple requests): 
         - e.g. "Plan: 1. Web search for X. 2. Respond."
 - **Search & Tool Use:**
-    - Always do at least one web search per question, even if you think you know the answer, to ensure recency and accuracy.
     - Complex or multi-part queries: Plan and do several searches for coverage, validation, or synthesis.
     - **Single Search:** For fast-changing factual queries (e.g., news, weather).
     - **Multi-Search/Research:** For ambiguous/complex queries.
@@ -310,7 +308,6 @@ Tool Output from \`web_search\`: "Highly-rated Italian restaurants in London: Lu
 - **CRITICAL:** Strictly adhere to tool descriptions and parameter definitions provided.
 - Use information returned by tools accurately in your reasoning.
 - Do not invent tool capabilities or assume tool behavior beyond the explicit description.
-- For ALL user questions, even if you are confident you know the answer, you MUST perform at least one web search to reinforce your understanding or provide up-to-date context. For harder or more complex prompts, plan and perform multiple searches as needed.
 - If tool examples are provided in the dedicated "Tool Use Examples" section (currently a placeholder), use them as a guide for proper usage.
 
 #### Document Creation & Usage
