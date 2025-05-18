@@ -22,7 +22,6 @@ import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
 import { TextareaAutoResizer, resetTextareaHeight } from './TextareaAutoResizer';
 import { useFileUploadHandler } from './FileUploadHandler';
 import type { SpeechRecognition } from './types';
-import { Button } from '@/components/ui/button';
 
 interface MultimodalInputProps {
   chatId: string;
@@ -69,9 +68,6 @@ function PureMultimodalInput({
   const [isInputFocused, setIsInputFocused] = useState(false);
   // State for tracking visual row count for expanding textarea
   const [visualRowCount, setVisualRowCount] = useState(1);
-  
-  // State for the new reasoning toggle
-  const [useReasoning, setUseReasoning] = useState(false);
   
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
@@ -134,7 +130,6 @@ function PureMultimodalInput({
 
     const chatRequestOptions = {
       experimental_attachments: attachments,
-      data: { useReasoning },
     };
 
     handleSubmit(undefined, chatRequestOptions);
@@ -153,7 +148,6 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
-    useReasoning,
   ]);
 
   // Handle click on container to focus textarea
@@ -328,26 +322,6 @@ function PureMultimodalInput({
               <div className="p-2 flex flex-row justify-start items-center z-10 gap-1">
                 {/* Background element with rounded corners */}
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none"></span>
-                {/* Reasoning Toggle Button - Text-based Pill Button */}
-                <Button
-                  type="button" // Prevent form submission
-                  variant="outline" // Base styling for OFF state
-                  size="sm"
-                  onClick={() => setUseReasoning(prev => !prev)}
-                  className={cx(
-                    "h-auto px-3 py-1.5 rounded-full transition-colors duration-150 relative z-10", // Base shape and positioning
-                    useReasoning ?
-                      // ON State: Blue toggle look
-                      "bg-primary/10 border-primary text-primary hover:bg-primary/20 hover:text-primary" :
-                      // OFF State: Transparent background, dimmed text. Relies on variant="outline" for border and standard hover.
-                      "bg-transparent text-foreground/70",
-                  )}
-                  title={useReasoning ? "Disable Reasoning Model" : "Enable Reasoning Model"}
-                  aria-pressed={useReasoning}
-                  disabled={status !== 'ready'}
-                >
-                  Reasoning
-                </Button>
               </div>
 
               {/* Right side - attachments, speech-to-text, and send/stop buttons */}

@@ -610,7 +610,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full text-muted-foreground"
+                    className="rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 transition-opacity duration-200"
                     onClick={handleRetry}
                     disabled={isRetrying}
                   >

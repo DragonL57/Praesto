@@ -1,4 +1,4 @@
-import { customProvider , wrapLanguageModel, extractReasoningMiddleware } from 'ai';
+import { customProvider, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { isTestEnvironment } from '../constants';
 import {
@@ -7,6 +7,7 @@ import {
   titleModel,
 } from './models.test';
 import { fireworks } from '@ai-sdk/fireworks';
+import { google } from '@ai-sdk/google';
 
 // Create the Pollinations.AI OpenAI-compatible provider
 export const pollinationsProvider = createOpenAICompatible({
@@ -85,5 +86,8 @@ export const myProvider = isTestEnvironment
 
       // Add Fireworks Qwen3 model with reasoning capabilities
       'chat-model-reasoning': enhancedQwenModel,
+
+      // Add Gemini 2.5 Flash model from Google Generative AI
+      'gemini-2.5-flash-preview-04-17': google('gemini-2.5-flash-preview-04-17'),
     },
   });

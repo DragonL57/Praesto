@@ -274,15 +274,15 @@ const NonMemoizedMarkdown = ({
             );
           },
 
-          'citation-button': ({ node, ...props }) => {
+          'citation-button': ({ node }) => {
             if (!node || !node.properties) return null;
             const num = node.properties.num as string;
             const url = node.properties.url as string;
             if (!num || !url) return null;
-            return <CitationButton num={num} url={url} />;
+              return <CitationButton num={num} url={url} />;
           },
 
-          'suggestion-button': ({ node, ...props }) => {
+          'suggestion-button': ({ node }) => {
             if (!node || !node.properties || !append) return null; // Check for append
             const text = node.properties.text as string;
             const query = node.properties.query as string;

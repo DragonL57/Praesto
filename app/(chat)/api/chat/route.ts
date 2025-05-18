@@ -3,8 +3,6 @@ import {
   createDataStreamResponse,
   smoothStream,
   streamText,
-  wrapLanguageModel,
-  extractReasoningMiddleware,
 } from 'ai';
 import type { UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
@@ -12,9 +10,7 @@ import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
 import { systemPrompt } from '@/lib/ai/prompts';
 // eslint-disable-next-line import/no-unresolved
-import { reasoningSystemPrompt } from '@/lib/ai/reasoning-prompts';
 // eslint-disable-next-line import/no-unresolved
-import { ROUTER_SYSTEM_PROMPT } from '@/lib/ai/router-prompt';
 // eslint-disable-next-line import/no-unresolved
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 // eslint-disable-next-line import/no-unresolved
@@ -48,6 +44,8 @@ import { Buffer } from 'buffer'; // Node.js Buffer
 // or a robust fetch for public URLs. For now, standard fetch.
 // import { head } from '@vercel/blob'; // To check existence/metadata if needed
 
+import { cookies } from 'next/headers';
+
 // --- Configuration for Extracted Text Formatting ---
 const ATTACHMENT_TEXT_HEADER_PREFIX = "\n\n--- Content from attachment:";
 const ATTACHMENT_TEXT_FOOTER = "---\n--- End of attachment ---";
@@ -71,8 +69,7 @@ export async function POST(request: Request) {
     const {
       id,
       messages,
-      userTimeContext,
-      data, // This will be our object containing useReasoning
+      userTimeContext, // This will be our object containing useReasoning
     }: {
       id: string;
       messages: Array<UIMessage>;
@@ -84,9 +81,6 @@ export async function POST(request: Request) {
       };
       data?: RequestData; // Make data optional and use the interface
     } = requestBody;
-
-    // Extract useReasoning from the nested data object
-    const useReasoning = data?.useReasoning === true; // Default to false if not present or not true
 
     const session = await auth();
 
@@ -247,85 +241,10 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        let finalSelectedChatModel: string;
-        let imageTranscriptionForReasoning: string | null = null;
-
-        if (useReasoning === true) {
-          finalSelectedChatModel = 'chat-model-reasoning';
-          console.log('Reasoning toggle is ON. Using chat-model-reasoning.');
-
-          // Check if there's a user message with images that would need transcription
-          const userMessageForTranscription = messagesForStreamText.find(
-            msg => msg.role === 'user' && msg.experimental_attachments && msg.experimental_attachments.some(att => att.contentType?.startsWith('image/'))
-          );
-
-          if (userMessageForTranscription) {
-            console.log('Reasoning model selected and images found in user message. Calling router for image transcription.');
-
-            // The userMessageForRouter should already have images if userMessageForTranscription is true.
-            // We just need any user message to pass to the router, preferably the most recent one.
-            const routerMessageInput = messagesForStreamText.find(msg => msg.id === userMessage.id) || userMessageForTranscription;
-            let routerMessagesForAPI: Array<UIMessage>;
-
-            if (routerMessageInput) {
-              // Ensure parts exist, even if empty text, for the UIMessage type
-              const textPart = routerMessageInput.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
-              const textContent = textPart ? textPart.text : '';
-
-              routerMessagesForAPI = [{
-                ...routerMessageInput, // Spread the original message to keep attachments
-                parts: [{ type: 'text', text: textContent }], // Ensure parts has at least a text part
-              }];
-
-              const routerImageAttachmentCount = routerMessageInput.experimental_attachments?.filter(att => att.contentType?.startsWith('image/')).length || 0;
-              if (routerImageAttachmentCount > 0) {
-                console.log(`Router will receive a user message with ${routerImageAttachmentCount} image attachment(s) for transcription.`);
-              }
-            } else {
-              // Fallback, though highly unlikely if userMessageForTranscription was found
-              console.warn('Could not find suitable user message for router input despite images being present. Creating a dummy message.');
-              routerMessagesForAPI = [{
-                id: generateUUID(),
-                role: 'user',
-                content: '', // Add required content property
-                parts: [{ type: 'text', text: '' }]
-              }];
-            }
-
-            try {
-              const routerAPI = myProvider.languageModel('title-model'); // Assuming title-model is vision capable
-              let routerResponseText = '';
-              const stream = await streamText({
-                model: routerAPI,
-                system: ROUTER_SYSTEM_PROMPT,
-                messages: routerMessagesForAPI, // Send message with images
-                maxTokens: 250,
-              });
-              for await (const delta of stream.textStream) {
-                routerResponseText += delta;
-              }
-
-              if (routerResponseText) {
-                console.log('Router model response (for transcription):', routerResponseText);
-                const parsedRouterResponse = JSON.parse(routerResponseText);
-                imageTranscriptionForReasoning = parsedRouterResponse.image_transcription || null;
-                console.log('Image Transcription for reasoning model:', imageTranscriptionForReasoning);
-                // The router's chosen_model is ignored as the toggle dictates the finalSelectedChatModel
-              } else {
-                console.warn('Router model returned empty response for transcription.');
-              }
-            } catch (e) {
-              console.error('Error calling or parsing router model response for transcription:', e);
-              // imageTranscriptionForReasoning remains null
-            }
-          } else {
-            console.log('Reasoning model selected, but no images found in user message that require transcription. Skipping router call.');
-          }
-        } else {
-          finalSelectedChatModel = 'chat-model';
-          console.log('Reasoning toggle is OFF or not present. Using chat-model.');
-          // imageTranscriptionForReasoning remains null, and router is not called.
-        }
+        // Use the model selected by the user (from the chat-model cookie), fallback to 'chat-model'
+        const cookieStore = await cookies();
+        const cookieModel = cookieStore.get('chat-model')?.value;
+        const finalSelectedChatModel = cookieModel || 'chat-model';
 
         const finalModelMessages = messagesForStreamText.map(msg => ({
           ...msg,
@@ -333,105 +252,34 @@ export async function POST(request: Request) {
           experimental_attachments: msg.experimental_attachments ? [...msg.experimental_attachments] : undefined
         }));
 
-        if (finalSelectedChatModel === 'chat-model-reasoning') {
-          // Append transcription to the last user message
-          if (imageTranscriptionForReasoning) {
-            const lastUserMsgIndex = finalModelMessages.map(m => m.role).lastIndexOf('user');
-            if (lastUserMsgIndex !== -1) {
-              const userMsgToModify = finalModelMessages[lastUserMsgIndex];
-              const currentText = userMsgToModify.parts.find(p => p.type === 'text')?.text || '';
-              const newText = `${currentText}\n\n--- Image Content Analysis ---\n${imageTranscriptionForReasoning}\n--- End of Image Content Analysis ---`;
-
-              const textPartIndex = userMsgToModify.parts.findIndex(p => p.type === 'text');
-              if (textPartIndex !== -1) {
-                userMsgToModify.parts[textPartIndex] = { type: 'text', text: newText };
-              } else {
-                userMsgToModify.parts.push({ type: 'text', text: newText });
-              }
-              console.log('Appended image transcription to the last user message for reasoning model.');
-            }
-          }
-
-          // CRUCIAL: Remove attachments from ALL messages if routing to reasoning model
-          for (const msg of finalModelMessages) {
-            msg.experimental_attachments = undefined;
-          }
-          console.log('Removed image attachments from ALL messages for reasoning model.');
-        }
-
-        const isFireworksQwenModel =
-          finalSelectedChatModel === 'accounts/fireworks/models/qwen3-235b-a22b';
-
-        const isOpenAILarge =
-          finalSelectedChatModel === 'openai-large' || finalSelectedChatModel === 'chat-model';
-
-        const isChatModelReasoning = finalSelectedChatModel === 'chat-model-reasoning';
-
-        // Prepare model options based on selected model
-        let modelOptions = {};
-        if (isOpenAILarge) {
-          modelOptions = {
-            maxTokens: 8192, // Set max token limit to 8192 for openai-large/chat-model
-            temperature: 1 // Set temperature for openai-large/chat-model
-          };
-        } else if (isFireworksQwenModel) {
-          modelOptions = {
-            maxTokens: 16000, // Set max token limit to 16000 for Fireworks Qwen model
-            temperature: 0.6 // Set temperature for Fireworks Qwen model
-          };
-        }
-
-        let modelInstance = myProvider.languageModel(finalSelectedChatModel);
-
-        if (isFireworksQwenModel) {
-          modelInstance = wrapLanguageModel({
-            model: modelInstance,
-            middleware: extractReasoningMiddleware({ tagName: 'think' }),
-          });
-        }
+        // Prepare model options for the selected model
+        const modelOptions = {
+          maxTokens: 8192,
+          temperature: 1,
+        };
+        const modelInstance = myProvider.languageModel(finalSelectedChatModel);
 
         const result = streamText({
           model: modelInstance,
-          system: isChatModelReasoning
-            ? reasoningSystemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext })
-            : systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
+          system: systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
           messages: finalModelMessages,
           maxSteps: 10,
           ...modelOptions,
-          providerOptions: isFireworksQwenModel
-            ? {
-              fireworks: {
-                temperature: 0.8 // Also set temperature in providerOptions for Fireworks
-              },
+          providerOptions: {
+            openai: {
+              maxTokens: 8192
             }
-            : isOpenAILarge
-              ? {
-                openai: {
-                  maxTokens: 8192
-                }
-              }
-              : undefined,
-          experimental_activeTools:
-            finalSelectedChatModel === 'chat-model-reasoning'
-              ? [
-                'getWeather',
-                'createDocument',
-                'updateDocument',
-                'requestSuggestions',
-                'webSearch',
-                'readWebsiteContent',
-                'getYoutubeTranscript',
-              ]
-              : [
-                'think',
-                'getWeather',
-                'createDocument',
-                'updateDocument',
-                'requestSuggestions',
-                'webSearch',
-                'readWebsiteContent',
-                'getYoutubeTranscript',
-              ],
+          },
+          experimental_activeTools: [
+            'think',
+            'getWeather',
+            'createDocument',
+            'updateDocument',
+            'requestSuggestions',
+            'webSearch',
+            'readWebsiteContent',
+            'getYoutubeTranscript',
+          ],
           experimental_transform: smoothStream({ chunking: 'line' }),
           experimental_generateMessageId: generateUUID,
           tools: {

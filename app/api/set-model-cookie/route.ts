@@ -10,7 +10,6 @@ export async function POST(request: Request) {
         }
 
         // Set the cookie with the model preference
-        // Fix: await the cookies() promise
         const cookieStore = await cookies();
         cookieStore.set('chat-model', model);
 

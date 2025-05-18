@@ -2,8 +2,9 @@
 
 import type { Attachment, Message as UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { useLocalStorage } from 'usehooks-ts';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
@@ -15,19 +16,33 @@ import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { unstable_serialize } from 'swr/infinite';
 import { getChatHistoryPaginationKey } from './sidebar-history';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 
 export function Chat({
   id,
   initialMessages,
+  selectedChatModel: initialSelectedChatModelFromServer,
   selectedVisibilityType,
   isReadonly,
 }: {
   id: string;
   initialMessages: Array<UIMessage>;
+  selectedChatModel: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+
+  const [globallySelectedModelId, setGloballySelectedModelId] = useLocalStorage(
+    'chat-model',
+    initialSelectedChatModelFromServer || DEFAULT_CHAT_MODEL_ID
+  );
+
+  useEffect(() => {
+    if (initialSelectedChatModelFromServer && initialSelectedChatModelFromServer !== globallySelectedModelId) {
+      setGloballySelectedModelId(initialSelectedChatModelFromServer);
+    }
+  }, [initialSelectedChatModelFromServer, globallySelectedModelId, setGloballySelectedModelId]);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,6 +61,7 @@ export function Chat({
     id,
     body: { 
       id, 
+      selectedChatModel: globallySelectedModelId,
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
@@ -79,6 +95,7 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
         <ChatHeader
           chatId={id}
+          selectedModelId={globallySelectedModelId}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />
