@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Moon, Sun } from "lucide-react"
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -19,7 +19,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="rounded-full opacity-0">
+      <Button variant="ghost" size="icon" className={`rounded-md opacity-0 ${className}`}>
         <Sun className="size-[18px]" />
         <span className="sr-only">Toggle theme</span>
       </Button>
@@ -27,7 +27,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+    <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-md ${className}`}>
       {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
       <span className="sr-only">Toggle theme</span>
     </Button>

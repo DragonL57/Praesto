@@ -11,6 +11,7 @@ import { ShareDialog } from './share-dialog';
 import { ModelSelector } from '@/components/model-selector';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from './theme-toggle';
 
 const PlusIcon = ({ size }: { size: number }) => <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>;
 
@@ -78,12 +79,23 @@ function PureChatHeader({
             />
           )}
 
-          {!isReadonly && isInSavedChat && (
-            <ShareDialog
-              chatId={chatId}
-              selectedVisibilityType={selectedVisibilityType}
-              className="order-1 md:order-3 md:ml-auto"
-            />
+          {!isReadonly && (
+            isInSavedChat ? (
+              <ShareDialog
+                chatId={chatId}
+                selectedVisibilityType={selectedVisibilityType}
+                className="order-1 md:order-3 md:ml-auto"
+              />
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="order-1 md:order-3 md:ml-auto">
+                    <ThemeToggle className="hidden md:flex md:px-3 md:h-11" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Switch theme</TooltipContent>
+              </Tooltip>
+            )
           )}
         </>
       ) : (

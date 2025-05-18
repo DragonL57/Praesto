@@ -156,7 +156,7 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center px-[6px] py-px mx-0.5 text-xs font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline align-middle"
+          className="inline-flex items-center justify-center min-w-4 h-4 px-0 mx-0.5 text-[10px] font-light text-gray-700 bg-gray-200 rounded-[5px] hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 no-underline align-middle text-center"
           aria-label={`Source ${num} - ${url}`}
         >
           {num}

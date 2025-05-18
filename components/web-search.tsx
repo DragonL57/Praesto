@@ -69,7 +69,7 @@ function PureWebSearch({ results, query }: WebSearchProps) {
           {!showAllPills && remainingPillsCount > 0 && (
             <button 
               onClick={() => setShowAllPills(true)} 
-              className="inline-flex items-center bg-gray-200 dark:bg-zinc-700 rounded-full px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="inline-flex items-center bg-gray-200 dark:bg-zinc-700 rounded-md px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               title={`Show ${remainingPillsCount} more results`}
             >
               +{remainingPillsCount} more

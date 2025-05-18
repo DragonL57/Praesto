@@ -61,8 +61,8 @@ export const readWebsiteContent = tool({
           Accept:
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         },
-        timeout: 15000, // 15 second timeout
-        maxContentLength: 10 * 1024 * 1024, // 10MB max size
+        timeout: 3000, // 3 second timeout
+        maxContentLength: 4 * 1024 * 1024, // 4MB max size
       });
 
       // Load HTML into cheerio for processing

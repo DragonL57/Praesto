@@ -28,7 +28,7 @@ const SitePill: React.FC<SitePillProps> = ({ domain, faviconUrl, originalUrl }) 
         alt={`${domain} favicon`} 
         width={16} 
         height={16} 
-        className="mr-2 rounded-full shrink-0"
+        className="mr-2 rounded-md shrink-0"
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
         }}
