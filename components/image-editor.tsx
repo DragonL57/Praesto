@@ -20,16 +20,6 @@ export function ImageEditor({
   const [imgLoading, setImgLoading] = useState(true);
   const showSpinner = status === 'streaming' || imgLoading;
 
-  // Determine the correct src for the image
-  let imgSrc = content;
-  if (content.startsWith('http')) {
-    imgSrc = content;
-  } else if (content.startsWith('data:image')) {
-    imgSrc = content;
-  } else {
-    imgSrc = `data:image/png;base64,${content}`;
-  }
-
   return (
     <div
       className={cn('flex flex-row items-center justify-center w-full', {
@@ -52,7 +42,7 @@ export function ImageEditor({
           className={cn('w-full h-fit max-w-[800px]', {
             'p-0 md:p-20': !isInline,
           })}
-          src={imgSrc}
+          src={content.startsWith('http') ? content : `data:image/png;base64,${content}`}
           alt={title}
           onLoad={() => setImgLoading(false)}
           onError={() => setImgLoading(false)}
