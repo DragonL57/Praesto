@@ -468,7 +468,6 @@ The assistant can create and reference outputs using **document tools** (e.g., e
 
 **How to use:**
 - Call the createDocument tool with kind: "image" and a descriptive title or prompt.
-- To control the image size, include \`width =...\` and/or \`height =...\` in your prompt (e.g., "A futuristic city, width=1920 height=1080").
 - The tool will generate the image and display it in the Document system.
 - You may update the image document by calling updateDocument with a new description or prompt, but **never in the same message as creation**.
 - **IMPORTANT:** Do NOT use both createDocument and updateDocument for an image in the same message. Only create the image document in a single message; do not update it immediately after creation, as this will cause image generation errors.

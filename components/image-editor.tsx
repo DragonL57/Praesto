@@ -1,6 +1,6 @@
 import { LoaderIcon } from './icons';
 import cn from 'classnames';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface ImageEditorProps {
   title: string;
@@ -18,6 +18,34 @@ export function ImageEditor({
   isInline,
 }: ImageEditorProps) {
   const [imgLoading, setImgLoading] = useState(true);
+  const [imgSrc, setImgSrc] = useState(content);
+  const retryCount = useRef(0);
+
+  // Reset imgSrc and retry state if content changes (e.g., when opening modal)
+  useEffect(() => {
+    setImgSrc(content);
+    setImgLoading(true);
+    retryCount.current = 0;
+  }, [content]);
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    // Only retry if the error is likely a 404 (image not found)
+    if (
+      retryCount.current < 5 &&
+      imgSrc.startsWith('http') &&
+      target.naturalWidth === 0
+    ) {
+      retryCount.current += 1;
+      setTimeout(() => {
+        setImgSrc(content + (content.includes('?') ? '&' : '?') + 'retry=' + Date.now());
+        setImgLoading(true);
+      }, 2000);
+    } else {
+      setImgLoading(false);
+    }
+  };
+
   const showSpinner = status === 'streaming' || imgLoading;
 
   return (
@@ -42,10 +70,10 @@ export function ImageEditor({
           className={cn('w-full h-fit max-w-[800px]', {
             'p-0 md:p-20': !isInline,
           })}
-          src={content.startsWith('http') ? content : `data:image/png;base64,${content}`}
+          src={imgSrc.startsWith('http') ? imgSrc : `data:image/png;base64,${imgSrc}`}
           alt={title}
           onLoad={() => setImgLoading(false)}
-          onError={() => setImgLoading(false)}
+          onError={handleError}
         />
       </picture>
     </div>
