@@ -152,11 +152,6 @@ function PureMultimodalInput({
     chatId,
   ]);
 
-  // Handle click on container to focus textarea
-  const handleContainerClick = useCallback(() => {
-    textareaRef.current?.focus();
-  }, []);
-
   // Pills config
   const pills = [
     {
@@ -246,15 +241,7 @@ function PureMultimodalInput({
           {isNewChat && <Greeting />}
           
           {/* Input container with dynamic padding based on attachments */}
-          <div 
-            onClick={handleContainerClick}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                handleContainerClick();
-              }
-            }}
-            role="button"
-            tabIndex={0}
+          <div
             className={cx(
               "w-full text-left rounded-3xl overflow-hidden bg-background dark:bg-zinc-800 dark:border-zinc-600 border border-input shadow-md transition-shadow duration-200",
               {
@@ -263,7 +250,6 @@ function PureMultimodalInput({
                 "shadow-md": !isInputFocused
               }
             )}
-            aria-label="Focus text input"
           >
             {/* Attachments inside the input bar - LibreChat style */}
             {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -346,9 +332,9 @@ function PureMultimodalInput({
             </div>
 
             {/* Bottom toolbar with controls - ensure SendButton and StopButton are here */}
-            <div className="absolute inset-x-0.5 bottom-0.5 flex items-center justify-between p-1">
+            <div className="absolute inset-x-0.5 bottom-0.5 flex items-center justify-between p-1 pointer-events-none cursor-default">
               {/* Left side - Persona selector and other potential future buttons */}
-              <div className="p-2 flex flex-row justify-start items-center z-10 gap-1">
+              <div className="p-2 flex flex-row justify-start items-center z-10 gap-1 pointer-events-auto">
                 {/* Background element with rounded corners */}
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none"></span>
                 <AttachmentsButton
@@ -358,7 +344,7 @@ function PureMultimodalInput({
               </div>
 
               {/* Right side - speech-to-text, and send/stop buttons */}
-              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1 relative">
+              <div className="p-2 flex flex-row justify-end items-center z-10 gap-1 relative pointer-events-auto">
                 <SpeechToTextButton
                   recognitionRef={recognitionRef}
                   setInput={setInput}

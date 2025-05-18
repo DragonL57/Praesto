@@ -34,34 +34,27 @@ export const Greeting = () => {
     
     // Create arrays of diverse greetings for different times of day
     const earlyMorningGreetings = [
-      "You're up early",
-      "Burning the midnight oil",
+      "You're up early!",
+      "Staying up late",
       "Working late tonight",
       "Night owl session",
-      "Quiet hours productivity"
     ];
     
     const morningGreetings = [
       "Good morning",
-      "Rise and shine",
       "Morning",
       "Hello bright and early",
-      "Top of the morning"
     ];
     
     const afternoonGreetings = [
       "Good afternoon",
       "Afternoon",
-      "Having a productive day",
-      "Midday greetings",
       "Hope your day is going well"
     ];
     
     const eveningGreetings = [
       "Good evening",
       "Evening",
-      "Winding down the day",
-      "Evening greetings",
       "Hope you had a good day"
     ];
     
@@ -92,8 +85,8 @@ export const Greeting = () => {
           `${baseGreeting} and happy weekend`;
       }
     }
-    // Afternoon (12 PM to 4:59 PM)
-    else if (hours < 17) {
+    // Afternoon (12 PM to 5:59 PM)
+    else if (hours < 18) {
       baseGreeting = getGreeting(afternoonGreetings);
       
       // Add weekend variant for weekends - in a more natural way
@@ -101,7 +94,7 @@ export const Greeting = () => {
         baseGreeting = `${baseGreeting} and happy weekend`;
       }
     }
-    // Evening (5 PM onwards)
+    // Evening (6 PM onwards)
     else {
       baseGreeting = getGreeting(eveningGreetings);
       
@@ -130,8 +123,8 @@ export const Greeting = () => {
   // Once mounted on client, show the actual greeting
   if (!mounted) {
     return (
-      <div className="text-center mb-4">
-        <div className="text-2xl font-extrabold">
+      <div className="text-center mb-6">
+        <div className="text-3xl font-extrabold">
           Welcome
         </div>
       </div>
@@ -139,12 +132,12 @@ export const Greeting = () => {
   }
   
   return (
-    <div className="text-center mb-4">
+    <div className="text-center mb-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-2xl font-normal"
+        className="text-3xl font-normal"
       >
         <Typewriter 
           text={greeting}
