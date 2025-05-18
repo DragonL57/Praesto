@@ -105,11 +105,10 @@ class BraveSearchClient {
       // Construct the URL with query parameters
       const url = new URL(this.API_ENDPOINT);
       url.searchParams.append('q', query);
-      url.searchParams.append('count', String(Math.min(maxResults, 20))); // Brave API max is 20
+      url.searchParams.append('count', String(Math.min(maxResults, 20)));
       url.searchParams.append('country', region.toUpperCase());
       url.searchParams.append('safesearch', safeSearch ? 'moderate' : 'off');
       url.searchParams.append('extra_snippets', 'true');
-
       if (search_lang) {
         url.searchParams.append('search_lang', search_lang);
       }
@@ -123,6 +122,9 @@ class BraveSearchClient {
         url.searchParams.append('summary', String(summary));
       }
 
+      // Log the full URL for debugging
+      console.log(`[Brave API Request] URL: ${url.toString()}`);
+
       // Make the request to Brave Search API
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -133,13 +135,18 @@ class BraveSearchClient {
           'X-Subscription-Token': this.API_KEY,
         },
       });
-
+      if (response.status === 422) {
+        // Log the error and throw
+        console.error(`[Brave API 422] Params:`, {
+          query, maxResults, region, safeSearch, search_lang, freshness, result_filter, summary
+        }, 'URL:', url.toString());
+        throw new Error('Brave Search API error: 422 Unprocessable Entity');
+      }
       if (!response.ok) {
         throw new Error(
           `Brave Search API error: ${response.status} ${response.statusText}`
         );
       }
-
       const data = await response.json();
       const results: SearchResult[] = [];
 
@@ -147,8 +154,6 @@ class BraveSearchClient {
       if (data.web && data.web.results && Array.isArray(data.web.results)) {
         for (const result of data.web.results) {
           if (results.length >= maxResults) break;
-
-          // Convert Brave search result to our SearchResult format
           results.push({
             title: result.title || 'No title',
             href: result.url || '',
@@ -161,9 +166,9 @@ class BraveSearchClient {
       if (data.summarizer && data.summarizer.results && data.summarizer.results.length > 0 && results.length < maxResults) {
         const summaryText = data.summarizer.results[0].text;
         if (summaryText) {
-          results.unshift({ // Add summary to the beginning of results
+          results.unshift({
             title: 'Search Summary',
-            href: '', // Summaries don't have a direct URL
+            href: '',
             body: summaryText,
           });
         }
@@ -172,7 +177,6 @@ class BraveSearchClient {
       // Add infobox if available
       if (data.infobox && data.infobox.results && results.length < maxResults) {
         const infobox = data.infobox.results;
-
         if (infobox.long_desc) {
           results.push({
             title: infobox.label || 'Information',
@@ -186,7 +190,6 @@ class BraveSearchClient {
       if (data.faq && data.faq.results && Array.isArray(data.faq.results) && results.length < maxResults) {
         for (const faq of data.faq.results) {
           if (results.length >= maxResults) break;
-
           results.push({
             title: faq.question || 'Question',
             href: faq.url || '',
@@ -231,7 +234,6 @@ class BraveSearchClient {
         }
       }
 
-
       console.log(
         `Brave Search Complete: Found ${results.length} results`
       );
@@ -243,7 +245,7 @@ class BraveSearchClient {
       };
 
       // Cache the results
-      searchCache.set(cacheKey, {
+      searchCache.set(url.toString(), {
         timestamp: Date.now(),
         results: finalResults
       });
@@ -474,7 +476,7 @@ export const webSearch = tool({
   }),
   execute: async ({
     query,
-    maxResults = 10,
+    maxResults: _maxResults, // ignore any incoming value
     region = 'us',
     safeSearch = true,
     search_lang,
@@ -482,9 +484,8 @@ export const webSearch = tool({
     result_filter,
     summary = false, // Default summary to false
   }) => {
-    // Normalize maxResults for internal use, respecting Brave's cap.
-    // The Zod schema now has default(10) and max(20).
-    const normalizedMaxResults = Math.min(maxResults, 20);
+    // Always use 20 results, regardless of what is passed in
+    const normalizedMaxResults = 20;
 
     let logParams = `Web Search: query='${query}', max=${normalizedMaxResults}, region=${region}, safe=${safeSearch ? 'on' : 'off'}, summary=${summary}`;
     if (search_lang) logParams += `, search_lang=${search_lang}`;
