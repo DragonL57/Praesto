@@ -8,12 +8,19 @@ export default function robots(): MetadataRoute.Robots {
         allow: ['/'],
         disallow: [
           '/api/',
-          '/dashboard/',
           '/admin/',
           '/chat/*/edit',
           '/*.json',
           '/private/',
-          '/share/*/edit'
+          '/share/*/edit',
+          '/app/',
+          '/.next/',
+          '/components/',
+          '/hooks/',
+          '/lib/',
+          '/tests/',
+          '/types/',
+          '/artifacts/',
         ],
       },
       {
@@ -27,6 +34,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: 'Google-Extended',
         allow: '/',
+      },
+      {
+        userAgent: 'Anthropic-AI',
+        disallow: ['/'],
+      },
+      {
+        userAgent: 'CCBot',
+        disallow: ['/'],
       },
     ],
     sitemap: 'https://www.unitaskai.com/sitemap.xml',

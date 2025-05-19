@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | UniTaskAI"
   },
   description: "Transform your workflow with UniTaskAI - the all-in-one AI platform for content creation, code generation, data analysis, and task automation. Try it for free today.",
-  keywords: ["AI workspace", "productivity tool", "AI assistant", "content generation", "code assistant", "data analysis", "workflow automation", "AI chat"],
+  keywords: ["AI workspace", "productivity tool", "AI assistant", "content generation", "code assistant", "data analysis", "workflow automation", "AI chat", "document analysis", "file processing", "multimodal AI", "AI document processing"],
   authors: [{ name: "UniTaskAI Team" }],
   creator: "UniTaskAI",
   publisher: "UniTaskAI",
@@ -33,6 +33,12 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
+  },
+  alternates: {
+    canonical: "https://www.unitaskai.com",
+    languages: {
+      'en-US': "https://www.unitaskai.com",
+    },
   },
   icons: {
     icon: [
@@ -82,9 +88,20 @@ export const metadata: Metadata = {
     description: "Your complete AI assistant for content, code, data, and more",
     images: ["/UniTaskAI_logo.png"],
     creator: "@unitaskai",
+    site: "@unitaskai",
   },
   verification: {
     google: "your-google-verification-code", // Replace with actual code when available
+    yandex: "yandex-verification-code", // Optional: Add when available
+    other: {
+      "msvalidate.01": "bing-verification-code", // For Bing Webmaster Tools verification
+    },
+  },
+  applicationName: "UniTaskAI",
+  appLinks: {
+    web: {
+      url: "https://www.unitaskai.com",
+    },
   },
   category: "productivity",
 }
@@ -134,13 +151,23 @@ export default async function RootLayout({
               data={{
                 '@context': 'https://schema.org',
                 '@type': 'WebApplication',
-                name: 'Presto AI',
-                description: 'Free AI Assistant',
-                url: 'https://praesto.ai',
-                applicationCategory: 'UtilityApplication',
-                genre: 'AI Chat',
-                browserRequirements: 'Requires JavaScript. Requires HTML5.',
-                softwareVersion: '3.0',
+                'name': 'UniTaskAI',
+                'description': 'AI-powered workspace for content creation, code generation, data analysis, and task automation.',
+                'url': 'https://www.unitaskai.com',
+                'applicationCategory': 'ProductivityApplication',
+                'operatingSystem': 'All',
+                'offers': {
+                  '@type': 'Offer',
+                  'price': '0',
+                  'priceCurrency': 'USD'
+                },
+                'featureList': 'AI Chat, Document Analysis, Code Generation, Data Analysis, Multimodal Input',
+                'browserRequirements': 'Requires JavaScript. Requires HTML5.',
+                'softwareVersion': '1.0',
+                'author': {
+                  '@type': 'Organization',
+                  'name': 'UniTaskAI'
+                }
               }}
             />
             <Toaster richColors closeButton={false} position="top-center" />
