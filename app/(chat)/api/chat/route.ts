@@ -49,6 +49,8 @@ const ATTACHMENT_TEXT_HEADER_PREFIX = "\n\n--- Content from attachment:";
 const ATTACHMENT_TEXT_FOOTER = "---\n--- End of attachment ---";
 const ATTACHMENT_ERROR_NOTE_PREFIX = "\n\n--- System Note: An error occurred while trying to extract text content from attachment:";
 const ATTACHMENT_ERROR_NOTE_SUFFIX = ". The file might be corrupted, password-protected, or in an unsupported format. ---";
+const ATTACHMENT_TEXT_TRUNCATED_SUFFIX = " [Content truncated as it exceeded 100,000 characters]";
+const MAX_EXTRACTED_TEXT_CHARS = 100000; // Maximum number of characters for extracted text
 // --- End of Configuration ---
 
 export const maxDuration = 60;
@@ -133,8 +135,18 @@ export async function POST(request: Request) {
             const extractedText = await parseOfficeAsync(fileBuffer);
 
             if (extractedText && extractedText.trim().length > 0) {
-              combinedUserTextAndAttachments += `${ATTACHMENT_TEXT_HEADER_PREFIX} ${attachment.name || 'file'} ---\n${extractedText.trim()}${ATTACHMENT_TEXT_FOOTER}`;
-              console.log(`Successfully extracted text from ${attachment.name || 'file'}. Length: ${extractedText.length}`);
+              // Limit extracted text to MAX_EXTRACTED_TEXT_CHARS characters
+              let finalText = extractedText.trim();
+              let truncationNote = '';
+
+              if (finalText.length > MAX_EXTRACTED_TEXT_CHARS) {
+                finalText = finalText.substring(0, MAX_EXTRACTED_TEXT_CHARS);
+                truncationNote = ATTACHMENT_TEXT_TRUNCATED_SUFFIX;
+                console.log(`Text from ${attachment.name || 'file'} was truncated from ${extractedText.length} to ${MAX_EXTRACTED_TEXT_CHARS} characters.`);
+              }
+
+              combinedUserTextAndAttachments += `${ATTACHMENT_TEXT_HEADER_PREFIX} ${attachment.name || 'file'} ---\n${finalText}${truncationNote}${ATTACHMENT_TEXT_FOOTER}`;
+              console.log(`Successfully extracted text from ${attachment.name || 'file'}. Length: ${finalText.length}${truncationNote ? ' (truncated)' : ''}`);
             } else {
               // This case means parsing was successful, but no text content was found (e.g., an empty .txt file or a PDF with only images).
               console.log(`No text extracted or text was empty for ${attachment.name || 'file'} (parsing successful).`);
