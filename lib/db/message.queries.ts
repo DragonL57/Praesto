@@ -32,23 +32,13 @@ export async function saveMessages({
     }
 }
 
-export async function getMessagesByChatId({ id, limit, offset }: { id: string, limit?: number, offset?: number }) {
+export async function getMessagesByChatId({ id }: { id: string }) {
     try {
-        const builder = db
+        return await db
             .select()
             .from(message)
             .where(eq(message.chatId, id))
             .orderBy(asc(message.createdAt));
-
-        if (typeof limit === 'number' && typeof offset === 'number') {
-            return await builder.limit(limit).offset(offset);
-        } else if (typeof limit === 'number') {
-            return await builder.limit(limit);
-        } else if (typeof offset === 'number') {
-            return await builder.offset(offset);
-        } else {
-            return await builder;
-        }
     } catch (error) {
         console.error('Failed to get messages by chat id from database', error);
         throw error;

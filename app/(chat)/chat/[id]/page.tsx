@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
@@ -37,10 +38,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     }
   }
 
-  // Fetch only the latest 30 messages for initial load (pagination)
   const messagesFromDb = await getMessagesByChatId({
     id,
-    limit: 30, // Only fetch the latest 30 messages for performance; can be made dynamic
   });
 
   function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
@@ -56,12 +55,15 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     }));
   }
 
+  const cookieStore = await cookies();
+  const modelIdFromCookie = cookieStore.get('chat-model')?.value || DEFAULT_CHAT_MODEL_ID;
+
   return (
     <PageTransition>
       <Chat
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
-        selectedChatModel={DEFAULT_CHAT_MODEL_ID}
+        selectedChatModel={modelIdFromCookie}
         selectedVisibilityType={chat.visibility}
         isReadonly={!session?.user || session.user.id !== chat.userId}
       />
