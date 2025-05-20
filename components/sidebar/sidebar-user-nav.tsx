@@ -23,8 +23,8 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SettingsCard } from '@/components/settings-card';
-import { toast } from '@/components/toast';
+import { SettingsCard } from '../settings-card';
+import { toast } from '../toast';
 
 export function SidebarUserNav({ user }: { user: User }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

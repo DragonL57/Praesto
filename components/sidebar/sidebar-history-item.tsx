@@ -1,10 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import { memo, useState } from 'react';
 import type { Chat } from '@/lib/db/schema';
 import type { SWRInfiniteKeyedMutator } from 'swr/infinite';
 import type { ChatHistory } from './sidebar-history';
 
-import { SidebarMenuAction, SidebarMenuButton } from './ui/sidebar';
+import { SidebarMenuAction, SidebarMenuButton } from '../ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +16,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from '../ui/dropdown-menu';
 import {
   CheckCircleFillIcon,
   GlobeIcon,
@@ -23,11 +25,11 @@ import {
   PencilEditIcon,
   ShareIcon,
   TrashIcon,
-} from './icons';
+} from '../icons';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { cn } from '@/lib/utils';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
 // Create a div version of SidebarMenuItem to avoid nested li elements

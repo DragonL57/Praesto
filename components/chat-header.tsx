@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useWindowSize, useLocalStorage } from 'usehooks-ts';
 import { useSidebar } from './ui/sidebar';
-import { SidebarToggle } from '@/components/sidebar-toggle';
+import { SidebarToggle } from '@/components/sidebar';
 import { memo, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType } from './visibility-selector';

@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import { LuPanelLeftClose, LuPanelLeftOpen} from 'react-icons/lu';
 
 export function SidebarToggle({
