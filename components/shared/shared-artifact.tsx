@@ -15,13 +15,13 @@ import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
 import type { Document, Vote } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
-import { ArtifactActions } from './artifact-actions';
-import { ArtifactCloseButton } from './artifact-close-button';
-import { ArtifactMessages } from './artifact-messages';
+import { ArtifactActions } from '../artifact-actions';
+import { ArtifactCloseButton } from '../artifact-close-button';
+import { ArtifactMessages } from '../artifact-messages';
 import { useArtifact } from '@/hooks/use-artifact';
-import { artifactDefinitions } from './artifact';
-import { Toolbar } from './toolbar';
-import { VersionFooter } from './version-footer';
+import { artifactDefinitions } from '../artifact';
+import { Toolbar } from '../toolbar';
+import { VersionFooter } from '../version-footer';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 
@@ -292,6 +292,7 @@ function PureSharedArtifact({
                   messages={messages}
                   setMessages={setMessages}
                   reload={reload}
+                  append={append}
                   isReadonly={isReadonly}
                   artifactStatus={artifact.status}
                 />

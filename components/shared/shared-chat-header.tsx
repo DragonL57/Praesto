@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
-import { PlusIcon } from './icons';
+import { PlusIcon } from '../icons';
 import { memo, useEffect, useState } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 import Link from 'next/link';
 
 function PureSharedChatHeader() {

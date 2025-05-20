@@ -16,10 +16,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { CheckIcon, CopyIcon, ShareIcon } from './icons';
+import { CheckIcon, CopyIcon, ShareIcon } from '../icons';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { cn } from '@/lib/utils';
-import type { VisibilityType } from './visibility-selector';
+import type { VisibilityType } from '../visibility-selector';
 
 export function ShareDialog({
   chatId,

@@ -7,7 +7,7 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
-import { SharedChat } from '@/components/shared-chat';
+import { SharedChat } from '@/components/shared';
 import { PageTransition } from '@/components/ui/page-transition';
 
 export const metadata = {

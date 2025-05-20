@@ -5,8 +5,8 @@ import { useChat } from '@ai-sdk/react';
 import { useState, useRef } from 'react';
 import useSWR from 'swr';
 import { fetcher, generateUUID } from '@/lib/utils';
-import { Messages } from './messages/messages';
-import type { VisibilityType } from './visibility-selector';
+import { Messages } from '../messages/messages';
+import type { VisibilityType } from '../visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { SharedChatHeader } from './shared-chat-header';
@@ -82,6 +82,7 @@ export function SharedChat({
             messages={messages}
             setMessages={setMessages}
             reload={reload}
+            append={append}
             isReadonly={isReadonly}
             isArtifactVisible={isArtifactVisible}
             messagesContainerRef={messagesContainerRef}

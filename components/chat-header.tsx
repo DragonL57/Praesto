@@ -7,7 +7,7 @@ import { SidebarToggle } from '@/components/sidebar-toggle';
 import { memo, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType } from './visibility-selector';
-import { ShareDialog } from './share-dialog';
+import { ShareDialog } from '@/components/shared';
 import { ModelSelector } from '@/components/model-selector';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { Button } from '@/components/ui/button';
