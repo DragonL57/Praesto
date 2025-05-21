@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ChevronUp, Settings, BookOpen } from 'lucide-react';
+import { ChevronUp, Settings, BookOpen, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import type { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SettingsCard } from '../settings-card';
 import { toast } from '../toast';
 
 export function SidebarUserNav({ user }: { user: User }) {
@@ -90,12 +89,11 @@ export function SidebarUserNav({ user }: { user: User }) {
               sideOffset={0}
               style={{ marginLeft: '0', left: '0' }}
             >
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="mr-2 size-4" />
-                Settings
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="cursor-pointer flex items-center w-full">
+                  <Settings className="mr-2 size-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/docs" className="cursor-pointer flex items-center">
@@ -111,6 +109,7 @@ export function SidebarUserNav({ user }: { user: User }) {
                   onClick={handleSignOut}
                   disabled={isSigningOut}
                 >
+                  <LogOut className="mr-2 size-4" />
                   {isSigningOut ? "Signing out..." : "Sign out"}
                 </button>
               </DropdownMenuItem>
@@ -122,7 +121,7 @@ export function SidebarUserNav({ user }: { user: User }) {
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="max-w-[700px] md:max-w-[700px] p-0 border-none">
           <DialogTitle className="sr-only">Settings</DialogTitle>
-          <SettingsCard onClose={() => setIsSettingsOpen(false)} />
+          {/* <SettingsCard onClose={() => setIsSettingsOpen(false)} /> */}
         </DialogContent>
       </Dialog>
     </>

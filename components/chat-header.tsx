@@ -40,6 +40,7 @@ function PureChatHeader({
   );
 
   const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
+  const isInNewChat = pathname === '/chat' || pathname === '/chat/new';
 
   useEffect(() => {
     setMounted(true);
@@ -51,7 +52,7 @@ function PureChatHeader({
 
       {mounted ? (
         <>
-          {(!open || windowWidth < 768) && (
+          {(!open || windowWidth < 768) && !isInNewChat && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
