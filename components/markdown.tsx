@@ -66,7 +66,7 @@ const TableWrapper = ({ children }: { children: React.ReactNode }) => {
       style={{
         width: '100%',
         maxWidth: '100%',
-        maxHeight: '600px',
+        maxHeight: '100%',
         overflowY: 'auto',
         overflowX: 'auto',
         display: 'block',
@@ -338,9 +338,7 @@ const NonMemoizedMarkdown = ({
                 style={{
                   borderCollapse: 'collapse',
                   borderSpacing: 0,
-                  width: 'max-content',      // Be as wide as content inherently
-                  minWidth: '100%',          // But at least 100% of the container
-                  tableLayout: 'auto'
+                  tableLayout: 'fixed',  // Enforce cell width constraints
                 }}
                 {...props}
               >
@@ -379,6 +377,7 @@ const NonMemoizedMarkdown = ({
                 maxWidth: '300px',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
+                overflowWrap: 'anywhere', // Ensure wrapping at maxWidth
                 padding: '8px 16px',
                 boxShadow: 'inset 0 1px 0 0 hsl(var(--border)), inset 0 -1px 0 0 hsl(var(--border))',
               }}
@@ -394,6 +393,7 @@ const NonMemoizedMarkdown = ({
                 maxWidth: '300px',
                 whiteSpace:'pre-wrap',
                 wordBreak: 'break-word',
+                overflowWrap: 'anywhere', // Ensure wrapping at maxWidth
                 padding: '8px 16px',
               }}
               {...props}
