@@ -11,8 +11,8 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, _cookieStore] = await Promise.all([auth(), await cookies()]);
-  // const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
+  const [session, cookieStore] = await Promise.all([auth(), await cookies()]);
+  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
   const isAuthenticated = !!session?.user;
   
   // Only show the sidebar if the user is authenticated
@@ -24,7 +24,7 @@ export default async function Layout({
         src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
         strategy="lazyOnload"
       />
-      <SidebarProvider defaultOpen={false}>
+      <SidebarProvider defaultOpen={showSidebar && !isCollapsed}>
         {showSidebar && <AppSidebar user={session?.user} />}
         <SidebarInset>
           <Suspense fallback={<div></div>}>

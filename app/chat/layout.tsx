@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import { AppSidebar } from '@/components/sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -14,9 +14,12 @@ export default async function Layout({
 }) {
   // Explicitly read headers and cookies first
   await headers(); // Read headers
+  const cookieStore = await cookies(); // Existing cookies call
   
   // Fetch session first
   const session = await auth();
+  
+  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
 
   return (
     <>
@@ -24,7 +27,7 @@ export default async function Layout({
         src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
         strategy="lazyOnload"
       />
-      <SidebarProvider defaultOpen={false}>
+      <SidebarProvider defaultOpen={!isCollapsed}>
         <AppSidebar user={session?.user} />
         <SidebarInset>{children}</SidebarInset>
       </SidebarProvider>
