@@ -9,17 +9,10 @@ import json
 import sys
 import argparse
 
-# Add pip package dependencies
-try:
-    from youtube_transcript_api import YouTubeTranscriptApi
-    from youtube_transcript_api.formatters import JSONFormatter
-    import requests
-except ImportError:
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "youtube-transcript-api requests"])
-    from youtube_transcript_api import YouTubeTranscriptApi
-    from youtube_transcript_api.formatters import JSONFormatter
-    import requests
+# Dependencies are expected to be installed in the environment
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import JSONFormatter
+import requests
 
 
 def extract_video_id(url_or_id):
