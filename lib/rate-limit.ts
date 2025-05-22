@@ -25,6 +25,11 @@ export function rateLimit(req: NextRequest) {
     const path = req.nextUrl.pathname;
     const method = req.method;
 
+    // Explicitly bypass rate limiting for internal API calls like get_transcript
+    if (path.startsWith('/api/get_transcript')) {
+        return NextResponse.next();
+    }
+
     // Only apply strict rate limiting to auth actions (POST requests)
     // For login/register page views, apply a much higher limit
     const isAuthAction = (
