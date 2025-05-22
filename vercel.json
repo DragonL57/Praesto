@@ -1,4 +1,5 @@
 {
+    "buildCommand": "pip install -r api/requirements.txt && pnpm run build",
     "crons": [
         {
             "path": "/api/cron/cleanup-unverified-users",

@@ -11,18 +11,6 @@ import { execSync } from 'child_process';
 console.log('🚀 Starting Vercel build process...');
 
 try {
-  // Install Python dependencies
-  console.log('🐍 Installing Python dependencies...');
-  try {
-    execSync('pip install -r api/requirements.txt', {
-      stdio: 'inherit'
-    });
-    console.log('✅ Python dependencies installed successfully');
-  } catch (pythonInstallError) {
-    console.error('❌ Failed to install Python dependencies:', pythonInstallError.message);
-    process.exit(1); // Exit if Python dependencies fail to install
-  }
-
   // Run database migrations with a timeout
   console.log('📊 Running database migrations...');
   try {
