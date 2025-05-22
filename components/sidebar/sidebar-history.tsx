@@ -105,6 +105,8 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     mutate,
   } = useSWRInfinite<ChatHistory>(getChatHistoryPaginationKey, fetcher, {
     fallbackData: [],
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   });
 
   const router = useRouter();

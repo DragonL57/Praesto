@@ -25,8 +25,8 @@ export function rateLimit(req: NextRequest) {
     const path = req.nextUrl.pathname;
     const method = req.method;
 
-    // Explicitly bypass rate limiting for internal API calls like get_transcript
-    if (path.startsWith('/api/get_transcript')) {
+    // Explicitly bypass rate limiting for internal API calls like get_transcript and history
+    if (path.startsWith('/api/get_transcript') || path.startsWith('/api/history')) {
         return NextResponse.next();
     }
 

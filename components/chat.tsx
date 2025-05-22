@@ -85,6 +85,10 @@ export function Chat({
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
     fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
   );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
