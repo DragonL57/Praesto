@@ -32,9 +32,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
     try {
         const response = await fetch(url, {
             headers: {
@@ -42,9 +39,7 @@ export async function GET(request: NextRequest) {
                 'Accept': 'text/html',
             },
             redirect: 'follow',
-            signal: controller.signal, // Added AbortSignal for timeout
         });
-        clearTimeout(timeoutId); // Clear timeout if fetch completes
 
         if (!response.ok) {
             return NextResponse.json({ error: `Failed to fetch URL: ${response.statusText}` }, { status: response.status });
@@ -144,20 +139,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(metadata);
 
     } catch (error) {
-        clearTimeout(timeoutId); // Clear timeout in case of error too
         console.error(`Error fetching metadata for ${url}:`, error);
         let errorMessage = 'Internal server error';
         if (error instanceof Error) {
             errorMessage = error.message;
-            // Check if it's an AbortError (timeout)
-            if (error.name === 'AbortError') {
-                return NextResponse.json({ error: `Request timed out while trying to reach: ${url}` }, { status: 504 }); // Gateway Timeout
-            }
-        }
-        // More specific error for other fetch issues
-        if (errorMessage.includes('fetch failed')) { // This might be redundant if AbortError is caught
-            return NextResponse.json({ error: `Could not reach the specified URL: ${url}` }, { status: 504 });
         }
         return NextResponse.json({ error: `Error processing URL: ${errorMessage}` }, { status: 500 });
     }
-} 
+}
