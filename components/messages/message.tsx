@@ -158,6 +158,61 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const [, copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
 
+  // Handle copy events to prevent background colors but retain markdown
+  const handleCopy = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    if (selection && selection.toString()) {
+      // Get selected HTML content with formatting (markdown)
+      const range = selection.getRangeAt(0);
+      const clonedSelection = range.cloneContents();
+      const div = document.createElement('div');
+      div.appendChild(clonedSelection);
+      
+      // Copy the HTML content (which contains the markdown formatting)
+      const formattedHTML = div.innerHTML;
+      
+      // Create a clean HTML version that preserves formatting but removes background styles
+      // This uses a style tag to override backgrounds while keeping other formatting
+      const cleanHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            * {
+              background-color: transparent !important;
+              background-image: none !important;
+              background: none !important;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+              color: initial;
+            }
+            pre, code {
+              font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            }
+            /* Preserve code highlighting colors but remove backgrounds */
+            code span {
+              background: none !important;
+              background-color: transparent !important;
+            }
+          </style>
+        </head>
+        <body>${formattedHTML}</body>
+        </html>
+      `;
+      
+      // Set both plain text and HTML versions
+      event.clipboardData.clearData();
+      event.clipboardData.setData('text/plain', selection.toString());
+      event.clipboardData.setData('text/html', cleanHTML);
+      
+      // Prevent the default copy behavior
+      event.preventDefault();
+    }
+  };
+
   // 1. Consolidate reasoning elements (text, web search results) for MessageReasoning
   const { reasoningElements, indicesToFilter } = useMemo(() => {
     const elements: ReasoningContentItem[] = [];
@@ -338,7 +393,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     return enhancedParts;
   }, [message.parts, message.role, indicesToFilter]); // Add indicesToFilter dependency
 
-    const handleCopy = async () => {
+    const handleCopyButtonClick = async () => {
       // User messages typically have one text part.
       // Find the first text part to ensure we get the content.
       const userTextPart = message.parts?.find(part => part.type === 'text');
@@ -471,6 +526,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       <div key={key} className="flex flex-row gap-2 items-start">
                         <div
                           data-testid="message-content"
+                          onCopy={handleCopy}
                           className={cn('flex flex-col gap-0 flex-1 w-full', {
                             [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
                               message.role === 'user',
@@ -640,7 +696,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     data-testid="message-copy-button"
                     variant="ghost"
                     className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
-                    onClick={handleCopy}
+                    onClick={handleCopyButtonClick}
                   >
                     <CopyIcon />
                     <span className="sr-only">Copy message</span>

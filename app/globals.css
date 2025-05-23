@@ -248,3 +248,10 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Styling for copy operations is handled by the onCopy event in messages/message.tsx */
+/* This helps ensure that copied content from the application doesn't include background colors */
+::selection {
+  color: inherit;
+  background-color: rgba(0, 100, 255, 0.1) !important;
+}

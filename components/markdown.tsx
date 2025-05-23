@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { memo, createElement, useState, Children, isValidElement } from 'react';
+import React, { memo, createElement, useState, Children, isValidElement, useEffect } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -97,30 +97,33 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const fetchMetadata = async () => {
-    if (!url || metadata || isLoading) return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
-      const data: Metadata = await response.json();
-      if (response.ok) {
-        setMetadata(data);
-      } else {
-        setMetadata({ error: data.error || 'Failed to fetch metadata' });
+  // Fetch metadata immediately upon component mount
+  useEffect(() => {
+    // Define the fetch function inside useEffect to avoid dependency issues
+    const fetchMetadata = async () => {
+      if (!url || metadata || isLoading) return;
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
+        const data: Metadata = await response.json();
+        if (response.ok) {
+          setMetadata(data);
+        } else {
+          setMetadata({ error: data.error || 'Failed to fetch metadata' });
+        }
+      } catch (error) {
+        console.error("Error fetching citation metadata:", error);
+        setMetadata({ error: 'Error fetching metadata' });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching citation metadata:", error);
-      setMetadata({ error: 'Error fetching metadata' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    
+    fetchMetadata();
+  }, [url, metadata, isLoading]); // Include all dependencies
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && !metadata && !isLoading) {
-      fetchMetadata();
-    }
   };
   
   const FallbackFavicon = () => (
