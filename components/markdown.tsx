@@ -428,9 +428,15 @@ const NonMemoizedMarkdown = ({
             </li>
           ),
           strong: ({ children, ...props }) => (
-            <span className="font-semibold after:content-[''] after:whitespace-pre" {...props}>
+            <strong className="font-semibold after:content-[''] after:whitespace-pre" {...props}>
               {children}
-            </span>
+            </strong>
+          ),
+          
+          em: ({ children, ...props }) => (
+            <em className="italic after:content-[''] after:whitespace-pre" {...props}>
+              {children}
+            </em>
           ),
 
           // Links

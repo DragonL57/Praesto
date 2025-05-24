@@ -158,21 +158,20 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const [, copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
 
-  // Handle copy events to prevent background colors but retain markdown
+  // Handle copy events to preserve formatting
   const handleCopy = (event: React.ClipboardEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
     if (selection && selection.toString()) {
-      // Get selected HTML content with formatting (markdown)
+      // Get selected HTML content with formatting
       const range = selection.getRangeAt(0);
       const clonedSelection = range.cloneContents();
       const div = document.createElement('div');
       div.appendChild(clonedSelection);
       
-      // Copy the HTML content (which contains the markdown formatting)
+      // Copy the HTML content (which contains the formatting)
       const formattedHTML = div.innerHTML;
       
-      // Create a clean HTML version that preserves formatting but removes background styles
-      // This uses a style tag to override backgrounds while keeping other formatting
+      // Create a clean HTML version that preserves formatting
       const cleanHTML = `
         <!DOCTYPE html>
         <html>
@@ -192,7 +191,12 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             pre, code {
               font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
             }
-            /* Preserve code highlighting colors but remove backgrounds */
+            /* Preserve formatting */
+            strong { font-weight: bold; }
+            em { font-style: italic; }
+            h1, h2, h3, h4, h5, h6 { font-weight: bold; }
+            ul { list-style-type: disc; padding-left: 20px; }
+            ol { list-style-type: decimal; padding-left: 20px; }
             code span {
               background: none !important;
               background-color: transparent !important;
@@ -394,6 +398,84 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
   }, [message.parts, message.role, indicesToFilter]); // Add indicesToFilter dependency
 
     const handleCopyButtonClick = async () => {
+      // For assistant messages, we need to get the HTML content for proper copying
+      if (message.role === 'assistant') {
+        try {
+          // Find the message content element
+          const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
+          if (!messageElement) {
+            throw new Error("Message element not found");
+          }
+          
+          // Get the HTML content
+          const htmlContent = messageElement.innerHTML;
+          
+          // Create a clean version for copying
+          const cleanHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                * {
+                  background-color: transparent !important;
+                  background-image: none !important;
+                  background: none !important;
+                }
+                body {
+                  margin: 0;
+                  padding: 0;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                  color: initial;
+                }
+                pre, code {
+                  font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                }
+                /* Preserve formatting */
+                strong { font-weight: bold; }
+                em { font-style: italic; }
+                h1, h2, h3, h4, h5, h6 { font-weight: bold; }
+                ul { list-style-type: disc; padding-left: 20px; }
+                ol { list-style-type: decimal; padding-left: 20px; }
+              </style>
+            </head>
+            <body>${htmlContent}</body>
+            </html>
+          `;
+          
+          // Create a temporary element to extract plain text
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          const plainText = tempDiv.textContent || tempDiv.innerText || '';
+          
+          // Copy the content with formatting
+          await copyFn(plainText);
+          
+          // Try to add HTML format to clipboard (for applications that support rich text)
+          try {
+            const clipboardItem = new ClipboardItem({
+              'text/plain': new Blob([plainText], { type: 'text/plain' }),
+              'text/html': new Blob([cleanHTML], { type: 'text/html' }),
+            });
+            await navigator.clipboard.write([clipboardItem]);
+          } catch (clipboardError) {
+            // Fallback already happened with copyFn above
+            console.warn('Enhanced clipboard write failed, using plain text fallback:', clipboardError);
+          }
+          
+          toast.success('Copied to clipboard!');
+        } catch (error) {
+          console.error('Failed to copy formatted text:', error);
+          // Fallback to the original method
+          fallbackCopy();
+        }
+      } else {
+        // For user messages, use the original method
+        fallbackCopy();
+      }
+    };
+    
+    // Fallback copy method for user messages or when the enhanced copy fails
+    const fallbackCopy = async () => {
       // User messages typically have one text part.
       // Find the first text part to ensure we get the content.
       const userTextPart = message.parts?.find(part => part.type === 'text');
@@ -526,6 +608,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       <div key={key} className="flex flex-row gap-2 items-start">
                         <div
                           data-testid="message-content"
+                          data-message-id={message.id}
                           onCopy={handleCopy}
                           className={cn('flex flex-col gap-0 flex-1 w-full', {
                             [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
