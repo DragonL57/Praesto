@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { memo, createElement, useState, Children, isValidElement, useEffect } from 'react';
+import React, { memo, createElement, useState, Children, isValidElement, useEffect, useRef } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -10,6 +10,7 @@ import 'katex/dist/katex.min.css';
 import { ImagePreviewModal } from './image-preview-modal';
 import { CodeBlock } from './code-block'; // Import the proper CodeBlock component
 import { InlineCode } from './ui/code/inline-code';
+import { metadataCache } from '@/lib/metadata-cache'; // Import our metadata cache
 import {
   HoverCard,
   HoverCardContent,
@@ -92,35 +93,71 @@ interface Metadata {
 }
 
 // Define the new CitationButton component
-const CitationButton = ({ num, url }: { num: string; url: string }) => {
+const CitationButton = memo(({ num, url }: { num: string; url: string }) => {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false); // Add a flag to track if we've already tried fetching
 
-  // Fetch metadata immediately upon component mount
+  // Use a ref to store the abort controller
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Fetch metadata once upon component mount or when URL changes
   useEffect(() => {
-    // Define the fetch function inside useEffect to avoid dependency issues
-    const fetchMetadata = async () => {
-      if (!url || metadata || isLoading) return;
+    let isMounted = true; // Flag to prevent state updates after unmount
+    
+    // Define the async function inside useEffect
+    const fetchData = async () => {
+      // Skip if no URL
+      if (!url) return;
+      
+      // Skip if we've already fetched (successful or not)
+      if (hasFetched) return;
+      
+      // Set loading state
       setIsLoading(true);
+      
+      // Cancel any in-progress fetches
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Create a new abort controller for this fetch
+      abortControllerRef.current = new AbortController();
+      
       try {
-        const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
-        const data: Metadata = await response.json();
-        if (response.ok) {
+        // This will check memory cache, session storage, or make API request as needed
+        const data = await metadataCache.get(url);
+        
+        if (isMounted) {
           setMetadata(data);
-        } else {
-          setMetadata({ error: data.error || 'Failed to fetch metadata' });
+          setHasFetched(true); // Always mark as fetched after completion
         }
       } catch (error) {
-        console.error("Error fetching citation metadata:", error);
-        setMetadata({ error: 'Error fetching metadata' });
+        if (!(error instanceof DOMException && error.name === 'AbortError') && isMounted) {
+          console.error("Error fetching citation metadata:", error);
+          setMetadata({ error: 'Error fetching metadata' });
+          setHasFetched(true); // Mark as fetched even on error
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
-    fetchMetadata();
-  }, [url, metadata, isLoading]); // Include all dependencies
+    fetchData();
+    
+    // Cleanup function to abort any pending fetches and prevent state updates after unmount
+    return () => {
+      isMounted = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+    // The useEffect should re-run if url changes or if hasFetched/metadata changes
+    // in a way that would allow a fetch that was previously skipped
+  }, [url, hasFetched]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -209,7 +246,10 @@ const CitationButton = ({ num, url }: { num: string; url: string }) => {
       </HoverCardContent>
     </HoverCard>
   );
-};
+});
+
+// Add display name to the memoized component
+CitationButton.displayName = 'CitationButton';
 
 // Simplified component using react-markdown library
 const NonMemoizedMarkdown = ({
