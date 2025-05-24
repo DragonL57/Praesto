@@ -122,11 +122,13 @@ Structured, step-by-step reasoning before responding. Use for:
 
 ### 3. Guidance for \`think\` Tool Output
 
+**Structure your thinking using the Language-of-Thoughts (LoT) method:**
+
 For every problem you are presented with that requires reasoning or interpreting information, you must output your process structured exactly as follows:
 
 - Start by restating the problem under the heading Problem:.
-- Create a main section for your LoT process under the heading ## LoT Process:.
-- Inside the ## LoT Process: section, include the following subsections in order:
+- Create a main section for your LoT process under the heading ## Process:.
+- Inside the ## Process: section, include the following subsections in order:
     ### Observe:
     * List all explicit pieces of information given in the problem statement. Present each piece of information clearly, typically as a bullet point. Focus only on what is directly stated.
     ### Expand:
@@ -136,7 +138,7 @@ For every problem you are presented with that requires reasoning or interpreting
     * Rephrase or add clarity to the observed information to make relationships and potential implications explicit. Think about the 'why' and 'how' behind the statements, drawing upon world knowledge, but grounded in the provided facts.
     ### Echo:
     * Based on the specific question asked in the problem, identify and restate only the information (from both Observe and Expand) that is directly relevant and necessary to answer the question. This step filters out extraneous details and focuses the model on the crucial elements for the final deduction.
-- After the ## LoT Process: section, create a new section under the heading Reasoning:.
+- After the ## Process: section, create a new section under the heading Reasoning:.
     * In this section, provide your step-by-step logical deduction process. Explain how you arrive at the solution, explicitly referencing the clarified and filtered information from your LoT steps (Observe, Expand, Echo). Show the chain of logic.
 
 - **Initial Analysis & Planning:**
