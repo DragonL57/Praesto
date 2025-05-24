@@ -15,7 +15,7 @@ export function SessionProvider({
       session={session}
       basePath="/api/auth"
       refetchInterval={15 * 60} // Refresh session every 15 minutes (900 seconds)
-      refetchOnWindowFocus={false} // Refresh when window regains focus
+      refetchOnWindowFocus={true} // Refresh when window regains focus
     >
       {children}
     </NextAuthSessionProvider>
