@@ -22,7 +22,7 @@ export const chatModels: ChatModel[] = [
   //   description: 'Qwen3 235B reasoning model from Fireworks',
   // },
   {
-    id: 'gemini-2.5-flash-preview-04-17',
+    id: 'gemini-2.5-flash-preview-05-20',
     name: 'Gemini 2.5 Flash (Preview)',
     description: 'Gemini 2.5 Flash preview model from Google Generative AI',
     provider: 'Google',
