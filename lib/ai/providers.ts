@@ -88,6 +88,6 @@ export const myProvider = isTestEnvironment
       'chat-model-reasoning': enhancedQwenModel,
 
       // Add Gemini 2.5 Flash model from Google Generative AI
-      'gemini-2.5-flash-preview-04-17': google('gemini-2.5-flash-preview-04-17'),
+      'gemini-2.5-flash-preview-05-20': google('gemini-2.5-flash-preview-05-20'),
     },
   });
