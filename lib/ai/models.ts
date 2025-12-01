@@ -15,6 +15,12 @@ export const chatModels: ChatModel[] = [
     isDefault: true,
   },
   {
+    id: 'glm-4.5',
+    name: 'GLM-4.5',
+    description: 'GLM-4.5 model from Z.AI',
+    provider: 'Z.AI',
+  },
+  {
     id: 'gemma-3-27b-it',
     name: 'Gemma 3 27B IT',
     description: 'Gemma 3 27B IT model from FPT Cloud',

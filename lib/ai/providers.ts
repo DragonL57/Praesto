@@ -21,5 +21,6 @@ export const myProvider = customProvider({
     'chat-model': zaiProvider.chatModel('glm-4.6'),
     'title-model': fptCloudProvider.chatModel('gemma-3-27b-it'),
     'artifact-model': zaiProvider.chatModel('glm-4.6'),
+    'glm-4.5': zaiProvider.chatModel('glm-4.5'),
   },
 });
