@@ -3,19 +3,23 @@ import { PreviewMessage, ThinkingMessage } from './message';
 import { memo, useEffect, useRef, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence } from 'framer-motion';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
 
+// Chat status type for AI SDK compatibility
+type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
+
 interface MessagesProps {
   chatId: string;
-  status: UseChatHelpers['status'];
+  status: ChatStatus;
   votes: Array<Vote> | undefined;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
-  reload: UseChatHelpers['reload'];
-  append: UseChatHelpers['append'];
+  setMessages: (
+    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
+  ) => void;
+  reload: () => void;
+  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
   isReadonly: boolean;
   isArtifactVisible: boolean;
   messagesContainerRef?: React.RefObject<HTMLDivElement>;
@@ -37,10 +41,10 @@ function PureMessages({
   // Use external refs if provided, otherwise create our own
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const internalEndRef = useRef<HTMLDivElement>(null);
-  
+
   const containerRef = externalContainerRef || internalContainerRef;
   const endRef = externalEndRef || internalEndRef;
-  
+
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const isStreamingRef = useRef<boolean>(status === 'streaming');
   const lastUserMessageIdRef = useRef<string | null>(null); // Ref for the last user message ID
@@ -61,7 +65,8 @@ function PureMessages({
       // Debounce scroll event slightly to avoid excessive state updates
       scrollTimeout = setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = container;
-        const distanceScrolledFromBottom = scrollHeight - clientHeight - scrollTop;
+        const distanceScrolledFromBottom =
+          scrollHeight - clientHeight - scrollTop;
 
         if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
           if (!userHasScrolledUp) setUserHasScrolledUp(true);
@@ -71,7 +76,7 @@ function PureMessages({
             setUserHasScrolledUp(false);
           }
         }
-      }, 50); 
+      }, 50);
     };
 
     container.addEventListener('scroll', handleScroll);
@@ -86,13 +91,23 @@ function PureMessages({
     const container = containerRef.current;
     if (!container) return;
 
-    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const lastMessage =
+      messages.length > 0 ? messages[messages.length - 1] : null;
 
-    if (lastMessage && lastMessage.role === 'user' && lastMessage.id !== lastUserMessageIdRef.current) {
-      const userMessageElement = document.querySelector(`[data-message-id="${lastMessage.id}"]`);
+    if (
+      lastMessage &&
+      lastMessage.role === 'user' &&
+      lastMessage.id !== lastUserMessageIdRef.current
+    ) {
+      const userMessageElement = document.querySelector(
+        `[data-message-id="${lastMessage.id}"]`,
+      );
       if (userMessageElement) {
         requestAnimationFrame(() => {
-          userMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          userMessageElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
         });
       }
       lastUserMessageIdRef.current = lastMessage.id;
@@ -105,11 +120,15 @@ function PureMessages({
     const end = endRef.current;
     if (end) {
       const shouldScrollToBottom =
-        (messages.length > prevMessagesLengthRef.current && (!lastMessage || lastMessage.role !== 'user' || lastMessage.id === lastUserMessageIdRef.current)) ||
+        (messages.length > prevMessagesLengthRef.current &&
+          (!lastMessage ||
+            lastMessage.role !== 'user' ||
+            lastMessage.id === lastUserMessageIdRef.current)) ||
         (status === 'streaming' && !isStreamingRef.current) ||
         (status === 'streaming' && isStreamingRef.current);
 
-      if (shouldScrollToBottom && !userHasScrolledUp) { // Modified condition
+      if (shouldScrollToBottom && !userHasScrolledUp) {
+        // Modified condition
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
@@ -121,7 +140,8 @@ function PureMessages({
   }, [messages, status, containerRef, endRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies
 
   // Check if there are any visible elements that would require scrolling
-  const hasVisibleContent = messages.length > 0 || (status === 'submitted' && messages.length > 0);
+  const hasVisibleContent =
+    messages.length > 0 || (status === 'submitted' && messages.length > 0);
 
   return (
     <div
@@ -164,21 +184,18 @@ function PureMessages({
           {status === 'submitted' &&
             messages.length > 0 &&
             messages[messages.length - 1].role === 'user' && (
-              <div 
-                key="thinking-message-wrapper" 
+              <div
+                key="thinking-message-wrapper"
                 className="thinking-message-wrapper mb-3 animate-fadeIn"
                 style={{ position: 'relative' }}
               >
                 <ThinkingMessage />
               </div>
-          )}
+            )}
         </AnimatePresence>
 
         {hasVisibleContent && (
-          <div
-            ref={endRef}
-            className="shrink-0 min-w-[24px] min-h-[24px]"
-          />
+          <div ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
         )}
       </div>
     </div>

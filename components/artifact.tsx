@@ -26,7 +26,9 @@ import { codeArtifact } from '@/artifacts/code/client';
 import { sheetArtifact } from '@/artifacts/sheet/client';
 import { textArtifact } from '@/artifacts/text/client';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
+
+// Chat status type for AI SDK compatibility
+type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
 export const artifactDefinitions = [
   textArtifact,
@@ -70,17 +72,22 @@ function PureArtifact({
 }: {
   chatId: string;
   input: string;
-  setInput: UseChatHelpers['setInput'];
-  status: UseChatHelpers['status'];
-  stop: UseChatHelpers['stop'];
+  setInput: Dispatch<SetStateAction<string>>;
+  status: ChatStatus;
+  stop: () => void;
   attachments: Array<Attachment>;
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
+  setMessages: (
+    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
+  ) => void;
   votes: Array<Vote> | undefined;
-  append: UseChatHelpers['append'];
-  handleSubmit: UseChatHelpers['handleSubmit'];
-  reload: UseChatHelpers['reload'];
+  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
+  handleSubmit: (
+    event?: { preventDefault?: () => void },
+    options?: { experimental_attachments?: Attachment[] },
+  ) => void;
+  reload: () => void;
   isReadonly: boolean;
   isPanelVisible?: boolean;
 }) {

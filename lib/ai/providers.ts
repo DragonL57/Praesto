@@ -16,11 +16,17 @@ const fptCloudProvider = createOpenAICompatible({
 });
 
 // Export the configured provider for the application
+// Model IDs match those defined in models.ts chatModels array
 export const myProvider = customProvider({
   languageModels: {
+    // Z.AI models - registered with their actual model IDs
+    'glm-4.6': zaiProvider.chatModel('glm-4.6'),
+    'glm-4.5': zaiProvider.chatModel('glm-4.5'),
+    // FPT Cloud models
+    'gemma-3-27b-it': fptCloudProvider.chatModel('gemma-3-27b-it'),
+    // Aliases for internal use
     'chat-model': zaiProvider.chatModel('glm-4.6'),
     'title-model': fptCloudProvider.chatModel('gemma-3-27b-it'),
     'artifact-model': zaiProvider.chatModel('glm-4.6'),
-    'glm-4.5': zaiProvider.chatModel('glm-4.5'),
   },
 });

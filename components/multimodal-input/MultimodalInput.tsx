@@ -5,7 +5,6 @@ import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import type { Attachment, UIMessage } from 'ai';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import equal from 'fast-deep-equal';
 
 import { PreviewAttachment } from '../preview-attachment';
@@ -19,24 +18,39 @@ import { SpeechToTextButton } from './SpeechToTextButton';
 import { ScrollButton } from './ScrollButton';
 import { Greeting } from './Greeting';
 import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
-import { TextareaAutoResizer, resetTextareaHeight } from './TextareaAutoResizer';
+import {
+  TextareaAutoResizer,
+  resetTextareaHeight,
+} from './TextareaAutoResizer';
 import { useFileUploadHandler } from './FileUploadHandler';
 import type { SpeechRecognition } from './types';
 import { ImageIcon, GPSIcon, GlobeIcon } from '../icons';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card';
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from '../ui/hover-card';
+
+// Chat status type for AI SDK compatibility
+type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
 interface MultimodalInputProps {
   chatId: string;
-  input: UseChatHelpers['input'];
-  setInput: UseChatHelpers['setInput'];
-  status: UseChatHelpers['status'];
+  input: string;
+  setInput: React.Dispatch<React.SetStateAction<string>>;
+  status: ChatStatus;
   stop: () => void;
   attachments: Array<Attachment>;
   setAttachments: React.Dispatch<React.SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
-  append: UseChatHelpers['append'];
-  handleSubmit: UseChatHelpers['handleSubmit'];
+  setMessages: (
+    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
+  ) => void;
+  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
+  handleSubmit: (
+    event?: { preventDefault?: () => void },
+    options?: { experimental_attachments?: Attachment[] },
+  ) => void;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -61,29 +75,25 @@ function PureMultimodalInput({
   // Mark append as unused with an underscore variable
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _append = append; // Create a local unused variable instead
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const isMobile = useIsMobile();
-  
+
   // State for tracking if input is focused
   const [isInputFocused, setIsInputFocused] = useState(false);
   // State for tracking visual row count for expanding textarea
   const [visualRowCount, setVisualRowCount] = useState(1);
-  
+
   // Is this a new chat (no messages)
   const isNewChat = messages.length === 0;
 
   // Define the set of statuses where the StopButton should be active
-  const activeStopButtonStatuses: UseChatHelpers['status'][] = [
-    'generating' as UseChatHelpers['status'],
-    'submitted' as UseChatHelpers['status'],
-    'streaming' as UseChatHelpers['status'],
-  ];
+  const activeStopButtonStatuses: ChatStatus[] = ['submitted', 'streaming'];
 
   // Use VirtualKeyboardHandler to manage keyboard on mobile
   // (doesn't render anything)
-  
+
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
     '',
@@ -115,7 +125,7 @@ function PureMultimodalInput({
   const { handleFileChange, handlePaste } = useFileUploadHandler({
     setAttachments,
     setUploadQueue,
-    status
+    status,
   });
 
   // Create the recognition reference at this level so it can be shared between components
@@ -157,20 +167,33 @@ function PureMultimodalInput({
     {
       key: 'create-image',
       label: 'Create Images',
-      icon: <span className="mr-2"><ImageIcon size={18} /></span>,
-      prompt: 'Pixelate a frog in a wizard robe holding a glowing staff, standing in a swamp at night.'
+      icon: (
+        <span className="mr-2">
+          <ImageIcon size={18} />
+        </span>
+      ),
+      prompt:
+        'Pixelate a frog in a wizard robe holding a glowing staff, standing in a swamp at night.',
     },
     {
       key: 'check-weather',
       label: 'Check Weather',
-      icon: <span className="mr-2"><GPSIcon size={18} /></span>,
-      prompt: "What's the weather like today in my location?"
+      icon: (
+        <span className="mr-2">
+          <GPSIcon size={18} />
+        </span>
+      ),
+      prompt: "What's the weather like today in my location?",
     },
     {
       key: 'latest-news',
       label: 'Latest News',
-      icon: <span className="mr-2"><GlobeIcon size={18} /></span>,
-      prompt: 'Show me the latest news headlines.'
+      icon: (
+        <span className="mr-2">
+          <GlobeIcon size={18} />
+        </span>
+      ),
+      prompt: 'Show me the latest news headlines.',
     },
   ];
 
@@ -181,40 +204,41 @@ function PureMultimodalInput({
 
   // Main wrapper with transition for centering in empty chats
   return (
-    <div 
+    <div
       className={cx(
-        "flex flex-col w-full transition-all duration-500 ease-in-out relative",
-        "h-auto justify-end"
+        'flex flex-col w-full transition-all duration-500 ease-in-out relative',
+        'h-auto justify-end',
       )}
     >
       {/* Virtual keyboard handler - doesn't render anything */}
       <VirtualKeyboardHandler isMobile={isMobile} />
-      
+
       {/* Textarea auto-resizer - doesn't render anything */}
-      <TextareaAutoResizer 
+      <TextareaAutoResizer
         textareaRef={textareaRef}
         value={input}
         isMobile={isMobile}
         width={width}
         onHeightChange={setVisualRowCount}
       />
-      
+
       {/* Form wrapper - fixed to bottom of viewport on mobile */}
-      <div 
+      <div
         className={cx(
-          "relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out input-container",
-          isMobile && "fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2",
+          'relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out input-container',
+          isMobile &&
+            'fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2',
         )}
         style={{
           // Add padding to the bottom to push content above the keyboard using proper env() variables
-          paddingBottom: isMobile ? 
-            `calc(env(keyboard-inset-height, var(--keyboard-height, 0px)) + 8px)` : 
-            '4px',
+          paddingBottom: isMobile
+            ? `calc(env(keyboard-inset-height, var(--keyboard-height, 0px)) + 8px)`
+            : '4px',
           // Apply transforms to handle viewport offset on iOS
-          transform: isMobile ? 
-            `translateY(calc(var(--viewport-offset-y, 0px) * -1))` : 
-            'none',
-          transition: 'padding-bottom 0.2s ease-out, transform 0.25s ease-out'
+          transform: isMobile
+            ? `translateY(calc(var(--viewport-offset-y, 0px) * -1))`
+            : 'none',
+          transition: 'padding-bottom 0.2s ease-out, transform 0.25s ease-out',
         }}
       >
         {messagesContainerRef && messagesEndRef && (
@@ -239,16 +263,16 @@ function PureMultimodalInput({
         <div className="relative">
           {/* Only show greeting when there are no messages */}
           {isNewChat && <Greeting />}
-          
+
           {/* Input container with dynamic padding based on attachments */}
           <div
             className={cx(
-              "w-full text-left rounded-3xl overflow-hidden bg-background dark:bg-zinc-800 dark:border-zinc-600 border border-input shadow-md transition-shadow duration-200",
+              'w-full text-left rounded-3xl overflow-hidden bg-background dark:bg-zinc-800 dark:border-zinc-600 border border-input shadow-md transition-shadow duration-200',
               {
-                "pt-4": attachments.length > 0 || uploadQueue.length > 0,
-                "shadow-lg": isInputFocused,
-                "shadow-md": !isInputFocused
-              }
+                'pt-4': attachments.length > 0 || uploadQueue.length > 0,
+                'shadow-lg': isInputFocused,
+                'shadow-md': !isInputFocused,
+              },
             )}
           >
             {/* Attachments inside the input bar - LibreChat style */}
@@ -259,12 +283,12 @@ function PureMultimodalInput({
                 style={{ scrollbarWidth: 'thin' }}
               >
                 {attachments.map((attachment, index) => (
-                  <PreviewAttachment 
-                    key={attachment.url} 
+                  <PreviewAttachment
+                    key={attachment.url}
                     attachment={attachment}
                     onRemove={() => {
-                      setAttachments(currentAttachments => 
-                        currentAttachments.filter((_, i) => i !== index)
+                      setAttachments((currentAttachments) =>
+                        currentAttachments.filter((_, i) => i !== index),
                       );
                     }}
                   />
@@ -283,7 +307,7 @@ function PureMultimodalInput({
                 ))}
               </div>
             )}
-            
+
             {/* Text input container with proper spacing for buttons - LibreChat style */}
             <div className="relative">
               <Textarea
@@ -320,7 +344,9 @@ function PureMultimodalInput({
                     event.preventDefault();
 
                     if (status !== 'ready') {
-                      toast.error('Please wait for the model to finish its response!');
+                      toast.error(
+                        'Please wait for the model to finish its response!',
+                      );
                     } else {
                       submitForm();
                     }
@@ -328,7 +354,10 @@ function PureMultimodalInput({
                 }}
               />
               {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
-              <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true" />
+              <div
+                className="h-14 w-full bg-transparent pointer-events-none"
+                aria-hidden="true"
+              />
             </div>
 
             {/* Bottom toolbar with controls - ensure SendButton and StopButton are here */}
@@ -380,9 +409,16 @@ function PureMultimodalInput({
                     {pill.label}
                   </button>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-80 p-3 shadow-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg z-[60] text-center" sideOffset={5}>
-                  <div className="text-base font-semibold mb-2">Prompt Preview</div>
-                  <div className="text-zinc-700 dark:text-zinc-200">{pill.prompt}</div>
+                <HoverCardContent
+                  className="w-80 p-3 shadow-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg z-[60] text-center"
+                  sideOffset={5}
+                >
+                  <div className="text-base font-semibold mb-2">
+                    Prompt Preview
+                  </div>
+                  <div className="text-zinc-700 dark:text-zinc-200">
+                    {pill.prompt}
+                  </div>
                 </HoverCardContent>
               </HoverCard>
             ))}

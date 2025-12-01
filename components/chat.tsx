@@ -1,8 +1,8 @@
 'use client';
 
-import type { Attachment, Message as UIMessage } from 'ai';
+import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useLocalStorage } from 'usehooks-ts';
 import { ChatHeader } from '@/components/chat-header';
@@ -35,39 +35,36 @@ export function Chat({
 
   const [globallySelectedModelId, setGloballySelectedModelId] = useLocalStorage(
     'chat-model',
-    () => initialSelectedChatModelFromServer || DEFAULT_CHAT_MODEL_ID
+    () => initialSelectedChatModelFromServer || DEFAULT_CHAT_MODEL_ID,
   );
 
   useEffect(() => {
-    if (initialSelectedChatModelFromServer && initialSelectedChatModelFromServer !== globallySelectedModelId) {
+    if (
+      initialSelectedChatModelFromServer &&
+      initialSelectedChatModelFromServer !== globallySelectedModelId
+    ) {
       setGloballySelectedModelId(initialSelectedChatModelFromServer);
     }
-  }, [initialSelectedChatModelFromServer, globallySelectedModelId, setGloballySelectedModelId]);
+  }, [
+    initialSelectedChatModelFromServer,
+    globallySelectedModelId,
+    setGloballySelectedModelId,
+  ]);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const {
-    messages,
-    setMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append,
-    status,
-    stop,
-    reload,
-  } = useChat({
+  const chatHelpers = useChat({
     id,
-    body: { 
-      id, 
+    body: {
+      id,
       selectedChatModel: globallySelectedModelId,
       userTimeContext: {
         date: new Date().toDateString(),
         time: new Date().toTimeString().split(' ')[0],
         dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     },
     initialMessages,
     experimental_throttle: 100,
@@ -78,9 +75,57 @@ export function Chat({
     },
     onError: (error) => {
       console.error('[Chat Component useChat onError]', error);
-      toast.error('An error occurred, please try again! Check the browser console for more details.');
+      toast.error(
+        'An error occurred, please try again! Check the browser console for more details.',
+      );
     },
   });
+
+  // Extract and type-cast helpers for component compatibility
+  const {
+    messages: rawMessages,
+    setMessages: rawSetMessages,
+    handleSubmit,
+    input,
+    setInput,
+    append: rawAppend,
+    status,
+    stop,
+    reload,
+  } = chatHelpers;
+
+  // Ensure messages have the required parts field for UIMessage compatibility
+  const messages = useMemo(
+    () =>
+      rawMessages.map((msg) => ({
+        ...msg,
+        parts: msg.parts ?? [],
+      })) as UIMessage[],
+    [rawMessages],
+  );
+
+  // Type-safe setMessages wrapper
+  const setMessages = (
+    messagesOrUpdater: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
+  ) => {
+    if (typeof messagesOrUpdater === 'function') {
+      rawSetMessages((prev) =>
+        messagesOrUpdater(
+          prev.map((m) => ({ ...m, parts: m.parts ?? [] })) as UIMessage[],
+        ),
+      );
+    } else {
+      rawSetMessages(messagesOrUpdater);
+    }
+  };
+
+  // Type-safe append wrapper
+  const append = (message: { role: 'user' | 'assistant'; content: string }) => {
+    return rawAppend({
+      role: message.role,
+      content: message.content,
+    });
+  };
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -88,7 +133,7 @@ export function Chat({
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-    }
+    },
   );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
@@ -104,8 +149,12 @@ export function Chat({
           isReadonly={isReadonly}
         />
 
-        <div className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}>
-          <div className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}>
+        <div
+          className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}
+        >
+          <div
+            className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}
+          >
             <Messages
               chatId={id}
               status={status}
@@ -121,7 +170,9 @@ export function Chat({
             />
           </div>
 
-          <div className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}>
+          <div
+            className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}
+          >
             <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
               {!isReadonly && (
                 <MultimodalInput
