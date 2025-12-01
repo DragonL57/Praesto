@@ -319,6 +319,7 @@ function PureArtifact({
                   messages={messages}
                   setMessages={setMessages}
                   reload={reload}
+                  append={append}
                   isReadonly={isReadonly}
                   artifactStatus={artifact.status}
                   isPanelVisible={isPanelVisible}
