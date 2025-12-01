@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * This function dynamically generates a sitemap by scanning the app directory structure

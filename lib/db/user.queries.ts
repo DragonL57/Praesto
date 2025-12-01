@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 import {
     user,
@@ -41,7 +41,7 @@ export async function getUserById(id: string): Promise<User | null> {
     }
 }
 
-export async function createUser(email: string, password: string, verified: boolean = false) {
+export async function createUser(email: string, password: string, verified = false) {
     const salt = genSaltSync(10);
     const hash = hashSync(password, salt);
 
@@ -132,7 +132,7 @@ export async function updateUser(id: string, data: Partial<User>) {
     }
 }
 
-export async function setVerificationToken(userId: string, token: string, expiryMinutes: number = 60) {
+export async function setVerificationToken(userId: string, token: string, expiryMinutes = 60) {
     const expiry = new Date();
     expiry.setMinutes(expiry.getMinutes() + expiryMinutes);
 
@@ -176,7 +176,7 @@ export async function verifyEmail(email: string, token: string): Promise<boolean
     }
 }
 
-export async function setPasswordResetToken(email: string, token: string, expiryMinutes: number = 15) {
+export async function setPasswordResetToken(email: string, token: string, expiryMinutes = 15) {
     const expiry = new Date();
     expiry.setMinutes(expiry.getMinutes() + expiryMinutes);
 

@@ -33,7 +33,7 @@ function PureWebSearch({ results, query }: WebSearchProps) {
   const getDomainFromUrl = (url: string): string => {
     try {
       return new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_e) {
       return 'unknown.com';
     }
@@ -45,30 +45,39 @@ function PureWebSearch({ results, query }: WebSearchProps) {
 
   if (safeResults.length === 0 && !query) return null;
 
-  const pillsToDisplay = showAllPills ? safeResults : safeResults.slice(0, maxVisiblePills);
+  const pillsToDisplay = showAllPills
+    ? safeResults
+    : safeResults.slice(0, maxVisiblePills);
   const remainingPillsCount = safeResults.length - pillsToDisplay.length;
 
   return (
     <div className="my-2 p-3 rounded-md bg-background">
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-        Searched for: <span className="font-semibold ml-1.5 text-gray-800 dark:text-gray-200 truncate" title={query}>&quot;{query}&quot;</span>
+        Searched for:{' '}
+        <span
+          className="font-semibold ml-1.5 text-gray-800 dark:text-gray-200 truncate"
+          title={query}
+        >
+          &quot;{query}&quot;
+        </span>
       </h3>
       {pillsToDisplay.length > 0 ? (
         <div className="flex flex-wrap gap-2 items-center">
-          {pillsToDisplay.map((result, index) => {
+          {pillsToDisplay.map((result) => {
             const domain = getDomainFromUrl(result.href);
             return (
-              <SitePill 
-                key={`${domain}-${index}-pill`} 
-                domain={domain} 
+              <SitePill
+                key={`${domain}-${result.href}`}
+                domain={domain}
                 faviconUrl={getFaviconUrl(domain)}
                 originalUrl={result.href}
               />
             );
           })}
           {!showAllPills && remainingPillsCount > 0 && (
-            <button 
-              onClick={() => setShowAllPills(true)} 
+            <button
+              type="button"
+              onClick={() => setShowAllPills(true)}
               className="inline-flex items-center bg-gray-200 dark:bg-zinc-700 rounded-md px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               title={`Show ${remainingPillsCount} more results`}
             >
@@ -77,7 +86,11 @@ function PureWebSearch({ results, query }: WebSearchProps) {
           )}
         </div>
       ) : (
-        query && <p className="text-xs text-gray-500 dark:text-gray-400">No results found for this search.</p>
+        query && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            No results found for this search.
+          </p>
+        )
       )}
     </div>
   );

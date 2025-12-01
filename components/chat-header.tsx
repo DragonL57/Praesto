@@ -6,7 +6,7 @@ import { useSidebar } from './ui/sidebar';
 import { SidebarToggle } from '@/components/sidebar';
 import { memo, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType } from './visibility-selector';
+import type { VisibilityType } from './visibility-selector';
 import { ShareDialog } from '@/components/shared';
 import { ModelSelector } from '@/components/model-selector';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
@@ -39,7 +39,7 @@ function PureChatHeader({
     initialSelectedModelId || DEFAULT_CHAT_MODEL_ID
   );
 
-  const isInSavedChat = pathname && pathname.startsWith('/chat/') && pathname !== '/chat/new';
+  const isInSavedChat = pathname?.startsWith('/chat/') && pathname !== '/chat/new';
   const isInNewChat = pathname === '/chat' || pathname === '/chat/new';
 
   useEffect(() => {

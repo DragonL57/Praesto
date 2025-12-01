@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, RefObject, useCallback } from 'react';
+import { useEffect, type RefObject, useCallback } from 'react';
 
 interface TextareaAutoResizerProps {
   textareaRef: RefObject<HTMLTextAreaElement>;
@@ -62,7 +62,7 @@ export function TextareaAutoResizer({
       
       // Calculate visual row count for styling purposes
       const style = window.getComputedStyle(textareaRef.current);
-      const lineHeight = parseFloat(style.lineHeight);
+      const lineHeight = Number.parseFloat(style.lineHeight);
       const rows = Math.max(1, Math.floor(textareaRef.current.scrollHeight / lineHeight));
       
       if (onHeightChange) {

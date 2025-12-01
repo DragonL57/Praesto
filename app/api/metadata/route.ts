@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
 interface Metadata {
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
             // Attempt to parse and re-format to ISO string for consistency, if valid
             try {
                 const dateObj = new Date(publishedDateStr);
-                if (!isNaN(dateObj.getTime())) {
+                if (!Number.isNaN(dateObj.getTime())) {
                     metadata.publishedDate = dateObj.toISOString();
                 }
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars

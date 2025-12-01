@@ -1,4 +1,4 @@
-import { CoreMessage, LanguageModelV1StreamPart } from 'ai';
+import type { CoreMessage, LanguageModelV1StreamPart } from 'ai';
 import { TEST_PROMPTS } from './basic';
 
 export function compareMessages(
@@ -49,7 +49,7 @@ const textToDeltas = (text: string): LanguageModelV1StreamPart[] => {
 
 export const getResponseChunksByPrompt = (
   prompt: CoreMessage[],
-  isReasoningEnabled: boolean = false,
+  isReasoningEnabled = false,
 ): Array<LanguageModelV1StreamPart> => {
   const recentMessage = prompt.at(-1);
 

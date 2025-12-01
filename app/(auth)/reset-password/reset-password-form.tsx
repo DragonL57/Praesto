@@ -1,54 +1,62 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { motion } from "framer-motion"
-import { ArrowLeft, EyeIcon, EyeOffIcon, Check, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  ArrowLeft,
+  EyeIcon,
+  EyeOffIcon,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ResetPasswordForm() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [token, setToken] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [error, setError] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    const tokenParam = searchParams.get('token')
-    const emailParam = searchParams.get('email')
+    const tokenParam = searchParams.get('token');
+    const emailParam = searchParams.get('email');
 
     if (tokenParam && emailParam) {
-      setToken(tokenParam)
-      setEmail(emailParam)
+      setToken(tokenParam);
+      setEmail(emailParam);
     } else {
-      setError('Missing token or email in URL. Please use the link from your email.')
+      setError(
+        'Missing token or email in URL. Please use the link from your email.',
+      );
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+      setError('Passwords do not match');
+      return;
     }
     if (!token || !email) {
-      setError('Token or email is missing. Cannot reset password.')
-      return
+      setError('Token or email is missing. Cannot reset password.');
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -57,26 +65,26 @@ export default function ResetPasswordForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, token, password }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        setIsSuccess(true)
+        setIsSuccess(true);
         // Optional: Redirect after a short delay
         setTimeout(() => {
-          router.push('/login?reset=success') // Redirect to login page
+          router.push('/login?reset=success'); // Redirect to login page
         }, 3000);
       } else {
-        setError(data.message || 'Failed to reset password')
+        setError(data.message || 'Failed to reset password');
       }
     } catch (err) {
-      setError('An error occurred while resetting the password')
-      console.error('Error resetting password:', err)
+      setError('An error occurred while resetting the password');
+      console.error('Error resetting password:', err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <motion.div
@@ -86,7 +94,9 @@ export default function ResetPasswordForm() {
       className="bg-background/80 backdrop-blur-lg border border-border/40 rounded-2xl p-8 shadow-lg w-full max-w-md"
     >
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Set new password</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">
+          Set new password
+        </h1>
         <p className="text-muted-foreground">
           Enter and confirm your new password.
         </p>
@@ -106,20 +116,23 @@ export default function ResetPasswordForm() {
             </AlertDescription>
           </Alert>
           <div className="text-center">
-             <Link href="/login" className="text-sm inline-flex items-center text-primary hover:underline">
-                 Go to Login now
-              </Link>
+            <Link
+              href="/login"
+              className="text-sm inline-flex items-center text-primary hover:underline"
+            >
+              Go to Login now
+            </Link>
           </div>
         </motion.div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Display error if token/email missing from URL */}
-          {!token || !email && error ? (
-             <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-             </Alert>
+          {!token || (!email && error) ? (
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : (
             <>
               {/* Password Field */}
@@ -133,13 +146,15 @@ export default function ResetPasswordForm() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 rounded-lg pr-10" 
+                    className="h-12 rounded-lg pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
                   >
                     {showPassword ? (
                       <EyeOffIcon className="size-5" />
@@ -161,13 +176,15 @@ export default function ResetPasswordForm() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-12 rounded-lg pr-10" 
+                    className="h-12 rounded-lg pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      showConfirmPassword ? 'Hide password' : 'Show password'
+                    }
                   >
                     {showConfirmPassword ? (
                       <EyeOffIcon className="size-5" />
@@ -179,17 +196,24 @@ export default function ResetPasswordForm() {
               </div>
 
               {error && (
-                 <p className="text-center text-sm text-destructive">{error}</p>
+                <p className="text-center text-sm text-destructive">{error}</p>
               )}
 
-              <Button type="submit" className="w-full h-12 rounded-full font-medium" disabled={isLoading || !token || !email}>
-                {isLoading ? "Resetting Password..." : "Set New Password"}
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-full font-medium"
+                disabled={isLoading || !token || !email}
+              >
+                {isLoading ? 'Resetting Password...' : 'Set New Password'}
               </Button>
             </>
           )}
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm inline-flex items-center text-primary hover:underline">
+            <Link
+              href="/login"
+              className="text-sm inline-flex items-center text-primary hover:underline"
+            >
               <ArrowLeft className="mr-1 size-4" />
               Back to login
             </Link>
@@ -197,5 +221,5 @@ export default function ResetPasswordForm() {
         </form>
       )}
     </motion.div>
-  )
-} 
+  );
+}

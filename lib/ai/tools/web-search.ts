@@ -151,19 +151,19 @@ class BraveSearchClient {
       const results: SearchResult[] = [];
 
       // Process web search results
-      if (data.web && data.web.results && Array.isArray(data.web.results)) {
+      if (data.web?.results && Array.isArray(data.web.results)) {
         for (const result of data.web.results) {
           if (results.length >= maxResults) break;
           results.push({
             title: result.title || 'No title',
             href: result.url || '',
-            body: result.description || result.snippet || (result.meta_url && result.meta_url.path) || 'No description available',
+            body: result.description || result.snippet || (result.meta_url?.path) || 'No description available',
           });
         }
       }
 
       // Process summary if available
-      if (data.summarizer && data.summarizer.results && data.summarizer.results.length > 0 && results.length < maxResults) {
+      if (data.summarizer?.results && data.summarizer.results.length > 0 && results.length < maxResults) {
         const summaryText = data.summarizer.results[0].text;
         if (summaryText) {
           results.unshift({
@@ -175,7 +175,7 @@ class BraveSearchClient {
       }
 
       // Add infobox if available
-      if (data.infobox && data.infobox.results && results.length < maxResults) {
+      if (data.infobox?.results && results.length < maxResults) {
         const infobox = data.infobox.results;
         if (infobox.long_desc) {
           results.push({
@@ -187,7 +187,7 @@ class BraveSearchClient {
       }
 
       // Add FAQ content if available
-      if (data.faq && data.faq.results && Array.isArray(data.faq.results) && results.length < maxResults) {
+      if (data.faq?.results && Array.isArray(data.faq.results) && results.length < maxResults) {
         for (const faq of data.faq.results) {
           if (results.length >= maxResults) break;
           results.push({
@@ -199,7 +199,7 @@ class BraveSearchClient {
       }
 
       // Add discussions if available
-      if (data.discussions && data.discussions.results && Array.isArray(data.discussions.results) && results.length < maxResults) {
+      if (data.discussions?.results && Array.isArray(data.discussions.results) && results.length < maxResults) {
         for (const discussion of data.discussions.results) {
           if (results.length >= maxResults) break;
           results.push({
@@ -211,7 +211,7 @@ class BraveSearchClient {
       }
 
       // Add videos if available
-      if (data.videos && data.videos.results && Array.isArray(data.videos.results) && results.length < maxResults) {
+      if (data.videos?.results && Array.isArray(data.videos.results) && results.length < maxResults) {
         for (const video of data.videos.results) {
           if (results.length >= maxResults) break;
           results.push({
@@ -223,7 +223,7 @@ class BraveSearchClient {
       }
 
       // Add news if available
-      if (data.news && data.news.results && Array.isArray(data.news.results) && results.length < maxResults) {
+      if (data.news?.results && Array.isArray(data.news.results) && results.length < maxResults) {
         for (const news_item of data.news.results) {
           if (results.length >= maxResults) break;
           results.push({

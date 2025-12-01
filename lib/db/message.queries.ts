@@ -16,7 +16,9 @@ import {
     type DBMessage,
 } from './schema';
 
-const client = postgres(process.env.POSTGRES_URL!);
+const url = process.env.POSTGRES_URL;
+if (!url) throw new Error('POSTGRES_URL is not defined');
+const client = postgres(url);
 const db = drizzle(client);
 
 export async function saveMessages({

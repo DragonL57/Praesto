@@ -27,8 +27,6 @@ import { webSearch } from '@/lib/ai/tools/web-search';
 // eslint-disable-next-line import/no-unresolved
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
 // eslint-disable-next-line import/no-unresolved
-import { getYoutubeTranscript } from '@/lib/ai/tools/get-youtube-transcript';
-// eslint-disable-next-line import/no-unresolved
 import { think } from '@/lib/ai/tools/think';
 // eslint-disable-next-line import/no-unresolved
 import { isProductionEnvironment } from '@/lib/constants';
@@ -37,7 +35,7 @@ import { myProvider } from '@/lib/ai/providers';
 
 // Imports for officeparser and file fetching
 import { parseOfficeAsync } from 'officeparser';
-import { Buffer } from 'buffer'; // Node.js Buffer
+import { Buffer } from 'node:buffer'; // Node.js Buffer
 // Assuming Vercel Blob client might be needed for fetching private blobs,
 // or a robust fetch for public URLs. For now, standard fetch.
 // import { head } from '@vercel/blob'; // To check existence/metadata if needed
@@ -288,7 +286,6 @@ export async function POST(request: Request) {
             'requestSuggestions',
             'webSearch',
             'readWebsiteContent',
-            'getYoutubeTranscript',
           ],
           experimental_transform: smoothStream({ chunking: 'line' }),
           experimental_generateMessageId: generateUUID,
@@ -297,7 +294,6 @@ export async function POST(request: Request) {
             getWeather,
             webSearch,
             readWebsiteContent,
-            getYoutubeTranscript,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
             requestSuggestions: requestSuggestions({

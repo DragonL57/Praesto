@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, RefObject } from 'react';
+import { useCallback, type RefObject } from 'react';
 import { toast } from 'sonner';
 import type { Attachment } from 'ai';
 import { uploadFile } from './utils';

@@ -27,7 +27,7 @@ export default async function Layout({
       <SidebarProvider defaultOpen={showSidebar && !isCollapsed}>
         {showSidebar && <AppSidebar user={session?.user} />}
         <SidebarInset>
-          <Suspense fallback={<div></div>}>
+          <Suspense fallback={<div />}>
             {children}
           </Suspense>
         </SidebarInset>

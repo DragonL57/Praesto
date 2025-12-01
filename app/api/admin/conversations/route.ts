@@ -5,7 +5,9 @@ import { desc, count, sql, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 // Connect to the database
-const client = postgres(process.env.POSTGRES_URL!);
+const url = process.env.POSTGRES_URL;
+if (!url) throw new Error('POSTGRES_URL is not defined');
+const client = postgres(url);
 const db = drizzle(client);
 
 export async function GET(request: Request) {
@@ -13,8 +15,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Number.parseInt(searchParams.get('page') || '1');
+    const limit = Number.parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
     // Subquery to get message counts per chat
@@ -29,10 +31,10 @@ export async function GET(request: Request) {
       .as('chatMessages');
 
     // Base query conditions
-    const conditions = searchQuery 
-      ? sql`${chat.title} LIKE ${'%' + searchQuery.toLowerCase() + '%'}`
+    const conditions = searchQuery
+      ? sql`${chat.title} LIKE ${`%${searchQuery.toLowerCase()}%`}`
       : sql`1=1`;
-    
+
     // Apply status filter if not "all"
     // Note: This is a placeholder since your schema might not have a status field
     // You might need to adapt this based on your actual data model

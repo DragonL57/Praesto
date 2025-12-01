@@ -1,7 +1,7 @@
 // This file creates a specific route handler for /api/auth/csrf
 // NextAuth.js client looks for this endpoint for CSRF protection
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 export async function GET() {
     // Generate a CSRF token (this is a simplified version)

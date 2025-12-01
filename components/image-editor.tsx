@@ -38,7 +38,7 @@ export function ImageEditor({
     ) {
       retryCount.current += 1;
       setTimeout(() => {
-        setImgSrc(content + (content.includes('?') ? '&' : '?') + 'retry=' + Date.now());
+        setImgSrc(`${content + (content.includes('?') ? '&' : '?')}retry=${Date.now()}`);
         setImgLoading(true);
       }, 2000);
     } else {

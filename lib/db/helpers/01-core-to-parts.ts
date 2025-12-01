@@ -29,9 +29,9 @@ const INSERT_BATCH_SIZE = 100; // Insert 100 messages at a time
 type NewMessageInsert = {
   id: string;
   chatId: string;
-  parts: any[];
+  parts: Record<string, unknown>[];
   role: string;
-  attachments: any[];
+  attachments: Record<string, unknown>[];
   createdAt: Date;
 };
 

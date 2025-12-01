@@ -83,6 +83,14 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
         style={{ bottom: height - 4 }}
         role="slider"
         aria-valuenow={minHeight}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowUp') {
+            setHeight(Math.min(height + 50, window.innerHeight - 100));
+          } else if (e.key === 'ArrowDown') {
+            setHeight(Math.max(height - 50, minHeight));
+          }
+        }}
       />
 
       <div

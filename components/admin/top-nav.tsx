@@ -53,7 +53,7 @@ export function AdminTopNav({ setSidebarOpen }: AdminTopNavProps) {
             aria-label="Notifications"
           >
             <Bell className="size-5" />
-            <span className="absolute right-1.5 top-1.5 flex size-2 rounded-full bg-primary"></span>
+            <span className="absolute right-1.5 top-1.5 flex size-2 rounded-full bg-primary" />
           </Button>
           <ThemeToggle />
           <div className="ml-2">

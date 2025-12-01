@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved

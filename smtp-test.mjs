@@ -27,7 +27,7 @@ if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASSWORD || !EMAIL_FROM 
 
 const transporter = createTransport({
   host: EMAIL_HOST,
-  port: parseInt(EMAIL_PORT, 10),
+  port: Number.parseInt(EMAIL_PORT, 10),
   secure: EMAIL_SECURE === 'true',
   auth: {
     user: EMAIL_USER,

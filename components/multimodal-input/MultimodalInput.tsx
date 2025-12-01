@@ -328,7 +328,7 @@ function PureMultimodalInput({
                 }}
               />
               {/* Fixed height spacer at the bottom to prevent text from going under buttons */}
-              <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true"></div>
+              <div className="h-14 w-full bg-transparent pointer-events-none" aria-hidden="true" />
             </div>
 
             {/* Bottom toolbar with controls - ensure SendButton and StopButton are here */}
@@ -336,7 +336,7 @@ function PureMultimodalInput({
               {/* Left side - Persona selector and other potential future buttons */}
               <div className="p-2 flex flex-row justify-start items-center z-10 gap-1 pointer-events-auto">
                 {/* Background element with rounded corners */}
-                <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none"></span>
+                <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none" />
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
                   status={status} // Correctly pass status, internal logic handles disabling

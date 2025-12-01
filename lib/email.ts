@@ -1,5 +1,5 @@
 import { createTransport } from 'nodemailer';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 // fs and path are no longer needed as templates are inline
 // import fs from 'fs';
 // import path from 'path';
@@ -36,7 +36,7 @@ const createTransporter = () => {
     maxConnections: 5, // Maximum number of connections in the pool
     maxMessages: 100, // Maximum number of messages per connection
     host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '587'),
+    port: Number.parseInt(process.env.EMAIL_PORT || '587'),
     secure: process.env.EMAIL_SECURE === 'true',
     auth: {
       user: process.env.EMAIL_USER,

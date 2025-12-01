@@ -5,7 +5,9 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 // Connect to the database
-const client = postgres(process.env.POSTGRES_URL!);
+const url = process.env.POSTGRES_URL;
+if (!url) throw new Error('POSTGRES_URL is not defined');
+const client = postgres(url);
 const db = drizzle(client);
 
 // GET a single conversation
@@ -13,7 +15,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   const params = await props.params;
   try {
     const { id } = params;
-    
+
     const result = await db
       .select()
       .from(chat)
@@ -42,7 +44,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   try {
     const { id } = params;
     const { visibility } = await request.json();
-    
+
     if (!visibility || (visibility !== 'public' && visibility !== 'private')) {
       return NextResponse.json(
         { error: 'Invalid visibility value. Must be "public" or "private"' },

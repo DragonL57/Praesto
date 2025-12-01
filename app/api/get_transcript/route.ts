@@ -1,6 +1,6 @@
-import { spawn } from 'child_process';
-import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
+import { spawn } from 'node:child_process';
+import { type NextRequest, NextResponse } from 'next/server';
+import path from 'node:path';
 
 export const dynamic = 'force-dynamic'; // No caching for this endpoint
 export const maxDuration = 30; // Set maximum duration to 30 seconds
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         };
 
         if (vercelJwt) {
-          fetchHeaders['Cookie'] = `_vercel_jwt=${vercelJwt}`;
+          fetchHeaders.Cookie = `_vercel_jwt=${vercelJwt}`;
         }
 
         const response = await fetch(apiUrl, {

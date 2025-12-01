@@ -91,7 +91,7 @@ export default function ConversationsPage() {
         setStats({
           totalConversations: data.totalCount,
           activeToday,
-          avgMessagesPerChat: parseFloat(avgMessages.toFixed(1)),
+          avgMessagesPerChat: Number.parseFloat(avgMessages.toFixed(1)),
           mostUsedModel: 'GPT-4' // Placeholder
         });
       }

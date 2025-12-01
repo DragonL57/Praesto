@@ -19,7 +19,7 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
 
     let keyboardHeight = 0;
     const handleVirtualKeyboardResize = () => {
-      if (navigator.virtualKeyboard && navigator.virtualKeyboard.boundingRect) {
+      if (navigator.virtualKeyboard?.boundingRect) {
         const { height: kbHeight } = navigator.virtualKeyboard.boundingRect;
         keyboardHeight = kbHeight;
         

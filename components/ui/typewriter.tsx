@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, Variants } from "framer-motion"
+import { motion, type Variants } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -41,7 +41,7 @@ const Typewriter = ({
       opacity: 1,
       transition: {
         duration: 0.01,
-        repeat: Infinity,
+        repeat: Number.POSITIVE_INFINITY,
         repeatDelay: 0.4,
         repeatType: "reverse",
       },

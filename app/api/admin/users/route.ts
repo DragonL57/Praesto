@@ -13,8 +13,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     // Removed unused status variable
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = Number.parseInt(searchParams.get('limit') || '50');
+    const offset = Number.parseInt(searchParams.get('offset') || '0');
 
     // Subquery to get message counts per user
     const userMessages = db
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       .leftJoin(userMessages, eq(user.id, userMessages.userId))
       .where(
         searchQuery
-          ? sql`LOWER(${user.email}) LIKE ${'%' + searchQuery.toLowerCase() + '%'}`
+          ? sql`LOWER(${user.email}) LIKE ${`%${searchQuery.toLowerCase()}%`}`
           : sql`1=1`
       )
       .groupBy(user.id, user.email, userMessages.messageCount)

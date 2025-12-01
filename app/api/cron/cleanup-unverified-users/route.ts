@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { deleteOldUnverifiedUsers } from '@/lib/db/queries';
 
 // This should be stored in your environment variables
