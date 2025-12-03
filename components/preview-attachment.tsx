@@ -14,7 +14,6 @@ import {
   Presentation,
   X,
 } from 'lucide-react';
-import { ImagePreviewModal } from './image-preview-modal';
 
 // Extend the Attachment type to include optional size property
 interface ExtendedAttachment extends Attachment {
@@ -37,7 +36,6 @@ export function PreviewAttachment({
   onRemove,
   isUploading = false,
 }: PreviewAttachmentProps) {
-  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState<boolean>(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string>('');
   const [fileSize, setFileSize] = useState<string>('');
@@ -220,10 +218,6 @@ export function PreviewAttachment({
     // Prevent event propagation to avoid UI refresh/rerender
     e.stopPropagation();
     e.preventDefault();
-
-    if (attachment.contentType?.startsWith('image/') && previewUrl) {
-      setIsImagePreviewOpen(true);
-    }
   };
 
   // Determine file type icon - use original file type for icon selection if available
@@ -336,16 +330,6 @@ export function PreviewAttachment({
           />
         )}
       </div>
-
-      {/* Image Preview Modal */}
-      {previewUrl && (
-        <ImagePreviewModal
-          isOpen={isImagePreviewOpen}
-          onClose={() => setIsImagePreviewOpen(false)}
-          imageUrl={previewUrl}
-          alt={filename}
-        />
-      )}
     </>
   );
 }

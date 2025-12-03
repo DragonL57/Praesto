@@ -1,4 +1,5 @@
 import type { Attachment, UIMessage } from 'ai';
+import type { UseChatHelpers } from '@ai-sdk/react';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -21,21 +22,13 @@ import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
 import { useSidebar } from './ui/sidebar';
 import { useArtifact } from '@/hooks/use-artifact';
-import { imageArtifact } from '@/artifacts/image/client';
 import { codeArtifact } from '@/artifacts/code/client';
-import { sheetArtifact } from '@/artifacts/sheet/client';
-import { textArtifact } from '@/artifacts/text/client';
 import equal from 'fast-deep-equal';
 
 // Chat status type for AI SDK compatibility
 type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
-export const artifactDefinitions = [
-  textArtifact,
-  codeArtifact,
-  imageArtifact,
-  sheetArtifact,
-];
+export const artifactDefinitions = [codeArtifact];
 export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
 
 export interface UIArtifact {
@@ -74,20 +67,18 @@ function PureArtifact({
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
   status: ChatStatus;
-  stop: () => void;
+  stop: UseChatHelpers['stop'];
   attachments: Array<Attachment>;
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: (
-    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-  ) => void;
+  setMessages: UseChatHelpers['setMessages'];
   votes: Array<Vote> | undefined;
-  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
+  append: UseChatHelpers['append'];
   handleSubmit: (
     event?: { preventDefault?: () => void },
     options?: { experimental_attachments?: Attachment[] },
   ) => void;
-  reload: () => void;
+  reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   isPanelVisible?: boolean;
 }) {
@@ -245,20 +236,24 @@ function PureArtifact({
     (definition) => definition.kind === artifact.kind,
   );
 
-  if (!artifactDefinition) {
-    throw new Error('Artifact definition not found!');
-  }
+  // If artifact kind is not supported (e.g., removed types like text, image, sheet),
+  // fall back to the first available definition or return null if artifact isn't visible
+  const effectiveDefinition = artifactDefinition ?? artifactDefinitions[0];
 
   useEffect(() => {
-    if (artifact.documentId !== 'init') {
-      if (artifactDefinition.initialize) {
-        artifactDefinition.initialize({
+    if (artifact.documentId !== 'init' && effectiveDefinition) {
+      if (effectiveDefinition.initialize) {
+        effectiveDefinition.initialize({
           documentId: artifact.documentId,
           setMetadata,
         });
       }
     }
-  }, [artifact.documentId, artifactDefinition, setMetadata]);
+  }, [artifact.documentId, effectiveDefinition, setMetadata]);
+
+  if (!effectiveDefinition) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
@@ -458,7 +453,7 @@ function PureArtifact({
             </div>
 
             <div className="dark:bg-muted bg-background h-full overflow-y-auto overflow-x-hidden !max-w-full items-center">
-              <artifactDefinition.content
+              <effectiveDefinition.content
                 title={artifact.title}
                 content={
                   isCurrentVersion

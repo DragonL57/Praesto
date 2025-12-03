@@ -15,10 +15,6 @@ import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestam
 import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 // eslint-disable-next-line import/no-unresolved
-import { createDocument } from '@/lib/ai/tools/create-document';
-// eslint-disable-next-line import/no-unresolved
-import { updateDocument } from '@/lib/ai/tools/update-document';
-// eslint-disable-next-line import/no-unresolved
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 // eslint-disable-next-line import/no-unresolved
 import { getWeather } from '@/lib/ai/tools/get-weather';
@@ -27,7 +23,9 @@ import { webSearch } from '@/lib/ai/tools/web-search';
 // eslint-disable-next-line import/no-unresolved
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
 // eslint-disable-next-line import/no-unresolved
-import { think } from '@/lib/ai/tools/think';
+import { createDocument } from '@/lib/ai/tools/create-document';
+// eslint-disable-next-line import/no-unresolved
+import { updateDocument } from '@/lib/ai/tools/update-document';
 // eslint-disable-next-line import/no-unresolved
 import { isProductionEnvironment } from '@/lib/constants';
 // eslint-disable-next-line import/no-unresolved
@@ -261,8 +259,9 @@ export async function POST(request: Request) {
         }));
 
         // Prepare model options for the selected model
+        // GLM-4.6 supports up to 128K output tokens
         const modelOptions = {
-          maxTokens: 8192,
+          maxTokens: 128000,
           temperature: 1,
         };
         const modelInstance = myProvider.languageModel(finalSelectedChatModel);
@@ -275,27 +274,37 @@ export async function POST(request: Request) {
           ...modelOptions,
           providerOptions: {
             openai: {
-              maxTokens: 8192
+              maxTokens: 128000
+            },
+            'z-ai': {
+              thinking: {
+                type: 'enabled'
+              },
+              maxTokens: 128000
             }
           },
           experimental_activeTools: [
-            'think',
             'getWeather',
-            'createDocument',
-            'updateDocument',
             'requestSuggestions',
             'webSearch',
             'readWebsiteContent',
+            'createDocument',
+            'updateDocument',
           ],
           experimental_transform: smoothStream({ chunking: 'line' }),
           experimental_generateMessageId: generateUUID,
           tools: {
-            think,
             getWeather,
             webSearch,
             readWebsiteContent,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
+            createDocument: createDocument({
+              session,
+              dataStream,
+            }),
+            updateDocument: updateDocument({
+              session,
+              dataStream,
+            }),
             requestSuggestions: requestSuggestions({
               session,
               dataStream,

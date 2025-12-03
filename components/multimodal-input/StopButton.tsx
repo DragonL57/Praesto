@@ -3,13 +3,11 @@
 import React, { memo } from 'react';
 import { Button } from '../ui/button';
 import { StopIcon } from '../icons';
-import type { UIMessage } from 'ai';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 interface StopButtonProps {
   stop: () => void;
-  setMessages: (
-    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-  ) => void;
+  setMessages: UseChatHelpers['setMessages'];
 }
 
 function PureStopButton({ stop, setMessages }: StopButtonProps) {

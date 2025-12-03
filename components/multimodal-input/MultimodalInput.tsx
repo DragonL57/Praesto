@@ -5,6 +5,7 @@ import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import type { Attachment, UIMessage } from 'ai';
+import type { UseChatHelpers } from '@ai-sdk/react';
 import equal from 'fast-deep-equal';
 
 import { PreviewAttachment } from '../preview-attachment';
@@ -43,10 +44,8 @@ interface MultimodalInputProps {
   attachments: Array<Attachment>;
   setAttachments: React.Dispatch<React.SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: (
-    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-  ) => void;
-  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
+  setMessages: UseChatHelpers['setMessages'];
+  append: UseChatHelpers['append'];
   handleSubmit: (
     event?: { preventDefault?: () => void },
     options?: { experimental_attachments?: Attachment[] },
