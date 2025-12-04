@@ -1,25 +1,25 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState, useMemo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import { AnimatePresence } from 'framer-motion';
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
-
-// Chat status type for AI SDK compatibility
-type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
 interface MessagesProps {
   chatId: string;
   status: ChatStatus;
   votes: Array<Vote> | undefined;
   messages: Array<UIMessage>;
-  setMessages: (
-    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-  ) => void;
-  reload: () => void;
-  append: (message: { role: 'user' | 'assistant'; content: string }) => void;
+  setMessages: SetMessagesFunction;
+  reload: () => Promise<string | null | undefined>;
+  append: AppendFunction;
   isReadonly: boolean;
   isArtifactVisible: boolean;
   messagesContainerRef?: React.RefObject<HTMLDivElement>;
@@ -44,6 +44,15 @@ function PureMessages({
 
   const containerRef = externalContainerRef || internalContainerRef;
   const endRef = externalEndRef || internalEndRef;
+
+  // Wrap reload to ensure it returns a promise
+  const wrappedReload = useMemo(
+    () => async () => {
+      const result = await reload();
+      return result;
+    },
+    [reload],
+  );
 
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const isStreamingRef = useRef<boolean>(status === 'streaming');
@@ -173,7 +182,7 @@ function PureMessages({
                   : undefined
               }
               setMessages={setMessages}
-              reload={reload}
+              reload={wrappedReload}
               append={append}
               isReadonly={isReadonly}
             />

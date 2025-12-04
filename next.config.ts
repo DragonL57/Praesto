@@ -21,11 +21,11 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // Added from template
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Added from template
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 

@@ -1,5 +1,10 @@
 import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from './ui/tooltip';
 import { artifactDefinitions } from './artifact';
 import type { UIArtifact } from './artifact';
 import { memo, useState } from 'react';
@@ -64,8 +69,8 @@ function PureArtifactActions<T = unknown>({
                   setIsLoading(true);
 
                   try {
-                    // We need to use the 'as any' temporarily to make TypeScript happy
-                    // since the artifact system is dynamically typed
+                    // The artifact system uses dynamic typing that TypeScript can't fully infer
+                    // so we use @ts-expect-error to suppress the type checking here
                     // @ts-expect-error The action.onClick expects a specific type, but we're passing a generic type
                     await Promise.resolve(action.onClick(actionContext));
                   } catch {

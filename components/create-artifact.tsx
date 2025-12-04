@@ -1,5 +1,5 @@
 import type { Suggestion } from '@/lib/db/schema';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type { AppendFunction } from '@/lib/ai/types';
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from 'react';
 import type { DataStreamDelta } from './data-stream-handler';
 import type { UIArtifact } from './artifact';
@@ -23,7 +23,7 @@ type ArtifactAction<M = unknown> = {
 };
 
 export type ArtifactToolbarContext = {
-  appendMessage: UseChatHelpers['append'];
+  appendMessage: AppendFunction;
 };
 
 export type ArtifactToolbarItem = {

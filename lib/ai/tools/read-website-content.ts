@@ -1,10 +1,11 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-import TurndownService from 'turndown';
 
-// Define error types for better type safety
+// Tavily API configuration
+const TAVILY_API_KEY = process.env.TAVILY_API_KEY || '';
+const TAVILY_EXTRACT_ENDPOINT = 'https://api.tavily.com/extract';
+
+// Error type definitions
 interface ErrorWithMessage {
   message: string;
 }
@@ -27,10 +28,6 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-// Get the serper.dev API key from environment variables, with fallback to hardcoded key for development
-const SERPER_API_KEY =
-  process.env.SERPER_API_KEY || '5b106638ab76499468577a6a8844cacfa7d38551';
-
 export const readWebsiteContent = tool({
   description:
     'Fetch and return the text content of a webpage/article in nicely formatted markdown for easy readability.',
@@ -51,226 +48,85 @@ export const readWebsiteContent = tool({
     // Ensure URL has protocol
     const fullUrl = url.startsWith('http') ? url : `https://${url}`;
 
-    // Direct approach - always try this first for all websites
+    if (!TAVILY_API_KEY) {
+      return {
+        url: fullUrl,
+        content: `Error fetching webpage content: TAVILY_API_KEY not configured in environment variables`,
+        query: query || null,
+        status: 'error',
+        error: 'Missing TAVILY_API_KEY',
+      };
+    }
+
     try {
-      // Directly fetch webpage content using axios
-      const response = await axios.get(fullUrl, {
+      // Make request to Tavily extract API
+      const tavilyRequest = {
+        api_key: TAVILY_API_KEY,
+        urls: [fullUrl],
+      };
+
+      const response = await fetch(TAVILY_EXTRACT_ENDPOINT, {
+        method: 'POST',
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          Accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Content-Type': 'application/json',
         },
-        timeout: 3000, // 3 second timeout
-        maxContentLength: 4 * 1024 * 1024, // 4MB max size
+        body: JSON.stringify(tavilyRequest),
       });
 
-      // Load HTML into cheerio for processing
-      const $ = cheerio.load(response.data);
+      if (!response.ok) {
+        throw new Error(`Tavily API error: ${response.status} ${response.statusText}`);
+      }
 
-      // Remove unwanted elements that typically contain noise
-      $(
-        'script, style, noscript, iframe, img, svg, header, footer, nav, aside, ads',
-      ).remove();
+      const results = await response.json() as { results: Array<{ url: string; content?: string; raw_content?: string }> };
 
-      // Get the cleaned HTML content
-      const cleanedHtml = $('body').html() || '';
+      if (!results || !results.results || results.results.length === 0) {
+        throw new Error('No content found in Tavily extract response');
+      }
 
-      // Convert HTML to markdown
-      const turndownService = new TurndownService({
-        headingStyle: 'atx',
-        codeBlockStyle: 'fenced',
-      });
+      const extractedContent = results.results[0].content || results.results[0].raw_content;
 
-      // Custom rules to improve markdown output
-      turndownService.addRule('preserveCodeBlocks', {
-        filter: (node) =>
-          node.nodeName === 'PRE' ||
-          (node.nodeName === 'CODE' &&
-            !!node.parentNode &&
-            node.parentNode.nodeName !== 'PRE'),
-        replacement: (content, node) => {
-          if (node.nodeName === 'PRE') {
-            // Handle pre blocks (usually code blocks)
-            return `\n\`\`\`\n${content}\n\`\`\`\n`;
-          } else {
-            // Handle inline code
-            return `\`${content}\``;
-          }
-        },
-      });
+      if (!extractedContent) {
+        throw new Error('No content extracted from webpage');
+      }
 
-      turndownService.addRule('removeEmptyParagraphs', {
-        filter: (node) => {
-          return node.nodeName === 'P' && node.textContent?.trim() === '';
-        },
-        replacement: () => '',
-      });
-
-      // Convert to markdown
-      let markdown = turndownService.turndown(cleanedHtml);
-
-      // Clean up the markdown - remove excessive newlines
-      markdown = markdown.replace(/\n{3,}/g, '\n\n');
-
-      // Strip out all image references from the markdown content
-      // This removes both Markdown image syntax ![alt](url) and HTML <img> tags that might be in the content
-      markdown = markdown.replace(/!\[.*?\]\(.*?\)/g, '*[Image removed]*'); // Remove markdown images
-      markdown = markdown.replace(/<img.*?>/g, '*[Image removed]*'); // Remove HTML img tags
-      markdown = markdown.replace(
-        /<figure.*?>.*?<\/figure>/g,
-        '*[Figure removed]*',
-      ); // Remove figure elements
-
-      // Check if the markdown has useful content (at least 100 chars)
-      if (markdown.trim().length < 100) {
-        console.log(
-          'Primary fetch succeeded but content is insufficient, trying fallback',
-        );
-        throw new Error('Insufficient content extracted');
+      // Check if content has useful length (at least 100 chars)
+      if (extractedContent.trim().length < 100) {
+        throw new Error('Extracted content is insufficient (less than 100 characters)');
       }
 
       console.log('Website content fetched and converted successfully');
 
       return {
         url: fullUrl,
-        content: markdown,
+        content: extractedContent,
         query: query || null,
         status: 'success',
-        source: 'direct',
+        source: 'tavily-extract',
       };
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error)
-        ? `Request failed: ${getErrorMessage(error)} ${error.response?.status ? `(Status: ${error.response.status})` : ''}`
-        : getErrorMessage(error);
+      const errorMessage = getErrorMessage(error);
+      console.error(`Error fetching website content with Tavily: ${errorMessage}`);
 
-      console.error(`Error fetching website content: ${errorMessage}`);
-
-      // Only attempt fallback if we have an API key
-      if (!SERPER_API_KEY) {
-        console.error(
-          "No SERPER_API_KEY found in environment variables, can't use fallback",
-        );
-        return {
-          url: fullUrl,
-          content: `Error fetching webpage content: ${errorMessage}\nFallback not attempted: Missing API key`,
-          query: query || null,
-          status: 'error',
-          error: errorMessage,
-        };
-      }
-
-      // Try fallback using serper.dev scraping API
-      console.log('Attempting fallback with serper.dev scraping API');
-      try {
-        const content = await fetchWithSerper(fullUrl);
-        if (content) {
-          return {
-            url: fullUrl,
-            content,
-            query: query || null,
-            status: 'success',
-            source: 'serper-dev-fallback',
-          };
-        } else {
-          throw new Error('No content found in scraped data');
-        }
-      } catch (fallbackError) {
-        const fallbackErrorMessage = getErrorMessage(fallbackError);
-        console.error(
-          `Fallback scraping also failed: ${fallbackErrorMessage}`,
-        );
-        return {
-          url: fullUrl,
-          content: formatErrorMessage(
-            fullUrl,
-            errorMessage,
-            fallbackErrorMessage,
-          ),
-          query: query || null,
-          status: 'error',
-          error: errorMessage,
-          fallbackError: fallbackErrorMessage,
-        };
-      }
+      return {
+        url: fullUrl,
+        content: formatErrorMessage(fullUrl, errorMessage),
+        query: query || null,
+        status: 'error',
+        error: errorMessage,
+      };
     }
   },
 });
 
-// Helper function to fetch content using serper.dev
-async function fetchWithSerper(url: string): Promise<string> {
-  if (!SERPER_API_KEY) {
-    throw new Error('No SERPER_API_KEY provided');
-  }
-
-  console.log(`Using serper.dev to fetch: ${url}`);
-
-  // Using the exact configuration from the working example
-  const data = JSON.stringify({
-    url: url,
-    includeMarkdown: true,
-  });
-
-  const config = {
-    method: 'post',
-    maxBodyLength: Number.POSITIVE_INFINITY,
-    url: 'https://scrape.serper.dev',
-    headers: {
-      'X-API-KEY': SERPER_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    data: data,
-  };
-
-  try {
-    const response = await axios.request(config);
-    const scrapeData = response.data;
-
-    let content = '';
-    if (scrapeData.markdown) {
-      console.log('Serper.dev returned markdown content');
-      content = scrapeData.markdown;
-    } else if (scrapeData.text) {
-      console.log('Serper.dev returned text content');
-      content = scrapeData.text;
-    } else {
-      throw new Error('No content found in serper.dev response');
-    }
-
-    // Strip out all image references from the markdown content
-    // This removes both Markdown image syntax ![alt](url) and HTML <img> tags that might be in the content
-    content = content.replace(/!\[.*?\]\(.*?\)/g, '*[Image removed]*'); // Remove markdown images
-    content = content.replace(/<img.*?>/g, '*[Image removed]*'); // Remove HTML img tags
-    content = content.replace(
-      /<figure.*?>.*?<\/figure>/g,
-      '*[Figure removed]*',
-    ); // Remove figure elements that might contain images
-
-    console.log('Images stripped from content');
-    return content;
-  } catch (error) {
-    const errorMessage = getErrorMessage(error);
-    console.error(`Error in serper.dev request: ${errorMessage}`);
-    throw new Error(errorMessage);
-  }
-}
-
 // Helper function to format error messages
-function formatErrorMessage(
-  url: string,
-  primaryError: string,
-  fallbackError: string,
-): string {
-  // Simplified generic error message for all website types
+function formatErrorMessage(url: string, error: string): string {
   return `
-    Error extracting content from ${new URL(url).hostname}:
-    Primary method: ${primaryError}
-    Fallback method: ${fallbackError}
+Error extracting content from ${new URL(url).hostname}:
+${error}
 
-    Suggestions:
-
-    - Visit the website directly using the link in the top-right
-    - Try asking a specific question about the website's content
-    - If you have access to the content, try copying and pasting relevant sections directly
+Suggestions:
+- Visit the website directly using the link
+- Try asking a specific question about the website's content
+- If you have access to the content, try copying and pasting relevant sections directly
   `;
 }

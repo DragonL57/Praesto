@@ -1,5 +1,4 @@
 import type { Attachment, UIMessage } from 'ai';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -24,9 +23,11 @@ import { useSidebar } from './ui/sidebar';
 import { useArtifact } from '@/hooks/use-artifact';
 import { codeArtifact } from '@/artifacts/code/client';
 import equal from 'fast-deep-equal';
-
-// Chat status type for AI SDK compatibility
-type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 
 export const artifactDefinitions = [codeArtifact];
 export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
@@ -67,18 +68,18 @@ function PureArtifact({
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
   status: ChatStatus;
-  stop: UseChatHelpers['stop'];
+  stop: () => void;
   attachments: Array<Attachment>;
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
+  setMessages: SetMessagesFunction;
   votes: Array<Vote> | undefined;
-  append: UseChatHelpers['append'];
+  append: AppendFunction;
   handleSubmit: (
     event?: { preventDefault?: () => void },
     options?: { experimental_attachments?: Attachment[] },
   ) => void;
-  reload: UseChatHelpers['reload'];
+  reload: () => Promise<string | null | undefined>;
   isReadonly: boolean;
   isPanelVisible?: boolean;
 }) {

@@ -70,7 +70,7 @@ export function projectWithPositions(
 export function createSuggestionWidget(
   suggestion: UISuggestion,
   view: EditorView,
-  artifactKind: ArtifactKind = 'text',
+  artifactKind: ArtifactKind = 'code',
 ): { dom: HTMLElement; destroy: () => void } {
   const dom = document.createElement('span');
   const root = createRoot(dom);

@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Textarea } from '../ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type { SetMessagesFunction, ReloadFunction } from '@/lib/ai/types';
 
 // Define proper types for message parts
 interface TextMessagePart {
@@ -25,8 +25,8 @@ type _MessagePart = TextMessagePart | ImageMessagePart;
 export type MessageEditorProps = {
   message: Message;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
-  setMessages: UseChatHelpers['setMessages'];
-  reload: UseChatHelpers['reload'];
+  setMessages: SetMessagesFunction;
+  reload: ReloadFunction;
 };
 
 export function MessageEditor({

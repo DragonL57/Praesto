@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { unstable_serialize } from 'swr/infinite';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import type { SetMessagesFunction, AppendFunction } from '@/lib/ai/types';
 
 export function Chat({
   id,
@@ -104,28 +105,40 @@ export function Chat({
     [rawMessages],
   );
 
-  // Type-safe setMessages wrapper
-  const setMessages = (
-    messagesOrUpdater: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-  ) => {
-    if (typeof messagesOrUpdater === 'function') {
-      rawSetMessages((prev) =>
-        messagesOrUpdater(
-          prev.map((m) => ({ ...m, parts: m.parts ?? [] })) as UIMessage[],
-        ),
-      );
-    } else {
-      rawSetMessages(messagesOrUpdater);
-    }
-  };
+  // Type-safe setMessages wrapper with useMemo to create stable reference
+  const setMessages = useMemo<SetMessagesFunction>(
+    () =>
+      (
+        messagesOrUpdater:
+          | UIMessage[]
+          | ((messages: UIMessage[]) => UIMessage[]),
+      ) => {
+        if (typeof messagesOrUpdater === 'function') {
+          rawSetMessages((prev) =>
+            messagesOrUpdater(
+              prev.map((m) => ({
+                ...m,
+                parts: m.parts ?? [],
+              })) as UIMessage[],
+            ),
+          );
+        } else {
+          rawSetMessages(messagesOrUpdater);
+        }
+      },
+    [rawSetMessages],
+  );
 
-  // Type-safe append wrapper
-  const append = (message: { role: 'user' | 'assistant'; content: string }) => {
-    return rawAppend({
-      role: message.role,
-      content: message.content,
-    });
-  };
+  // Type-safe append wrapper with useMemo
+  const append = useMemo<AppendFunction>(
+    () => (message: { role: 'user' | 'assistant'; content: string }) => {
+      return rawAppend({
+        role: message.role,
+        content: message.content,
+      });
+    },
+    [rawAppend],
+  );
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

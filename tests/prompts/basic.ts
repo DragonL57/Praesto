@@ -60,7 +60,7 @@ export const TEST_PROMPTS: Record<string, CoreMessage> = {
         result: {
           id: '3ca386a4-40c6-4630-8ed1-84cbd46cc7eb',
           title: 'Essay about Silicon Valley',
-          kind: 'text',
+          kind: 'code',
           content: 'A document was created and is now visible to the user.',
         },
       },

@@ -4,7 +4,12 @@ import equal from 'fast-deep-equal';
 import type { Vote } from '@/lib/db/schema';
 import type { UIMessage } from 'ai';
 import type { UIArtifact } from './artifact';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ReloadFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 
 import { PreviewMessage } from './messages/message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
@@ -12,15 +17,15 @@ import { ScrollToBottomButton } from './scroll-to-bottom-button';
 
 interface ArtifactMessagesProps {
   chatId: string;
-  status: UseChatHelpers['status'];
   votes: Array<Vote> | undefined;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
-  reload: UseChatHelpers['reload'];
-  append: UseChatHelpers['append'];
+  reload: ReloadFunction;
   isReadonly: boolean;
   artifactStatus: UIArtifact['status'];
   isPanelVisible?: boolean;
+  status: ChatStatus;
+  setMessages: SetMessagesFunction;
+  append: AppendFunction;
 }
 
 function PureArtifactMessages({
@@ -64,9 +69,9 @@ function PureArtifactMessages({
         ref={messagesEndRef}
         className="shrink-0 min-w-[24px] min-h-[24px]"
       />
-      
+
       {messages.length > 2 && !isPanelVisible && (
-        <ScrollToBottomButton 
+        <ScrollToBottomButton
           containerRef={messagesContainerRef}
           endRef={messagesEndRef}
           isArtifactOpen={isPanelVisible}

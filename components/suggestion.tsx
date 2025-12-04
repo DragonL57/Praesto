@@ -28,7 +28,6 @@ export const Suggestion = ({
       {!isExpanded ? (
         <motion.div
           className={cn('cursor-pointer text-muted-foreground p-1', {
-            'absolute -right-8': artifactKind === 'text',
             'sticky top-0 right-4': artifactKind === 'code',
           })}
           onClick={() => {

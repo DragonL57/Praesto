@@ -2,15 +2,19 @@
 
 import React from 'react';
 import { Button } from './ui/button'; // Assuming a shared Button component exists
-import type { UseChatHelpers } from '@ai-sdk/react'; // For append type
+import type { AppendFunction } from '@/lib/ai/types'; // For append type
 
 interface SuggestionButtonProps {
   text: string;
   query: string;
-  append: UseChatHelpers['append']; // Function to send a message
+  append: AppendFunction; // Function to send a message
 }
 
-export const SuggestionButton: React.FC<SuggestionButtonProps> = ({ text, query, append }) => {
+export const SuggestionButton: React.FC<SuggestionButtonProps> = ({
+  text,
+  query,
+  append,
+}) => {
   const handleSuggestionClick = () => {
     // Append a new message with the suggestion query.
     // The new message will have the role 'user' by default with append.
@@ -32,4 +36,4 @@ export const SuggestionButton: React.FC<SuggestionButtonProps> = ({ text, query,
       {text}
     </Button>
   );
-}; 
+};

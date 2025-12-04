@@ -31,7 +31,7 @@ import {
   format,
 } from 'date-fns'; // Added more date-fns functions
 import { SuggestionButton } from './suggestion-button'; // Added import
-import type { UseChatHelpers } from '@ai-sdk/react'; // Added import for append type
+import type { AppendFunction } from '@/lib/ai/types';
 
 // Define a more specific type for HAST nodes with properties
 interface HastNodeWithProperties {
@@ -54,7 +54,7 @@ interface CustomMarkdownComponents extends Components {
   }>;
   'suggestion-button'?: React.FC<{
     node?: HastNodeWithProperties;
-    append?: UseChatHelpers['append']; // Added append here
+    append?: AppendFunction;
     [key: string]: unknown;
   }>;
 }
@@ -63,7 +63,7 @@ interface CustomMarkdownComponents extends Components {
 interface MarkdownProps {
   children: string;
   baseHeadingLevel?: number;
-  append?: UseChatHelpers['append']; // Added append prop
+  append?: AppendFunction;
 }
 
 // Component to handle table overflow with proper scrollbars

@@ -22,7 +22,7 @@ import {
 } from '../ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from '../document-preview';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type { SetMessagesFunction, AppendFunction } from '@/lib/ai/types';
 import { MessageReasoning } from './message-reasoning';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
@@ -132,16 +132,16 @@ const UserTextWithLineBreaks = ({ text }: { text: string }) => {
   );
 };
 
-export interface PurePreviewMessageProps {
+export type PurePreviewMessageProps = {
   chatId: string;
   message: UIMessage;
-  vote: Vote | undefined;
+  vote?: Vote;
   isLoading: boolean;
-  setMessages: UseChatHelpers['setMessages'];
-  reload: UseChatHelpers['reload'];
-  append: UseChatHelpers['append'];
+  setMessages: SetMessagesFunction;
+  reload: () => Promise<string | null | undefined>;
+  append: AppendFunction;
   isReadonly: boolean;
-}
+};
 
 const PurePreviewMessage = memo<PurePreviewMessageProps>(
   ({

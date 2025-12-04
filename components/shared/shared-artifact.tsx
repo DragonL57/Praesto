@@ -23,7 +23,11 @@ import { artifactDefinitions } from '../artifact';
 import { Toolbar } from '../toolbar';
 import { VersionFooter } from '../version-footer';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 
 function PureSharedArtifact({
   chatId,
@@ -43,17 +47,17 @@ function PureSharedArtifact({
 }: {
   chatId: string;
   _input: string;
-  _setInput: UseChatHelpers['setInput'];
-  _handleSubmit: UseChatHelpers['handleSubmit'];
-  status: UseChatHelpers['status'];
-  stop: UseChatHelpers['stop'];
+  _setInput: (input: string) => void;
+  _handleSubmit: (event?: { preventDefault?: () => void }) => void;
+  status: ChatStatus;
+  stop: () => void;
   _attachments: Array<Attachment>;
   _setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
+  setMessages: SetMessagesFunction;
   votes: Array<Vote> | undefined;
-  append: UseChatHelpers['append'];
-  reload: UseChatHelpers['reload'];
+  append: AppendFunction;
+  reload: () => Promise<string | null | undefined>;
   isReadonly: boolean;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();

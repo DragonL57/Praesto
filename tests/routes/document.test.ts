@@ -55,7 +55,7 @@ test.describe
 
       const draftDocument = {
         title: "Ada's Document",
-        kind: 'text',
+        kind: 'code',
         content: 'Created by Ada',
       };
 
@@ -93,7 +93,7 @@ test.describe
 
       const draftDocument = {
         title: "Ada's Document",
-        kind: 'text',
+        kind: 'code',
         content: 'Updated by Ada',
       };
 
@@ -183,7 +183,7 @@ test.describe
 
       const draftDocument = {
         title: "Babbage's Document",
-        kind: 'text',
+        kind: 'code',
         content: 'Created by Babbage',
       };
 

@@ -5,8 +5,12 @@ import cx from 'classnames';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import type { Attachment, UIMessage } from 'ai';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import equal from 'fast-deep-equal';
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 
 import { PreviewAttachment } from '../preview-attachment';
 import { Textarea } from '../ui/textarea';
@@ -32,9 +36,6 @@ import {
   HoverCardContent,
 } from '../ui/hover-card';
 
-// Chat status type for AI SDK compatibility
-type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
-
 interface MultimodalInputProps {
   chatId: string;
   input: string;
@@ -44,8 +45,8 @@ interface MultimodalInputProps {
   attachments: Array<Attachment>;
   setAttachments: React.Dispatch<React.SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
-  append: UseChatHelpers['append'];
+  setMessages: SetMessagesFunction;
+  append: AppendFunction;
   handleSubmit: (
     event?: { preventDefault?: () => void },
     options?: { experimental_attachments?: Attachment[] },

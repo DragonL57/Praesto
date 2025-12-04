@@ -22,7 +22,12 @@ import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
 import { artifactDefinitions } from './artifact';
 import type { ArtifactKind } from './artifact';
 import type { ArtifactToolbarItem } from './create-artifact';
-import type { UseChatHelpers } from '@ai-sdk/react';
+
+import type {
+  SetMessagesFunction,
+  AppendFunction,
+  ChatStatus,
+} from '@/lib/ai/types';
 
 type ToolProps = {
   description: string;
@@ -32,11 +37,11 @@ type ToolProps = {
   isToolbarVisible?: boolean;
   setIsToolbarVisible?: Dispatch<SetStateAction<boolean>>;
   isAnimating: boolean;
-  append: UseChatHelpers['append'];
+  append: AppendFunction;
   onClick: ({
     appendMessage,
   }: {
-    appendMessage: UseChatHelpers['append'];
+    appendMessage: AppendFunction;
   }) => void;
 };
 
@@ -153,7 +158,7 @@ const ReadingLevelSelector = ({
 }: {
   setSelectedTool: Dispatch<SetStateAction<string | null>>;
   isAnimating: boolean;
-  append: UseChatHelpers['append'];
+  append: AppendFunction;
 }) => {
   const LEVELS = [
     'Elementary',
@@ -283,7 +288,7 @@ export const Tools = ({
   isToolbarVisible: boolean;
   selectedTool: string | null;
   setSelectedTool: Dispatch<SetStateAction<string | null>>;
-  append: UseChatHelpers['append'];
+  append: AppendFunction;
   isAnimating: boolean;
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>;
   tools: Array<ArtifactToolbarItem>;
@@ -339,10 +344,10 @@ const PureToolbar = ({
 }: {
   isToolbarVisible: boolean;
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>;
-  status: UseChatHelpers['status'];
-  append: UseChatHelpers['append'];
-  stop: UseChatHelpers['stop'];
-  setMessages: UseChatHelpers['setMessages'];
+  status: ChatStatus;
+  append: AppendFunction;
+  stop: () => void;
+  setMessages: SetMessagesFunction;
   artifactKind: ArtifactKind;
 }) => {
   const toolbarRef = useRef<HTMLDivElement>(null);
