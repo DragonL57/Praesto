@@ -546,7 +546,7 @@ const NonMemoizedMarkdown = ({
               );
               const Tag = hasBlock ? 'div' : 'p';
               return (
-                <Tag className="my-2 break-words" {...props}>
+                <Tag className="my-2 break-words text-sm" {...props}>
                   {children}
                 </Tag>
               );
@@ -573,7 +573,7 @@ const NonMemoizedMarkdown = ({
               return createElement(
                 `h${level}`,
                 {
-                  className: 'text-3xl font-semibold mt-2 mb-2 break-words',
+                  className: 'text-base font-semibold mt-3 mb-2 break-words',
                   ...props,
                 },
                 children,
@@ -585,7 +585,7 @@ const NonMemoizedMarkdown = ({
               return createElement(
                 `h${level}`,
                 {
-                  className: 'text-2xl font-semibold mt-2 mb-2 break-words',
+                  className: 'text-sm font-semibold mt-2 mb-2 break-words',
                   ...props,
                 },
                 children,
@@ -597,7 +597,7 @@ const NonMemoizedMarkdown = ({
               return createElement(
                 `h${level}`,
                 {
-                  className: 'text-xl font-semibold mt-2 mb-2 break-words',
+                  className: 'text-sm font-semibold mt-2 mb-2 break-words',
                   ...props,
                 },
                 children,
