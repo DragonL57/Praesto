@@ -37,12 +37,8 @@ const NonMemoizedMarkdown = ({
   baseHeadingLevel = 1,
   append,
 }: MarkdownProps) => {
-  // Early return for empty content
-  if (!children || children.trim() === '') {
-    return null;
-  }
-
   // Memoize components based on baseHeadingLevel and append
+  // Must be called before any early returns (React hooks rules)
   const components = useMemo<CustomMarkdownComponents>(
     () => ({
       // Code components
@@ -80,6 +76,11 @@ const NonMemoizedMarkdown = ({
     }),
     [baseHeadingLevel, append],
   );
+
+  // Early return for empty content (after hooks)
+  if (!children || children.trim() === '') {
+    return null;
+  }
 
   return (
     <ReactMarkdown
