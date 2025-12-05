@@ -17,8 +17,6 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true, // Added from template
   },
-  // Ensure output is properly generated for Vercel
-  output: 'standalone',
   // Added from template
   eslint: {
     ignoreDuringBuilds: false,

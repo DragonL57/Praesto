@@ -21,10 +21,10 @@ export const chatModels: ChatModel[] = [
     provider: 'Z.AI',
   },
   {
-    id: 'gemma-3-27b-it',
-    name: 'Gemma 3 27B IT',
-    description: 'Gemma 3 27B IT model from FPT Cloud',
-    provider: 'FPT Cloud',
+    id: 'glm-4.5-air',
+    name: 'GLM-4.5 Air',
+    description: 'GLM-4.5 Air model from Z.AI',
+    provider: 'Z.AI',
   },
 ];
 

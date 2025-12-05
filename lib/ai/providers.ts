@@ -8,13 +8,6 @@ const zaiProvider = createOpenAICompatible({
   baseURL: 'https://api.z.ai/api/coding/paas/v4',
 });
 
-// FPT Cloud LiteLLM OpenAI-compatible provider for title/chat creation
-const fptCloudProvider = createOpenAICompatible({
-  name: 'fpt-cloud',
-  apiKey: process.env.FPT_API_KEY || '',
-  baseURL: 'https://mkp-api.fptcloud.jp',
-});
-
 // Export the configured provider for the application
 // Model IDs match those defined in models.ts chatModels array
 export const myProvider = customProvider({
@@ -22,11 +15,10 @@ export const myProvider = customProvider({
     // Z.AI models - registered with their actual model IDs
     'glm-4.6': zaiProvider.chatModel('glm-4.6'),
     'glm-4.5': zaiProvider.chatModel('glm-4.5'),
-    // FPT Cloud models
-    'gemma-3-27b-it': fptCloudProvider.chatModel('gemma-3-27b-it'),
+    'glm-4.5-air': zaiProvider.chatModel('glm-4.5-air'),
     // Aliases for internal use
     'chat-model': zaiProvider.chatModel('glm-4.6'),
-    'title-model': fptCloudProvider.chatModel('gemma-3-27b-it'),
+    'title-model': zaiProvider.chatModel('glm-4.5-air'),
     'artifact-model': zaiProvider.chatModel('glm-4.6'),
   },
 });
