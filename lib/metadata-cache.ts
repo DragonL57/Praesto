@@ -105,7 +105,7 @@ export const metadataCache = {
         const fetchPromise = (async () => {
             // Add timeout to prevent hanging requests
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeoutId = setTimeout(() => controller.abort('Request timeout'), 10000); // 10 second timeout
 
             try {
                 const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`, {
