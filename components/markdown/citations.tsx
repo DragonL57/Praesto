@@ -150,7 +150,7 @@ export const CitationButton = memo(({ num, url }: CitationButtonProps) => {
                   width={16}
                   height={16}
                   className="rounded-sm"
-                  onError={(e) => {
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
