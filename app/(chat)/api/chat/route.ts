@@ -49,7 +49,7 @@ const ATTACHMENT_TEXT_TRUNCATED_SUFFIX = " [Content truncated as it exceeded 100
 const MAX_EXTRACTED_TEXT_CHARS = 100000; // Maximum number of characters for extracted text
 // --- End of Configuration ---
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Define an interface for the expected 'data' object from the frontend
 interface RequestData {
