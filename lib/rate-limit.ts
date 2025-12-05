@@ -46,16 +46,20 @@ export function rateLimit(req: NextRequest) {
     const windowMs = 15 * 60 * 1000; // 15 minutes
 
     // Different limits based on the endpoint and method
-    let maxRequests = 40// Default higher limit for most requests
+    let maxRequests = 100; // Default higher limit for most requests
 
     if (isAuthAction) {
-        // Stricter limits for auth actions
+        // Stricter limits for auth actions, but reasonable for development
         if (path.includes('forgot-password') && method === 'POST') {
-            maxRequests = 5; // 5 password reset attempts per 15 minutes
+            maxRequests = 10; // 10 password reset attempts per 15 minutes
         } else if ((path === '/login' || path === '/api/auth/callback/credentials') && method === 'POST') {
-            maxRequests = 10; // 10 login attempts per 15 minutes
+            maxRequests = 20; // 20 login attempts per 15 minutes
         } else if (path === '/register' && method === 'POST') {
-            maxRequests = 5; // 5 registration attempts per 15 minutes
+            maxRequests = 10; // 10 registration attempts per 15 minutes
+        } else if (path.includes('/api/auth/session')) {
+            maxRequests = 200; // Higher limit for session checks (called frequently by Auth.js)
+        } else if (path.startsWith('/api/auth/')) {
+            maxRequests = 100; // Higher limit for general auth API calls
         }
     }
 

@@ -50,8 +50,8 @@ export const config = {
     // Use a single standardized auth route pattern for NextAuth's own APIs
     '/api/auth/:path*',
 
-    // Exclude other API routes from middleware to prevent conflicts (original logic for non-api)
-    // This rule might need to be adjusted if we want to protect more /api routes via middleware
-    '/((?!api/).)*'
+    // Exclude static files, images, and other assets from middleware
+    // This prevents unnecessary auth checks and reduces rate limit issues
+    '/((?!_next/static|_next/image|favicon.ico|images|fonts|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 };

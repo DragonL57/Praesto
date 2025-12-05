@@ -13,7 +13,14 @@ import { authConfig } from '@/app/(auth)/auth.config';
 
 export const { auth } = NextAuth({
     ...authConfig,
-    session: { strategy: 'jwt' },
+    session: {
+        strategy: 'jwt',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60, // Only update session once per 24 hours (reduces auth calls)
+    },
+    jwt: {
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
     providers: [
         Credentials({
             credentials: {

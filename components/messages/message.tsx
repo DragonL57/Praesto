@@ -728,7 +728,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                             })}
                           >
                             {message.role === 'user' ? (
-                              <div className="whitespace-pre-wrap break-words">
+                              <div className="whitespace-pre-wrap break-words text-sm">
                                 {part.text && (
                                   <UserTextWithLineBreaks text={part.text} />
                                 )}

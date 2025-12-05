@@ -234,7 +234,7 @@ export function MessageReasoning({
               data-testid="message-reasoning-content-area-inner"
             >
               {content.map((item, index) => {
-                const itemKey = `reasoning-item-${typeof item === 'string' ? index : item.type || index}`;
+                const itemKey = `reasoning-item-${index}-${typeof item === 'string' ? 'text' : item.type || 'unknown'}`;
                 if (typeof item === 'string') {
                   return (
                     <motion.div

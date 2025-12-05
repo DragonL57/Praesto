@@ -8,6 +8,8 @@ export const authConfig = {
   },
   // Add JWT configuration with a secret
   secret: process.env.NEXTAUTH_SECRET,
+  // Reduce debug logging in production
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
     // while this file is also used in non-Node.js environments
@@ -21,6 +23,16 @@ export const authConfig = {
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
       const isSharedChat = nextUrl.pathname.match(/^\/chat\/[a-zA-Z0-9-]+$/); // Match shared chat URL pattern
+
+      // Skip auth check for static assets and public files
+      const isStaticAsset = nextUrl.pathname.startsWith('/_next') ||
+        nextUrl.pathname.startsWith('/images') ||
+        nextUrl.pathname.startsWith('/fonts') ||
+        nextUrl.pathname.includes('.');
+
+      if (isStaticAsset) {
+        return true;
+      }
 
       // Allow access to landing page without authentication
       if (isRootPath) {
