@@ -24,9 +24,10 @@ export const myProvider = customProvider({
     'glm-4.5': zaiProvider.chatModel('glm-4.5'),
     // FPT Cloud models
     'gemma-3-27b-it': fptCloudProvider.chatModel('gemma-3-27b-it'),
+    'Qwen3-32B': fptCloudProvider.chatModel('Qwen3-32B'),
     // Aliases for internal use
     'chat-model': zaiProvider.chatModel('glm-4.6'),
-    'title-model': fptCloudProvider.chatModel('gemma-3-27b-it'),
+    'title-model': fptCloudProvider.chatModel('Qwen3-32B'),
     'artifact-model': zaiProvider.chatModel('glm-4.6'),
   },
 });
