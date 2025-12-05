@@ -115,7 +115,7 @@ const CodeBlock = memo(
             <span ref={isCopiedRef}>Copy</span>
           </button>
         </div>
-        <div className="w-full max-w-full bg-transparent overflow-auto">
+        <div className="w-full max-w-full bg-transparent overflow-auto code-block-container">
           <SyntaxHighlighter
             language={highlighterLang}
             style={currentSyntaxTheme}
@@ -127,7 +127,18 @@ const CodeBlock = memo(
               borderRadius: '0 0 0.375rem 0.375rem',
             }}
             showLineNumbers={highlighterLang !== 'text'}
-            wrapLines={false}
+            showInlineLineNumbers={false}
+            wrapLines={true}
+            lineNumberContainerStyle={{
+              float: 'left',
+              paddingRight: '1em',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              textAlign: 'right',
+              minWidth: '2.5em',
+              opacity: 0.5,
+            }}
             codeTagProps={{
               style: {
                 backgroundColor: 'transparent',

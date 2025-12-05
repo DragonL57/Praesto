@@ -255,3 +255,34 @@ body {
   color: inherit;
   background-color: rgba(0, 100, 255, 0.1) !important;
 }
+
+/* 
+ * Prevent line numbers from being copied when selecting code in code blocks.
+ * react-syntax-highlighter renders line numbers in a separate container when showInlineLineNumbers={false}.
+ * This targets the line number container element.
+ */
+.code-block-container code > span:first-child {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;  
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Target all possible line number elements */
+.code-block-container .linenumber,
+.code-block-container .react-syntax-highlighter-line-number,
+.code-block-container span.linenumber {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Target the line number container (rendered separately with float: left) */
+.code-block-container pre > span[style*="float"],
+.code-block-container pre > span[style*="user-select: none"] {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
