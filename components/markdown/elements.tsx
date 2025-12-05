@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, ImgHTMLAttributes } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { textStyles, blockStyles, imageStyles } from './styles';
@@ -10,9 +10,7 @@ type LinkProps = HTMLAttributes<HTMLAnchorElement> & {
   node?: unknown;
 };
 
-type ImageProps = {
-  src?: string;
-  alt?: string;
+type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
   node?: unknown;
 };
 
@@ -83,7 +81,8 @@ export const Paragraph = ({
 
 // Image component with lazy loading
 export const MarkdownImage = ({ src, alt, node: _node }: ImageProps) => {
-  if (!src) return null;
+  // Handle case where src is undefined or a Blob (React 19 types)
+  if (!src || typeof src !== 'string') return null;
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {

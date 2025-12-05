@@ -19,16 +19,18 @@ const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB (aligned with server-side 
 export function useFileUploadHandler({
   setAttachments,
   setUploadQueue,
-  status
+  status,
 }: FileUploadHandlerProps) {
   // Handle file input change
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(event.target.files || []);
 
-      const validFiles = selectedFiles.filter(file => {
+      const validFiles = selectedFiles.filter((file) => {
         if (file.size > MAX_FILE_SIZE_BYTES) {
-          toast.error(`File "${file.name}" is too large. Max size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`);
+          toast.error(
+            `File "${file.name}" is too large. Max size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
+          );
           return false;
         }
         return true;
@@ -40,7 +42,7 @@ export function useFileUploadHandler({
         setUploadQueue([]); // Ensure queue is cleared if all were invalid
         return;
       }
-      
+
       if (validFiles.length < selectedFiles.length) {
         // Some files were filtered out, inform the user if needed or just proceed with valid ones
         // toast.info("Some files were too large and have been excluded.");
@@ -52,7 +54,7 @@ export function useFileUploadHandler({
         if (event.target) event.target.value = ''; // Clear the file input
         return; // No files to upload
       }
-      
+
       try {
         const uploadPromises = validFiles.map((file) => uploadFile(file));
         const uploadedAttachments = await Promise.all(uploadPromises);
@@ -95,7 +97,9 @@ export function useFileUploadHandler({
         const file = item.getAsFile();
         if (file) {
           if (file.size > MAX_FILE_SIZE_BYTES) {
-            toast.error(`Pasted image "${file.name}" is too large. Max size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`);
+            toast.error(
+              `Pasted image "${file.name}" is too large. Max size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
+            );
             continue; // Skip this file
           }
           const timestamp = new Date().getTime();
@@ -107,7 +111,7 @@ export function useFileUploadHandler({
           imageFiles.push(renamedFile);
         }
       }
-      
+
       if (imageFiles.length === 0) {
         return; // No valid files to upload
       }
@@ -136,13 +140,16 @@ export function useFileUploadHandler({
   );
 
   // Create function to trigger file input dialog
-  const triggerFileUpload = useCallback((fileInputRef: RefObject<HTMLInputElement>) => {
-    fileInputRef.current?.click();
-  }, []);
+  const triggerFileUpload = useCallback(
+    (fileInputRef: RefObject<HTMLInputElement | null>) => {
+      fileInputRef.current?.click();
+    },
+    [],
+  );
 
   return {
     handleFileChange,
     handlePaste,
-    triggerFileUpload
+    triggerFileUpload,
   };
 }

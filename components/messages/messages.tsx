@@ -22,8 +22,8 @@ interface MessagesProps {
   append: AppendFunction;
   isReadonly: boolean;
   isArtifactVisible: boolean;
-  messagesContainerRef?: React.RefObject<HTMLDivElement>;
-  messagesEndRef?: React.RefObject<HTMLDivElement>;
+  messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
+  messagesEndRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function PureMessages({
