@@ -26,12 +26,6 @@ export const chatModels: ChatModel[] = [
     description: 'Gemma 3 27B IT model from FPT Cloud',
     provider: 'FPT Cloud',
   },
-  {
-    id: 'Qwen3-32B',
-    name: 'Qwen3-32B',
-    description: 'Qwen3-32B model from FPT Cloud',
-    provider: 'FPT Cloud',
-  },
 ];
 
 const defaultModel = chatModels.find(model => model.isDefault);
