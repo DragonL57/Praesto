@@ -5,22 +5,23 @@ import type { NextRequest } from 'next/server';
 import { authConfig } from '@/app/(auth)/auth.config';
 import { rateLimit } from '@/lib/rate-limit';
 
-// Middleware function to handle both authentication and rate limiting
-export async function middleware(request: NextRequest) {
+// Proxy function to handle both authentication and rate limiting
+export async function proxy(request: NextRequest) {
   // Apply rate limiting for auth endpoints
   const rateLimitResponse = rateLimit(request);
   if (rateLimitResponse.status === 429) {
     return rateLimitResponse;
   }
 
-  // Apply NextAuth middleware for protected routes
+  // Apply NextAuth proxy for protected routes
   const authMiddleware = await NextAuth(authConfig).auth();
 
   // Create a new response if authMiddleware is not a NextResponse
   // This ensures we always have a NextResponse object with headers
-  const response = authMiddleware instanceof NextResponse
-    ? authMiddleware
-    : NextResponse.next();
+  const response =
+    authMiddleware instanceof NextResponse
+      ? authMiddleware
+      : NextResponse.next();
 
   // Set security headers - now we're guaranteed to have headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -28,7 +29,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com https://vercel.live; connect-src 'self' https:; frame-src 'self' https://vercel.live;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com https://vercel.live; connect-src 'self' https:; frame-src 'self' https://vercel.live;",
   );
 
   return response;
@@ -50,7 +51,7 @@ export const config = {
     // Use a single standardized auth route pattern for NextAuth's own APIs
     '/api/auth/:path*',
 
-    // Exclude static files, images, and other assets from middleware
+    // Exclude static files, images, and other assets from proxy
     // This prevents unnecessary auth checks and reduces rate limit issues
     '/((?!_next/static|_next/image|favicon.ico|images|fonts|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
