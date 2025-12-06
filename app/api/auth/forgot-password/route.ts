@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             const clonedRequest = request.clone();
             requestBodyForError = await clonedRequest.text();
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
+        } catch (_e) {
             requestBodyForError = 'Failed to clone or read request body for error logging.';
         }
         console.error('[API /api/auth/forgot-password] Request body during error:', requestBodyForError);

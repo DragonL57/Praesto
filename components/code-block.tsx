@@ -27,9 +27,11 @@ const CodeBlock = memo(
     const isCopiedRef = useRef<HTMLSpanElement>(null);
     const { resolvedTheme } = useTheme();
     const [currentSyntaxTheme, setCurrentSyntaxTheme] = useState(oneLight);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
       setCurrentSyntaxTheme(resolvedTheme === 'dark' ? oneDark : oneLight);
+      setIsClient(true);
     }, [resolvedTheme]);
 
     // Handle copy functionality without using state
@@ -116,7 +118,8 @@ const CodeBlock = memo(
           </button>
         </div>
         <div className="w-full max-w-full bg-transparent overflow-auto code-block-container">
-          <SyntaxHighlighter
+          {isClient ? (
+            <SyntaxHighlighter
             language={highlighterLang}
             style={currentSyntaxTheme}
             customStyle={{
@@ -137,7 +140,8 @@ const CodeBlock = memo(
               MozUserSelect: 'none',
               textAlign: 'right',
               minWidth: '2.5em',
-              opacity: 0.5,
+              opacity: '0.5',
+              backgroundColor: 'transparent',
             }}
             codeTagProps={{
               style: {
@@ -147,6 +151,11 @@ const CodeBlock = memo(
           >
             {String(children)}
           </SyntaxHighlighter>
+          ) : (
+            <pre className="p-4 bg-transparent text-sm overflow-x-auto">
+              <code>{String(children)}</code>
+            </pre>
+          )}
         </div>
       </div>
     );

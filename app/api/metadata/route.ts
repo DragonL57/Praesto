@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
                         if (publishedDateStr) break;
                     }
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (e) {
+                } catch (_e) {
                     // console.warn('Error parsing JSON-LD for datePublished:', e);
                 }
                 if (publishedDateStr) return false; // break out of .each loop
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
                     metadata.publishedDate = dateObj.toISOString();
                 }
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (e) {
+            } catch (_e) {
                 // console.warn('Could not parse extracted date string:', publishedDateStr);
             }
         }

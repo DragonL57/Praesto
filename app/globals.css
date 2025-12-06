@@ -143,20 +143,21 @@ body {
   }
 
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   /* Remove all focus styles */
   *:focus {
-    outline: none !important;
+    outline: none;
   }
   *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
+    outline: none;
+    box-shadow: none;
   }
   
   /* Override focus styles for all interactive elements */
@@ -172,8 +173,8 @@ body {
   select:focus-visible,
   [role="button"]:focus,
   [tabindex]:focus {
-    outline: none !important;
-    box-shadow: none !important;
+    outline: none;
+    box-shadow: none;
   }
 }
 
@@ -210,14 +211,14 @@ body {
 
 /* Custom inline code styling with higher specificity */
 .custom-inline-code {
-  /* Enforce rounded shape with important to override conflicts */
-  border-radius: 0.5rem !important;
-  padding: 0.375rem 0.375rem !important; 
+  /* Enforce rounded shape to override conflicts */
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.375rem;
   /* Ensure proper box shape */
-  display: inline-block !important;
+  display: inline-block;
   /* Fix alignments */
-  vertical-align: baseline !important;
-  line-height: 1 !important;
+  vertical-align: baseline;
+  line-height: 1;
 }
 
 /* Animation and layout fixes */
@@ -253,7 +254,7 @@ body {
 /* This helps ensure that copied content from the application doesn't include background colors */
 ::selection {
   color: inherit;
-  background-color: rgba(0, 100, 255, 0.1) !important;
+  background-color: rgba(0, 100, 255, 0.1);
 }
 
 /* 
@@ -262,27 +263,27 @@ body {
  * This targets the line number container element.
  */
 .code-block-container code > span:first-child {
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;  
-  -ms-user-select: none !important;
-  user-select: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* Target all possible line number elements */
 .code-block-container .linenumber,
 .code-block-container .react-syntax-highlighter-line-number,
 .code-block-container span.linenumber {
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* Target the line number container (rendered separately with float: left) */
 .code-block-container pre > span[style*="float"],
 .code-block-container pre > span[style*="user-select: none"] {
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
