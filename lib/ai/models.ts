@@ -10,8 +10,8 @@ export const chatModels: ChatModel[] = [
   {
     id: 'glm-4.6',
     name: 'GLM-4.6',
-    description: 'GLM-4.6 model from Z.AI',
-    provider: 'Z.AI',
+    description: 'GLM-4.6 model via Poe API',
+    provider: 'Poe',
     isDefault: true,
   },
   {
