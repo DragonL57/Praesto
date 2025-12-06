@@ -35,5 +35,5 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": ["**/components/ui/**", "**/lib/editor/**"]
+  "ignorePatterns": ["**/components/ui/**"]
 }
