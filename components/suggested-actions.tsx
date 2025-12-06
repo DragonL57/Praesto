@@ -4,18 +4,21 @@ import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { memo } from 'react';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import type { UIMessage } from 'ai';
 
 interface SuggestedActionsProps {
   chatId: string;
-  append: UseChatHelpers['append'];
+  // AI SDK 5.x: append was renamed to sendMessage
+  sendMessage: UseChatHelpers<UIMessage>['sendMessage'];
 }
 
-function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
+function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const suggestedActions = [
     {
       title: 'Explain the concept',
       label: 'of sustainable living',
-      action: 'Explain the concept of sustainable living and how individuals can implement it in their daily lives.',
+      action:
+        'Explain the concept of sustainable living and how individuals can implement it in their daily lives.',
     },
     {
       title: 'Compare and contrast',
@@ -30,7 +33,8 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
     {
       title: 'Write a short story',
       label: 'about a journey to the stars',
-      action: 'Write a short story about an unexpected journey to the stars and the discovery that changes everything.',
+      action:
+        'Write a short story about an unexpected journey to the stars and the discovery that changes everything.',
     },
   ];
 
@@ -53,10 +57,8 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
 
-              append({
-                role: 'user',
-                content: suggestedAction.action,
-              });
+              // AI SDK 5.x: sendMessage accepts text directly
+              sendMessage({ text: suggestedAction.action });
             }}
             className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >

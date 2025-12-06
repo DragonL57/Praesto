@@ -1,20 +1,16 @@
-import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
-// eslint-disable-next-line import/no-unresolved
+import { notFound } from 'next/navigation';
+
 import { Chat } from '@/components/chat';
-// eslint-disable-next-line import/no-unresolved
-import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
-// eslint-disable-next-line import/no-unresolved
 import { DataStreamHandler } from '@/components/data-stream-handler';
-// eslint-disable-next-line import/no-unresolved
-import type { DBMessage } from '@/lib/db/schema';
-import type { Attachment, UIMessage } from 'ai';
-// eslint-disable-next-line import/no-unresolved
 import { PageTransition } from '@/components/ui/page-transition';
-// eslint-disable-next-line import/no-unresolved
+import { auth } from '@/app/auth';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
+
+import type { Attachment } from '@/lib/ai/types';
+import type { DBMessage } from '@/lib/db/schema';
+import type { UIMessage } from 'ai';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -43,6 +39,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   });
 
   function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
+    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
     return messages.map((message) => ({
       id: message.id,
       parts: message.parts as UIMessage['parts'],
@@ -56,7 +53,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   const cookieStore = await cookies();
-  const modelIdFromCookie = cookieStore.get('chat-model')?.value || DEFAULT_CHAT_MODEL_ID;
+  const modelIdFromCookie =
+    cookieStore.get('chat-model')?.value || DEFAULT_CHAT_MODEL_ID;
 
   return (
     <PageTransition>

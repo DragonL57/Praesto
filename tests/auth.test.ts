@@ -1,15 +1,16 @@
-import { generateId } from 'ai';
+import { createIdGenerator } from 'ai';
 import { getUnixTime } from 'date-fns';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
+const generateId = createIdGenerator({ size: 16 });
 const testEmail = `test-${getUnixTime(new Date())}@playwright.com`;
-const testPassword = generateId(16);
+const testPassword = generateId();
 
 class AuthPage {
-  constructor(private page: Page) {}
+  constructor(private page: Page) { }
 
   async gotoLogin() {
     await this.page.goto('/login');

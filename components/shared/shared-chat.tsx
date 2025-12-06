@@ -1,22 +1,24 @@
 'use client';
 
-import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef, useMemo } from 'react';
+import { DefaultChatTransport, type UIMessage } from 'ai';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import useSWR from 'swr';
+
+import { useArtifactSelector } from '@/hooks/use-artifact';
+import type {
+  AppendFunction,
+  Attachment,
+  ChatStatus,
+  SetMessagesFunction,
+} from '@/lib/ai/types';
 import { fetcher, generateUUID } from '@/lib/utils';
+import type { Vote } from '@/lib/db/schema';
 import { Messages } from '../messages/messages';
 import type { VisibilityType } from '../visibility-selector';
-import { useArtifactSelector } from '@/hooks/use-artifact';
-import { toast } from 'sonner';
-import { SharedChatHeader } from './shared-chat-header';
 import { SharedArtifact } from './shared-artifact';
-import type { Vote } from '@/lib/db/schema';
-import type {
-  SetMessagesFunction,
-  AppendFunction,
-  ChatStatus,
-} from '@/lib/ai/types';
+import { SharedChatHeader } from './shared-chat-header';
 
 export function SharedChat({
   id,
@@ -35,36 +37,60 @@ export function SharedChat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const {
-    messages,
-    setMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append,
-    status,
-    stop,
-    reload,
-  } = useChat({
-    id,
-    body: {
+  // Manage input state manually (AI SDK 5.x change)
+  const [input, setInput] = useState('');
+
+  const { messages, setMessages, sendMessage, status, stop, regenerate } =
+    useChat({
       id,
-      selectedChatModel: selectedChatModel,
-      userTimeContext: {
-        date: new Date().toDateString(),
-        time: new Date().toTimeString().split(' ')[0],
-        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      transport: new DefaultChatTransport({
+        api: '/api/chat',
+        body: {
+          id,
+          selectedChatModel: selectedChatModel,
+          userTimeContext: {
+            date: new Date().toDateString(),
+            time: new Date().toTimeString().split(' ')[0],
+            dayOfWeek: new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+            }),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+        },
+      }),
+      messages: initialMessages,
+      generateId: generateUUID,
+      onError: () => {
+        toast.error('An error occurred, please try again!');
       },
+    });
+
+  // Create handleSubmit wrapper for compatibility
+  const handleSubmit = (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
+    if (input.trim()) {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
+
+  // Create append wrapper for compatibility
+  const append = useCallback(
+    async (message: {
+      role: string;
+      content: string;
+    }): Promise<string | null | undefined> => {
+      await sendMessage({ text: message.content });
+      return null;
     },
-    initialMessages,
-    experimental_throttle: 100,
-    sendExtraMessageFields: true,
-    generateId: generateUUID,
-    onError: () => {
-      toast.error('An error occurred, please try again!');
-    },
-  });
+    [sendMessage],
+  );
+
+  // Create reload wrapper for compatibility
+  const reload = useCallback(async (): Promise<string | null | undefined> => {
+    await regenerate();
+    return null;
+  }, [regenerate]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

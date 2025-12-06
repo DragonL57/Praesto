@@ -1,12 +1,13 @@
 'use client';
 
-import type { Message } from 'ai';
-import { Button } from '../ui/button';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import type { UIMessage } from 'ai';
+
+import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import type { SetMessagesFunction, ReloadFunction } from '@/lib/ai/types';
+import type { ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
 
 // Define proper types for message parts
 interface TextMessagePart {
@@ -23,7 +24,7 @@ interface ImageMessagePart {
 type _MessagePart = TextMessagePart | ImageMessagePart;
 
 export type MessageEditorProps = {
-  message: Message;
+  message: UIMessage;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
   setMessages: SetMessagesFunction;
   reload: ReloadFunction;
@@ -37,14 +38,9 @@ export function MessageEditor({
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Extract text content from message parts instead of using message.content which might be empty
+  // AI SDK 5.x: Extract text content from message parts (content property no longer exists)
   const extractMessageText = () => {
-    // If message.content has value, use it
-    if (message.content && message.content.trim() !== '') {
-      return message.content;
-    }
-
-    // Otherwise extract text from message parts
+    // Extract text from message parts
     if (message.parts && message.parts.length > 0) {
       return message.parts
         .filter((part): part is TextMessagePart => part.type === 'text')

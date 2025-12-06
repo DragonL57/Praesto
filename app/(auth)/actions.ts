@@ -3,10 +3,9 @@
 
 import { z } from 'zod';
 
+import { signIn } from '@/app/auth';
 import { createUser, getUser, setVerificationToken } from '@/lib/db/queries';
 import { generateToken, sendVerificationEmail } from '@/lib/email';
-
-import { signIn } from '@/app/auth';
 
 // Enhanced password validation schema - only for registration
 const passwordSchema = z.string()

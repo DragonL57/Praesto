@@ -1,32 +1,34 @@
 'use client';
 
-import React, { memo, useState, useMemo, useEffect } from 'react';
-import type { UIMessage } from 'ai';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
-import type { Vote } from '@/lib/db/schema';
-import { DocumentToolCall, DocumentToolResult } from '../document';
-import { PencilEditIcon, CopyIcon } from '../icons';
-import { RefreshCwIcon } from 'lucide-react';
-import { Markdown } from '../markdown';
-import { MessageActions } from './message-actions';
-import { PreviewAttachment } from '../preview-attachment';
-import { Weather } from '../weather';
 import equal from 'fast-deep-equal';
-import { cn } from '@/lib/utils';
+import { RefreshCwIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCopyToClipboard } from 'usehooks-ts';
+
 import { Button } from '../ui/button';
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
   TooltipProvider,
+  TooltipTrigger,
 } from '../ui/tooltip';
-import { MessageEditor } from './message-editor';
 import { DocumentPreview } from '../document-preview';
-import type { SetMessagesFunction, AppendFunction } from '@/lib/ai/types';
+import { DocumentToolCall, DocumentToolResult } from '../document';
+import { Markdown } from '../markdown';
+import { MessageActions } from './message-actions';
+import { MessageEditor } from './message-editor';
 import { MessageReasoning } from './message-reasoning';
-import { useCopyToClipboard } from 'usehooks-ts';
-import { toast } from 'sonner';
+import { PencilEditIcon, CopyIcon } from '../icons';
+import { PreviewAttachment } from '../preview-attachment';
+import { Weather } from '../weather';
+
+import { cn } from '@/lib/utils';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
+import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
+import type { Vote } from '@/lib/db/schema';
+import type { UIMessage } from 'ai';
 
 // Define types needed for reasoning elements, mirroring message-reasoning.tsx
 interface WebSearchResult {
@@ -101,14 +103,59 @@ type EnhancedMessagePart = UIMessage['parts'][0] & {
   connectNext?: boolean;
   connectPrevious?: boolean;
   toolIndex?: number;
-  // Properly type toolInvocation to avoid TypeScript errors
-  toolInvocation?: {
-    toolName: string;
-    toolCallId: string;
-    state: string;
-    args?: Record<string, unknown>;
-    result?: Record<string, unknown>;
-  };
+};
+
+// AI SDK 5.x tool parts have state/input/output directly on the part
+// Helper to check if a part is a tool call part (type starts with 'tool-' or is 'dynamic-tool')
+const isToolPart = (part: UIMessage['parts'][0]): boolean => {
+  return part.type.startsWith('tool-') || part.type === 'dynamic-tool';
+};
+
+// Helper to extract tool name from a tool part
+const extractToolName = (part: UIMessage['parts'][0]): string => {
+  if (part.type === 'dynamic-tool' && 'toolName' in part) {
+    return (part as { toolName: string }).toolName;
+  }
+  if (part.type.startsWith('tool-')) {
+    return part.type.substring(5); // Remove 'tool-' prefix
+  }
+  return '';
+};
+
+// Helper to get tool call ID from a tool part
+const getToolCallId = (part: UIMessage['parts'][0]): string => {
+  if ('toolCallId' in part) {
+    return (part as { toolCallId: string }).toolCallId;
+  }
+  return '';
+};
+
+// Helper to check if tool result is available
+const isToolResultAvailable = (part: UIMessage['parts'][0]): boolean => {
+  if ('state' in part) {
+    return (part as { state: string }).state === 'output-available';
+  }
+  return false;
+};
+
+// Helper to get tool output
+const getToolOutput = (
+  part: UIMessage['parts'][0],
+): Record<string, unknown> | undefined => {
+  if ('output' in part) {
+    return part.output as Record<string, unknown>;
+  }
+  return undefined;
+};
+
+// Helper to get tool input/args
+const getToolInput = (
+  part: UIMessage['parts'][0],
+): Record<string, unknown> | undefined => {
+  if ('input' in part) {
+    return part.input as Record<string, unknown>;
+  }
+  return undefined;
 };
 
 // Helper function to preserve line breaks in user messages
@@ -227,15 +274,21 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
         message.parts.forEach((part, index) => {
           // a) Check for dedicated reasoning parts
           if (part.type === 'reasoning') {
-            const potentialReasoningPart = part as {
-              reasoning?: unknown;
+            const reasoningPart = part as {
+              text?: unknown;
+              reasoningText?: unknown;
               details?: unknown;
             };
             let content = '';
-            if (typeof potentialReasoningPart.reasoning === 'string') {
-              content = potentialReasoningPart.reasoning;
-            } else if (Array.isArray(potentialReasoningPart.details)) {
-              content = (potentialReasoningPart.details as Array<unknown>)
+            // AI SDK 5.x uses 'text' property for reasoning
+            if (typeof reasoningPart.text === 'string') {
+              content = reasoningPart.text;
+            } else if (typeof reasoningPart.reasoningText === 'string') {
+              // Fallback for older format
+              content = reasoningPart.reasoningText;
+            } else if (Array.isArray(reasoningPart.details)) {
+              // Fallback for details array format
+              content = (reasoningPart.details as Array<unknown>)
                 .map((detail: unknown) => {
                   const d = detail as ReasoningDetail;
                   return d.type === 'text' && d.text ? d.text : '';
@@ -260,11 +313,10 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             }
           }
           // c) Check for tool results to include in reasoning
-          else if (
-            part.type === 'tool-invocation' &&
-            part.toolInvocation?.state === 'result'
-          ) {
-            const { toolName, result } = part.toolInvocation;
+          // AI SDK 5.x: Tool parts have type 'tool-<name>' or 'dynamic-tool' with state/output directly on part
+          else if (isToolPart(part) && isToolResultAvailable(part)) {
+            const toolName = extractToolName(part);
+            const result = getToolOutput(part);
             if (result && typeof result === 'object') {
               // i) Handle 'think' tool results (add as text)
               if (toolName === 'think') {
@@ -310,7 +362,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 }
               }
             } // End check if result is object
-          } // End check for tool-invocation result
+          } // End check for tool result
         });
       }
       return {
@@ -354,15 +406,12 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
         return enhancedPart;
       });
 
-      // Grouping logic (First pass: Mark connections - unchanged)
+      // Grouping logic (First pass: Mark connections)
+      // AI SDK 5.x: Use helper functions for tool part detection
       for (let i = 0; i < enhancedParts.length; i++) {
         const part = enhancedParts[i];
-        if (
-          part.type === 'tool-invocation' &&
-          part.toolInvocation?.state === 'result'
-        ) {
-          // Add safe navigation
-          const currentToolName = part.toolInvocation.toolName;
+        if (isToolPart(part) && isToolResultAvailable(part)) {
+          const currentToolName = extractToolName(part);
           let nextToolPart: EnhancedMessagePart | null = null;
           let textEncounteredNext = false;
           for (let j = i + 1; j < enhancedParts.length; j++) {
@@ -375,9 +424,8 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               break;
             }
             if (
-              potentialNextPart.type === 'tool-invocation' &&
-              potentialNextPart.toolInvocation &&
-              potentialNextPart.toolInvocation.state === 'result'
+              isToolPart(potentialNextPart) &&
+              isToolResultAvailable(potentialNextPart)
             ) {
               nextToolPart = potentialNextPart;
               break;
@@ -386,10 +434,9 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
           if (
             !textEncounteredNext &&
             nextToolPart &&
-            nextToolPart.type === 'tool-invocation' &&
-            nextToolPart.toolInvocation
+            isToolPart(nextToolPart)
           ) {
-            const nextToolName = nextToolPart.toolInvocation.toolName;
+            const nextToolName = extractToolName(nextToolPart);
             if (
               (currentToolName === 'webSearch' &&
                 (nextToolName === 'readWebsiteContent' ||
@@ -412,9 +459,8 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               break;
             }
             if (
-              potentialPrevPart.type === 'tool-invocation' &&
-              potentialPrevPart.toolInvocation &&
-              potentialPrevPart.toolInvocation.state === 'result'
+              isToolPart(potentialPrevPart) &&
+              isToolResultAvailable(potentialPrevPart)
             ) {
               prevToolPart = potentialPrevPart;
               break;
@@ -423,10 +469,9 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
           if (
             !textEncounteredPrev &&
             prevToolPart &&
-            prevToolPart.type === 'tool-invocation' &&
-            prevToolPart.toolInvocation
+            isToolPart(prevToolPart)
           ) {
-            const prevToolName = prevToolPart.toolInvocation.toolName;
+            const prevToolName = extractToolName(prevToolPart);
             if (
               (currentToolName === 'readWebsiteContent' &&
                 (prevToolName === 'webSearch' ||
@@ -439,26 +484,18 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
         }
       }
 
-      // Grouping logic (Second pass: Assign group indices - unchanged)
+      // Grouping logic (Second pass: Assign group indices)
       let currentGroupIndex = 0;
       for (let i = 0; i < enhancedParts.length; i++) {
         const part = enhancedParts[i];
-        if (
-          part.type === 'tool-invocation' &&
-          part.toolInvocation &&
-          part.toolInvocation.state === 'result'
-        ) {
+        if (isToolPart(part) && isToolResultAvailable(part)) {
           if (part.toolIndex === -1) {
             part.toolIndex = currentGroupIndex;
             if (part.connectNext) {
               let j = i + 1;
               while (j < enhancedParts.length) {
                 const nextPart = enhancedParts[j];
-                if (
-                  nextPart.type !== 'tool-invocation' ||
-                  !nextPart.toolInvocation ||
-                  nextPart.toolInvocation.state !== 'result'
-                ) {
+                if (!isToolPart(nextPart) || !isToolResultAvailable(nextPart)) {
                   j++;
                   continue;
                 }
@@ -619,6 +656,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
 
     const isUserMessage = message.role === 'user';
 
+    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
     return (
       <div
         data-testid={`message-${message.role}`}
@@ -643,13 +681,12 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   ) {
                     return true;
                   }
-                  // Check for tool results that aren't reasoning tools
+                  // AI SDK 5.x: Check for tool results that aren't reasoning tools
                   if (
-                    part.type === 'tool-invocation' &&
-                    part.toolInvocation?.state === 'result' &&
-                    part.toolInvocation.toolName &&
+                    isToolPart(part) &&
+                    isToolResultAvailable(part) &&
                     !['think', 'webSearch', 'readWebsiteContent'].includes(
-                      part.toolInvocation.toolName,
+                      extractToolName(part),
                     )
                   ) {
                     return true;
@@ -659,7 +696,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               }
             />
           )}
-
         <div
           className={cn(
             'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl',
@@ -670,27 +706,38 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
           )}
         >
           <div className="flex flex-col gap-1 w-full">
-            {message.experimental_attachments && (
-              <div
-                data-testid={`message-attachments`}
-                className="flex flex-row justify-end gap-2"
-              >
-                {message.experimental_attachments.map((attachment) => (
-                  <PreviewAttachment
-                    key={attachment.url}
-                    attachment={attachment}
-                  />
-                ))}
-              </div>
-            )}
+            {/* AI SDK 5.x: Attachments are now file parts in message.parts */}
+            {(() => {
+              const fileParts = message.parts.filter(
+                (part) => part.type === 'file',
+              ) as Array<{ type: 'file'; url: string; mediaType: string }>;
+              if (fileParts.length === 0) return null;
+              return (
+                <div
+                  data-testid={`message-attachments`}
+                  className="flex flex-row justify-end gap-2"
+                >
+                  {fileParts.map((filePart) => (
+                    <PreviewAttachment
+                      key={filePart.url}
+                      attachment={{
+                        url: filePart.url,
+                        contentType: filePart.mediaType,
+                        name: filePart.url.split('/').pop() || 'file',
+                      }}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
 
             {(() => {
               const toolGroups: { [key: number]: EnhancedMessagePart[] } = {};
               processedParts.forEach((part) => {
+                // AI SDK 5.x: Tool parts have state directly on the part
                 if (
-                  part.type === 'tool-invocation' &&
-                  part.toolInvocation &&
-                  part.toolInvocation.state === 'result' &&
+                  isToolPart(part) &&
+                  isToolResultAvailable(part) &&
                   part.toolIndex !== undefined &&
                   part.toolIndex >= 0
                 ) {
@@ -705,10 +752,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 const key = `message-${message.id}-part-${index}`;
 
                 // A: Render non-tool-result parts
-                if (
-                  type !== 'tool-invocation' ||
-                  part.toolInvocation?.state !== 'result'
-                ) {
+                if (!isToolPart(part) || !isToolResultAvailable(part)) {
                   if (type === 'text') {
                     if (part.text?.trim().length === 0) return null;
                     if (mode === 'view') {
@@ -763,12 +807,15 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     }
                   }
                   if (
-                    type === 'tool-invocation' &&
-                    part.toolInvocation?.state === 'call'
+                    isToolPart(part) &&
+                    'state' in part &&
+                    (part as { state: string }).state === 'input-available'
                   ) {
-                    const { toolInvocation } = part;
-                    if (!toolInvocation) return null;
-                    const { toolName, toolCallId, args } = toolInvocation;
+                    // AI SDK 5.x: Tool call state is 'input-available' (previously 'call')
+                    const toolName = extractToolName(part);
+                    const toolCallId = getToolCallId(part);
+                    const args = getToolInput(part) || {};
+
                     // Only render tool calls NOT handled by reasoning (think, webSearch, readWebsiteContent)
                     if (
                       ['think', 'webSearch', 'readWebsiteContent'].includes(
@@ -790,18 +837,18 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                         ) : toolName === 'createDocument' ? (
                           <DocumentPreview
                             isReadonly={isReadonly}
-                            args={args}
+                            args={args as { title: string }}
                           />
                         ) : toolName === 'updateDocument' ? (
                           <DocumentToolCall
                             type="update"
-                            args={args}
+                            args={args as { title: string }}
                             isReadonly={isReadonly}
                           />
                         ) : toolName === 'requestSuggestions' ? (
                           <DocumentToolCall
                             type="request-suggestions"
-                            args={args}
+                            args={args as { title: string }}
                             isReadonly={isReadonly}
                           />
                         ) : null}{' '}
@@ -821,10 +868,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 ) {
                   return null;
                 }
-                if (!part.toolInvocation) return null;
+                if (!isToolPart(part)) return null;
 
+                // AI SDK 5.x: Get tool name from type or toolName property
+                const toolNameForResult = extractToolName(part);
                 // Skip rendering tools handled by MessageReasoning
-                const toolNameForResult = part.toolInvocation.toolName;
                 if (
                   ['think', 'webSearch', 'readWebsiteContent'].includes(
                     toolNameForResult,
@@ -851,27 +899,24 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     >
                       {currentToolGroup.map(
                         (groupPart: EnhancedMessagePart) => {
-                          if (
-                            groupPart.type !== 'tool-invocation' ||
-                            !groupPart.toolInvocation
-                          )
-                            return null;
-                          const inv = groupPart.toolInvocation;
-                          const _res = inv.result || {};
+                          if (!isToolPart(groupPart)) return null;
+                          const groupToolName = extractToolName(groupPart);
+                          const groupToolCallId = getToolCallId(groupPart);
+                          const _res = getToolOutput(groupPart) || {};
                           if (
                             [
                               'think',
                               'webSearch',
                               'readWebsiteContent',
-                            ].includes(inv.toolName)
+                            ].includes(groupToolName)
                           )
                             return null;
                           return (
-                            <div key={inv.toolCallId} className="border-0">
+                            <div key={groupToolCallId} className="border-0">
                               {/* Render grouped non-reasoning tools like Weather, Docs etc. if they can be grouped */}
-                              {/* Example: if (inv.toolName === 'getWeather') return <Weather ...inGroup={true}/>; */}
+                              {/* Example: if (groupToolName === 'getWeather') return <Weather ...inGroup={true}/>; */}
                               {/* Placeholder for now */}
-                              <pre>Grouped: {inv.toolName} Result</pre>
+                              <pre>Grouped: {groupToolName} Result</pre>
                             </div>
                           );
                         },
@@ -880,9 +925,10 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   );
                 } else {
                   // Render Standalone Tool Result (for tools NOT handled by reasoning)
-                  const { toolInvocation } = part;
-                  const { toolName, toolCallId } = toolInvocation;
-                  const result = toolInvocation.result || {};
+                  // AI SDK 5.x: Properties are directly on the part
+                  const toolName = extractToolName(part);
+                  const toolCallId = getToolCallId(part);
+                  const result = getToolOutput(part) || {};
 
                   // Final check: Ensure it's not a reasoning-handled tool
                   if (
@@ -908,22 +954,46 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       )}
                     >
                       {toolName === 'getWeather' ? (
-                        <Weather weatherAtLocation={result} />
+                        <Weather
+                          weatherAtLocation={
+                            result as unknown as Parameters<
+                              typeof Weather
+                            >[0]['weatherAtLocation']
+                          }
+                        />
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview
                           isReadonly={isReadonly}
-                          result={result}
+                          result={
+                            result as unknown as {
+                              id: string;
+                              title: string;
+                              kind: 'code';
+                            }
+                          }
                         />
                       ) : toolName === 'updateDocument' ? (
                         <DocumentToolResult
                           type="update"
-                          result={result}
+                          result={
+                            result as {
+                              id: string;
+                              title: string;
+                              kind: 'code';
+                            }
+                          }
                           isReadonly={isReadonly}
                         />
                       ) : toolName === 'requestSuggestions' ? (
                         <DocumentToolResult
                           type="request-suggestions"
-                          result={result}
+                          result={
+                            result as {
+                              id: string;
+                              title: string;
+                              kind: 'code';
+                            }
+                          }
                           isReadonly={isReadonly}
                         />
                       ) : (
@@ -948,7 +1018,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             )}
           </div>
         </div>
-
         {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
         {isUserMessage && mode !== 'edit' && !isReadonly && (
           <div className="flex justify-end items-center gap-1 mt-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200">

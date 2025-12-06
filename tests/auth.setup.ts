@@ -1,13 +1,14 @@
 import path from 'node:path';
-import { generateId } from 'ai';
+import { createIdGenerator } from 'ai';
 import { getUnixTime } from 'date-fns';
 import { expect, test as setup } from '@playwright/test';
 
 const authFile = path.join(__dirname, '../playwright/.auth/session.json');
+const generateId = createIdGenerator({ size: 16 });
 
 setup('authenticate', async ({ page }) => {
   const testEmail = `test-${getUnixTime(new Date())}@playwright.com`;
-  const testPassword = generateId(16);
+  const testPassword = generateId();
 
   await page.goto('http://localhost:3000/register');
   await page.getByPlaceholder('user@acme.com').click();

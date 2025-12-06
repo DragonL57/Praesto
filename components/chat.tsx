@@ -1,23 +1,29 @@
 'use client';
 
-import type { Attachment, UIMessage } from 'ai';
+import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
-import { useLocalStorage } from 'usehooks-ts';
-import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher, generateUUID } from '@/lib/utils';
-import { Artifact } from './artifact';
-import { MultimodalInput, InputSkeleton } from './multimodal-input';
-import { Messages } from './messages/messages';
-import type { VisibilityType } from './visibility-selector';
-import { useArtifactSelector } from '@/hooks/use-artifact';
-import { toast } from 'sonner';
 import { unstable_serialize } from 'swr/infinite';
+import { useLocalStorage } from 'usehooks-ts';
+import { toast } from 'sonner';
+
+import { Artifact } from './artifact';
+import { ChatHeader } from '@/components/chat-header';
+import { InputSkeleton, MultimodalInput } from './multimodal-input';
+import { Messages } from './messages/messages';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
+import { useArtifactSelector } from '@/hooks/use-artifact';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
-import type { SetMessagesFunction, AppendFunction } from '@/lib/ai/types';
+import { fetcher, generateUUID } from '@/lib/utils';
+
+import type {
+  AppendFunction,
+  Attachment,
+  SetMessagesFunction,
+} from '@/lib/ai/types';
+import type { Vote } from '@/lib/db/schema';
+import type { VisibilityType } from './visibility-selector';
 
 export function Chat({
   id,
@@ -55,25 +61,35 @@ export function Chat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Manage input state manually (AI SDK 5.x change)
+  const [input, setInput] = useState('');
+
   const chatHelpers = useChat({
     id,
-    body: {
-      id,
-      selectedChatModel: globallySelectedModelId,
-      userTimeContext: {
-        date: new Date().toDateString(),
-        time: new Date().toTimeString().split(' ')[0],
-        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: {
+        id,
+        selectedChatModel: globallySelectedModelId,
+        userTimeContext: {
+          date: new Date().toDateString(),
+          time: new Date().toTimeString().split(' ')[0],
+          dayOfWeek: new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+          }),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
       },
-    },
-    initialMessages,
-    experimental_throttle: 100,
-    sendExtraMessageFields: true,
+    }),
+
+    messages: initialMessages,
     generateId: generateUUID,
+
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
+
     onError: (error) => {
       console.error('[Chat Component useChat onError]', error);
       toast.error(
@@ -86,14 +102,26 @@ export function Chat({
   const {
     messages: rawMessages,
     setMessages: rawSetMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append: rawAppend,
+    sendMessage,
     status,
     stop,
-    reload,
+    regenerate,
   } = chatHelpers;
+
+  // Create handleSubmit wrapper for compatibility
+  const handleSubmit = (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
+    if (input.trim()) {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
+
+  // Create reload wrapper for compatibility
+  const reload = async (): Promise<string | null | undefined> => {
+    await regenerate();
+    return null;
+  };
 
   // Ensure messages have the required parts field for UIMessage compatibility
   const messages = useMemo(
@@ -131,13 +159,15 @@ export function Chat({
 
   // Type-safe append wrapper with useMemo
   const append = useMemo<AppendFunction>(
-    () => (message: { role: 'user' | 'assistant'; content: string }) => {
-      return rawAppend({
-        role: message.role,
-        content: message.content,
-      });
-    },
-    [rawAppend],
+    () =>
+      async (message: {
+        role: 'user' | 'assistant';
+        content: string;
+      }): Promise<string | null | undefined> => {
+        await sendMessage({ text: message.content });
+        return null;
+      },
+    [sendMessage],
   );
 
   const { data: votes } = useSWR<Array<Vote>>(

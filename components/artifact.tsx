@@ -1,33 +1,36 @@
-import type { Attachment, UIMessage } from 'ai';
-import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
+import equal from 'fast-deep-equal';
+import { formatDistance } from 'date-fns';
 import {
+  memo,
   type Dispatch,
   type SetStateAction,
   useCallback,
   useEffect,
   useState,
-  memo,
 } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
-import type { Document, Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
-import { MultimodalInput } from './multimodal-input';
-import { Toolbar } from './toolbar';
-import { VersionFooter } from './version-footer';
+import type { UIMessage } from 'ai';
+
 import { ArtifactActions } from './artifact-actions';
 import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
+import { MultimodalInput } from './multimodal-input';
+import { Toolbar } from './toolbar';
+import { VersionFooter } from './version-footer';
 import { useSidebar } from './ui/sidebar';
-import { useArtifact } from '@/hooks/use-artifact';
+
 import { codeArtifact } from '@/artifacts/code/client';
-import equal from 'fast-deep-equal';
+import { useArtifact } from '@/hooks/use-artifact';
+import { fetcher } from '@/lib/utils';
 import type {
-  SetMessagesFunction,
+  Attachment,
   AppendFunction,
   ChatStatus,
+  SetMessagesFunction,
 } from '@/lib/ai/types';
+import type { Document, Vote } from '@/lib/db/schema';
 
 export const artifactDefinitions = [codeArtifact];
 export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
@@ -77,7 +80,10 @@ function PureArtifact({
   append: AppendFunction;
   handleSubmit: (
     event?: { preventDefault?: () => void },
-    options?: { experimental_attachments?: Attachment[] },
+    options?: {
+      /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
+      experimental_attachments?: Attachment[];
+    },
   ) => void;
   reload: () => Promise<string | null | undefined>;
   isReadonly: boolean;

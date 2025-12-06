@@ -1,19 +1,20 @@
-import type { Attachment } from 'ai';
+
 import { useEffect, useState } from 'react';
-import { FileIcon } from './icons';
-import { Button } from './ui/button';
 import {
-  Loader2,
-  FileText,
-  FileSpreadsheet,
-  Image as FileImage,
-  File as FilePdf,
+  FileArchive,
   FileCode,
   FileJson,
-  FileArchive,
+  File,
+  FileSpreadsheet,
+  FileText,
+  Image as FileImage,
+  Loader2,
   Presentation,
   X,
 } from 'lucide-react';
+import type { Attachment } from '@/lib/ai/types';
+import { FileIcon } from './icons';
+import { Button } from './ui/button';
 
 // Extend the Attachment type to include optional size property
 interface ExtendedAttachment extends Attachment {
@@ -233,7 +234,7 @@ export function PreviewAttachment({
     if (effectiveType.startsWith('image/')) {
       return <FileImage size={16} stroke="rgb(59 130 246)" />;
     } else if (effectiveType === 'application/pdf') {
-      return <FilePdf size={16} stroke="rgb(239 68 68)" />;
+      return <File size={16} stroke="rgb(239 68 68)" />;
     } else if (
       effectiveType.includes('wordprocessingml') ||
       effectiveType === 'application/msword'
@@ -276,60 +277,58 @@ export function PreviewAttachment({
     filename.length > 20 ? `${filename.substring(0, 20)}...` : filename;
 
   return (
-    <>
-      <div
-        className="group relative flex items-center gap-2 rounded-md border bg-background p-2 shadow-sm"
-        data-testid="attachment-preview"
-      >
-        <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
-          {isUploading ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : (
-            getFileIcon()
-          )}
-        </div>
-
-        <div className="flex flex-col">
-          <div
-            className="max-w-[140px] truncate text-sm font-medium"
-            title={filename}
-          >
-            {displayName}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {isUploading
-              ? 'Loading...'
-              : attachment.contentType?.startsWith('image/')
-                ? 'Click to preview'
-                : `${fileType}${fileSize ? ` • ${fileSize}` : ''}`}
-          </div>
-        </div>
-
-        {onRemove && !isUploading && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute -right-1 -top-1 size-5 rounded-full bg-gray-100 dark:bg-gray-800 shadow-sm z-10"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            <X size={12} className="text-gray-900 dark:text-gray-200" />
-            <span className="sr-only">Remove attachment</span>
-          </Button>
-        )}
-
-        {/* Make only images clickable for previews */}
-        {!isUploading && attachment.contentType?.startsWith('image/') && (
-          <button
-            type="button"
-            className="absolute inset-0 cursor-pointer"
-            onClick={handlePreviewClick}
-            aria-label="Preview image"
-          />
+    <div
+      className="group relative flex items-center gap-2 rounded-md border bg-background p-2 shadow-sm"
+      data-testid="attachment-preview"
+    >
+      <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
+        {isUploading ? (
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+        ) : (
+          getFileIcon()
         )}
       </div>
-    </>
+
+      <div className="flex flex-col">
+        <div
+          className="max-w-[140px] truncate text-sm font-medium"
+          title={filename}
+        >
+          {displayName}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {isUploading
+            ? 'Loading...'
+            : attachment.contentType?.startsWith('image/')
+              ? 'Click to preview'
+              : `${fileType}${fileSize ? ` • ${fileSize}` : ''}`}
+        </div>
+      </div>
+
+      {onRemove && !isUploading && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute -right-1 -top-1 size-5 rounded-full bg-gray-100 dark:bg-gray-800 shadow-sm z-10"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+        >
+          <X size={12} className="text-gray-900 dark:text-gray-200" />
+          <span className="sr-only">Remove attachment</span>
+        </Button>
+      )}
+
+      {/* Make only images clickable for previews */}
+      {!isUploading && attachment.contentType?.startsWith('image/') && (
+        <button
+          type="button"
+          className="absolute inset-0 cursor-pointer"
+          onClick={handlePreviewClick}
+          aria-label="Preview image"
+        />
+      )}
+    </div>
   );
 }

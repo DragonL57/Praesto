@@ -4,7 +4,16 @@
  * These types help bridge the gap between different versions of the AI SDK
  * where UIMessage and Message have slight type differences.
  */
-import type { Attachment, UIMessage } from 'ai';
+import type { UIMessage } from 'ai';
+
+// Custom Attachment type for AI SDK 5.x compatibility
+// In v5, attachments are now part of the message parts array as file parts
+export type Attachment = {
+    url: string;
+    name?: string;
+    contentType?: string;
+    mediaType?: string;
+};
 
 // Type for setMessages that works with UIMessage
 export type SetMessagesFunction = (
@@ -17,7 +26,8 @@ export type AppendFunction = (
         | {
             role: 'user' | 'assistant';
             content: string;
-            experimental_attachments?: Attachment[];
+            // In AI SDK 5.x, attachments are handled via parts array
+            attachments?: Attachment[];
         }
 ) => Promise<string | null | undefined>;
 

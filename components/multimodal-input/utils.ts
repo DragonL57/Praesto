@@ -1,5 +1,5 @@
 import { upload } from '@vercel/blob/client';
-import type { Attachment } from 'ai';
+import type { Attachment } from '@/lib/ai/types';
 
 // Utility functions for multimodal input components
 

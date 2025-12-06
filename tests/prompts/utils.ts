@@ -1,9 +1,13 @@
-import type { CoreMessage, LanguageModelV1StreamPart } from 'ai';
+import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { ModelMessage } from 'ai';
 import { TEST_PROMPTS } from './basic';
 
+let idCounter = 0;
+const generatePartId = () => `part-${idCounter++}`;
+
 export function compareMessages(
-  firstMessage: CoreMessage,
-  secondMessage: CoreMessage,
+  firstMessage: ModelMessage,
+  secondMessage: ModelMessage,
 ): boolean {
   if (firstMessage.role !== secondMessage.role) return false;
 
@@ -39,18 +43,24 @@ export function compareMessages(
   return true;
 }
 
-const textToDeltas = (text: string): LanguageModelV1StreamPart[] => {
-  const deltas = text
-    .split(' ')
-    .map((char) => ({ type: 'text-delta' as const, textDelta: `${char} ` }));
+// AI SDK 5.x: V2 stream parts use 'id' and 'delta' instead of 'textDelta'
+const textToDeltas = (text: string): LanguageModelV2StreamPart[] => {
+  const deltas = text.split(' ').map(
+    (word) =>
+      ({
+        type: 'text-delta',
+        id: generatePartId(),
+        delta: `${word} `,
+      }) as LanguageModelV2StreamPart,
+  );
 
   return deltas;
 };
 
 export const getResponseChunksByPrompt = (
-  prompt: CoreMessage[],
-  isReasoningEnabled = false,
-): Array<LanguageModelV1StreamPart> => {
+  prompt: ModelMessage[],
+  _isReasoningEnabled = false,
+): Array<LanguageModelV2StreamPart> => {
   const recentMessage = prompt.at(-1);
 
   if (!recentMessage) {
@@ -63,8 +73,7 @@ export const getResponseChunksByPrompt = (
       {
         type: 'finish',
         finishReason: 'stop',
-        logprobs: undefined,
-        usage: { completionTokens: 10, promptTokens: 3 },
+        usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
       },
     ];
   } else if (compareMessages(recentMessage, TEST_PROMPTS.USER_GRASS)) {
@@ -73,8 +82,7 @@ export const getResponseChunksByPrompt = (
       {
         type: 'finish',
         finishReason: 'stop',
-        logprobs: undefined,
-        usage: { completionTokens: 10, promptTokens: 3 },
+        usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
       },
     ];
   }
@@ -85,8 +93,7 @@ export const getResponseChunksByPrompt = (
     {
       type: 'finish',
       finishReason: 'stop',
-      logprobs: undefined,
-      usage: { completionTokens: 10, promptTokens: 3 },
+      usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
     },
   ];
 };

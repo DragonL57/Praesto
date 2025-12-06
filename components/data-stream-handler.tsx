@@ -1,10 +1,11 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+
 import { artifactDefinitions, type ArtifactKind } from './artifact';
-import type { Suggestion } from '@/lib/db/schema';
 import { initialArtifactData, useArtifact } from '@/hooks/use-artifact';
+import type { Suggestion } from '@/lib/db/schema';
 
 export type DataStreamDelta = {
   type:
@@ -22,17 +23,44 @@ export type DataStreamDelta = {
 };
 
 export function DataStreamHandler({ id }: { id: string }) {
-  const { data: dataStream } = useChat({ id });
+  const { messages } = useChat({ id });
   const { artifact, setArtifact, setMetadata } = useArtifact();
-  const lastProcessedIndex = useRef(-1);
+  const lastProcessedMessageId = useRef<string | null>(null);
+  const lastProcessedPartCount = useRef<number>(0);
 
-  useEffect(() => {
-    if (!dataStream?.length) return;
+  // Process data parts from the message stream
+  // AI SDK 5.x: Custom data is now sent as 'data-artifact' type parts in the message
+  const processDataParts = useCallback(() => {
+    if (!messages?.length) return;
 
-    const newDeltas = dataStream.slice(lastProcessedIndex.current + 1);
-    lastProcessedIndex.current = dataStream.length - 1;
+    // Get the last assistant message (which contains streaming data)
+    const lastMessage = messages.filter((m) => m.role === 'assistant').at(-1);
+    if (!lastMessage) return;
 
-    (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
+    // Check if we need to process new parts
+    const isNewMessage = lastProcessedMessageId.current !== lastMessage.id;
+    if (isNewMessage) {
+      lastProcessedMessageId.current = lastMessage.id;
+      lastProcessedPartCount.current = 0;
+    }
+
+    // Process data parts from the message
+    // Data parts have type 'data-artifact' with a nested data object
+    const dataParts = lastMessage.parts.filter(
+      (part) => typeof part.type === 'string' && part.type.startsWith('data-'),
+    );
+
+    // Only process new parts
+    const newParts = dataParts.slice(lastProcessedPartCount.current);
+    lastProcessedPartCount.current = dataParts.length;
+
+    newParts.forEach((part) => {
+      // Extract the data from the part
+      const partData = part as { type: string; data?: DataStreamDelta };
+      const delta = partData.data;
+
+      if (!delta) return;
+
       const artifactDefinition = artifactDefinitions.find(
         (artifactDefinition) => artifactDefinition.kind === artifact.kind,
       );
@@ -90,7 +118,11 @@ export function DataStreamHandler({ id }: { id: string }) {
         }
       });
     });
-  }, [dataStream, setArtifact, setMetadata, artifact]);
+  }, [messages, setArtifact, setMetadata, artifact]);
+
+  useEffect(() => {
+    processDataParts();
+  }, [processDataParts]);
 
   return null;
 }

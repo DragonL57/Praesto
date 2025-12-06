@@ -1,6 +1,6 @@
 import { generateUUID } from '@/lib/utils';
 import { tool } from 'ai';
-import type { DataStreamWriter } from 'ai';
+import type { UIMessageStreamWriter } from 'ai';
 import { z } from 'zod';
 import type { Session } from 'next-auth';
 import {
@@ -10,36 +10,43 @@ import {
 
 interface CreateDocumentProps {
   session: Session;
-  dataStream: DataStreamWriter;
+  dataStream: UIMessageStreamWriter;
+}
+
+// Helper to write data to the stream in AI SDK 5.x format
+function writeData(writer: UIMessageStreamWriter, data: { type: string; content: string }) {
+  // AI SDK 5.x: Use write() with data parts
+  // The 'data' property will be sent to the client via the stream
+  writer.write({ type: 'data-artifact' as const, data } as unknown as Parameters<typeof writer.write>[0]);
 }
 
 export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
   tool({
     description:
       'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.',
-    parameters: z.object({
+    inputSchema: z.object({
       title: z.string(),
       kind: z.enum(artifactKinds),
     }),
     execute: async ({ title, kind }) => {
       const id = generateUUID();
 
-      dataStream.writeData({
+      writeData(dataStream, {
         type: 'kind',
         content: kind,
       });
 
-      dataStream.writeData({
+      writeData(dataStream, {
         type: 'id',
         content: id,
       });
 
-      dataStream.writeData({
+      writeData(dataStream, {
         type: 'title',
         content: title,
       });
 
-      dataStream.writeData({
+      writeData(dataStream, {
         type: 'clear',
         content: '',
       });
@@ -60,7 +67,7 @@ export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
         session,
       });
 
-      dataStream.writeData({ type: 'finish', content: '' });
+      writeData(dataStream, { type: 'finish', content: '' });
 
       return {
         id,

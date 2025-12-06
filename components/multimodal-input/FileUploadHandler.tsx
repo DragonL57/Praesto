@@ -2,7 +2,8 @@
 
 import { useCallback, type RefObject } from 'react';
 import { toast } from 'sonner';
-import type { Attachment } from 'ai';
+
+import type { Attachment } from '@/lib/ai/types';
 import { uploadFile } from './utils';
 
 interface FileUploadHandlerProps {
@@ -102,7 +103,7 @@ export function useFileUploadHandler({
             );
             continue; // Skip this file
           }
-          const timestamp = new Date().getTime();
+          const timestamp = Date.now();
           const renamedFile = new File(
             [file],
             `${timestamp}.${file.type.split('/')[1] || 'png'}`,

@@ -37,7 +37,7 @@ interface SearchResult {
 export const webSearch = tool({
   description:
     'Perform a web search using Tavily and return the results. Supports real-time information lookup with high-quality sources.',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe('The search query'),
     maxResults: z
       .number()

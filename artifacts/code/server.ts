@@ -1,9 +1,17 @@
-import { z } from 'zod';
+
 import { streamObject } from 'ai';
-import { myProvider } from '@/lib/ai/providers';
-// Modify the import to be more explicit
-import { updateDocumentPrompt } from '@/lib/ai/prompts';
+import type { UIMessageStreamWriter } from 'ai';
+import { z } from 'zod';
+
 import { createDocumentHandler } from '@/lib/artifacts/server';
+import { myProvider } from '@/lib/ai/providers';
+import { updateDocumentPrompt } from '@/lib/ai/prompts';
+
+// Helper to write data to the stream in AI SDK 5.x format
+function writeData(writer: UIMessageStreamWriter, data: { type: string; content: string }) {
+  // AI SDK 5.x: Use write() with data parts
+  writer.write({ type: 'data-artifact' as const, data } as unknown as Parameters<typeof writer.write>[0]);
+}
 
 export const codeDocumentHandler = createDocumentHandler<'code'>({
   kind: 'code',
@@ -27,7 +35,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
         const { code } = object;
 
         if (code) {
-          dataStream.writeData({
+          writeData(dataStream, {
             type: 'code-delta',
             content: code ?? '',
           });
@@ -59,7 +67,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
         const { code } = object;
 
         if (code) {
-          dataStream.writeData({
+          writeData(dataStream, {
             type: 'code-delta',
             content: code ?? '',
           });

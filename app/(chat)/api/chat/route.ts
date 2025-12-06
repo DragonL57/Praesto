@@ -1,44 +1,53 @@
-import {
-  appendResponseMessages,
-  createDataStreamResponse,
-  smoothStream,
-  streamText,
-} from 'ai';
-import type { UIMessage } from 'ai';
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
-// eslint-disable-next-line import/no-unresolved
-import { systemPrompt } from '@/lib/ai/prompts';
-// eslint-disable-next-line import/no-unresolved
-import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
-// eslint-disable-next-line import/no-unresolved
-import { generateUUID, getMostRecentUserMessage, getTrailingMessageId, } from '@/lib/utils';
-import { generateTitleFromUserMessage } from '../../actions';
-// eslint-disable-next-line import/no-unresolved
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-// eslint-disable-next-line import/no-unresolved
-import { getWeather } from '@/lib/ai/tools/get-weather';
-// eslint-disable-next-line import/no-unresolved
-import { webSearch } from '@/lib/ai/tools/web-search';
-// eslint-disable-next-line import/no-unresolved
-import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
-// eslint-disable-next-line import/no-unresolved
-import { createDocument } from '@/lib/ai/tools/create-document';
-// eslint-disable-next-line import/no-unresolved
-import { updateDocument } from '@/lib/ai/tools/update-document';
-// eslint-disable-next-line import/no-unresolved
-import { isProductionEnvironment } from '@/lib/constants';
-// eslint-disable-next-line import/no-unresolved
-import { myProvider } from '@/lib/ai/providers';
 
-// Imports for officeparser and file fetching
-import { parseOfficeAsync } from 'officeparser';
 import { Buffer } from 'node:buffer'; // Node.js Buffer
-// Assuming Vercel Blob client might be needed for fetching private blobs,
-// or a robust fetch for public URLs. For now, standard fetch.
-// import { head } from '@vercel/blob'; // To check existence/metadata if needed
-
 import { cookies } from 'next/headers';
+import { parseOfficeAsync } from 'officeparser';
+
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  smoothStream,
+  stepCountIs,
+  streamText,
+  type FileUIPart,
+  type UIMessage,
+  type UIMessageStreamWriter,
+} from 'ai';
+
+import { auth } from '@/app/auth';
+import { createDocument } from '@/lib/ai/tools/create-document';
+import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
+import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
+import { generateTitleFromUserMessage } from '../../actions';
+import { getWeather } from '@/lib/ai/tools/get-weather';
+import { isProductionEnvironment } from '@/lib/constants';
+import { myProvider } from '@/lib/ai/providers';
+import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
+import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
+import { systemPrompt } from '@/lib/ai/prompts';
+import { updateDocument } from '@/lib/ai/tools/update-document';
+import { webSearch } from '@/lib/ai/tools/web-search';
+
+// Helper types for file parts
+type FileAttachment = {
+  url: string;
+  name?: string;
+  contentType?: string;
+  mediaType?: string;
+};
+
+// Extract file parts from message parts (AI SDK 5.x approach)
+function getFilePartsFromMessage(message: UIMessage): FileAttachment[] {
+  return message.parts
+    .filter((part): part is FileUIPart => part.type === 'file')
+    .map(part => ({
+      url: part.url,
+      name: (part as FileUIPart & { name?: string }).name,
+      contentType: part.mediaType,
+      mediaType: part.mediaType,
+    }));
+}
 
 // --- Configuration for Extracted Text Formatting ---
 const ATTACHMENT_TEXT_HEADER_PREFIX = "\n\n--- Content from attachment:";
@@ -104,17 +113,20 @@ export async function POST(request: Request) {
 
     combinedUserTextAndAttachments = originalUserTypedText;
 
-    if (userMessage.experimental_attachments && userMessage.experimental_attachments.length > 0) {
-      const imageAttachments = userMessage.experimental_attachments.filter(att => att.contentType?.startsWith('image/'));
-      const documentAttachments = userMessage.experimental_attachments.filter(att => !att.contentType?.startsWith('image/'));
+    // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
+    const fileParts = getFilePartsFromMessage(userMessage);
+    if (fileParts.length > 0) {
+      const imageAttachments = fileParts.filter(att => att.contentType?.startsWith('image/') || att.mediaType?.startsWith('image/'));
+      const documentAttachments = fileParts.filter(att => !att.contentType?.startsWith('image/') && !att.mediaType?.startsWith('image/'));
 
       console.log(`Processing attachments: ${imageAttachments.length} images, ${documentAttachments.length} documents`);
 
-      for (const attachment of userMessage.experimental_attachments) {
+      for (const attachment of fileParts) {
         if (attachment.url) {
           // Skip text extraction for image files - modern AI models can process these directly
-          if (attachment.contentType?.startsWith('image/')) {
-            console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType})`);
+          const isImage = attachment.contentType?.startsWith('image/') || attachment.mediaType?.startsWith('image/');
+          if (isImage) {
+            console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType || attachment.mediaType})`);
             continue;
           }
 
@@ -127,7 +139,7 @@ export async function POST(request: Request) {
             const fileArrayBuffer = await response.arrayBuffer();
             const fileBuffer = Buffer.from(fileArrayBuffer);
 
-            console.log(`Parsing file: ${attachment.name || 'unknown file'} (${attachment.contentType})`);
+            console.log(`Parsing file: ${attachment.name || 'unknown file'} (${attachment.contentType || attachment.mediaType})`);
             const extractedText = await parseOfficeAsync(fileBuffer);
 
             if (extractedText && extractedText.trim().length > 0) {
@@ -175,35 +187,14 @@ export async function POST(request: Request) {
 
     // Prepare messages for streamText:
     // 1. For the current userMessage, its .parts are already updated with combined text (if attachments were processed).
-    // 2. For user messages, preserve image attachments but remove non-image attachments
+    // 2. AI SDK 5.x uses parts array for both text and files
     // 
     // Mixed-attachment case handled as follows:
-    // - Image attachments: Preserved in experimental_attachments field for direct model viewing
+    // - Image attachments: Preserved as file parts in message.parts for direct model viewing
     // - Document attachments: Their extracted text is included in the message text part
-    //   with appropriate headers/footers, while the original attachments are filtered out
-    //   to avoid redundancy (since their content is already in the message text)
+    //   with appropriate headers/footers, while preserving image file parts
     const messagesForStreamText = messages.map(msg => {
-      let processedMsg = { ...msg }; // Start with a shallow copy
-
-      // If it's a user message, handle attachments appropriately
-      if (processedMsg.role === 'user' && msg.experimental_attachments) {
-        // Filter to keep only image attachments
-        const imageAttachments = msg.experimental_attachments.filter(
-          attachment => attachment.contentType?.startsWith('image/')
-        );
-
-        // If there are image attachments, keep them; otherwise set to undefined
-        processedMsg = {
-          ...processedMsg,
-          experimental_attachments: imageAttachments.length > 0 ? imageAttachments : undefined,
-        };
-      } else if (processedMsg.role === 'user') {
-        // If user message but no attachments, ensure experimental_attachments is undefined
-        processedMsg = {
-          ...processedMsg,
-          experimental_attachments: undefined,
-        };
-      }
+      const processedMsg = { ...msg }; // Start with a shallow copy
 
       // If this specific message is the most recent user message we just processed,
       // ensure its parts are the ones we potentially modified with extracted text.
@@ -228,14 +219,15 @@ export async function POST(request: Request) {
       }
     }
 
+    // AI SDK 5.x: Attachments are now stored as file parts within message.parts
     await saveMessages({
       messages: [
         {
           chatId: id,
           id: userMessage.id,
           role: 'user',
-          parts: originalUserMessageParts, // Use the original parts for saving
-          attachments: userMessage.experimental_attachments ?? [],
+          parts: originalUserMessageParts, // Use the original parts for saving (includes file parts)
+          attachments: [], // Legacy field - attachments are now in parts as file type
           createdAt: new Date(),
         },
       ],
@@ -245,33 +237,45 @@ export async function POST(request: Request) {
     // This ensures the conversation moves to the top of the sidebar right away
     await updateChatTimestamp({ id });
 
-    return createDataStreamResponse({
-      execute: async (dataStream) => {
-        // Use the model selected by the user (from the chat-model cookie), fallback to 'chat-model'
-        const cookieStore = await cookies();
-        const cookieModel = cookieStore.get('chat-model')?.value;
-        const finalSelectedChatModel = cookieModel || 'chat-model';
+    // Use the model selected by the user (from the chat-model cookie), fallback to 'chat-model'
+    const cookieStore = await cookies();
+    const cookieModel = cookieStore.get('chat-model')?.value;
+    const finalSelectedChatModel = cookieModel || 'chat-model';
 
-        const finalModelMessages = messagesForStreamText.map(msg => ({
-          ...msg,
-          parts: [...msg.parts],
-          experimental_attachments: msg.experimental_attachments ? [...msg.experimental_attachments] : undefined
-        }));
+    // AI SDK 5.x: Messages already use parts array, no need for experimental_attachments
+    const finalModelMessages = messagesForStreamText.map(msg => ({
+      ...msg,
+      parts: [...msg.parts],
+    }));
 
-        // Prepare model options for the selected model
-        // GLM-4.6 supports up to 128K output tokens
-        const modelOptions = {
-          maxTokens: 128000,
-          temperature: 1,
-        };
-        const modelInstance = myProvider.languageModel(finalSelectedChatModel);
+    // Prepare model options for the selected model
+    // GLM-4.6 supports up to 128K output tokens
+    const modelOptions = {
+      maxTokens: 128000,
+      temperature: 1,
+    };
+    const modelInstance = myProvider.languageModel(finalSelectedChatModel);
 
+    // Log information about image file parts being sent to the model
+    const finalImagePartsForLogging = finalModelMessages
+      .filter(msg => msg.role === 'user')
+      .flatMap(msg => msg.parts.filter((part): part is FileUIPart => part.type === 'file' && (part.mediaType?.startsWith('image/') ?? false)));
+
+    if (finalImagePartsForLogging.length > 0) {
+      console.log(`Sending ${finalImagePartsForLogging.length} image file parts to the final model (${finalSelectedChatModel}):`,
+        finalImagePartsForLogging.map(img => `${img.mediaType}`));
+    }
+
+    // AI SDK 5.x: Create the UI message stream with execute callback
+    const stream = createUIMessageStream({
+      execute: async ({ writer }: { writer: UIMessageStreamWriter }) => {
         const result = streamText({
           model: modelInstance,
           system: systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
-          messages: finalModelMessages,
-          maxSteps: 10,
+          messages: convertToModelMessages(finalModelMessages),
+          stopWhen: stepCountIs(10),
           ...modelOptions,
+
           providerOptions: {
             openai: {
               maxTokens: 128000
@@ -283,6 +287,7 @@ export async function POST(request: Request) {
               maxTokens: 128000
             }
           },
+
           experimental_activeTools: [
             'getWeather',
             'requestSuggestions',
@@ -291,86 +296,97 @@ export async function POST(request: Request) {
             'createDocument',
             'updateDocument',
           ],
+
           experimental_transform: smoothStream({ chunking: 'line' }),
-          experimental_generateMessageId: generateUUID,
+
           tools: {
             getWeather,
             webSearch,
             readWebsiteContent,
             createDocument: createDocument({
               session,
-              dataStream,
+              dataStream: writer,
             }),
             updateDocument: updateDocument({
               session,
-              dataStream,
+              dataStream: writer,
             }),
             requestSuggestions: requestSuggestions({
               session,
-              dataStream,
+              dataStream: writer,
             }),
           },
-          onFinish: async ({ response }) => {
-            if (session.user?.id) {
-              try {
-                const assistantId = getTrailingMessageId({
-                  messages: response.messages.filter(
-                    (message) => message.role === 'assistant',
-                  ),
-                });
 
-                if (!assistantId) {
-                  throw new Error('No assistant message found!');
-                }
-
-                const [, assistantMessage] = appendResponseMessages({
-                  messages: [userMessage],
-                  responseMessages: response.messages,
-                });
-
-                await saveMessages({
-                  messages: [
-                    {
-                      id: assistantId,
-                      chatId: id,
-                      role: assistantMessage.role,
-                      parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
-                      createdAt: new Date(),
-                    },
-                  ],
-                });
-
-                // Update the chat timestamp to move it to the top of the sidebar
-                await updateChatTimestamp({ id });
-              } catch {
-                console.error('Failed to save chat');
-              }
-            }
-          },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',
-          },
+          }
         });
 
-        result.consumeStream();
-
-        // Log information about image attachments being sent to the model
-        const finalImageAttachmentsForLogging = finalModelMessages
-          .filter(msg => msg.role === 'user' && msg.experimental_attachments?.length)
-          .flatMap(msg => msg.experimental_attachments || [])
-          .filter(attachment => attachment.contentType?.startsWith('image/'));
-
-        if (finalImageAttachmentsForLogging.length > 0) {
-          console.log(`Sending ${finalImageAttachmentsForLogging.length} image attachments to the final model (${finalSelectedChatModel}):`,
-            finalImageAttachmentsForLogging.map(img => `${img.name} (${img.contentType})`));
-        }
-
-        result.mergeIntoDataStream(dataStream, {
+        // AI SDK 5.x: Merge the result stream into the UI message stream
+        writer.merge(result.toUIMessageStream({
           sendReasoning: true,
-        });
+        }));
+
+        // Wait for the stream to finish before saving messages
+        const response = await result.response;
+
+        if (session.user?.id) {
+          try {
+            // AI SDK 5.x: Response messages are AssistantModelMessage[], need to extract ID differently
+            const assistantMessages = response.messages.filter(
+              (message) => message.role === 'assistant'
+            );
+
+            if (assistantMessages.length === 0) {
+              throw new Error('No assistant message found!');
+            }
+
+            // Get the last assistant message and generate an ID for it
+            const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+            const assistantId = generateUUID();
+
+            // AI SDK 5.x: AssistantContent can be string or array, convert to UIMessage parts format
+            const content = lastAssistantMessage.content;
+            const contentArray = typeof content === 'string'
+              ? [{ type: 'text' as const, text: content }]
+              : content;
+
+            const uiParts = contentArray.map((part: { type: string; text?: string; toolCallId?: string; toolName?: string; args?: unknown }) => {
+              if (part.type === 'text') {
+                return { type: 'text' as const, text: part.text || '' };
+              }
+              if (part.type === 'tool-call') {
+                return {
+                  type: 'tool-invocation' as const,
+                  toolInvocationId: part.toolCallId,
+                  toolName: part.toolName,
+                  args: part.args,
+                  state: 'result' as const,
+                };
+              }
+              return part;
+            });
+
+            await saveMessages({
+              messages: [
+                {
+                  id: assistantId,
+                  chatId: id,
+                  role: 'assistant' as const,
+                  parts: uiParts,
+                  attachments: [], // Legacy field - attachments are now in parts
+                  createdAt: new Date(),
+                },
+              ],
+            });
+
+            // Update the chat timestamp to move it to the top of the sidebar
+            await updateChatTimestamp({ id });
+          } catch {
+            console.error('Failed to save chat');
+          }
+        }
       },
       onError: (error: unknown) => {
         console.error('[API CHAT STREAMING ERROR]', error instanceof Error ? error.message : error, error instanceof Error ? error.stack : undefined);
@@ -388,7 +404,11 @@ export async function POST(request: Request) {
         }
         return 'An error occurred during streaming. Please try again. (Details logged on server)';
       },
+      generateId: generateUUID,
     });
+
+    // Return the stream as a response
+    return createUIMessageStreamResponse({ stream });
   } catch (error) {
     console.error('[API CHAT ROUTE ERROR]', error);
     return new Response('An error occurred while processing your request. Please try again.', {

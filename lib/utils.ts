@@ -1,11 +1,6 @@
 import type {
   CoreAssistantMessage,
   CoreToolMessage,
-  Message,
-  // Remove unused imports
-  // TextStreamPart,
-  // ToolInvocation,
-  // ToolSet,
   UIMessage,
 } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
@@ -54,38 +49,55 @@ export function generateUUID(): string {
   });
 }
 
-// Prefix with underscore to mark as intentionally unused, or remove if not needed elsewhere
+// AI SDK 5.x: Tool invocations are now in message.parts as 'tool-invocation' type parts
+// The 'tool-invocation' part uses 'toolCallId' (not 'toolInvocationId')
+// Tool state should be 'output-available' when result is ready
+// This function updates tool invocation parts with their results
 function _addToolMessageToChat({
   toolMessage,
   messages,
 }: {
   toolMessage: CoreToolMessage;
-  messages: Array<Message>;
-}): Array<Message> {
+  messages: Array<UIMessage>;
+}): Array<UIMessage> {
   return messages.map((message) => {
-    if (message.toolInvocations) {
+    // Find tool-invocation parts in the message
+    const hasToolInvocations = message.parts.some(part =>
+      part.type === 'tool-invocation' || (typeof part.type === 'string' && part.type.startsWith('tool-'))
+    );
+
+    if (hasToolInvocations) {
       return {
         ...message,
-        toolInvocations: message.toolInvocations.map((toolInvocation) => {
+        parts: message.parts.map((part) => {
+          // Check if this is a tool-related part
+          if (part.type !== 'tool-invocation' && !(typeof part.type === 'string' && part.type.startsWith('tool-'))) {
+            return part;
+          }
+
+          // AI SDK 5.x: Tool parts use 'toolCallId' property
+          const partWithToolCall = part as { toolCallId?: string };
+          if (!partWithToolCall.toolCallId) return part;
+
           const toolResult = toolMessage.content.find(
-            (tool) => tool.toolCallId === toolInvocation.toolCallId,
+            (tool) => tool.toolCallId === partWithToolCall.toolCallId,
           );
 
           if (toolResult) {
             return {
-              ...toolInvocation,
-              state: 'result',
-              result: toolResult.result,
+              ...part,
+              state: 'output-available' as const, // AI SDK 5.x uses 'output-available' instead of 'result'
+              output: toolResult.output, // AI SDK 5.x uses 'output' property
             };
           }
 
-          return toolInvocation;
+          return part;
         }),
       };
     }
 
     return message;
-  });
+  }) as Array<UIMessage>;
 }
 
 type ResponseMessageWithoutId = CoreToolMessage | CoreAssistantMessage;

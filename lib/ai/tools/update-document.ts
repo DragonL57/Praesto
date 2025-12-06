@@ -1,4 +1,4 @@
-import { type DataStreamWriter, tool } from 'ai';
+import { type UIMessageStreamWriter, tool } from 'ai';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
 import { getDocumentById } from '@/lib/db/queries';
@@ -6,13 +6,19 @@ import { documentHandlersByArtifactKind } from '@/lib/artifacts/server';
 
 interface UpdateDocumentProps {
   session: Session;
-  dataStream: DataStreamWriter;
+  dataStream: UIMessageStreamWriter;
+}
+
+// Helper to write data to the stream in AI SDK 5.x format
+function writeData(writer: UIMessageStreamWriter, data: { type: string; content: string }) {
+  // AI SDK 5.x: Use write() with data parts
+  writer.write({ type: 'data-artifact' as const, data } as unknown as Parameters<typeof writer.write>[0]);
 }
 
 export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
   tool({
     description: 'Update a document with the given description.',
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe('The ID of the document to update'),
       description: z
         .string()
@@ -27,7 +33,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
         };
       }
 
-      dataStream.writeData({
+      writeData(dataStream, {
         type: 'clear',
         content: document.title,
       });
@@ -48,7 +54,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
         session,
       });
 
-      dataStream.writeData({ type: 'finish', content: '' });
+      writeData(dataStream, { type: 'finish', content: '' });
 
       return {
         id,

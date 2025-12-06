@@ -7,7 +7,7 @@ import {
   expect,
   type Page,
 } from '@playwright/test';
-import { generateId } from 'ai';
+import { createIdGenerator } from 'ai';
 import { getUnixTime } from 'date-fns';
 
 export type UserContext = {
@@ -35,7 +35,8 @@ export async function createAuthenticatedContext({
   const page = await context.newPage();
 
   const email = `test-${name}-${getUnixTime(new Date())}@playwright.com`;
-  const password = generateId(16);
+  const generateId = createIdGenerator({ size: 16 });
+  const password = generateId();
 
   await page.goto('http://localhost:3000/register');
   await page.getByPlaceholder('user@acme.com').click();

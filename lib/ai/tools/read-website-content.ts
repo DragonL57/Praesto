@@ -31,7 +31,7 @@ function getErrorMessage(error: unknown): string {
 export const readWebsiteContent = tool({
   description:
     'Fetch and return the text content of a webpage/article in nicely formatted markdown for easy readability.',
-  parameters: z.object({
+  inputSchema: z.object({
     url: z.string().describe('The URL of the webpage to fetch content from'),
     query: z
       .string()

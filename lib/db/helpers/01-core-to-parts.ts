@@ -9,7 +9,6 @@ import {
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { inArray } from 'drizzle-orm';
-import { appendResponseMessages } from 'ai';
 import type { UIMessage } from 'ai';
 
 config({
@@ -86,8 +85,8 @@ async function createNewTable() {
           messageSection.length = 0;
         }
 
-        // @ts-expect-error message.content has different type
-        messageSection.push(message);
+        // Cast message to Record since deprecated message schema has different type
+        messageSection.push(message as unknown as UIMessage);
       }
 
       if (messageSection.length > 0) {
@@ -101,39 +100,53 @@ async function createNewTable() {
         const [firstAssistantMessage] = assistantMessages;
 
         try {
-          const uiSection = appendResponseMessages({
-            messages: [userMessage],
-            // @ts-expect-error: message.content has different type
-            responseMessages: assistantMessages,
-            _internal: {
-              currentDate: () => firstAssistantMessage.createdAt ?? new Date(),
-            },
-          });
+          // AI SDK 5.x: appendResponseMessages was removed, manually build UI messages
+          const projectedUISection: NewMessageInsert[] = [];
 
-          const projectedUISection = uiSection
-            .map((message) => {
-              if (message.role === 'user') {
-                return {
-                  id: message.id,
-                  chatId: chat.id,
-                  parts: [{ type: 'text', text: message.content }],
-                  role: message.role,
-                  createdAt: message.createdAt,
-                  attachments: [],
-                } as NewMessageInsert;
-              } else if (message.role === 'assistant') {
-                return {
-                  id: message.id,
-                  chatId: chat.id,
-                  parts: message.parts || [],
-                  role: message.role,
-                  createdAt: message.createdAt,
-                  attachments: [],
-                } as NewMessageInsert;
-              }
-              return null;
-            })
-            .filter((msg): msg is NewMessageInsert => msg !== null);
+          // Add user message
+          if (userMessage) {
+            const userContent = (userMessage as { content?: string }).content || '';
+            projectedUISection.push({
+              id: userMessage.id,
+              chatId: chat.id,
+              parts: [{ type: 'text', text: userContent }],
+              role: 'user',
+              // Use createdAt if available on the message, otherwise use current date
+              createdAt: (userMessage as { createdAt?: Date }).createdAt || new Date(),
+              attachments: [],
+            });
+          }
+
+          // Add assistant messages
+          for (const assistantMessage of assistantMessages) {
+            const msgWithContent = assistantMessage as {
+              id: string;
+              content?: string;
+              parts?: Record<string, unknown>[];
+              createdAt?: Date;
+            };
+            const parts =
+              msgWithContent.parts ||
+              (msgWithContent.content
+                ? [{ type: 'text', text: msgWithContent.content }]
+                : []);
+
+            // Cast firstAssistantMessage to access createdAt (not part of UIMessage in SDK 5.x)
+            const firstMsgWithCreatedAt = firstAssistantMessage as unknown as {
+              createdAt?: Date;
+            };
+            projectedUISection.push({
+              id: assistantMessage.id,
+              chatId: chat.id,
+              parts: parts,
+              role: 'assistant',
+              createdAt:
+                msgWithContent.createdAt ||
+                firstMsgWithCreatedAt?.createdAt ||
+                new Date(),
+              attachments: [],
+            });
+          }
 
           // Add messages to batch
           for (const msg of projectedUISection) {

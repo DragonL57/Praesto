@@ -1,7 +1,7 @@
 'use server';
 
 import { generateText } from 'ai';
-import type { Message } from 'ai';
+import type { UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
 import { deleteMessagesByChatIdAfterTimestamp, getMessageById, updateChatVisiblityById, } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
@@ -11,7 +11,7 @@ import { myProvider } from '@/lib/ai/providers';
 export async function generateTitleFromUserMessage({
   message,
 }: {
-  message: Message;
+  message: UIMessage;
 }) {
   const { text: title } = await generateText({
     model: myProvider.languageModel('title-model'),

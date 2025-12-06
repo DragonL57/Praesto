@@ -1,40 +1,41 @@
 'use client';
 
-import React, { useRef, useState, useCallback, memo, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
+import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
-import type { Attachment, UIMessage } from 'ai';
-import equal from 'fast-deep-equal';
-import type {
-  SetMessagesFunction,
-  AppendFunction,
-  ChatStatus,
-} from '@/lib/ai/types';
+import type { UIMessage } from 'ai';
 
 import { PreviewAttachment } from '../preview-attachment';
 import { Textarea } from '../ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-import { SendButton } from './SendButton';
-import { StopButton } from './StopButton';
 import { AttachmentsButton } from './AttachmentsButton';
-import { SpeechToTextButton } from './SpeechToTextButton';
-import { ScrollButton } from './ScrollButton';
 import { Greeting } from './Greeting';
+import { ImageIcon, GPSIcon, GlobeIcon } from '../icons';
+import { ScrollButton } from './ScrollButton';
+import { SendButton } from './SendButton';
+import { SpeechToTextButton } from './SpeechToTextButton';
+import { StopButton } from './StopButton';
+import { useFileUploadHandler } from './FileUploadHandler';
 import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '../ui/hover-card';
 import {
   TextareaAutoResizer,
   resetTextareaHeight,
 } from './TextareaAutoResizer';
-import { useFileUploadHandler } from './FileUploadHandler';
+import type {
+  AppendFunction,
+  Attachment,
+  ChatStatus,
+  SetMessagesFunction,
+} from '@/lib/ai/types';
 import type { SpeechRecognition } from './types';
-import { ImageIcon, GPSIcon, GlobeIcon } from '../icons';
-import {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-} from '../ui/hover-card';
 
 interface MultimodalInputProps {
   chatId: string;
@@ -49,7 +50,10 @@ interface MultimodalInputProps {
   append: AppendFunction;
   handleSubmit: (
     event?: { preventDefault?: () => void },
-    options?: { experimental_attachments?: Attachment[] },
+    options?: {
+      /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
+      experimental_attachments?: Attachment[];
+    },
   ) => void;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
@@ -140,6 +144,7 @@ function PureMultimodalInput({
       recognitionRef.current = null;
     }
 
+    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
     const chatRequestOptions = {
       experimental_attachments: attachments,
     };

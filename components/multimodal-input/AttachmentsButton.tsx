@@ -1,17 +1,27 @@
 'use client';
 
 import React, { memo } from 'react';
+import type { UseChatHelpers } from '@ai-sdk/react';
+import type { UIMessage } from 'ai';
+
 import { Button } from '../ui/button';
 import { PaperclipIcon } from '../icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip';
 
 interface AttachmentsButtonProps {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  status: UseChatHelpers['status'];
+  status: UseChatHelpers<UIMessage>['status'];
 }
 
-function PureAttachmentsButton({ fileInputRef, status }: AttachmentsButtonProps) {
+function PureAttachmentsButton({
+  fileInputRef,
+  status,
+}: AttachmentsButtonProps) {
   return (
     <TooltipProvider delayDuration={50} skipDelayDuration={0}>
       <Tooltip>
