@@ -282,6 +282,12 @@ export async function POST(request: Request) {
                 type: 'enabled'
               },
               maxTokens: 128000
+            },
+            poe: {
+              thinking: {
+                type: 'enabled'
+              },
+              maxTokens: 128000
             }
           },
 
