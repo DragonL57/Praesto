@@ -8,6 +8,13 @@ const zaiProvider = createOpenAICompatible({
   baseURL: 'https://api.z.ai/api/coding/paas/v4',
 });
 
+// Poe API OpenAI-compatible provider
+const poeProvider = createOpenAICompatible({
+  name: 'poe',
+  apiKey: process.env.POE_API_KEY || '',
+  baseURL: 'https://api.poe.com/v1',
+});
+
 // Export the configured provider for the application
 // Model IDs match those defined in models.ts chatModels array
 export const myProvider = customProvider({
@@ -16,6 +23,8 @@ export const myProvider = customProvider({
     'glm-4.6': zaiProvider.chatModel('glm-4.6'),
     'glm-4.5': zaiProvider.chatModel('glm-4.5'),
     'glm-4.5-air': zaiProvider.chatModel('glm-4.5-air'),
+    // Poe models - registered with their actual model IDs
+    'deepseek-v3.2': poeProvider.chatModel('deepseek-v3.2'),
     // Aliases for internal use
     'chat-model': zaiProvider.chatModel('glm-4.6'),
     'title-model': zaiProvider.chatModel('glm-4.5-air'),

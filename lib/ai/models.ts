@@ -26,6 +26,12 @@ export const chatModels: ChatModel[] = [
     description: 'GLM-4.5 Air model from Z.AI',
     provider: 'Z.AI',
   },
+  {
+    id: 'deepseek-v3.2',
+    name: 'DeepSeek v3.2',
+    description: 'DeepSeek v3.2 model from Poe API',
+    provider: 'Poe',
+  },
 ];
 
 const defaultModel = chatModels.find(model => model.isDefault);
