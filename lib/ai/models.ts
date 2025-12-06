@@ -8,29 +8,17 @@ export interface ChatModel {
 
 export const chatModels: ChatModel[] = [
   {
-    id: 'glm-4.6',
-    name: 'GLM-4.6',
-    description: 'GLM-4.6 model via Poe API',
+    id: 'kimi-k2-thinking',
+    name: 'Kimi K2 Thinking',
+    description: 'Kimi K2 Thinking model via Poe API',
     provider: 'Poe',
     isDefault: true,
   },
   {
-    id: 'glm-4.5',
-    name: 'GLM-4.5',
-    description: 'GLM-4.5 model from Z.AI',
+    id: 'glm-4.6',
+    name: 'GLM-4.6',
+    description: 'GLM-4.6 model from Z.AI',
     provider: 'Z.AI',
-  },
-  {
-    id: 'glm-4.5-air',
-    name: 'GLM-4.5 Air',
-    description: 'GLM-4.5 Air model from Z.AI',
-    provider: 'Z.AI',
-  },
-  {
-    id: 'deepseek-v3.2',
-    name: 'DeepSeek v3.2',
-    description: 'DeepSeek v3.2 model from Poe API',
-    provider: 'Poe',
   },
 ];
 
