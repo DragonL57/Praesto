@@ -19,6 +19,5 @@ export const myProvider = customProvider({
     // Aliases for internal use
     'chat-model': zaiProvider.chatModel('glm-4.6'),
     'title-model': zaiProvider.chatModel('glm-4.5-air'),
-    'artifact-model': zaiProvider.chatModel('glm-4.6'),
   },
 });

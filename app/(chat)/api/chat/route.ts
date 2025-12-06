@@ -16,7 +16,6 @@ import {
 } from 'ai';
 
 import { auth } from '@/app/auth';
-import { createDocument } from '@/lib/ai/tools/create-document';
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -24,9 +23,7 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { systemPrompt } from '@/lib/ai/prompts';
-import { updateDocument } from '@/lib/ai/tools/update-document';
 import { webSearch } from '@/lib/ai/tools/web-search';
 
 // Helper types for file parts
@@ -290,11 +287,8 @@ export async function POST(request: Request) {
 
           experimental_activeTools: [
             'getWeather',
-            'requestSuggestions',
             'webSearch',
             'readWebsiteContent',
-            'createDocument',
-            'updateDocument',
           ],
 
           experimental_transform: smoothStream({ chunking: 'line' }),
@@ -303,18 +297,6 @@ export async function POST(request: Request) {
             getWeather,
             webSearch,
             readWebsiteContent,
-            createDocument: createDocument({
-              session,
-              dataStream: writer,
-            }),
-            updateDocument: updateDocument({
-              session,
-              dataStream: writer,
-            }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream: writer,
-            }),
           },
 
           experimental_telemetry: {

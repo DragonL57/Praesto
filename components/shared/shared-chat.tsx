@@ -2,14 +2,11 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
-import { useArtifactSelector } from '@/hooks/use-artifact';
 import type {
-  AppendFunction,
-  Attachment,
   ChatStatus,
   SetMessagesFunction,
 } from '@/lib/ai/types';
@@ -17,7 +14,6 @@ import { fetcher, generateUUID } from '@/lib/utils';
 import type { Vote } from '@/lib/db/schema';
 import { Messages } from '../messages/messages';
 import type { VisibilityType } from '../visibility-selector';
-import { SharedArtifact } from './shared-artifact';
 import { SharedChatHeader } from './shared-chat-header';
 
 export function SharedChat({
@@ -37,10 +33,7 @@ export function SharedChat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Manage input state manually (AI SDK 5.x change)
-  const [input, setInput] = useState('');
-
-  const { messages, setMessages, sendMessage, status, stop, regenerate } =
+  const { messages, setMessages, status } =
     useChat({
       id,
       transport: new DefaultChatTransport({
@@ -65,33 +58,6 @@ export function SharedChat({
       },
     });
 
-  // Create handleSubmit wrapper for compatibility
-  const handleSubmit = (e?: { preventDefault?: () => void }) => {
-    e?.preventDefault?.();
-    if (input.trim()) {
-      sendMessage({ text: input });
-      setInput('');
-    }
-  };
-
-  // Create append wrapper for compatibility
-  const append = useCallback(
-    async (message: {
-      role: string;
-      content: string;
-    }): Promise<string | null | undefined> => {
-      await sendMessage({ text: message.content });
-      return null;
-    },
-    [sendMessage],
-  );
-
-  // Create reload wrapper for compatibility
-  const reload = useCallback(async (): Promise<string | null | undefined> => {
-    await regenerate();
-    return null;
-  }, [regenerate]);
-
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
     fetcher,
@@ -100,9 +66,6 @@ export function SharedChat({
       revalidateOnReconnect: false,
     },
   );
-
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
-  const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
   // Wrap setMessages to match custom type
   const wrappedSetMessages = useMemo<SetMessagesFunction>(
@@ -113,17 +76,12 @@ export function SharedChat({
     [setMessages],
   );
 
-  // Wrap append to match custom type
-  const wrappedAppend = useMemo<AppendFunction>(
-    () => async (message) => {
-      return append(message as unknown as Parameters<typeof append>[0]);
-    },
-    [append],
-  );
+  // Empty implementations for required props
+  const reload = async (): Promise<string | null | undefined> => null;
+  const append = async (): Promise<string | null | undefined> => null;
 
   return (
-    <>
-      <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
+    <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
         <SharedChatHeader />
 
         <div className="flex-1 overflow-hidden relative w-full">
@@ -134,31 +92,13 @@ export function SharedChat({
             messages={messages}
             setMessages={wrappedSetMessages}
             reload={reload}
-            append={wrappedAppend}
+            append={append}
             isReadonly={isReadonly}
-            isArtifactVisible={isArtifactVisible}
+            isArtifactVisible={false}
             messagesContainerRef={messagesContainerRef}
             messagesEndRef={messagesEndRef}
           />
         </div>
       </div>
-
-      <SharedArtifact
-        chatId={id}
-        _input={input}
-        _setInput={setInput}
-        _handleSubmit={handleSubmit}
-        status={status as ChatStatus}
-        stop={stop}
-        _attachments={attachments}
-        _setAttachments={setAttachments}
-        append={wrappedAppend}
-        messages={messages}
-        setMessages={wrappedSetMessages}
-        reload={reload}
-        votes={votes}
-        isReadonly={isReadonly}
-      />
-    </>
   );
 }

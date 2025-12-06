@@ -14,8 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { DocumentPreview } from '../document-preview';
-import { DocumentToolCall, DocumentToolResult } from '../document';
 import { Markdown } from '../markdown';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
@@ -148,15 +146,6 @@ const getToolOutput = (
   return undefined;
 };
 
-// Helper to get tool input/args
-const getToolInput = (
-  part: UIMessage['parts'][0],
-): Record<string, unknown> | undefined => {
-  if ('input' in part) {
-    return part.input as Record<string, unknown>;
-  }
-  return undefined;
-};
 
 // Helper function to preserve line breaks in user messages
 const UserTextWithLineBreaks = ({ text }: { text: string }) => {
@@ -814,7 +803,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     // AI SDK 5.x: Tool call state is 'input-available' (previously 'call')
                     const toolName = extractToolName(part);
                     const toolCallId = getToolCallId(part);
-                    const args = getToolInput(part) || {};
 
                     // Only render tool calls NOT handled by reasoning (think, webSearch, readWebsiteContent)
                     if (
@@ -834,23 +822,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       >
                         {toolName === 'getWeather' ? (
                           <Weather />
-                        ) : toolName === 'createDocument' ? (
-                          <DocumentPreview
-                            isReadonly={isReadonly}
-                            args={args as { title: string }}
-                          />
-                        ) : toolName === 'updateDocument' ? (
-                          <DocumentToolCall
-                            type="update"
-                            args={args as { title: string }}
-                            isReadonly={isReadonly}
-                          />
-                        ) : toolName === 'requestSuggestions' ? (
-                          <DocumentToolCall
-                            type="request-suggestions"
-                            args={args as { title: string }}
-                            isReadonly={isReadonly}
-                          />
                         ) : null}{' '}
                         {/* Other non-reasoning tool calls rendered here */}
                       </div>
@@ -942,16 +913,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   return (
                     <div
                       key={toolCallId}
-                      className={cx(
-                        {
-                          'border-[1.5px] border-border rounded-xl mb-0': ![
-                            'updateDocument',
-                            'createDocument',
-                            'requestSuggestions',
-                          ].includes(toolName),
-                        },
-                        'relative',
-                      )}
+                      className="border-[1.5px] border-border rounded-xl mb-0 relative"
                     >
                       {toolName === 'getWeather' ? (
                         <Weather
@@ -960,41 +922,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                               typeof Weather
                             >[0]['weatherAtLocation']
                           }
-                        />
-                      ) : toolName === 'createDocument' ? (
-                        <DocumentPreview
-                          isReadonly={isReadonly}
-                          result={
-                            result as unknown as {
-                              id: string;
-                              title: string;
-                              kind: 'code';
-                            }
-                          }
-                        />
-                      ) : toolName === 'updateDocument' ? (
-                        <DocumentToolResult
-                          type="update"
-                          result={
-                            result as {
-                              id: string;
-                              title: string;
-                              kind: 'code';
-                            }
-                          }
-                          isReadonly={isReadonly}
-                        />
-                      ) : toolName === 'requestSuggestions' ? (
-                        <DocumentToolResult
-                          type="request-suggestions"
-                          result={
-                            result as {
-                              id: string;
-                              title: string;
-                              kind: 'code';
-                            }
-                          }
-                          isReadonly={isReadonly}
                         />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>

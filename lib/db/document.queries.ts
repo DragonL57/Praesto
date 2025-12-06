@@ -14,7 +14,6 @@ import {
     document,
     suggestion,
 } from './schema';
-import type { ArtifactKind } from '@/components/artifact';
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
@@ -29,7 +28,7 @@ export async function saveDocument({
 }: {
     id: string;
     title: string;
-    kind: ArtifactKind;
+    kind: string;
     content: string;
     userId: string;
 }) {
@@ -39,7 +38,7 @@ export async function saveDocument({
             .values({
                 id,
                 title,
-                kind,
+                kind: kind as 'text' | 'code' | 'image' | 'sheet',
                 content,
                 userId,
                 createdAt: new Date(),

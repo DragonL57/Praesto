@@ -56,7 +56,7 @@ export const TEST_PROMPTS: Record<string, ModelMessage> = {
       {
         type: 'tool-result',
         toolCallId: 'call_123',
-        toolName: 'createDocument',
+        toolName: 'getWeather',
         output: {
           type: 'json',
           value: {

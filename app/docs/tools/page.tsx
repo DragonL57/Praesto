@@ -27,11 +27,6 @@ export default function Tools() {
       <p className="mb-4">
         Placeholder content for document handling capabilities.
       </p>
-      
-      <h2 className="mb-4 mt-8 text-2xl font-semibold">Artifact System</h2>
-      <p className="mb-4">
-        Placeholder content for the artifact system.
-      </p>
     </main>
   )
 }

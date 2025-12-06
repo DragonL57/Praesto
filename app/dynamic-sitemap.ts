@@ -39,7 +39,7 @@ export default function dynamicSitemap(): MetadataRoute.Sitemap {
 
                 if (stat.isDirectory()) {
                     // Skip certain directories that shouldn't be in the sitemap
-                    if (['api', 'components', 'lib', 'hooks', 'types', 'artifacts'].some(d => file === d)) {
+                    if (['api', 'components', 'lib', 'hooks', 'types'].some(d => file === d)) {
                         continue;
                     }
 

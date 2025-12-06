@@ -45,19 +45,3 @@ export const titleModel = new MockLanguageModelV2({
     }),
   }),
 });
-
-export const artifactModel = new MockLanguageModelV2({
-  doGenerate: async () => ({
-    content: [{ type: 'text' as const, text: 'Hello, world!' }],
-    finishReason: 'stop' as const,
-    usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
-    warnings: [],
-  }),
-  doStream: async ({ prompt }: { prompt: LanguageModelV2Prompt }) => ({
-    stream: simulateReadableStream({
-      chunkDelayInMs: 50,
-      initialDelayInMs: 100,
-      chunks: getResponseChunksByPrompt(prompt),
-    }),
-  }),
-});

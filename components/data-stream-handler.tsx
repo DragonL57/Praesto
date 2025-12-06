@@ -3,8 +3,6 @@
 import { useChat } from '@ai-sdk/react';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { artifactDefinitions, type ArtifactKind } from './artifact';
-import { initialArtifactData, useArtifact } from '@/hooks/use-artifact';
 import type { Suggestion } from '@/lib/db/schema';
 
 export type DataStreamDelta = {
@@ -24,7 +22,6 @@ export type DataStreamDelta = {
 
 export function DataStreamHandler({ id }: { id: string }) {
   const { messages } = useChat({ id });
-  const { artifact, setArtifact, setMetadata } = useArtifact();
   const lastProcessedMessageId = useRef<string | null>(null);
   const lastProcessedPartCount = useRef<number>(0);
 
@@ -54,6 +51,7 @@ export function DataStreamHandler({ id }: { id: string }) {
     const newParts = dataParts.slice(lastProcessedPartCount.current);
     lastProcessedPartCount.current = dataParts.length;
 
+    // Process the new data parts
     newParts.forEach((part) => {
       // Extract the data from the part
       const partData = part as { type: string; data?: DataStreamDelta };
@@ -61,64 +59,13 @@ export function DataStreamHandler({ id }: { id: string }) {
 
       if (!delta) return;
 
-      const artifactDefinition = artifactDefinitions.find(
-        (artifactDefinition) => artifactDefinition.kind === artifact.kind,
-      );
+      // Since artifacts are removed, we just log the delta for debugging
+      console.log('DataStream: Processing delta', delta);
 
-      if (artifactDefinition?.onStreamPart) {
-        artifactDefinition.onStreamPart({
-          streamPart: delta,
-          setArtifact,
-          setMetadata,
-        });
-      }
-
-      setArtifact((draftArtifact) => {
-        if (!draftArtifact) {
-          return { ...initialArtifactData, status: 'streaming' };
-        }
-
-        switch (delta.type) {
-          case 'id':
-            return {
-              ...draftArtifact,
-              documentId: delta.content as string,
-              status: 'streaming',
-            };
-
-          case 'title':
-            return {
-              ...draftArtifact,
-              title: delta.content as string,
-              status: 'streaming',
-            };
-
-          case 'kind':
-            return {
-              ...draftArtifact,
-              kind: delta.content as ArtifactKind,
-              status: 'streaming',
-            };
-
-          case 'clear':
-            return {
-              ...draftArtifact,
-              content: '',
-              status: 'streaming',
-            };
-
-          case 'finish':
-            return {
-              ...draftArtifact,
-              status: 'idle',
-            };
-
-          default:
-            return draftArtifact;
-        }
-      });
+      // Here you could add other non-artifact specific processing
+      // For now, this handler just processes the stream without artifact functionality
     });
-  }, [messages, setArtifact, setMetadata, artifact]);
+  }, [messages]);
 
   useEffect(() => {
     processDataParts();

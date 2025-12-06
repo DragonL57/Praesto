@@ -83,15 +83,6 @@ export default defineConfig({
       },
     },
     {
-      name: 'artifacts',
-      testMatch: /artifacts.test.ts/,
-      dependencies: ['setup:auth'],
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/session.json',
-      },
-    },
-    {
       name: 'routes',
       testMatch: /routes\/.*.test.ts/,
       dependencies: [],

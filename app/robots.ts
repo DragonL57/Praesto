@@ -20,7 +20,6 @@ export default function robots(): MetadataRoute.Robots {
           '/lib/',
           '/tests/',
           '/types/',
-          '/artifacts/',
         ],
       },
       {

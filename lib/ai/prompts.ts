@@ -1,4 +1,3 @@
-import type { ArtifactKind } from '@/components/artifact';
 
 // ==========================================
 // PROMPT ARCHITECTURE NOTES
@@ -30,11 +29,6 @@ You have access to the following capabilities:
 - Web search for real-time information lookup
 - Website content extraction for deep reading
 - Weather data retrieval
-
-**Content Creation**
-- Document creation (code artifacts)
-- Document updating and refinement
-- Suggestion generation for document improvements
 
 **Knowledge**
 - Broad expertise across programming, science, business, creative writing, and general knowledge
@@ -68,11 +62,6 @@ For simple queries, this process happens rapidly. For complex tasks, be thorough
 - Deep analysis of a specific source
 - Extracting detailed information beyond search snippets
 - Verifying information from primary sources
-
-**When to create documents:**
-- User requests code, scripts, or technical artifacts
-- Content that benefits from dedicated editing space
-- Iterative work that will be refined over time
 
 ## Tool Execution Rules
 
@@ -304,81 +293,3 @@ Use this information for all temporal references and time-sensitive queries.
 ${environmentContext}`;
 };
 
-/**
- * Document update prompt generator - preserved as a separate utility
- */
-export const updateDocumentPrompt = (
-  currentContent: string | null,
-  type: ArtifactKind,
-) => {
-  const basePrompt = `
-# Document update guidelines
-
-Purpose: Enhance existing content while preserving structure and intent.
-
-Core principles:
-
-Preservation: Maintain existing formatting and structure
-
-Enhancement: Improve clarity and completeness
-
-Consistency: Follow document-specific conventions
-
-Respect: Honor the original purpose and intent
-
-Quality: Apply core assistant principles
-
-Current content preview (up to 2000 chars):
-${currentContent ? currentContent.slice(0, 2000) + (currentContent.length > 2000 ? '...' : '') : 'No content yet.'}
-`;
-
-  switch (type) {
-    case 'code':
-      return `${basePrompt}
-
-## Code document guidelines
-
-Structure requirements:
-
-Preserve code organization and indentation
-
-Maintain function/class structure
-
-Retain existing code architecture
-
-Enhancement focus:
-
-Preserve comments unless demonstrably incorrect
-
-Improve code readability and efficiency when possible
-
-Enhance documentation with clear explanations
-
-Apply language-specific best practices
-
-Maintain consistent naming conventions and style
-
-Ensure logic integrity during modifications
-`;
-
-    default:
-      return `${basePrompt}
-
-## General update guidelines
-
-Key principles:
-
-Identify and preserve the document's core purpose
-
-Maintain structural elements and organization
-
-Enhance clarity and information completeness
-
-Correct any errors or inconsistencies
-
-Focus on meeting the specific user request
-
-Apply appropriate formatting for content type
-`;
-  }
-};
