@@ -8,9 +8,9 @@ export interface ChatModel {
 
 export const chatModels: ChatModel[] = [
   {
-    id: 'kimi-k2-thinking',
-    name: 'Kimi K2 Thinking',
-    description: 'Kimi K2 Thinking model via Poe API',
+    id: 'grok-4.1-fast-reasoning',
+    name: 'Grok 4.1 Fast Reasoning',
+    description: 'Grok 4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
     isDefault: true,
   },

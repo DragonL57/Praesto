@@ -25,10 +25,9 @@ export const myProvider = customProvider({
     // Z.AI models - registered with their actual model IDs
     'glm-4.6': zaiProvider.chatModel('glm-4.6'),
     // Poe models - registered with their actual model IDs
-    'kimi-k2-thinking': poeProvider.chatModel('kimi-k2-thinking'),
-    'deepseek-v3.2': poeProvider.chatModel('deepseek-v3.2'),
+    'grok-4.1-fast-reasoning': poeProvider.chatModel('grok-4.1-fast-reasoning'),
     // Aliases for internal use
-    'chat-model': poeProvider.chatModel('kimi-k2-thinking'),
+    'chat-model': poeProvider.chatModel('grok-4.1-fast-reasoning'),
     'title-model': zaiProvider.chatModel('glm-4.5-air'),
   },
 });
