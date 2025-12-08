@@ -943,18 +943,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 />
               </div>
             )}
-
-            {/* Silence line indicator for memory updates - shown for both user and assistant messages */}
-            {message.parts && Array.isArray(message.parts) && message.parts.some((part: any) =>
-              part.type === 'data' &&
-              part.data?.type === 'memory-update'
-            ) && (
-              <div className="flex justify-center mt-2 mb-1">
-                <div className="text-xs text-muted-foreground/60 italic">
-                  Memory updated
-                </div>
-              </div>
-            )}
           </div>
         </div>
         {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
