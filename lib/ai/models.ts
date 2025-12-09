@@ -34,7 +34,15 @@ export const chatModels: ChatModel[] = [
     supportsTools: false,
     supportsThinking: true,
   },
-  ];
+  {
+    id: 'qwen3-coder-480b-t',
+    name: 'Qwen3-coder',
+    description: 'Qwen3-coder 480B model via Poe API (specialized for coding)',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: false,
+  },
+];
 
 const defaultModel = chatModels.find(model => model.isDefault);
 export const DEFAULT_CHAT_MODEL_ID = defaultModel

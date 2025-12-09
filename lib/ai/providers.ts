@@ -27,9 +27,9 @@ export const myProvider = customProvider({
     // Poe models - registered with their actual model IDs
     'grok-4.1-fast-reasoning': poeProvider.chatModel('grok-4.1-fast-reasoning'),
     'deepseek-v3.2': poeProvider.chatModel('deepseek-v3.2'),
+    'qwen3-coder-480b-t': poeProvider.chatModel('qwen3-coder-480b-t'),
     // Aliases for internal use
     'chat-model': poeProvider.chatModel('grok-4.1-fast-reasoning'),
     'title-model': zaiProvider.chatModel('glm-4.5-air'),
   },
 });
-
