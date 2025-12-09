@@ -25,6 +25,7 @@ import { myProvider } from '@/lib/ai/providers';
 import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
 import { systemPrompt } from '@/lib/ai/prompts';
 import { webSearch } from '@/lib/ai/tools/web-search';
+import { chatModels } from '@/lib/ai/models';
 
 // Helper types for file parts
 type FileAttachment = {
@@ -239,6 +240,13 @@ export async function POST(request: Request) {
     const cookieModel = cookieStore.get('chat-model')?.value;
     const finalSelectedChatModel = cookieModel || 'chat-model';
 
+    // Get model configuration to check tool support
+    const currentModel = chatModels.find(model => model.id === finalSelectedChatModel) ||
+                         chatModels.find(model => model.id === 'chat-model') ||
+                         chatModels[0];
+    const supportsTools = currentModel?.supportsTools ?? true;
+    const supportsThinking = currentModel?.supportsThinking ?? true;
+
     // AI SDK 5.x: Messages already use parts array, no need for experimental_attachments
     const finalModelMessages = messagesForStreamText.map(msg => ({
       ...msg,
@@ -279,36 +287,44 @@ export async function POST(request: Request) {
             },
             'z-ai': {
               thinking: {
-                type: 'enabled'
+                type: supportsThinking ? 'enabled' : 'disabled'
               },
               maxTokens: 128000
             },
             poe: {
               thinking: {
-                type: 'enabled'
+                type: supportsThinking ? 'enabled' : 'disabled'
               },
-              maxTokens: 128000
+              maxTokens: 128000,
+              // Enable thinking mode for DeepSeek v3.2 using the exact format from the API example
+              ...(finalSelectedChatModel === 'deepseek-v3.2' && {
+                extra_body: {
+                  enable_thinking: true
+                }
+              })
             }
           },
 
-          experimental_activeTools: [
-            'getWeather',
-            'webSearch',
-            'readWebsiteContent',
-          ],
-
           experimental_transform: smoothStream({ chunking: 'line' }),
-
-          tools: {
-            getWeather,
-            webSearch,
-            readWebsiteContent,
-          },
 
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',
-          }
+          },
+
+          // Only add tools if the model supports them
+          ...(supportsTools && {
+            experimental_activeTools: [
+              'getWeather',
+              'webSearch',
+              'readWebsiteContent',
+            ] as ('getWeather' | 'webSearch' | 'readWebsiteContent')[],
+            tools: {
+              getWeather,
+              webSearch,
+              readWebsiteContent,
+            },
+          }),
         });
 
         // AI SDK 5.x: Merge the result stream into the UI message stream
