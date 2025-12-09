@@ -27,21 +27,33 @@ import { systemPrompt } from '@/lib/ai/prompts';
 import { webSearch } from '@/lib/ai/tools/web-search';
 import { chatModels } from '@/lib/ai/models';
 
-// Helper types for file parts
-type FileAttachment = {
+// Define interfaces for better type safety
+interface MessagePart {
+  type: string;
+  url?: string;
+  name?: string;
+  contentType?: string;
+  mediaType?: string;
+  text?: string;
+  toolCallId?: string;
+  toolName?: string;
+  args?: unknown;
+}
+
+interface FileAttachment {
   url: string;
   name?: string;
   contentType?: string;
   mediaType?: string;
-};
+}
 
 // Extract file parts from message parts (AI SDK 5.x approach)
-function getFilePartsFromMessage(message: UIMessage): FileAttachment[] {
+function getFilePartsFromMessage(message: UIMessage) {
   return message.parts
-    .filter((part): part is FileUIPart => part.type === 'file')
-    .map(part => ({
-      url: part.url,
-      name: (part as FileUIPart & { name?: string }).name,
+    .filter((part: MessagePart) => part.type === 'file')
+    .map((part: MessagePart): FileAttachment => ({
+      url: part.url ?? '',
+      name: part.name,
       contentType: part.mediaType,
       mediaType: part.mediaType,
     }));
@@ -114,8 +126,8 @@ export async function POST(request: Request) {
     // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
     const fileParts = getFilePartsFromMessage(userMessage);
     if (fileParts.length > 0) {
-      const imageAttachments = fileParts.filter(att => att.contentType?.startsWith('image/') || att.mediaType?.startsWith('image/'));
-      const documentAttachments = fileParts.filter(att => !att.contentType?.startsWith('image/') && !att.mediaType?.startsWith('image/'));
+      const imageAttachments = fileParts.filter((att: FileAttachment) => att.contentType?.startsWith('image/') || att.mediaType?.startsWith('image/'));
+      const documentAttachments = fileParts.filter((att: FileAttachment) => !att.contentType?.startsWith('image/') && !att.mediaType?.startsWith('image/'));
 
       console.log(`Processing attachments: ${imageAttachments.length} images, ${documentAttachments.length} documents`);
 
@@ -242,8 +254,8 @@ export async function POST(request: Request) {
 
     // Get model configuration to check tool support
     const currentModel = chatModels.find(model => model.id === finalSelectedChatModel) ||
-                         chatModels.find(model => model.id === 'chat-model') ||
-                         chatModels[0];
+      chatModels.find(model => model.id === 'chat-model') ||
+      chatModels[0];
     const supportsTools = currentModel?.supportsTools ?? true;
     const supportsThinking = currentModel?.supportsThinking ?? true;
 
@@ -274,6 +286,7 @@ export async function POST(request: Request) {
     // AI SDK 5.x: Create the UI message stream with execute callback
     const stream = createUIMessageStream({
       execute: async ({ writer }: { writer: UIMessageStreamWriter }) => {
+        // Standard single model processing
         const result = streamText({
           model: modelInstance,
           system: systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
@@ -299,7 +312,7 @@ export async function POST(request: Request) {
               // Enable thinking mode for DeepSeek v3.2 using the exact format from the API example
               ...(finalSelectedChatModel === 'deepseek-v3.2' && {
                 extra_body: {
-                  enable_thinking: true
+                  enable_thinking: false
                 }
               })
             }
@@ -339,7 +352,7 @@ export async function POST(request: Request) {
           try {
             // AI SDK 5.x: Response messages are AssistantModelMessage[], need to extract ID differently
             const assistantMessages = response.messages.filter(
-              (message) => message.role === 'assistant'
+              message => message.role === 'assistant'
             );
 
             if (assistantMessages.length === 0) {

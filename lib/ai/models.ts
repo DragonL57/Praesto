@@ -34,7 +34,7 @@ export const chatModels: ChatModel[] = [
     supportsTools: false,
     supportsThinking: true,
   },
-];
+  ];
 
 const defaultModel = chatModels.find(model => model.isDefault);
 export const DEFAULT_CHAT_MODEL_ID = defaultModel
