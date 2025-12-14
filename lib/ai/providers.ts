@@ -199,6 +199,7 @@ export function getProviderOptions(modelId: string, supportsThinking: boolean) {
 export function getModelOptions() {
   return {
     temperature: 1,
+    maxTokens: 128000, // Set max context length to 128,000 tokens for all models
   };
 }
 
