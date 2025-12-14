@@ -278,7 +278,7 @@ export async function POST(request: Request) {
 
             // Process the complete response text to extract thinking and clean content
             if (text) {
-              // Parse Poe API thinking format (lines starting with >)
+              // Parse both Poe API thinking format (lines starting with >) and italicized thinking format
               const lines = text.split('\n');
               const thinkingLines: string[] = [];
               const nonThinkingLines: string[] = [];
@@ -286,17 +286,30 @@ export async function POST(request: Request) {
 
               for (const line of lines) {
                 const trimmedLine = line.trim();
+
+                // Check for Poe API thinking format (lines starting with >)
                 if (trimmedLine.startsWith('>')) {
-                  // This is a thinking line
                   inThinkingBlock = true;
-                  // Remove the > prefix and any following space
                   const thinkingContent = trimmedLine.substring(1).trim();
                   if (thinkingContent) {
                     thinkingLines.push(thinkingContent);
                   }
-                } else if (!(inThinkingBlock && trimmedLine === '')) {
+                }
+                // Check for italicized thinking format (*Thinking...*, *content*, etc.)
+                else if ((trimmedLine.startsWith('*') && trimmedLine.endsWith('*') &&
+                         (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
+                  inThinkingBlock = true;
+                  // Remove the * asterisks from both ends
+                  const thinkingContent = trimmedLine.substring(1, trimmedLine.length - 1).trim();
+                  if (thinkingContent) {
+                    thinkingLines.push(thinkingContent);
+                  }
+                }
+                else if (!(inThinkingBlock && trimmedLine === '')) {
                   // Non-thinking line or meaningful line, end of thinking block
-                  inThinkingBlock = false;
+                  if (!trimmedLine.startsWith('*')) {
+                    inThinkingBlock = false;
+                  }
                   nonThinkingLines.push(line);
                 }
               }

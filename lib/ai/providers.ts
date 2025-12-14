@@ -41,19 +41,12 @@ const poeProvider = createOpenAICompatible({
   baseURL: 'https://api.poe.com/v1',
 });
 
-// Enhanced models with default settings and middleware
-const enhancedDeepSeekModel = wrapLanguageModel({
-  model: poeProvider.chatModel('deepseek-v3.2'),
+// Enhanced Grok-4.1-fast-reasoning model
+const enhancedGrok41FastReasoningModel = wrapLanguageModel({
+  model: poeProvider.chatModel('grok-4.1-fast-reasoning'),
   middleware: defaultSettingsMiddleware({
     settings: {
-      temperature: 0.6,
-      providerOptions: {
-        poe: {
-          thinking: {
-            type: 'enabled'
-          }
-        }
-      }
+      temperature: 1,
     }
   })
 });
@@ -83,22 +76,6 @@ const lightWeightModel = wrapLanguageModel({
   })
 });
 
-// Enhanced Claude Haiku 4.5 model with thinking support
-const enhancedClaudeHaikuModel = wrapLanguageModel({
-  model: poeProvider.chatModel('claude-haiku-4.5'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.7,
-      providerOptions: {
-        poe: {
-          extra_body: {
-            thinking_budget: 16384
-          }
-        }
-      }
-    }
-  })
-});
 
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
@@ -112,17 +89,9 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
   },
   {
-    id: 'deepseek-v3.2',
-    name: 'DeepSeek v3.2',
-    description: 'DeepSeek v3.2 model via Poe API (with thinking)',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'claude-haiku-4.5',
-    name: 'Claude Haiku 4.5',
-    description: 'Claude Haiku 4.5 model via Poe API (with thinking)',
+    id: 'grok-4.1-fast-reasoning',
+    name: 'Grok-4.1',
+    description: 'Grok-4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
@@ -147,8 +116,7 @@ export const myProvider = customProvider({
     'glm-4.6': enhancedGlmModel,
 
     // Enhanced Poe models with middleware
-    'deepseek-v3.2': enhancedDeepSeekModel,
-    'claude-haiku-4.5': enhancedClaudeHaikuModel,
+    'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGlmModel,
@@ -170,7 +138,7 @@ export function getModelConfiguration(modelId: string) {
 }
 
 // Get provider options for a specific model
-export function getProviderOptions(modelId: string, supportsThinking: boolean) {
+export function getProviderOptions(supportsThinking: boolean) {
   const baseOptions = {};
 
   return {
@@ -182,15 +150,7 @@ export function getProviderOptions(modelId: string, supportsThinking: boolean) {
       ...baseOptions
     },
     poe: {
-      thinking: {
-        type: supportsThinking ? 'enabled' : 'disabled'
-      },
-      // Enable thinking mode for DeepSeek v3.2 using the exact format from the API example
-      ...(modelId === 'deepseek-v3.2' && {
-        extra_body: {
-          enable_thinking: false
-        }
-      })
+      ...baseOptions
     }
   };
 }
@@ -233,7 +193,7 @@ export function getStreamTextConfig(
   const { supportsTools, supportsThinking } = getModelConfiguration(modelId);
   const modelInstance = myProvider.languageModel(modelId);
   const modelOptions = getModelOptions();
-  const providerOptions = getProviderOptions(modelId, supportsThinking);
+  const providerOptions = getProviderOptions(supportsThinking);
 
   return {
     model: modelInstance,
