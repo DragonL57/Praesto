@@ -17,15 +17,30 @@ export const Code = ({
   node: _node,
   ...props
 }: CodeProps) => {
+  // Handle both standard 3-backtick and 4-backtick code blocks
   const match = /language-(\w+)/.exec(className || '');
   const language = match?.[1] || '';
-  const isInline = !match;
+
+  // Check if this is inline code or a code block
+  const content = String(children);
+
+  // Code blocks have:
+  // 1. A className with language- prefix, OR
+  // 2. No className but contain newlines (common with 4 backticks), OR
+  // 3. Content that looks like code (has backticks, semicolons, brackets, etc.)
+  const hasMultipleLines = content.includes('\n');
+  const hasCodeBlockSyntax = content.includes('```') || content.includes('`');
+  const looksLikeCode = /[{}[\];()]/.test(content) || content.includes('//') || content.includes('#');
+  const isLongContent = content.length > 50; // Longer content is likely a code block
+
+  // Determine if this should be a code block vs inline code
+  const isInline = !match && !hasMultipleLines && !hasCodeBlockSyntax && !looksLikeCode && !isLongContent;
 
   if (isInline) {
     return <InlineCode {...props}>{children}</InlineCode>;
   }
 
-  return <CodeBlock lang={language}>{String(children)}</CodeBlock>;
+  return <CodeBlock lang={language}>{content}</CodeBlock>;
 };
 
 /**

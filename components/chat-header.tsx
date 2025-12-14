@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import type { VisibilityType } from './visibility-selector';
 import { ShareDialog } from '@/components/shared';
 import { ModelSelector } from '@/components/model-selector';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 

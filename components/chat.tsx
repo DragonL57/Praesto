@@ -12,7 +12,7 @@ import { ChatHeader } from '@/components/chat-header';
 import { InputSkeleton, MultimodalInput } from './multimodal-input';
 import { Messages } from './messages/messages';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { fetcher, generateUUID } from '@/lib/utils';
 
 import type {

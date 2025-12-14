@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';
 import { SharedChat } from '@/components/shared';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 
 import type { Attachment } from '@/lib/ai/types';

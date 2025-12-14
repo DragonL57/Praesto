@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 
 import { Chat } from '@/components/chat';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { generateUUID } from '@/lib/utils';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';

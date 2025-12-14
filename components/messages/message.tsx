@@ -299,6 +299,42 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             if (thinkMatch?.[1]) {
               elements.push(thinkMatch[1].trim());
               // Text part itself isn't filtered, just cleaned later
+            } else {
+              // Check for Poe API thinking format (lines starting with >)
+              const lines = part.text.split('\n');
+              const thinkingLines: string[] = [];
+              const nonThinkingLines: string[] = [];
+              let inThinkingBlock = false;
+
+              for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('>')) {
+                  // This is a thinking line
+                  inThinkingBlock = true;
+                  // Remove the > prefix and any following space
+                  const thinkingContent = trimmedLine.substring(1).trim();
+                  if (thinkingContent) {
+                    thinkingLines.push(thinkingContent);
+                  }
+                } else if (!(inThinkingBlock && trimmedLine === '')) {
+                  // Non-thinking line or meaningful line, end of thinking block
+                  inThinkingBlock = false;
+                  nonThinkingLines.push(line);
+                }
+              }
+
+              // If we found thinking content, add it to reasoning elements
+              if (thinkingLines.length > 0) {
+                const thinkingContent = thinkingLines.join('\n').trim();
+                if (thinkingContent) {
+                  elements.push(thinkingContent);
+                }
+              }
+
+              // Update the text part to remove thinking content if we had thinking content
+              if (thinkingLines.length > 0) {
+                part.text = nonThinkingLines.join('\n');
+              }
             }
           }
           // c) Check for tool results to include in reasoning

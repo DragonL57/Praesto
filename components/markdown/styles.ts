@@ -16,12 +16,12 @@ export const textStyles = {
     strong: 'font-semibold after:content-[\'\'] after:whitespace-pre',
     em: 'italic after:content-[\'\'] after:whitespace-pre',
     link: 'text-sm text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere',
-    listItem: 'py-1 break-words text-sm',
+    listItem: 'py-0.5 break-words text-sm leading-relaxed marker:text-zinc-600 dark:marker:text-zinc-400',
 } as const;
 
 export const listStyles = {
-    ordered: 'list-decimal list-outside ml-4 my-2 text-sm',
-    unordered: 'nested-bullets list-outside ml-4 my-2 text-sm',
+    ordered: 'list-decimal list-inside ml-4 my-2 text-sm [&>li]:marker:font-semibold',
+    unordered: 'list-disc list-inside ml-4 my-2 text-sm [&_ul]:ml-6 [&_ol]:ml-6',
 } as const;
 
 export const blockStyles = {

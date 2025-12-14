@@ -4,42 +4,20 @@ import { cookies } from 'next/headers';
 import { parseOfficeAsync } from 'officeparser';
 
 import {
-  convertToModelMessages,
-  createUIMessageStream,
   createUIMessageStreamResponse,
-  smoothStream,
-  stepCountIs,
   streamText,
   type FileUIPart,
+  type TextUIPart,
   type UIMessage,
-  type UIMessageStreamWriter,
 } from 'ai';
 
 import { auth } from '@/app/auth';
 import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
 import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
-import { readWebsiteContent } from '@/lib/ai/tools/read-website-content';
-import { systemPrompt } from '@/lib/ai/prompts';
-import { webSearch } from '@/lib/ai/tools/web-search';
-import { chatModels } from '@/lib/ai/models';
+import { getStreamTextConfig } from '@/lib/ai/providers';
 
-// Define interfaces for better type safety
-interface MessagePart {
-  type: string;
-  url?: string;
-  name?: string;
-  contentType?: string;
-  mediaType?: string;
-  text?: string;
-  toolCallId?: string;
-  toolName?: string;
-  args?: unknown;
-}
-
+// Define file attachment interface for internal use
 interface FileAttachment {
   url: string;
   name?: string;
@@ -47,13 +25,27 @@ interface FileAttachment {
   mediaType?: string;
 }
 
+// Type definitions for tool calls and results
+interface ToolCall {
+  toolName: string;
+  toolCallId: string;
+  args?: Record<string, unknown>;
+}
+
+interface ToolResult {
+  toolName: string;
+  toolCallId: string;
+  result?: unknown;
+}
+
+
 // Extract file parts from message parts (AI SDK 5.x approach)
 function getFilePartsFromMessage(message: UIMessage) {
   return message.parts
-    .filter((part: MessagePart) => part.type === 'file')
-    .map((part: MessagePart): FileAttachment => ({
+    .filter((part): part is FileUIPart => part.type === 'file')
+    .map((part: FileUIPart): FileAttachment => ({
       url: part.url ?? '',
-      name: part.name,
+      name: part.filename,
       contentType: part.mediaType,
       mediaType: part.mediaType,
     }));
@@ -117,8 +109,8 @@ export async function POST(request: Request) {
 
     // Get the original typed text from the user message parts
     const originalUserTypedText = userMessage.parts
-      .filter(part => part.type === 'text')
-      .map(part => (part as { type: 'text'; text: string }).text)
+      .filter((part): part is TextUIPart => part.type === 'text')
+      .map(part => part.text)
       .join('\n');
 
     combinedUserTextAndAttachments = originalUserTypedText;
@@ -184,7 +176,7 @@ export async function POST(request: Request) {
       const nonTextParts = userMessage.parts.filter(part => part.type !== 'text');
       userMessage.parts = [
         ...nonTextParts,
-        { type: 'text', text: combinedUserTextAndAttachments }
+        { type: 'text', text: combinedUserTextAndAttachments } as TextUIPart
       ];
       console.log('User message parts updated: non-text parts preserved, text consolidated with attachments.');
       console.log('Final combined text for AI:', combinedUserTextAndAttachments);
@@ -252,26 +244,12 @@ export async function POST(request: Request) {
     const cookieModel = cookieStore.get('chat-model')?.value;
     const finalSelectedChatModel = cookieModel || 'chat-model';
 
-    // Get model configuration to check tool support
-    const currentModel = chatModels.find(model => model.id === finalSelectedChatModel) ||
-      chatModels.find(model => model.id === 'chat-model') ||
-      chatModels[0];
-    const supportsTools = currentModel?.supportsTools ?? true;
-    const supportsThinking = currentModel?.supportsThinking ?? true;
-
+    
     // AI SDK 5.x: Messages already use parts array, no need for experimental_attachments
     const finalModelMessages = messagesForStreamText.map(msg => ({
       ...msg,
       parts: [...msg.parts],
     }));
-
-    // Prepare model options for the selected model
-    // GLM-4.6 supports up to 128K output tokens
-    const modelOptions = {
-      maxTokens: 128000,
-      temperature: 1,
-    };
-    const modelInstance = myProvider.languageModel(finalSelectedChatModel);
 
     // Log information about image file parts being sent to the model
     const finalImagePartsForLogging = finalModelMessages
@@ -283,108 +261,91 @@ export async function POST(request: Request) {
         finalImagePartsForLogging.map(img => `${img.mediaType}`));
     }
 
-    // AI SDK 5.x: Create the UI message stream with execute callback
-    const stream = createUIMessageStream({
-      execute: async ({ writer }: { writer: UIMessageStreamWriter }) => {
-        // Standard single model processing
-        const result = streamText({
-          model: modelInstance,
-          system: systemPrompt({ selectedChatModel: finalSelectedChatModel, userTimeContext }),
-          messages: convertToModelMessages(finalModelMessages),
-          stopWhen: stepCountIs(10),
-          ...modelOptions,
+    // AI SDK 5.x: Direct approach - use streamText with custom onFinish to capture and save
+    const streamTextConfig = getStreamTextConfig(finalSelectedChatModel, finalModelMessages, userTimeContext);
 
-          providerOptions: {
-            openai: {
-              maxTokens: 128000
-            },
-            'z-ai': {
-              thinking: {
-                type: supportsThinking ? 'enabled' : 'disabled'
-              },
-              maxTokens: 128000
-            },
-            poe: {
-              thinking: {
-                type: supportsThinking ? 'enabled' : 'disabled'
-              },
-              maxTokens: 128000,
-              // Enable thinking mode for DeepSeek v3.2 using the exact format from the API example
-              ...(finalSelectedChatModel === 'deepseek-v3.2' && {
-                extra_body: {
-                  enable_thinking: false
-                }
-              })
-            }
-          },
+    // Generate a unique ID for the assistant message before streaming starts
+    const assistantId = generateUUID();
 
-          experimental_transform: smoothStream({ chunking: 'line' }),
-
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: 'stream-text',
-          },
-
-          // Only add tools if the model supports them
-          ...(supportsTools && {
-            experimental_activeTools: [
-              'getWeather',
-              'webSearch',
-              'readWebsiteContent',
-            ] as ('getWeather' | 'webSearch' | 'readWebsiteContent')[],
-            tools: {
-              getWeather,
-              webSearch,
-              readWebsiteContent,
-            },
-          }),
-        });
-
-        // AI SDK 5.x: Merge the result stream into the UI message stream
-        writer.merge(result.toUIMessageStream({
-          sendReasoning: true,
-        }));
-
-        // Wait for the stream to finish before saving messages
-        const response = await result.response;
-
+    const result = streamText({
+      ...streamTextConfig,
+      onFinish: async ({ text, toolCalls, toolResults }) => {
+        // When streaming completes, we have access to all the data we need
         if (session.user?.id) {
           try {
-            // AI SDK 5.x: Response messages are AssistantModelMessage[], need to extract ID differently
-            const assistantMessages = response.messages.filter(
-              message => message.role === 'assistant'
-            );
+            // Build the complete parts array including text, reasoning, and tool results
+            const uiParts: Array<UIMessage['parts'][number]> = [];
 
-            if (assistantMessages.length === 0) {
-              throw new Error('No assistant message found!');
+            // Process the complete response text to extract thinking and clean content
+            if (text) {
+              // Parse Poe API thinking format (lines starting with >)
+              const lines = text.split('\n');
+              const thinkingLines: string[] = [];
+              const nonThinkingLines: string[] = [];
+              let inThinkingBlock = false;
+
+              for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('>')) {
+                  // This is a thinking line
+                  inThinkingBlock = true;
+                  // Remove the > prefix and any following space
+                  const thinkingContent = trimmedLine.substring(1).trim();
+                  if (thinkingContent) {
+                    thinkingLines.push(thinkingContent);
+                  }
+                } else if (!(inThinkingBlock && trimmedLine === '')) {
+                  // Non-thinking line or meaningful line, end of thinking block
+                  inThinkingBlock = false;
+                  nonThinkingLines.push(line);
+                }
+              }
+
+              // Add reasoning part if we found thinking content
+              if (thinkingLines.length > 0) {
+                const thinkingContent = thinkingLines.join('\n').trim();
+                if (thinkingContent) {
+                  uiParts.push({
+                    type: 'reasoning',
+                    text: thinkingContent,
+                  });
+                }
+              }
+
+              // Add cleaned text content if present
+              const cleanText = nonThinkingLines.join('\n').trim();
+              if (cleanText) {
+                uiParts.push({ type: 'text', text: cleanText });
+              }
             }
 
-            // Get the last assistant message and generate an ID for it
-            const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
-            const assistantId = generateUUID();
+            // Add tool calls and results
+            if (toolCalls && toolCalls.length > 0) {
+              toolCalls.forEach(toolCall => {
+                // Add the tool call part for the tool invocation
+                uiParts.push({
+                  type: `tool-${toolCall.toolName}`,
+                  toolCallId: toolCall.toolCallId,
+                  input: (toolCall as ToolCall).args || toolCall,
+                  state: 'input-available' as const,
+                });
+              });
+            }
 
-            // AI SDK 5.x: AssistantContent can be string or array, convert to UIMessage parts format
-            const content = lastAssistantMessage.content;
-            const contentArray = typeof content === 'string'
-              ? [{ type: 'text' as const, text: content }]
-              : content;
+            // Add tool results
+            if (toolResults && toolResults.length > 0) {
+              toolResults.forEach(toolResult => {
+                uiParts.push({
+                  type: `tool-${toolResult.toolName}`,
+                  toolCallId: toolResult.toolCallId,
+                  input: {}, // Input is required for output-available state, but we might not have it
+                  state: 'output-available' as const,
+                  output: (toolResult as ToolResult).result || toolResult,
+                });
+              });
+            }
 
-            const uiParts = contentArray.map((part: { type: string; text?: string; toolCallId?: string; toolName?: string; args?: unknown }) => {
-              if (part.type === 'text') {
-                return { type: 'text' as const, text: part.text || '' };
-              }
-              if (part.type === 'tool-call') {
-                return {
-                  type: 'tool-invocation' as const,
-                  toolInvocationId: part.toolCallId,
-                  toolName: part.toolName,
-                  args: part.args,
-                  state: 'result' as const,
-                };
-              }
-              return part;
-            });
-
+            // Save the complete message with all parts
             await saveMessages({
               messages: [
                 {
@@ -400,32 +361,27 @@ export async function POST(request: Request) {
 
             // Update the chat timestamp to move it to the top of the sidebar
             await updateChatTimestamp({ id });
-          } catch {
-            console.error('Failed to save chat');
+          } catch (error) {
+            console.error('Failed to save chat:', error);
           }
         }
-      },
-      onError: (error: unknown) => {
-        console.error('[API CHAT STREAMING ERROR]', error instanceof Error ? error.message : error, error instanceof Error ? error.stack : undefined);
-        if (error instanceof Error) {
-          console.error('[API CHAT STREAMING ERROR] Name:', error.name);
-          console.error('[API CHAT STREAMING ERROR] Message:', error.message);
-          if (error.stack) {
-            console.error('[API CHAT STREAMING ERROR] Stack:', error.stack);
-          }
-          if (error.cause) {
-            console.error('[API CHAT STREAMING ERROR] Cause:', error.cause);
-          }
-        } else {
-          console.error('[API CHAT STREAMING ERROR] (Unknown error type):', error);
-        }
-        return 'An error occurred during streaming. Please try again. (Details logged on server)';
-      },
-      generateId: generateUUID,
+      }
     });
 
-    // Return the stream as a response
-    return createUIMessageStreamResponse({ stream });
+    // Create UI message stream with reasoning enabled and proper error handling
+    try {
+      const stream = result.toUIMessageStream({
+        sendReasoning: true,
+      });
+
+      // Return the stream as a response
+      return createUIMessageStreamResponse({ stream });
+    } catch (error) {
+      console.error('[API CHAT ROUTE ERROR]', error);
+      return new Response('An error occurred while processing your request. Please try again.', {
+        status: 500,
+      });
+    }
   } catch (error) {
     console.error('[API CHAT ROUTE ERROR]', error);
     return new Response('An error occurred while processing your request. Please try again.', {
