@@ -16,7 +16,7 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
   const lastXRef = useRef(0);
 
   // Start dragging - but only if clicking on empty space or holding modifier key
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement> | { pageX: number; shiftKey: boolean; ctrlKey: boolean; preventDefault: () => void; target: EventTarget; currentTarget: EventTarget }) => {
     if (!containerRef.current) return;
 
     const target = e.target as HTMLElement;
@@ -132,9 +132,25 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        role="region"
+        role="button"
+        tabIndex={0}
         aria-label="Draggable table container"
         data-draggable="true"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            // Create a synthetic event object for keyboard activation
+            const syntheticEvent = {
+              pageX: 0,
+              shiftKey: false,
+              ctrlKey: false,
+              preventDefault: () => {},
+              target: e.target,
+              currentTarget: e.currentTarget,
+            };
+            handleMouseDown(syntheticEvent);
+          }
+        }}
       >
         {/* Inner scrollable content wrapper */}
         <div
