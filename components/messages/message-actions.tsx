@@ -3,6 +3,7 @@ import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from '../icons';
 import { Button } from '../ui/button';
@@ -12,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 
@@ -29,6 +30,23 @@ export function PureMessageActions({
 }) {
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
+  const [shouldShowButtons, setShouldShowButtons] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Effect to handle button visibility
+  useEffect(() => {
+    if (isMobile) {
+      // On mobile, always show buttons after a short delay with fade-in
+      const timer = setTimeout(() => {
+        setShouldShowButtons(true);
+      }, 300); // 300ms delay for fade-in effect
+
+      return () => clearTimeout(timer);
+    } else {
+      // On desktop, buttons remain hover-dependent (controlled by CSS)
+      setShouldShowButtons(false);
+    }
+  }, [isMobile, message.id]); // Re-run when message changes
 
   if (isLoading) return null;
   if (message.role === 'user') return null;
@@ -39,7 +57,9 @@ export function PureMessageActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
+              className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+              }`}
               variant="ghost"
               onClick={async () => {
                 const textFromParts = message.parts
@@ -68,7 +88,9 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               data-testid="message-upvote"
-              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
+              className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+              }`}
               disabled={vote?.isUpvoted}
               variant="ghost"
               onClick={async () => {
@@ -122,7 +144,9 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               data-testid="message-downvote"
-              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+              className={`px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
+                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+              }`}
               variant="ghost"
               disabled={vote && !vote.isUpvoted}
               onClick={async () => {

@@ -27,6 +27,7 @@ import { deleteTrailingMessages } from '@/app/(chat)/actions';
 import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
 import type { Vote } from '@/lib/db/schema';
 import type { UIMessage } from 'ai';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Define types needed for reasoning elements, mirroring message-reasoning.tsx
 interface WebSearchResult {
@@ -193,6 +194,8 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [, copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
+    const [shouldShowButtons, setShouldShowButtons] = useState(false);
+    const isMobile = useIsMobile();
 
     // Handle copy events to preserve formatting
     const handleCopy = (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -681,12 +684,32 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
 
     const isUserMessage = message.role === 'user';
 
+    // Effect to handle button visibility
+    useEffect(() => {
+      if (isMobile) {
+        // On mobile, always show buttons after a short delay with fade-in
+        const timer = setTimeout(() => {
+          setShouldShowButtons(true);
+        }, 300); // 300ms delay for fade-in effect
+
+        return () => clearTimeout(timer);
+      } else {
+        // On desktop, buttons remain hover-dependent (controlled by CSS)
+        setShouldShowButtons(false);
+      }
+    }, [isMobile, message.id]); // Re-run when message changes
+
     /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
     return (
       <div
         data-testid={`message-${message.role}`}
         className="w-full mx-auto max-w-3xl px-4 group/message transition-opacity duration-300 ease-in-out"
         data-role={message.role}
+        style={{
+          maxWidth: 'min(100%, 48rem)', // Ensure content never exceeds viewport width
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
       >
         {/* 3. Render MessageReasoning with the consolidated elements */}
         {message.role === 'assistant' &&
@@ -729,6 +752,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               'group-data-[role=user]/message:w-fit': mode !== 'edit',
             },
           )}
+          style={{
+            maxWidth: message.role === 'user' ? 'min(100%, 42rem)' : '100%', // User messages: smaller max-width, Assistant: full width
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+          }}
         >
           <div className="flex flex-col gap-1 w-full">
             {/* AI SDK 5.x: Attachments are now file parts in message.parts */}
@@ -795,9 +823,20 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                                 message.role === 'user',
                               'text-foreground': message.role === 'assistant',
                             })}
+                            style={{
+                              maxWidth: '100%',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              hyphens: 'auto',
+                            }}
                           >
                             {message.role === 'user' ? (
-                              <div className="whitespace-pre-wrap break-words text-sm">
+                              <div className="whitespace-pre-wrap break-words text-sm" style={{
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
+                                hyphens: 'auto',
+                                maxWidth: '100%',
+                              }}>
                                 {part.text && (
                                   <UserTextWithLineBreaks text={part.text} />
                                 )}
@@ -983,14 +1022,18 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
         </div>
         {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
         {isUserMessage && mode !== 'edit' && !isReadonly && (
-          <div className="flex justify-end items-center gap-1 mt-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200">
+          <div className={`flex justify-end items-center gap-1 mt-1 transition-opacity duration-200 ${
+            isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+          }`}>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 transition-opacity duration-200"
+                    className={`rounded-full text-muted-foreground transition-opacity duration-200 ${
+                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                    }`}
                     onClick={handleRetry}
                     disabled={isRetrying}
                   >
@@ -1035,7 +1078,9 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     data-testid="message-copy-button"
                     variant="ghost"
-                    className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100 mr-1"
+                    className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                    }`}
                     onClick={handleCopyButtonClick}
                   >
                     <CopyIcon />
@@ -1051,7 +1096,9 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     data-testid="message-edit-button"
                     variant="ghost"
-                    className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
+                    className={`px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
+                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                    }`}
                     onClick={() => {
                       setMode('edit');
                     }}

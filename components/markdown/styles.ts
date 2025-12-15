@@ -31,22 +31,24 @@ export const blockStyles = {
 } as const;
 
 export const tableStyles = {
-    wrapper: {
-        width: '100%',
-        maxWidth: '100%',
-        maxHeight: '100%',
-        overflowY: 'auto' as const,
-        overflowX: 'auto' as const,
-        display: 'block' as const,
-        border: '1px solid var(--border)',
-        WebkitOverflowScrolling: 'touch' as const,
-        position: 'relative' as const,
-    },
-    table: {
-        borderCollapse: 'collapse' as const,
-        borderSpacing: 0,
-        tableLayout: 'fixed' as const,
-    },
+        wrapper: {
+            width: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            overflowY: 'auto' as const,
+            overflowX: 'auto' as const,
+            display: 'block' as const,
+            border: '1px solid var(--border)',
+            WebkitOverflowScrolling: 'touch' as const,
+            position: 'relative' as const,
+        },
+        table: {
+            borderCollapse: 'collapse' as const,
+            borderSpacing: 0,
+            tableLayout: 'auto' as const, // Changed from 'fixed' to 'auto' to allow natural width
+            width: 'auto' as const, // Allow table to be wider than container
+            minWidth: 'max-content' as const, // Ensure table doesn't compress
+        },
     thead: 'bg-zinc-200 dark:bg-zinc-700',
     theadStyle: { position: 'sticky' as const, top: 0, zIndex: 1 },
     tr: 'even:bg-zinc-100 dark:even:bg-zinc-800',
