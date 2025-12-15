@@ -263,15 +263,29 @@ function PureSpeechToTextButton({
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        // Accumulate all transcripts so far
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          fullTranscript += event.results[i][0].transcript;
-        }
-        // Use the isFinal flag of the last result
+        // Detect if this is mobile by checking for pattern that causes duplication
         const lastResultIndex = event.results.length - 1;
+        const currentTranscript = event.results[lastResultIndex][0].transcript;
         const isFinal = event.results[lastResultIndex].isFinal;
-        updateInputWithTranscript(fullTranscript, isFinal);
+
+        // Check if we're on mobile by testing if the transcript contains incremental repetition pattern
+        const isMobileDuplication = !isFinal &&
+          event.results.length > 1 &&
+          currentTranscript.length > 0 &&
+          event.results[lastResultIndex - 1] &&
+          event.results[lastResultIndex - 1][0].transcript.includes(currentTranscript.slice(0, -1));
+
+        if (isMobileDuplication) {
+          // On mobile with duplication issue, use only the latest transcript
+          updateInputWithTranscript(currentTranscript, isFinal);
+        } else {
+          // On desktop or normal behavior, accumulate all transcripts
+          let fullTranscript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            fullTranscript += event.results[i][0].transcript;
+          }
+          updateInputWithTranscript(fullTranscript, isFinal);
+        }
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {

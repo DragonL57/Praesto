@@ -6,7 +6,9 @@ import { type VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+
 import { cn } from "@/lib/utils"
+import Cookies from "js-cookie"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -84,7 +86,10 @@ const SidebarProvider = React.forwardRef<
         }
 
         // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        Cookies.set(SIDEBAR_COOKIE_NAME, openState.toString(), {
+          expires: SIDEBAR_COOKIE_MAX_AGE / (60 * 60 * 24), // Convert seconds to days
+          path: '/'
+        })
       },
       [setOpenProp, open]
     )
