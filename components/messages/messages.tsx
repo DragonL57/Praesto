@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState, useMemo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import { AnimatePresence } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type {
   SetMessagesFunction,
   AppendFunction,
@@ -58,6 +59,45 @@ function PureMessages({
   const isStreamingRef = useRef<boolean>(status === 'streaming');
   const lastUserMessageIdRef = useRef<string | null>(null); // Ref for the last user message ID
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false); // New state
+  const prevChatIdRef = useRef<string>(chatId); // Track chat ID changes
+  const hasInitialScrolledRef = useRef<boolean>(false); // Track if we've done initial scroll
+
+  // Initialize virtualizer with dynamic sizing
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 300, // Estimate average message height
+    overscan: 5, // Render 5 extra items above and below viewport
+    enabled: messages.length > 20, // Only virtualize if more than 20 messages
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+
+  // Scroll to bottom when opening a conversation (chatId changes)
+  useEffect(() => {
+    const container = containerRef.current;
+    const end = endRef.current;
+
+    // Check if chatId has changed or if this is the first mount
+    if (chatId !== prevChatIdRef.current) {
+      prevChatIdRef.current = chatId;
+      hasInitialScrolledRef.current = false;
+    }
+
+    // Scroll to bottom when conversation loads and has messages
+    if (!hasInitialScrolledRef.current && messages.length > 0 && end && container) {
+      // Use a small delay to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(() => {
+          end.scrollIntoView({ behavior: 'instant', block: 'end' });
+          hasInitialScrolledRef.current = true;
+        });
+      }, 50);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [chatId, messages.length, containerRef, endRef]);
 
   // Effect to detect user scroll and update userHasScrolledUp state
   useEffect(() => {
@@ -152,6 +192,9 @@ function PureMessages({
   const hasVisibleContent =
     messages.length > 0 || (status === 'submitted' && messages.length > 0);
 
+  // Determine if we should use virtualization
+  const shouldVirtualize = messages.length > 20;
+
   return (
     <div
       className={`absolute inset-0 flex flex-col w-full ${hasVisibleContent ? 'scrollbar-thin scrollbar-thumb-muted-foreground/50 hover:scrollbar-thumb-muted-foreground scrollbar-track-transparent' : 'scrollbar-none'}`}
@@ -164,30 +207,83 @@ function PureMessages({
       ref={containerRef}
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
-        {messages.map((message, index) => (
+        {shouldVirtualize ? (
+          // Virtualized rendering for long conversations
           <div
-            key={message.id}
-            data-message-id={message.id} // Add data-message-id for selection
-            className="transition-opacity duration-300 ease-in-out"
+            style={{
+              height: `${totalSize}px`,
+              width: '100%',
+              position: 'relative',
+            }}
           >
-            <PreviewMessage
-              chatId={chatId}
-              message={message}
-              isLoading={
-                status === 'streaming' && messages.length - 1 === index
-              }
-              vote={
-                votes
-                  ? votes.find((vote) => vote.messageId === message.id)
-                  : undefined
-              }
-              setMessages={setMessages}
-              reload={wrappedReload}
-              append={append}
-              isReadonly={isReadonly}
-            />
+            {virtualItems.map((virtualItem) => {
+              const message = messages[virtualItem.index];
+              const index = virtualItem.index;
+
+              return (
+                <div
+                  key={message.id}
+                  data-message-id={message.id}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  className="transition-opacity duration-300 ease-in-out"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  <PreviewMessage
+                    chatId={chatId}
+                    message={message}
+                    isLoading={
+                      status === 'streaming' && messages.length - 1 === index
+                    }
+                    vote={
+                      votes
+                        ? votes.find((vote) => vote.messageId === message.id)
+                        : undefined
+                    }
+                    setMessages={setMessages}
+                    reload={wrappedReload}
+                    append={append}
+                    isReadonly={isReadonly}
+                  />
+                </div>
+              );
+            })}
           </div>
-        ))}
+        ) : (
+          // Regular rendering for short conversations
+          <>
+            {messages.map((message, index) => (
+              <div
+                key={message.id}
+                data-message-id={message.id} // Add data-message-id for selection
+                className="transition-opacity duration-300 ease-in-out"
+              >
+                <PreviewMessage
+                  chatId={chatId}
+                  message={message}
+                  isLoading={
+                    status === 'streaming' && messages.length - 1 === index
+                  }
+                  vote={
+                    votes
+                      ? votes.find((vote) => vote.messageId === message.id)
+                      : undefined
+                  }
+                  setMessages={setMessages}
+                  reload={wrappedReload}
+                  append={append}
+                  isReadonly={isReadonly}
+                />
+              </div>
+            ))}
+          </>
+        )}
 
         <AnimatePresence>
           {status === 'submitted' &&
