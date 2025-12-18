@@ -1,4 +1,5 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { google } from '@ai-sdk/google';
 import {
   customProvider,
   wrapLanguageModel,
@@ -76,6 +77,16 @@ const lightWeightModel = wrapLanguageModel({
   })
 });
 
+// Google Gemini models
+const gemini3FlashModel = wrapLanguageModel({
+  model: google('gemini-3-flash-preview'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 1,
+    }
+  })
+});
+
 
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
@@ -93,6 +104,14 @@ export const chatModels: ChatModel[] = [
     name: 'Grok-4.1',
     description: 'Grok-4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: true,
+  },
+  {
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash Preview',
+    description: 'Google Gemini 3 Flash Preview - Latest generation with advanced thinking',
+    provider: 'Google',
     supportsTools: true,
     supportsThinking: true,
   },
@@ -117,6 +136,9 @@ export const myProvider = customProvider({
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
+
+    // Google Gemini models with middleware
+    'gemini-3-flash-preview': gemini3FlashModel,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGlmModel,
@@ -150,6 +172,9 @@ export function getProviderOptions(supportsThinking: boolean) {
       ...baseOptions
     },
     poe: {
+      ...baseOptions
+    },
+    google: {
       ...baseOptions
     }
   };
