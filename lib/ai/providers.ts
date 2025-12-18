@@ -52,6 +52,16 @@ const enhancedGrok41FastReasoningModel = wrapLanguageModel({
   })
 });
 
+// Inception Mercury Coder model
+const inceptionMercuryCoderModel = wrapLanguageModel({
+  model: poeProvider.chatModel('inception-mercury-coder'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.7,
+    }
+  })
+});
+
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.6'),
   middleware: defaultSettingsMiddleware({
@@ -108,6 +118,14 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
   },
   {
+    id: 'inception-mercury-coder',
+    name: 'Inception Mercury Coder',
+    description: 'Inception Mercury Coder - Specialized coding model via Poe API',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: false,
+  },
+  {
     id: 'gemini-3-flash-preview',
     name: 'Gemini 3 Flash Preview',
     description: 'Google Gemini 3 Flash Preview - Latest generation with advanced thinking',
@@ -136,6 +154,7 @@ export const myProvider = customProvider({
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
+    'inception-mercury-coder': inceptionMercuryCoderModel,
 
     // Google Gemini models with middleware
     'gemini-3-flash-preview': gemini3FlashModel,
