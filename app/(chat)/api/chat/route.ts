@@ -101,6 +101,21 @@ export async function POST(request: Request) {
       return new Response('No user message found', { status: 400 });
     }
 
+    // Debug: Log the user message structure as received
+    console.log('User message received:', JSON.stringify({
+      id: userMessage.id,
+      role: userMessage.role,
+      parts: userMessage.parts.map(p => ({
+        type: p.type,
+        ...(p.type === 'text' ? { textLength: (p as TextUIPart).text.length } : {}),
+        ...(p.type === 'file' ? {
+          url: (p as FileUIPart).url,
+          filename: (p as FileUIPart).filename,
+          mediaType: (p as FileUIPart).mediaType
+        } : {})
+      }))
+    }, null, 2));
+
     // Store a copy of the original user message parts for saving to DB
     const originalUserMessageParts = userMessage.parts.map(part => ({ ...part }));
 
@@ -115,13 +130,29 @@ export async function POST(request: Request) {
 
     combinedUserTextAndAttachments = originalUserTypedText;
 
+    // Use the model selected by the user (from the chat-model cookie), fallback to 'chat-model'
+    const cookieStore = await cookies();
+    const cookieModel = cookieStore.get('chat-model')?.value;
+    const finalSelectedChatModel = cookieModel || 'chat-model';
+
+    // Get thinking level from cookie (for Gemini 3 models)
+    const thinkingLevel = cookieStore.get('thinking-level')?.value || 'high';
+
+    const isGeminiModel = finalSelectedChatModel.includes('gemini');
+
     // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
     const fileParts = getFilePartsFromMessage(userMessage);
     if (fileParts.length > 0) {
       const imageAttachments = fileParts.filter((att: FileAttachment) => att.contentType?.startsWith('image/') || att.mediaType?.startsWith('image/'));
-      const documentAttachments = fileParts.filter((att: FileAttachment) => !att.contentType?.startsWith('image/') && !att.mediaType?.startsWith('image/'));
+      const pdfAttachments = fileParts.filter((att: FileAttachment) => att.contentType === 'application/pdf' || att.mediaType === 'application/pdf');
+      const documentAttachments = fileParts.filter((att: FileAttachment) =>
+        !att.contentType?.startsWith('image/') &&
+        !att.mediaType?.startsWith('image/') &&
+        att.contentType !== 'application/pdf' &&
+        att.mediaType !== 'application/pdf'
+      );
 
-      console.log(`Processing attachments: ${imageAttachments.length} images, ${documentAttachments.length} documents`);
+      console.log(`Processing attachments: ${imageAttachments.length} images, ${pdfAttachments.length} PDFs, ${documentAttachments.length} documents`);
 
       for (const attachment of fileParts) {
         if (attachment.url) {
@@ -129,6 +160,13 @@ export async function POST(request: Request) {
           const isImage = attachment.contentType?.startsWith('image/') || attachment.mediaType?.startsWith('image/');
           if (isImage) {
             console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType || attachment.mediaType})`);
+            continue;
+          }
+
+          // Skip text extraction for PDF files if using Gemini - it has native PDF vision
+          const isPDF = attachment.contentType === 'application/pdf' || attachment.mediaType === 'application/pdf';
+          if (isPDF && isGeminiModel) {
+            console.log(`Skipping text extraction for PDF with Gemini: ${attachment.name || 'unknown PDF'} - using native vision processing`);
             continue;
           }
 
@@ -239,16 +277,18 @@ export async function POST(request: Request) {
     // This ensures the conversation moves to the top of the sidebar right away
     await updateChatTimestamp({ id });
 
-    // Use the model selected by the user (from the chat-model cookie), fallback to 'chat-model'
-    const cookieStore = await cookies();
-    const cookieModel = cookieStore.get('chat-model')?.value;
-    const finalSelectedChatModel = cookieModel || 'chat-model';
-
-    
-    // AI SDK 5.x: Messages already use parts array, no need for experimental_attachments
+    // AI SDK 5.x: Messages already use parts array, thought signatures are preserved in parts
+    // Gemini 3 requires thought signatures to be circulated back for proper reasoning
     const finalModelMessages = messagesForStreamText.map(msg => ({
       ...msg,
-      parts: [...msg.parts],
+      parts: msg.parts.map((part) => {
+        // Preserve thoughtSignature field if it exists (critical for Gemini 3)
+        // This maintains reasoning context across turns
+        if ('thoughtSignature' in part && part.thoughtSignature) {
+          return { ...part, thoughtSignature: part.thoughtSignature };
+        }
+        return { ...part };
+      }),
     }));
 
     // Log information about image file parts being sent to the model
@@ -258,23 +298,67 @@ export async function POST(request: Request) {
 
     if (finalImagePartsForLogging.length > 0) {
       console.log(`Sending ${finalImagePartsForLogging.length} image file parts to the final model (${finalSelectedChatModel}):`,
-        finalImagePartsForLogging.map(img => `${img.mediaType}`));
+        finalImagePartsForLogging.map(img => ({ mediaType: img.mediaType, url: img.url, filename: img.filename })));
     }
 
-    // AI SDK 5.x: Direct approach - use streamText with custom onFinish to capture and save
-    const streamTextConfig = getStreamTextConfig(finalSelectedChatModel, finalModelMessages, userTimeContext);
+    // Debug: Log the complete message structure before conversion
+    console.log('Messages before streamText:', JSON.stringify(finalModelMessages.map(m => ({
+      role: m.role,
+      parts: m.parts.map(p => ({ type: p.type, ...(p.type === 'file' ? { url: (p as FileUIPart).url, mediaType: (p as FileUIPart).mediaType } : {}) }))
+    })), null, 2));
 
-    // Generate a unique ID for the assistant message before streaming starts
+    // AI SDK 5.x: Direct approach - use streamText with custom onFinish to capture and save
+    const streamTextConfig = getStreamTextConfig(
+      finalSelectedChatModel,
+      finalModelMessages,
+      userTimeContext,
+      thinkingLevel
+    );
+
     const assistantId = generateUUID();
 
     const result = streamText({
       ...streamTextConfig,
-      onFinish: async ({ text, toolCalls, toolResults }) => {
+      onFinish: async ({ text, toolCalls, toolResults, reasoning, response }) => {
         // When streaming completes, we have access to all the data we need
         if (session.user?.id) {
           try {
-            // Build the complete parts array including text, reasoning, and tool results
+            // Build the complete parts array including text, reasoning, thought signatures, and tool results
             const uiParts: Array<UIMessage['parts'][number]> = [];
+
+            // Extract thought signatures from response for Gemini 3 (critical for multi-turn reasoning)
+            // Thought signatures must be preserved and sent back in next turn to maintain reasoning context
+            let thoughtSignature: string | undefined;
+            if (response?.messages) {
+              // Check the assistant message parts for thoughtSignature
+              const assistantMessage = response.messages.find((m) =>
+                typeof m === 'object' && m !== null && 'role' in m && m.role === 'assistant'
+              );
+              if (assistantMessage && 'content' in assistantMessage && Array.isArray(assistantMessage.content)) {
+                // Look for thoughtSignature in any of the content parts
+                for (const part of assistantMessage.content) {
+                  if (typeof part === 'object' && part !== null && 'thoughtSignature' in part && typeof part.thoughtSignature === 'string') {
+                    thoughtSignature = part.thoughtSignature;
+                    break; // Only need the first one (for parallel calls, only first has signature)
+                  }
+                }
+              }
+            }
+
+            // Add reasoning/thinking content if available (from Gemini or other models)
+            if (reasoning) {
+              // Convert reasoning array to string if needed
+              const reasoningText = Array.isArray(reasoning)
+                ? reasoning.map(r => typeof r === 'string' ? r : r.text).join('\n')
+                : typeof reasoning === 'string' ? reasoning : '';
+
+              if (reasoningText) {
+                const reasoningPart = thoughtSignature
+                  ? { type: 'reasoning' as const, text: reasoningText, thoughtSignature }
+                  : { type: 'reasoning' as const, text: reasoningText };
+                uiParts.push(reasoningPart);
+              }
+            }
 
             // Process the complete response text to extract thinking and clean content
             if (text) {
@@ -297,7 +381,7 @@ export async function POST(request: Request) {
                 }
                 // Check for italicized thinking format (*Thinking...*, *content*, etc.)
                 else if ((trimmedLine.startsWith('*') && trimmedLine.endsWith('*') &&
-                         (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
+                  (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
                   inThinkingBlock = true;
                   // Remove the * asterisks from both ends
                   const thinkingContent = trimmedLine.substring(1, trimmedLine.length - 1).trim();
@@ -314,8 +398,8 @@ export async function POST(request: Request) {
                 }
               }
 
-              // Add reasoning part if we found thinking content
-              if (thinkingLines.length > 0) {
+              // Add reasoning part if we found thinking content (and no reasoning part already added)
+              if (thinkingLines.length > 0 && !reasoning) {
                 const thinkingContent = thinkingLines.join('\n').trim();
                 if (thinkingContent) {
                   uiParts.push({
@@ -328,20 +412,31 @@ export async function POST(request: Request) {
               // Add cleaned text content if present
               const cleanText = nonThinkingLines.join('\n').trim();
               if (cleanText) {
-                uiParts.push({ type: 'text', text: cleanText });
+                const textPart = (thoughtSignature && !reasoning && thinkingLines.length === 0)
+                  ? { type: 'text' as const, text: cleanText, thoughtSignature }
+                  : { type: 'text' as const, text: cleanText };
+                uiParts.push(textPart);
               }
             }
 
             // Add tool calls and results
             if (toolCalls && toolCalls.length > 0) {
-              toolCalls.forEach(toolCall => {
-                // Add the tool call part for the tool invocation
-                uiParts.push({
-                  type: `tool-${toolCall.toolName}`,
-                  toolCallId: toolCall.toolCallId,
-                  input: (toolCall as ToolCall).args || toolCall,
-                  state: 'input-available' as const,
-                });
+              toolCalls.forEach((toolCall, index) => {
+                const toolCallPart = (thoughtSignature && index === 0 && !reasoning)
+                  ? {
+                    type: `tool-${toolCall.toolName}` as const,
+                    toolCallId: toolCall.toolCallId,
+                    input: (toolCall as ToolCall).args || toolCall,
+                    state: 'input-available' as const,
+                    thoughtSignature
+                  }
+                  : {
+                    type: `tool-${toolCall.toolName}` as const,
+                    toolCallId: toolCall.toolCallId,
+                    input: (toolCall as ToolCall).args || toolCall,
+                    state: 'input-available' as const,
+                  };
+                uiParts.push(toolCallPart);
               });
             }
 

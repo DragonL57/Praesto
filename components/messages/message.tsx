@@ -703,7 +703,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     return (
       <div
         data-testid={`message-${message.role}`}
-        className="w-full mx-auto max-w-3xl px-4 group/message transition-opacity duration-300 ease-in-out"
+        className="w-full mx-auto max-w-3xl px-2 md:px-4 group/message transition-opacity duration-300 ease-in-out"
         data-role={message.role}
         style={{
           maxWidth: 'min(100%, 48rem)', // Ensure content never exceeds viewport width
@@ -819,7 +819,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                             data-message-id={message.id}
                             onCopy={handleCopy}
                             className={cn('flex flex-col gap-0 flex-1 w-full', {
-                              [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-4 py-3 rounded-2xl transition-all duration-300`]:
+                              [`${getGradientStyle(message)} dark:text-zinc-100 text-zinc-900 px-3 py-2 md:px-4 md:py-3 rounded-2xl transition-all duration-300`]:
                                 message.role === 'user',
                               'text-foreground': message.role === 'assistant',
                             })}
@@ -1031,16 +1031,16 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`rounded-full text-muted-foreground transition-opacity duration-200 ${
+                    className={`rounded-full text-muted-foreground size-9 md:size-8 transition-opacity duration-200 ${
                       isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={handleRetry}
                     disabled={isRetrying}
                   >
                     {isRetrying ? (
-                      <div className="flex items-center justify-center size-4">
+                      <div className="flex items-center justify-center size-[18px] md:size-4">
                         <svg
-                          className="animate-spin size-4 text-blue-500"
+                          className="animate-spin size-[18px] md:size-4 text-blue-500"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -1061,7 +1061,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                         </svg>
                       </div>
                     ) : (
-                      <RefreshCwIcon className="size-4" />
+                      <RefreshCwIcon className="size-[18px] md:size-4" />
                     )}
                     <span className="sr-only">Retry generation</span>
                   </Button>
@@ -1078,12 +1078,12 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     data-testid="message-copy-button"
                     variant="ghost"
-                    className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+                    className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
                       isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={handleCopyButtonClick}
                   >
-                    <CopyIcon />
+                    <CopyIcon size={18} />
                     <span className="sr-only">Copy message</span>
                   </Button>
                 </TooltipTrigger>
@@ -1096,14 +1096,14 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   <Button
                     data-testid="message-edit-button"
                     variant="ghost"
-                    className={`px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
+                    className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
                       isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={() => {
                       setMode('edit');
                     }}
                   >
-                    <PencilEditIcon />
+                    <PencilEditIcon size={18} />
                     <span className="sr-only">Edit message</span>
                   </Button>
                 </TooltipTrigger>

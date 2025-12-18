@@ -16,12 +16,12 @@ export const textStyles = {
     strong: 'font-semibold after:content-[\'\'] after:whitespace-pre',
     em: 'italic after:content-[\'\'] after:whitespace-pre',
     link: 'text-sm text-blue-700 dark:text-blue-400 hover:underline break-words overflow-wrap-anywhere',
-    listItem: 'py-0.5 break-words text-sm leading-relaxed marker:text-zinc-600 dark:marker:text-zinc-400',
+    listItem: 'break-words text-sm leading-relaxed',
 } as const;
 
 export const listStyles = {
-    ordered: 'list-decimal list-inside ml-4 my-2 text-sm [&>li]:marker:font-semibold',
-    unordered: 'list-disc list-inside ml-4 my-2 text-sm [&_ul]:ml-6 [&_ol]:ml-6',
+    ordered: 'list-decimal list-outside ml-6 my-2 space-y-1 text-sm [&>li]:pl-1',
+    unordered: 'list-disc list-outside ml-6 my-2 space-y-1 text-sm [&_ul]:ml-4 [&_ol]:ml-4 [&_ul]:mt-1 [&_ol]:mt-1',
 } as const;
 
 export const blockStyles = {
@@ -31,24 +31,24 @@ export const blockStyles = {
 } as const;
 
 export const tableStyles = {
-        wrapper: {
-            width: '100%',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            overflowY: 'auto' as const,
-            overflowX: 'auto' as const,
-            display: 'block' as const,
-            border: '1px solid var(--border)',
-            WebkitOverflowScrolling: 'touch' as const,
-            position: 'relative' as const,
-        },
-        table: {
-            borderCollapse: 'collapse' as const,
-            borderSpacing: 0,
-            tableLayout: 'auto' as const, // Changed from 'fixed' to 'auto' to allow natural width
-            width: 'auto' as const, // Allow table to be wider than container
-            minWidth: 'max-content' as const, // Ensure table doesn't compress
-        },
+    wrapper: {
+        width: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflowY: 'auto' as const,
+        overflowX: 'auto' as const,
+        display: 'block' as const,
+        border: '1px solid var(--border)',
+        WebkitOverflowScrolling: 'touch' as const,
+        position: 'relative' as const,
+    },
+    table: {
+        borderCollapse: 'collapse' as const,
+        borderSpacing: 0,
+        tableLayout: 'auto' as const, // Changed from 'fixed' to 'auto' to allow natural width
+        width: 'auto' as const, // Allow table to be wider than container
+        minWidth: 'max-content' as const, // Ensure table doesn't compress
+    },
     thead: 'bg-zinc-200 dark:bg-zinc-700',
     theadStyle: { position: 'sticky' as const, top: 0, zIndex: 1 },
     tr: 'even:bg-zinc-100 dark:even:bg-zinc-800',

@@ -57,7 +57,7 @@ export function PureMessageActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+              className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
                 isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
               }`}
               variant="ghost"
@@ -77,7 +77,7 @@ export function PureMessageActions({
                 toast.success('Copied to clipboard!');
               }}
             >
-              <CopyIcon />
+              <CopyIcon size={18} />
               <span className="sr-only">Copy message text</span>
             </Button>
           </TooltipTrigger>
@@ -88,7 +88,7 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               data-testid="message-upvote"
-              className={`px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
+              className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
                 isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
               }`}
               disabled={vote?.isUpvoted}
@@ -133,7 +133,7 @@ export function PureMessageActions({
                 });
               }}
             >
-              <ThumbUpIcon />
+              <ThumbUpIcon size={18} />
               <span className="sr-only">Upvote response</span>
             </Button>
           </TooltipTrigger>
@@ -144,7 +144,7 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               data-testid="message-downvote"
-              className={`px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
+              className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
                 isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
               }`}
               variant="ghost"
@@ -189,7 +189,7 @@ export function PureMessageActions({
                 });
               }}
             >
-              <ThumbDownIcon />
+              <ThumbDownIcon size={18} />
               <span className="sr-only">Downvote response</span>
             </Button>
           </TooltipTrigger>

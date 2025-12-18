@@ -107,7 +107,7 @@ export function Chat({
   } = chatHelpers;
 
   // Create handleSubmit wrapper for compatibility
-  const handleSubmit = (e?: { preventDefault?: () => void }) => {
+  const _handleSubmit = (e?: { preventDefault?: () => void }) => {
     e?.preventDefault?.();
     if (input.trim()) {
       sendMessage({ text: input });
@@ -218,7 +218,7 @@ export function Chat({
                   chatId={id}
                   input={input}
                   setInput={setInput}
-                  handleSubmit={handleSubmit}
+                  sendMessage={sendMessage}
                   status={status}
                   stop={stop}
                   attachments={attachments}

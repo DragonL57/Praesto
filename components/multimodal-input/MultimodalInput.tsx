@@ -48,13 +48,7 @@ interface MultimodalInputProps {
   messages: Array<UIMessage>;
   setMessages: SetMessagesFunction;
   append: AppendFunction;
-  handleSubmit: (
-    event?: { preventDefault?: () => void },
-    options?: {
-      /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
-      experimental_attachments?: Attachment[];
-    },
-  ) => void;
+  sendMessage: (message: { text: string; files?: Array<{ type: 'file'; filename?: string; mediaType: string; url: string }> }) => void;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -71,7 +65,7 @@ function PureMultimodalInput({
   messages,
   setMessages,
   append,
-  handleSubmit,
+  sendMessage,
   className,
   messagesContainerRef,
   messagesEndRef,
@@ -144,12 +138,23 @@ function PureMultimodalInput({
       recognitionRef.current = null;
     }
 
-    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
-    const chatRequestOptions = {
-      experimental_attachments: attachments,
-    };
+    console.log('Submitting form with attachments:', attachments);
 
-    handleSubmit(undefined, chatRequestOptions);
+    // AI SDK 5.x: Convert attachments to FileUIPart format for sendMessage
+    const fileParts = attachments.map(att => ({
+      type: 'file' as const,
+      filename: att.name,
+      mediaType: att.contentType || 'application/octet-stream',
+      url: att.url,
+    }));
+
+    console.log('Converted file parts:', fileParts);
+
+    // Send message with files using AI SDK 5.x API
+    sendMessage({
+      text: input,
+      files: fileParts.length > 0 ? fileParts : undefined,
+    });
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -160,7 +165,8 @@ function PureMultimodalInput({
     }
   }, [
     attachments,
-    handleSubmit,
+    input,
+    sendMessage,
     setAttachments,
     setLocalStorageInput,
     width,
@@ -230,9 +236,9 @@ function PureMultimodalInput({
       {/* Form wrapper - fixed to bottom of viewport on mobile */}
       <div
         className={cx(
-          'relative w-full flex flex-col gap-4 transition-all duration-500 ease-in-out input-container',
+          'relative w-full flex flex-col gap-2 md:gap-4 transition-all duration-500 ease-in-out input-container',
           isMobile &&
-            'fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2',
+            'fixed bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-sm px-2 pb-2',
         )}
         style={{
           // Add padding to the bottom to push content above the keyboard using proper env() variables
@@ -401,17 +407,20 @@ function PureMultimodalInput({
 
         {/* Pills row below the input bar for new chats */}
         {isNewChat && (
-          <div className="flex flex-row justify-center gap-2">
+          <div className="flex flex-row justify-center gap-1.5 md:gap-2 flex-wrap px-1 max-w-full">
             {pills.map((pill) => (
               <HoverCard key={pill.key} openDelay={200} closeDelay={100}>
                 <HoverCardTrigger asChild>
                   <button
-                    className="px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-base font-medium text-zinc-700 dark:text-zinc-200 shadow hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center"
+                    className="px-3 py-1.5 md:px-4 md:py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-sm md:text-base font-medium text-zinc-700 dark:text-zinc-200 shadow hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center shrink-0 max-w-full"
                     onClick={() => handlePillClick(pill.prompt)}
                     type="button"
                   >
-                    {pill.icon}
-                    {pill.label}
+                    <span className="mr-1.5 md:mr-2 shrink-0">
+                      {pill.icon.props.children}
+                    </span>
+                    <span className="hidden sm:inline truncate">{pill.label}</span>
+                    <span className="sm:hidden text-xs truncate">{pill.label.split(' ')[0]}</span>
                   </button>
                 </HoverCardTrigger>
                 <HoverCardContent

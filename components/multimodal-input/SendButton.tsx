@@ -14,7 +14,7 @@ function PureSendButton({ submitForm, input, uploadQueue }: SendButtonProps) {
   return (
     <Button
       data-testid="send-button"
-      className="rounded-full p-2 h-fit border border-transparent bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-colors"
+      className="rounded-full p-2.5 md:p-2 h-fit border border-transparent bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-colors"
       onClick={(event) => {
         event.preventDefault();
         submitForm();
@@ -22,7 +22,7 @@ function PureSendButton({ submitForm, input, uploadQueue }: SendButtonProps) {
       disabled={input.length === 0 || uploadQueue.length > 0}
       aria-label="Send message"
     >
-      <ArrowUpIcon size={16} />
+      <ArrowUpIcon size={18} />
       <span className="sr-only">Send message</span>
     </Button>
   );

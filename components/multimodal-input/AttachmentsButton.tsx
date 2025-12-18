@@ -28,7 +28,7 @@ function PureAttachmentsButton({
         <TooltipTrigger asChild>
           <Button
             data-testid="attachments-button"
-            className="rounded-md rounded-bl-lg p-[7px] h-fit border border-input dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+            className="rounded-md rounded-bl-lg p-2 md:p-[7px] h-fit border border-input dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
             onClick={(event) => {
               event.preventDefault();
               fileInputRef.current?.click();
@@ -37,7 +37,7 @@ function PureAttachmentsButton({
             variant="ghost"
             aria-label="Attach files"
           >
-            <PaperclipIcon size={16} />
+            <PaperclipIcon size={18} />
             <span className="sr-only">Attach files</span>
           </Button>
         </TooltipTrigger>

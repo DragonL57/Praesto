@@ -22,10 +22,10 @@ export function SidebarToggle({
         <Button
           onClick={toggleSidebar}
           variant="outline"
-          className="md:px-3 px-3 h-11 md:h-11"
+          className="size-8 md:h-10 md:w-auto p-0 md:px-3"
           aria-label="Toggle Sidebar"
         >
-          {open ? <LuPanelLeftClose size={20} /> : <LuPanelLeftOpen size={20} />}
+          {open ? <LuPanelLeftClose size={18} className="md:size-5" /> : <LuPanelLeftOpen size={18} className="md:size-5" />}
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </TooltipTrigger>

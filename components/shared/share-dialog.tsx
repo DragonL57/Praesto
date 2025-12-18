@@ -53,12 +53,12 @@ export function ShareDialog({
         <Button
           variant="outline"
           className={cn(
-            'hidden md:flex md:px-3 md:h-11 gap-2 items-center',
+            'h-8 w-8 md:h-10 md:w-auto p-0 md:px-3 md:gap-2',
             className
           )}
         >
-          <ShareIcon size={20} />
-          <span className="text-base">Share</span>
+          <ShareIcon size={18} />
+          <span className="hidden md:inline text-sm">Share</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[350px] p-0" align="end">

@@ -14,7 +14,7 @@ function PureStopButton({ stop, setMessages }: StopButtonProps) {
   return (
     <Button
       data-testid="stop-button"
-      className="rounded-full p-2 h-fit border border-red-200 dark:border-red-700 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 shadow-sm transition-colors"
+      className="rounded-full p-2.5 md:p-2 h-fit border border-red-200 dark:border-red-700 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 shadow-sm transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();
@@ -22,7 +22,7 @@ function PureStopButton({ stop, setMessages }: StopButtonProps) {
       }}
       aria-label="Stop generating"
     >
-      <StopIcon size={16} />
+      <StopIcon size={18} />
       <span className="sr-only">Stop generating</span>
     </Button>
   );

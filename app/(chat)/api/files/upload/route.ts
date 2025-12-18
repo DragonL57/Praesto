@@ -60,6 +60,8 @@ export async function POST(request: Request) {
             userId: session.user.id, // Example: include userId in the token payload
             // originalPathname: pathname, // could be useful
           }),
+          // Provide callbackUrl for onUploadCompleted webhook
+          callbackUrl: process.env.VERCEL_BLOB_CALLBACK_URL || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/upload`,
           // You can also set a validity period for the token if needed
           // validUntil: Date.now() + 60 * 60 * 1000, // 1 hour from now
         };

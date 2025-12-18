@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import type { VisibilityType } from './visibility-selector';
 import { ShareDialog } from '@/components/shared';
 import { ModelSelector } from '@/components/model-selector';
+import { ThinkingLevelSelector } from '@/components/thinking-level-selector';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
@@ -47,7 +48,7 @@ function PureChatHeader({
   }, []);
 
   return (
-    <header className="flex sticky top-0 bg-background py-2.5 items-center px-3 md:px-3 gap-3">
+    <header className="flex sticky top-0 bg-background py-1.5 md:py-2 items-center px-2 md:px-3 gap-1.5 md:gap-2 z-50 border-b">
       <SidebarToggle />
 
       {mounted ? (
@@ -57,7 +58,7 @@ function PureChatHeader({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className="order-2 md:order-1 md:px-3 px-3 h-11 md:h-11 ml-auto md:ml-0"
+                  className="size-8 md:h-10 md:w-auto p-0 md:px-3 ml-auto md:ml-0"
                   onClick={() => {
                     router.push('/chat');
                     router.refresh();
@@ -65,8 +66,8 @@ function PureChatHeader({
                   data-testid="new-chat-button"
                   type="button"
                 >
-                  <PlusIcon size={20} />
-                  <span className="md:sr-only">New Chat</span>
+                  <PlusIcon size={18} />
+                  <span className="hidden md:inline ml-2">New Chat</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>New Chat</TooltipContent>
@@ -76,7 +77,14 @@ function PureChatHeader({
           {!isReadonly && (
             <ModelSelector
               selectedModelId={globallySelectedModelId}
-              className="order-1 md:order-2"
+              className="shrink-0"
+            />
+          )}
+
+          {!isReadonly && (
+            <ThinkingLevelSelector
+              selectedModelId={globallySelectedModelId}
+              className="shrink-0"
             />
           )}
 
@@ -85,22 +93,17 @@ function PureChatHeader({
               <ShareDialog
                 chatId={chatId}
                 selectedVisibilityType={selectedVisibilityType}
-                className="order-1 md:order-3 md:ml-auto"
+                className="md:ml-auto"
               />
             ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="order-1 md:order-3 md:ml-auto">
-                    <ThemeToggle className="hidden md:flex md:px-3 md:h-11" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Switch theme</TooltipContent>
-              </Tooltip>
+              <div className="md:ml-auto">
+                <ThemeToggle className="hidden md:flex h-10 px-3" />
+              </div>
             )
           )}
         </>
       ) : (
-        <div className="h-[40px] flex-1" />
+        <div className="h-8 md:h-10 flex-1" />
       )}
     </header>
   );

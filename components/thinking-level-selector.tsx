@@ -9,52 +9,94 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { chatModels } from '@/lib/ai/providers';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from 'usehooks-ts';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 
-export function ModelSelector({
+// Thinking levels for Gemini 3 models
+const thinkingLevels = [
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    description: 'Fastest - minimal thinking, best for chat',
+    flashOnly: true,
+  },
+  {
+    id: 'low',
+    name: 'Low',
+    description: 'Fast - simple instruction following',
+    flashOnly: false,
+  },
+  {
+    id: 'medium',
+    name: 'Medium',
+    description: 'Balanced - good for most tasks',
+    flashOnly: true,
+  },
+  {
+    id: 'high',
+    name: 'High',
+    description: 'Deepest reasoning - best quality',
+    flashOnly: false,
+  },
+];
+
+export function ThinkingLevelSelector({
   selectedModelId,
   className,
 }: {
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
-  // Use local storage to persist model selection without server action
-  const [localModelId, setLocalModelId] = useLocalStorage('selected-chat-model-id', selectedModelId);
+  
+  // Determine if current model is Gemini and if it's Flash variant
+  const isGeminiModel = selectedModelId.includes('gemini-3');
+  const isFlashModel = selectedModelId.includes('flash');
+  
+  // Use local storage to persist thinking level selection
+  const [localThinkingLevel, setLocalThinkingLevel] = useLocalStorage('thinking-level', 'high');
   
   // This optimistic state handles immediate UI updates
-  const [optimisticModelId, setOptimisticModelId] = useOptimistic(localModelId);
+  const [optimisticThinkingLevel, setOptimisticThinkingLevel] = useOptimistic(localThinkingLevel);
 
   // Update server cookie without causing UI refresh
-  const saveModelCookie = useCallback(async (modelId: string) => {
+  const saveThinkingLevelCookie = useCallback(async (level: string) => {
     try {
-      // Use fetch API directly instead of server action to avoid any page transitions
-      await fetch('/api/set-model-cookie', {
+      await fetch('/api/set-thinking-level-cookie', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: modelId }),
+        body: JSON.stringify({ thinkingLevel: level }),
       });
     } catch (error) {
-      console.error('Failed to save model preference:', error);
+      console.error('Failed to save thinking level preference:', error);
     }
   }, []);
 
   // Sync local storage with server cookie when component mounts
   useEffect(() => {
-    if (localModelId !== selectedModelId) {
-      saveModelCookie(localModelId);
-    }
-  }, [localModelId, selectedModelId, saveModelCookie]);
+    saveThinkingLevelCookie(localThinkingLevel);
+  }, [localThinkingLevel, saveThinkingLevelCookie]);
 
-  const selectedChatModel = useMemo(
-    () => chatModels.find((chatModel) => chatModel.id === optimisticModelId),
-    [optimisticModelId],
+  const selectedThinkingLevel = useMemo(
+    () => thinkingLevels.find((level) => level.id === optimisticThinkingLevel),
+    [optimisticThinkingLevel],
   );
+
+  // Filter available levels based on model type
+  const availableLevels = useMemo(() => {
+    if (isFlashModel) {
+      return thinkingLevels; // Flash supports all levels
+    }
+    return thinkingLevels.filter(level => !level.flashOnly); // Pro only supports low/high
+  }, [isFlashModel]);
+
+  // Don't show selector if not a Gemini model
+  if (!isGeminiModel) {
+    return null;
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -66,35 +108,36 @@ export function ModelSelector({
         )}
       >
         <Button
-          data-testid="model-selector"
+          data-testid="thinking-level-selector"
           variant="outline"
           className="h-8 md:h-10 px-2 md:px-3 flex gap-1 md:gap-2 items-center text-xs md:text-sm"
         >
-          <span className="truncate max-w-[80px] md:max-w-none">{selectedChatModel?.name}</span>
+          <span className="hidden md:inline text-muted-foreground">Thinking:</span>
+          <span className="truncate max-w-[60px] md:max-w-none">{selectedThinkingLevel?.name}</span>
           <ChevronDownIcon size={16} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {chatModels.map((chatModel) => {
-          const { id } = chatModel;
+        {availableLevels.map((level) => {
+          const { id } = level;
 
           return (
             <DropdownMenuItem
-              data-testid={`model-selector-item-${id}`}
+              data-testid={`thinking-level-selector-item-${id}`}
               key={id}
               onSelect={() => {
                 setOpen(false);
 
                 startTransition(() => {
                   // Update local state first - this is immediate and doesn't refresh
-                  setOptimisticModelId(id);
-                  setLocalModelId(id);
+                  setOptimisticThinkingLevel(id);
+                  setLocalThinkingLevel(id);
                   
                   // Then update server cookie in background without causing refresh
-                  saveModelCookie(id);
+                  saveThinkingLevelCookie(id);
                 });
               }}
-              data-active={id === optimisticModelId}
+              data-active={id === optimisticThinkingLevel}
               asChild
             >
               <button
@@ -102,9 +145,9 @@ export function ModelSelector({
                 className="gap-4 group/item flex flex-row justify-between items-center w-full py-2"
               >
                 <div className="flex flex-col gap-1 items-start">
-                  <div className="text-base">{chatModel.name}</div>
+                  <div className="text-base">{level.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {chatModel.description}
+                    {level.description}
                   </div>
                 </div>
 

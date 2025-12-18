@@ -27,8 +27,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-md ${className}`}>
-      {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+    <Button variant="ghost" size="icon" onClick={toggleTheme} className={`rounded-md size-8 md:size-10 ${className}`}>
+      {theme === "dark" ? <Sun className="size-[16px] md:size-[18px]" /> : <Moon className="size-[16px] md:size-[18px]" />}
       <span className="sr-only">Toggle theme</span>
     </Button>
   )
