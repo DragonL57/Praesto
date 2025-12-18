@@ -156,6 +156,7 @@ function PureMultimodalInput({
       files: fileParts.length > 0 ? fileParts : undefined,
     });
 
+    setInput('');
     setAttachments([]);
     setLocalStorageInput('');
     resetTextareaHeight(textareaRef);
@@ -167,6 +168,7 @@ function PureMultimodalInput({
     attachments,
     input,
     sendMessage,
+    setInput,
     setAttachments,
     setLocalStorageInput,
     width,

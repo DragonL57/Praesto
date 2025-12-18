@@ -14,7 +14,7 @@ function PureStopButton({ stop, setMessages }: StopButtonProps) {
   return (
     <Button
       data-testid="stop-button"
-      className="rounded-full p-2.5 md:p-2 h-fit border border-red-200 dark:border-red-700 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 shadow-sm transition-colors"
+      className="rounded-full p-2.5 md:p-2 h-fit border-0 bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700 shadow-sm transition-colors"
       onClick={(event) => {
         event.preventDefault();
         stop();
