@@ -362,8 +362,11 @@ export async function POST(request: Request) {
 
             // Process the complete response text to extract thinking and clean content
             if (text) {
+              // Remove "**Thinking...**" header if present
+              let processedText = text.replace(/^\*\*Thinking\.\.\.\*\*\s*\n*/i, '');
+
               // Parse both Poe API thinking format (lines starting with >) and italicized thinking format
-              const lines = text.split('\n');
+              const lines = processedText.split('\n');
               const thinkingLines: string[] = [];
               const nonThinkingLines: string[] = [];
               let inThinkingBlock = false;
@@ -391,10 +394,13 @@ export async function POST(request: Request) {
                 }
                 else if (!(inThinkingBlock && trimmedLine === '')) {
                   // Non-thinking line or meaningful line, end of thinking block
-                  if (!trimmedLine.startsWith('*')) {
+                  if (!trimmedLine.startsWith('*') && !trimmedLine.startsWith('>')) {
                     inThinkingBlock = false;
                   }
-                  nonThinkingLines.push(line);
+                  // Only add non-thinking lines that aren't empty lines immediately after thinking blocks
+                  if (!inThinkingBlock || trimmedLine !== '') {
+                    nonThinkingLines.push(line);
+                  }
                 }
               }
 
@@ -482,8 +488,74 @@ export async function POST(request: Request) {
         sendReasoning: true,
       });
 
+      // Transform the stream to remove "**Thinking...**" and ">" prefixed thinking content during streaming
+      let accumulatedText = '';
+      let hasSeenContent = false;
+
+      const transformedStream = stream.pipeThrough(
+        new TransformStream({
+          transform(chunk, controller) {
+            // If this is a text delta chunk, filter it
+            if (chunk && typeof chunk === 'object' && 'type' in chunk) {
+              if (chunk.type === 'text-delta' && 'textDelta' in chunk && typeof chunk.textDelta === 'string') {
+                const delta = chunk.textDelta;
+
+                // Skip any chunk that contains thinking patterns
+                if (delta.includes('**Thinking') ||
+                  delta.includes('Thinking...') ||
+                  delta.trim().startsWith('>') ||
+                  (!hasSeenContent && delta.trim() === '')) {
+                  // Don't send this chunk, it's thinking content
+                  return;
+                }
+
+                // Accumulate text to detect when real content starts
+                accumulatedText += delta;
+
+                // Once we see markdown or substantial content, mark that we've seen content
+                if (delta.includes('#') || delta.includes('##') || accumulatedText.length > 50) {
+                  hasSeenContent = true;
+                }
+
+                // If we haven't seen real content yet, buffer and don't send
+                if (!hasSeenContent) {
+                  return;
+                }
+
+                // Clean the delta before sending
+                let cleanedDelta = delta;
+
+                // Remove any thinking patterns that might appear
+                cleanedDelta = cleanedDelta.replace(/\*\*Thinking\.{3,}\*\*/gi, '');
+                cleanedDelta = cleanedDelta.replace(/Thinking\.{3,}/gi, '');
+
+                // Remove lines starting with >
+                const lines = cleanedDelta.split('\n');
+                const filteredLines = lines.filter(line => !line.trim().startsWith('>'));
+                cleanedDelta = filteredLines.join('\n');
+
+                // Only send if there's content
+                if (cleanedDelta.trim()) {
+                  controller.enqueue({ ...chunk, textDelta: cleanedDelta });
+                }
+              } else {
+                // Pass through other chunk types (like reasoning-delta)
+                controller.enqueue(chunk);
+              }
+            } else {
+              controller.enqueue(chunk);
+            }
+          },
+          flush(controller) {
+            // Reset state when stream ends
+            accumulatedText = '';
+            hasSeenContent = false;
+          }
+        })
+      );
+
       // Return the stream as a response
-      return createUIMessageStreamResponse({ stream });
+      return createUIMessageStreamResponse({ stream: transformedStream });
     } catch (error) {
       console.error('[API CHAT ROUTE ERROR]', error);
       return new Response('An error occurred while processing your request. Please try again.', {

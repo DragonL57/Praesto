@@ -61,6 +61,15 @@ const enhancedGpt5ChatModel = wrapLanguageModel({
   })
 });
 
+const enhancedZenoSonarReasoningModel = wrapLanguageModel({
+  model: poeProvider.chatModel('zeno-sonar-reasoning'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.7,
+    }
+  })
+});
+
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.6'),
   middleware: defaultSettingsMiddleware({
@@ -150,6 +159,14 @@ export const chatModels: ChatModel[] = [
     supportsThinking: false,
   },
   {
+    id: 'zeno-sonar-reasoning',
+    name: 'Zeno Sonar Reasoning',
+    description: 'Zeno Sonar Reasoning model via Poe API - advanced reasoning capabilities',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: true,
+  },
+  {
     id: 'gemini-3-pro-preview',
     name: 'Gemini 3 Pro Preview',
     description: 'Google Gemini 3 Pro - Most capable model with advanced reasoning',
@@ -187,6 +204,7 @@ export const myProvider = customProvider({
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
     'gpt-5-chat': enhancedGpt5ChatModel,
+    'zeno-sonar-reasoning': enhancedZenoSonarReasoningModel,
 
     // Google Gemini models with middleware
     'gemini-3-pro-preview': gemini3ProModel,
