@@ -16,6 +16,7 @@ import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestam
 import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 import { getStreamTextConfig } from '@/lib/ai/providers';
+import { getCalendarTools } from '@/lib/ai/calendar-tools';
 
 // Define file attachment interface for internal use
 interface FileAttachment {
@@ -315,10 +316,34 @@ export async function POST(request: Request) {
       thinkingLevel
     );
 
+    // Add calendar tools (server-only, loaded dynamically)
+    const calendarTools = await getCalendarTools();
+
+    // Merge calendar tools if the config supports tools
+    let configWithCalendar = streamTextConfig;
+    if ('tools' in streamTextConfig && streamTextConfig.tools) {
+      const toolsConfig = streamTextConfig as typeof streamTextConfig & {
+        experimental_activeTools?: readonly string[];
+        tools: Record<string, unknown>;
+      };
+
+      configWithCalendar = {
+        ...streamTextConfig,
+        experimental_activeTools: [
+          ...(toolsConfig.experimental_activeTools || []),
+          ...calendarTools.experimental_activeTools,
+        ] as readonly string[],
+        tools: {
+          ...toolsConfig.tools,
+          ...calendarTools.tools,
+        },
+      } as typeof streamTextConfig;
+    }
+
     const assistantId = generateUUID();
 
     const result = streamText({
-      ...streamTextConfig,
+      ...configWithCalendar,
       onFinish: async ({ text, toolCalls, toolResults, reasoning, response }) => {
         // When streaming completes, we have access to all the data we need
         if (session.user?.id) {

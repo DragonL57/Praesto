@@ -48,10 +48,17 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       console.log('Parts structure:', JSON.stringify(originalParts, null, 2));
 
       // Process text parts to extract embedded thinking content (for older messages)
+      // Also ensure tool-related parts are preserved
       if (message.role === 'assistant') {
         const newParts: UIMessage['parts'] = [];
 
         originalParts.forEach((part) => {
+          // Preserve tool-call and tool-result parts as-is
+          if (part.type && (part.type.startsWith('tool-') || part.type === 'tool-call' || part.type === 'tool-result')) {
+            newParts.push(part);
+            return;
+          }
+
           if (part.type === 'text' && typeof part.text === 'string') {
             // Check for embedded Poe API thinking format (lines starting with >)
             const lines = part.text.split('\n');
@@ -100,7 +107,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
               newParts.push(part);
             }
           } else {
-            // Non-text part, keep as-is
+            // Non-text part (file, reasoning, etc.), keep as-is
             newParts.push(part);
           }
         });

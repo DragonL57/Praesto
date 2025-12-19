@@ -21,6 +21,7 @@ import { MessageReasoning } from './message-reasoning';
 import { PencilEditIcon, CopyIcon, TrashIcon } from '../icons';
 import { PreviewAttachment } from '../preview-attachment';
 import { Weather } from '../weather';
+import { Calendar } from '../calendar';
 
 import { cn } from '@/lib/utils';
 import { deleteTrailingMessages, deleteMessage } from '@/app/(chat)/actions';
@@ -909,11 +910,28 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       <div
                         key={toolCallId}
                         className={cx({
-                          skeleton: ['getWeather'].includes(toolName),
+                          skeleton: [
+                            'getWeather',
+                            'listCalendarEvents',
+                            'createCalendarEvent',
+                            'updateCalendarEvent',
+                            'deleteCalendarEvent',
+                            'findFreeTimeSlots',
+                            'getCalendarEvent',
+                          ].includes(toolName),
                         })}
                       >
                         {toolName === 'getWeather' ? (
                           <Weather />
+                        ) : [
+                            'listCalendarEvents',
+                            'createCalendarEvent',
+                            'updateCalendarEvent',
+                            'deleteCalendarEvent',
+                            'findFreeTimeSlots',
+                            'getCalendarEvent',
+                          ].includes(toolName) ? (
+                          <Calendar />
                         ) : null}{' '}
                         {/* Other non-reasoning tool calls rendered here */}
                       </div>
@@ -1015,6 +1033,15 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                             >[0]['weatherAtLocation']
                           }
                         />
+                      ) : [
+                          'listCalendarEvents',
+                          'createCalendarEvent',
+                          'updateCalendarEvent',
+                          'deleteCalendarEvent',
+                          'findFreeTimeSlots',
+                          'getCalendarEvent',
+                        ].includes(toolName) ? (
+                        <Calendar result={result as unknown as Parameters<typeof Calendar>[0]['result']} />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}
