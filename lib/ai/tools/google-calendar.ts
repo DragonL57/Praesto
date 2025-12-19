@@ -84,6 +84,23 @@ export const listCalendarEvents = tool({
                 events: formattedEvents,
             };
         } catch (error: unknown) {
+            // BEGIN DEBUG LOGGING
+            console.error('[Google Calendar] Error in listCalendarEvents:', {
+                error,
+                calendarId,
+                timeMin,
+                timeMax,
+                maxResults,
+                query,
+                singleEvents,
+                orderBy,
+                env: {
+                    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+                    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+                    GOOGLE_SERVICE_ACCOUNT_KEY: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
+                },
+            });
+            // END DEBUG LOGGING
             const errorMessage = error instanceof Error ? error.message : String(error);
             return {
                 success: false,
