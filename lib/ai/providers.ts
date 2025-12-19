@@ -52,6 +52,15 @@ const enhancedGrok41FastReasoningModel = wrapLanguageModel({
   })
 });
 
+const enhancedGpt5ChatModel = wrapLanguageModel({
+  model: poeProvider.chatModel('gpt-5-chat'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.7,
+    }
+  })
+});
+
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.6'),
   middleware: defaultSettingsMiddleware({
@@ -133,6 +142,14 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
   },
   {
+    id: 'gpt-5-chat',
+    name: 'GPT-5 Chat',
+    description: 'GPT-5 Chat model via Poe API - supports image reading and analysis',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: false,
+  },
+  {
     id: 'gemini-3-pro-preview',
     name: 'Gemini 3 Pro Preview',
     description: 'Google Gemini 3 Pro - Most capable model with advanced reasoning',
@@ -169,6 +186,7 @@ export const myProvider = customProvider({
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
+    'gpt-5-chat': enhancedGpt5ChatModel,
 
     // Google Gemini models with middleware
     'gemini-3-pro-preview': gemini3ProModel,

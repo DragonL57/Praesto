@@ -13,6 +13,7 @@ import postgres from 'postgres';
 import {
     message,
     vote,
+    document,
     type DBMessage,
 } from './schema';
 
@@ -143,7 +144,33 @@ export async function deleteMessageById({
     chatId: string;
 }) {
     try {
-        // Delete associated votes first
+        // First, get the message to check for attached documents
+        const [msgToDelete] = await db
+            .select()
+            .from(message)
+            .where(and(eq(message.id, messageId), eq(message.chatId, chatId)));
+
+        if (msgToDelete && msgToDelete.attachments) {
+            const attachments = msgToDelete.attachments as Array<{
+                id?: string;
+                documentId?: string;
+                name?: string;
+            }>;
+
+            // Extract document IDs from attachments
+            const documentIds = attachments
+                .map((att) => att.documentId || att.id)
+                .filter((id): id is string => Boolean(id));
+
+            // Delete associated documents and their suggestions
+            if (documentIds.length > 0) {
+                await db
+                    .delete(document)
+                    .where(inArray(document.id, documentIds));
+            }
+        }
+
+        // Delete associated votes
         await db.delete(vote).where(eq(vote.messageId, messageId));
 
         // Delete the message
