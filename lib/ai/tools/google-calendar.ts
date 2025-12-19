@@ -23,7 +23,7 @@ const calendarEventSchema = z.object({
 export const listCalendarEvents = tool({
     description: 'List calendar events within a specified time range. Use this to check availability, view scheduled events, or search for specific meetings.',
     inputSchema: z.object({
-        calendarId: z.string().default('primary').describe('Calendar ID (default: "primary" for the user\'s primary calendar)'),
+        calendarId: z.string().default(process.env.GOOGLE_CALENDAR_ID || 'primary').describe('Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)'),
         timeMin: z.string().describe('Start date/time in ISO 8601 format (e.g., "2024-03-20T00:00:00Z")'),
         timeMax: z.string().optional().describe('End date/time in ISO 8601 format (e.g., "2024-03-27T23:59:59Z")'),
         maxResults: z.number().min(1).max(100).default(10).describe('Maximum number of events to return (1-100, default: 10)'),
@@ -115,7 +115,7 @@ export const listCalendarEvents = tool({
 export const createCalendarEvent = tool({
     description: 'Create a new calendar event. Use this to schedule meetings, appointments, reminders, or any time-blocked activities.',
     inputSchema: calendarEventSchema.extend({
-        calendarId: z.string().default('primary').describe('Calendar ID (default: "primary" for the user\'s primary calendar)'),
+        calendarId: z.string().default(process.env.GOOGLE_CALENDAR_ID || 'primary').describe('Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)'),
         sendUpdates: z.enum(['all', 'externalOnly', 'none']).default('none').describe('Whether to send notifications to attendees'),
     }),
     execute: async ({
