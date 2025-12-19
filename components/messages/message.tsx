@@ -18,12 +18,12 @@ import { Markdown } from '../markdown';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 import { MessageReasoning } from './message-reasoning';
-import { PencilEditIcon, CopyIcon } from '../icons';
+import { PencilEditIcon, CopyIcon, TrashIcon } from '../icons';
 import { PreviewAttachment } from '../preview-attachment';
 import { Weather } from '../weather';
 
 import { cn } from '@/lib/utils';
-import { deleteTrailingMessages } from '@/app/(chat)/actions';
+import { deleteTrailingMessages, deleteMessage } from '@/app/(chat)/actions';
 import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
 import type { Vote } from '@/lib/db/schema';
 import type { UIMessage } from 'ai';
@@ -682,6 +682,23 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
       }
     };
 
+    const handleDeleteMessage = async () => {
+      try {
+        // Delete the message from the database
+        await deleteMessage({ id: message.id, chatId });
+
+        // Update client-side messages state
+        setMessages((prevMessages) =>
+          prevMessages.filter((m) => m.id !== message.id)
+        );
+
+        toast.success('Message deleted.');
+      } catch (error) {
+        console.error('Failed to delete message:', error);
+        toast.error('Failed to delete message. Please try again.');
+      }
+    };
+
     const isUserMessage = message.role === 'user';
 
     // Effect to handle button visibility
@@ -1015,6 +1032,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   message={message}
                   vote={vote}
                   isLoading={isLoading}
+                  setMessages={setMessages}
                 />
               </div>
             )}
@@ -1090,24 +1108,44 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 <TooltipContent>Copy message</TooltipContent>
               </Tooltip>
 
-              {/* EDIT BUTTON */}
+              {/* EDIT BUTTON - USER MESSAGES ONLY */}
+              {isUserMessage && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      data-testid="message-edit-button"
+                      variant="ghost"
+                      className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
+                        isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                      }`}
+                      onClick={() => {
+                        setMode('edit');
+                      }}
+                    >
+                      <PencilEditIcon size={18} />
+                      <span className="sr-only">Edit message</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit message</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* DELETE BUTTON */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    data-testid="message-edit-button"
+                    data-testid="message-delete-button"
                     variant="ghost"
                     className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
                       isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
                     }`}
-                    onClick={() => {
-                      setMode('edit');
-                    }}
+                    onClick={handleDeleteMessage}
                   >
-                    <PencilEditIcon size={18} />
-                    <span className="sr-only">Edit message</span>
+                    <TrashIcon size={18} />
+                    <span className="sr-only">Delete message</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Edit message</TooltipContent>
+                <TooltipContent>Delete message</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

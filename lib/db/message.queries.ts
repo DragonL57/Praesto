@@ -133,4 +133,25 @@ export async function deleteMessagesByChatIdAfterTimestamp({
         );
         throw error;
     }
-} 
+}
+
+export async function deleteMessageById({
+    messageId,
+    chatId,
+}: {
+    messageId: string;
+    chatId: string;
+}) {
+    try {
+        // Delete associated votes first
+        await db.delete(vote).where(eq(vote.messageId, messageId));
+
+        // Delete the message
+        return await db
+            .delete(message)
+            .where(and(eq(message.id, messageId), eq(message.chatId, chatId)));
+    } catch (error) {
+        console.error('Failed to delete message by id from database', error);
+        throw error;
+    }
+}

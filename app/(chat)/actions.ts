@@ -3,7 +3,7 @@
 import { generateText } from 'ai';
 import type { UIMessage } from 'ai';
 // eslint-disable-next-line import/no-unresolved
-import { deleteMessagesByChatIdAfterTimestamp, getMessageById, updateChatVisiblityById, } from '@/lib/db/queries';
+import { deleteMessagesByChatIdAfterTimestamp, deleteMessageById, getMessageById, updateChatVisiblityById, } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 // eslint-disable-next-line import/no-unresolved
 import { myProvider } from '@/lib/ai/providers';
@@ -38,6 +38,13 @@ export async function deleteTrailingMessages({ id }: { id: string }) {
   await deleteMessagesByChatIdAfterTimestamp({
     chatId: message.chatId,
     timestamp: message.createdAt,
+  });
+}
+
+export async function deleteMessage({ id, chatId }: { id: string; chatId: string }) {
+  await deleteMessageById({
+    messageId: id,
+    chatId,
   });
 }
 
