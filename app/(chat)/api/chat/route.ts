@@ -363,7 +363,7 @@ export async function POST(request: Request) {
             // Process the complete response text to extract thinking and clean content
             if (text) {
               // Remove "**Thinking...**" header if present
-              let processedText = text.replace(/^\*\*Thinking\.\.\.\*\*\s*\n*/i, '');
+              const processedText = text.replace(/^\*\*Thinking\.{3,}\*\*\s*\n*/i, '');
 
               // Parse both Poe API thinking format (lines starting with >) and italicized thinking format
               const lines = processedText.split('\n');
@@ -546,7 +546,7 @@ export async function POST(request: Request) {
               controller.enqueue(chunk);
             }
           },
-          flush(controller) {
+          flush(_controller) {
             // Reset state when stream ends
             accumulatedText = '';
             hasSeenContent = false;
