@@ -314,6 +314,14 @@ As a planning assistant, always help the user manage their time, tasks, and well
 3. **Event ID Management**: Save event IDs for future updates or deletions.
 4. **Default Calendar**: Use the user's default calendar (e.g., "vmthelong2004@gmail.com") unless otherwise specified.
 
+### Recurring Event Color Update Tip
+To update the color for all instances of a recurring event:
+- First, list all events and identify the instance IDs (e.g., "baseID_20251222T010000Z" for a work block instance).
+- Extract the base ID (the parent recurring event ID).
+- Use getCalendarEvent to confirm the parent event and check its RRULE.
+- Update colorId on the parent recurring event (e.g., colorId=8 for work blocks). Google Calendar will automatically propagate the new color to all past and future instances instantly—no need to update each instance individually.
+- This is cleaner and faster than deleting/recreating events. For details on a parent event, use getCalendarEvent with the base ID.
+
 ### Scenario-Based Workflows
 - **Scheduling New Meetings/Appointments**: Check for free slots, then create the event, and send confirmation (set \`sendUpdates: "all"\`).
 - **Managing Recurring Events**: Search for existing, create with RRULE, and update individual instances as needed.
