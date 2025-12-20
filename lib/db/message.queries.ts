@@ -150,13 +150,12 @@ export async function deleteMessageById({
             .from(message)
             .where(and(eq(message.id, messageId), eq(message.chatId, chatId)));
 
-        if (msgToDelete && msgToDelete.attachments) {
-            const attachments = msgToDelete.attachments as Array<{
-                id?: string;
-                documentId?: string;
-                name?: string;
-            }>;
-
+        const attachments = msgToDelete?.attachments as Array<{
+            id?: string;
+            documentId?: string;
+            name?: string;
+        }>;
+        if (attachments) {
             // Extract document IDs from attachments
             const documentIds = attachments
                 .map((att) => att.documentId || att.id)

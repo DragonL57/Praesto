@@ -15,7 +15,7 @@ export async function GET(request: Request) {
         try {
             const authUrl = getAuthorizationUrl();
             return NextResponse.redirect(authUrl);
-        } catch (_error) {
+        } catch {
             return NextResponse.json({
                 success: false,
                 error: 'Failed to generate authorization URL',

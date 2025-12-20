@@ -103,6 +103,7 @@ type EnhancedMessagePart = UIMessage['parts'][0] & {
   connectNext?: boolean;
   connectPrevious?: boolean;
   toolIndex?: number;
+  state?: string; // for tool parts, may be 'input-available', 'output-available', etc.
 };
 
 // AI SDK 5.x tool parts have state/input/output directly on the part
@@ -147,7 +148,6 @@ const getToolOutput = (
   }
   return undefined;
 };
-
 
 // Helper function to preserve line breaks in user messages
 const UserTextWithLineBreaks = ({ text }: { text: string }) => {
@@ -690,7 +690,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
 
         // Update client-side messages state
         setMessages((prevMessages) =>
-          prevMessages.filter((m) => m.id !== message.id)
+          prevMessages.filter((m) => m.id !== message.id),
         );
 
         toast.success('Message deleted.');
@@ -818,9 +818,44 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 }
               });
 
-              return processedParts.map((part, index) => {
+              // Filter out 'input-available' tool parts if an 'output-available' part with the same toolCallId exists
+              const toolResultIds = new Set(
+                processedParts
+                  .filter(
+                    (p) =>
+                      isToolPart(p) &&
+                      isToolResultAvailable(p) &&
+                      getToolCallId(p),
+                  )
+                  .map((p) => getToolCallId(p)),
+              );
+              const filteredParts = processedParts.filter((part) => {
+                if (
+                  isToolPart(part) &&
+                  part.state === 'input-available' &&
+                  toolResultIds.has(getToolCallId(part))
+                ) {
+                  // Hide input-available if output-available exists for this toolCallId
+                  return false;
+                }
+                return true;
+              });
+
+              return filteredParts.map((part, index) => {
                 const { type } = part;
-                const key = `message-${message.id}-part-${index}`;
+                // Ensure unique key for tool parts, even if toolCallId repeats
+                let key = `message-${message.id}-part-${index}`;
+                if (isToolPart(part)) {
+                  const toolCallId = getToolCallId(part);
+                  if (toolCallId) {
+                    // Use message.id, toolCallId, and toolIndex (if present) for uniqueness
+                    const toolIndex =
+                      typeof part.toolIndex === 'number' && part.toolIndex >= 0
+                        ? `_${part.toolIndex}`
+                        : '';
+                    key = `call_${message.id}_${toolCallId}${toolIndex}`;
+                  }
+                }
 
                 // A: Render non-tool-result parts
                 if (!isToolPart(part) || !isToolResultAvailable(part)) {
@@ -849,12 +884,15 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                             }}
                           >
                             {message.role === 'user' ? (
-                              <div className="whitespace-pre-wrap break-words text-sm" style={{
-                                wordBreak: 'break-word',
-                                overflowWrap: 'break-word',
-                                hyphens: 'auto',
-                                maxWidth: '100%',
-                              }}>
+                              <div
+                                className="whitespace-pre-wrap break-words text-sm"
+                                style={{
+                                  wordBreak: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  hyphens: 'auto',
+                                  maxWidth: '100%',
+                                }}
+                              >
                                 {part.text && (
                                   <UserTextWithLineBreaks text={part.text} />
                                 )}
@@ -908,7 +946,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     // Render other tool calls (Weather, Document, etc.)
                     return (
                       <div
-                        key={toolCallId}
+                        key={`call_${message.id}_${toolCallId}${typeof part.toolIndex === 'number' && part.toolIndex >= 0 ? `_${part.toolIndex}` : ''}`}
                         className={cx({
                           skeleton: [
                             'getWeather',
@@ -983,6 +1021,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                           if (!isToolPart(groupPart)) return null;
                           const groupToolName = extractToolName(groupPart);
                           const groupToolCallId = getToolCallId(groupPart);
+                          const toolIndex =
+                            typeof groupPart.toolIndex === 'number' &&
+                            groupPart.toolIndex >= 0
+                              ? `_${groupPart.toolIndex}`
+                              : '';
                           const _res = getToolOutput(groupPart) || {};
                           if (
                             [
@@ -993,7 +1036,10 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                           )
                             return null;
                           return (
-                            <div key={groupToolCallId} className="border-0">
+                            <div
+                              key={`call_${message.id}_${groupToolCallId}${toolIndex}`}
+                              className="border-0"
+                            >
                               {/* Render grouped non-reasoning tools like Weather, Docs etc. if they can be grouped */}
                               {/* Example: if (groupToolName === 'getWeather') return <Weather ...inGroup={true}/>; */}
                               {/* Placeholder for now */}
@@ -1022,7 +1068,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   // Render standalone results for Weather, Docs, YouTube, etc.
                   return (
                     <div
-                      key={toolCallId}
+                      key={`call_${message.id}_${toolCallId}${typeof part.toolIndex === 'number' && part.toolIndex >= 0 ? `_${part.toolIndex}` : ''}`}
                       className="border-[1.5px] border-border rounded-xl mb-0 relative"
                     >
                       {toolName === 'getWeather' ? (
@@ -1041,7 +1087,13 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                           'findFreeTimeSlots',
                           'getCalendarEvent',
                         ].includes(toolName) ? (
-                        <Calendar result={result as unknown as Parameters<typeof Calendar>[0]['result']} />
+                        <Calendar
+                          result={
+                            result as unknown as Parameters<
+                              typeof Calendar
+                            >[0]['result']
+                          }
+                        />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}
@@ -1067,9 +1119,15 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
         </div>
         {/* NEW EDIT BUTTON LOCATION FOR USER MESSAGES */}
         {isUserMessage && mode !== 'edit' && !isReadonly && (
-          <div className={`flex justify-end items-center gap-1 mt-1 transition-opacity duration-200 ${
-            isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
-          }`}>
+          <div
+            className={`flex justify-end items-center gap-1 mt-1 transition-opacity duration-200 ${
+              isMobile
+                ? shouldShowButtons
+                  ? 'opacity-100'
+                  : 'opacity-0'
+                : 'opacity-0 group-hover/message:opacity-100'
+            }`}
+          >
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1077,7 +1135,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     variant="ghost"
                     size="icon"
                     className={`rounded-full text-muted-foreground size-9 md:size-8 transition-opacity duration-200 ${
-                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                      isMobile
+                        ? shouldShowButtons
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                        : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={handleRetry}
                     disabled={isRetrying}
@@ -1124,7 +1186,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     data-testid="message-copy-button"
                     variant="ghost"
                     className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
-                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                      isMobile
+                        ? shouldShowButtons
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                        : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={handleCopyButtonClick}
                   >
@@ -1143,7 +1209,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       data-testid="message-edit-button"
                       variant="ghost"
                       className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
-                        isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                        isMobile
+                          ? shouldShowButtons
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                          : 'opacity-0 group-hover/message:opacity-100'
                       }`}
                       onClick={() => {
                         setMode('edit');
@@ -1164,7 +1234,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     data-testid="message-delete-button"
                     variant="ghost"
                     className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
-                      isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                      isMobile
+                        ? shouldShowButtons
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                        : 'opacity-0 group-hover/message:opacity-100'
                     }`}
                     onClick={handleDeleteMessage}
                   >

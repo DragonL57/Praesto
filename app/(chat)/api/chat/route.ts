@@ -1,3 +1,12 @@
+// Type for a step in the result.steps array
+interface Step {
+  toolCalls?: ToolCall[];
+  toolResults?: ToolResult[];
+  // Add other properties as needed
+}
+
+// Type for reasoning array elements
+type ReasoningItem = string | { text: string };
 
 import { Buffer } from 'node:buffer'; // Node.js Buffer
 import { cookies } from 'next/headers';
@@ -344,147 +353,161 @@ export async function POST(request: Request) {
 
     const result = streamText({
       ...configWithCalendar,
-      onFinish: async ({ text, toolCalls, toolResults, reasoning, response }) => {
+      // Debug: Log every step as it finishes
+      onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
+        console.log('[AI TOOL DEBUG] Step finished');
+        console.log('[AI TOOL DEBUG] toolCalls:', JSON.stringify(toolCalls, null, 2));
+        console.log('[AI TOOL DEBUG] toolResults:', JSON.stringify(toolResults, null, 2));
+        console.log('[AI TOOL DEBUG] text:', text);
+        console.log('[AI TOOL DEBUG] finishReason:', finishReason);
+        console.log('[AI TOOL DEBUG] usage:', usage);
+      },
+      onFinish: async ({ text, reasoning }) => {
         // When streaming completes, we have access to all the data we need
         if (session.user?.id) {
           try {
-            // Build the complete parts array including text, reasoning, thought signatures, and tool results
+            // DEBUG: Log the entire result object after streaming
+            console.log('[AI TOOL DEBUG] result object after streaming:', JSON.stringify(result, null, 2));
+
+            // --- Aggregate toolCalls/toolResults from all steps for robust persistence ---
+            const allSteps: Step[] = Array.isArray(result?.steps) ? result.steps : [];
+            let allToolCalls: ToolCall[] = [];
+            let allToolResults: ToolResult[] = [];
+
+            // Fallback: If steps is missing/empty, extract from result.response.messages (POE/OpenAI format)
+            if (!allSteps || allSteps.length === 0) {
+              const response = result?.response ? await result.response : undefined;
+              const messages = response?.messages || [];
+              for (const msg of messages) {
+                if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+                  for (const part of msg.content) {
+                    if (part.type === 'tool-call') {
+                      // POE format: input property is the tool call args
+                      allToolCalls.push({
+                        toolName: part.toolName,
+                        toolCallId: part.toolCallId,
+                        args: (part.input && typeof part.input === 'object') ? part.input as Record<string, unknown> : {},
+                      });
+                    }
+                  }
+                }
+                if (msg.role === 'tool' && Array.isArray(msg.content)) {
+                  for (const part of msg.content) {
+                    if (part.type === 'tool-result') {
+                      // POE format: output property is { type: 'json', value: ... } or just the value
+                      let resultValue: unknown;
+                      if (part.output && typeof part.output === 'object' && 'value' in part.output) {
+                        resultValue = part.output.value;
+                      } else if (part.output !== undefined) {
+                        resultValue = part.output;
+                      }
+                      allToolResults.push({
+                        toolName: part.toolName,
+                        toolCallId: part.toolCallId,
+                        result: resultValue,
+                      });
+                    }
+                  }
+                }
+              }
+            } else {
+              allToolCalls = allSteps.flatMap((step) => step?.toolCalls || []);
+              allToolResults = allSteps.flatMap((step) => step?.toolResults || []);
+            }
+
+            // DEBUG: Log allToolCalls and allToolResults before building uiParts
+            console.log('[AI TOOL DEBUG] allToolCalls:', JSON.stringify(allToolCalls, null, 2));
+            console.log('[AI TOOL DEBUG] allToolResults:', JSON.stringify(allToolResults, null, 2));
+
             const uiParts: Array<UIMessage['parts'][number]> = [];
 
-            // Extract thought signatures from response for Gemini 3 (critical for multi-turn reasoning)
-            // Thought signatures must be preserved and sent back in next turn to maintain reasoning context
-            let thoughtSignature: string | undefined;
-            if (response?.messages) {
-              // Check the assistant message parts for thoughtSignature
-              const assistantMessage = response.messages.find((m) =>
-                typeof m === 'object' && m !== null && 'role' in m && m.role === 'assistant'
-              );
-              if (assistantMessage && 'content' in assistantMessage && Array.isArray(assistantMessage.content)) {
-                // Look for thoughtSignature in any of the content parts
-                for (const part of assistantMessage.content) {
-                  if (typeof part === 'object' && part !== null && 'thoughtSignature' in part && typeof part.thoughtSignature === 'string') {
-                    thoughtSignature = part.thoughtSignature;
-                    break; // Only need the first one (for parallel calls, only first has signature)
-                  }
-                }
-              }
-            }
-
-            // Add reasoning/thinking content if available (from Gemini or other models)
+            // 1. Reasoning/thought signature (if any)
             if (reasoning) {
-              // Convert reasoning array to string if needed
               const reasoningText = Array.isArray(reasoning)
-                ? reasoning.map(r => typeof r === 'string' ? r : r.text).join('\n')
+                ? reasoning.map((r: ReasoningItem) => typeof r === 'string' ? r : r.text).join('\n')
                 : typeof reasoning === 'string' ? reasoning : '';
-
               if (reasoningText) {
-                const reasoningPart = thoughtSignature
-                  ? { type: 'reasoning' as const, text: reasoningText, thoughtSignature }
-                  : { type: 'reasoning' as const, text: reasoningText };
-                uiParts.push(reasoningPart);
+                uiParts.push({ type: 'reasoning', text: reasoningText });
               }
             }
 
-            // Process the complete response text to extract thinking and clean content
-            if (text) {
-              // Remove "**Thinking...**" header if present
-              const processedText = text.replace(/^\*\*Thinking\.{3,}\*\*\s*\n*/i, '');
-
-              // Parse both Poe API thinking format (lines starting with >) and italicized thinking format
-              const lines = processedText.split('\n');
-              const thinkingLines: string[] = [];
-              const nonThinkingLines: string[] = [];
-              let inThinkingBlock = false;
-
-              for (const line of lines) {
-                const trimmedLine = line.trim();
-
-                // Check for Poe API thinking format (lines starting with >)
-                if (trimmedLine.startsWith('>')) {
-                  inThinkingBlock = true;
-                  const thinkingContent = trimmedLine.substring(1).trim();
-                  if (thinkingContent) {
-                    thinkingLines.push(thinkingContent);
-                  }
-                }
-                // Check for italicized thinking format (*Thinking...*, *content*, etc.)
-                else if ((trimmedLine.startsWith('*') && trimmedLine.endsWith('*') &&
-                  (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
-                  inThinkingBlock = true;
-                  // Remove the * asterisks from both ends
-                  const thinkingContent = trimmedLine.substring(1, trimmedLine.length - 1).trim();
-                  if (thinkingContent) {
-                    thinkingLines.push(thinkingContent);
-                  }
-                }
-                else if (!(inThinkingBlock && trimmedLine === '')) {
-                  // Non-thinking line or meaningful line, end of thinking block
-                  if (!trimmedLine.startsWith('*') && !trimmedLine.startsWith('>')) {
-                    inThinkingBlock = false;
-                  }
-                  // Only add non-thinking lines that aren't empty lines immediately after thinking blocks
-                  if (!inThinkingBlock || trimmedLine !== '') {
-                    nonThinkingLines.push(line);
-                  }
-                }
-              }
-
-              // Add reasoning part if we found thinking content (and no reasoning part already added)
-              if (thinkingLines.length > 0 && !reasoning) {
-                const thinkingContent = thinkingLines.join('\n').trim();
-                if (thinkingContent) {
-                  uiParts.push({
-                    type: 'reasoning',
-                    text: thinkingContent,
-                  });
-                }
-              }
-
-              // Add cleaned text content if present
-              const cleanText = nonThinkingLines.join('\n').trim();
-              if (cleanText) {
-                const textPart = (thoughtSignature && !reasoning && thinkingLines.length === 0)
-                  ? { type: 'text' as const, text: cleanText, thoughtSignature }
-                  : { type: 'text' as const, text: cleanText };
-                uiParts.push(textPart);
-              }
-            }
-
-            // Add tool calls and results
-            if (toolCalls && toolCalls.length > 0) {
-              toolCalls.forEach((toolCall, index) => {
-                const toolCallPart = (thoughtSignature && index === 0 && !reasoning)
-                  ? {
-                    type: `tool-${toolCall.toolName}` as const,
-                    toolCallId: toolCall.toolCallId,
-                    input: (toolCall as ToolCall).args || toolCall,
-                    state: 'input-available' as const,
-                    thoughtSignature
-                  }
-                  : {
-                    type: `tool-${toolCall.toolName}` as const,
-                    toolCallId: toolCall.toolCallId,
-                    input: (toolCall as ToolCall).args || toolCall,
-                    state: 'input-available' as const,
-                  };
-                uiParts.push(toolCallPart);
+            // 2. Tool call(s) (input-available) from all steps
+            allToolCalls.forEach((toolCall: ToolCall) => {
+              uiParts.push({
+                type: `tool-${toolCall.toolName}`,
+                toolCallId: toolCall.toolCallId,
+                state: 'input-available',
+                input: toolCall.args || {},
               });
-            }
+            });
 
-            // Add tool results
-            if (toolResults && toolResults.length > 0) {
-              toolResults.forEach(toolResult => {
+            // 3. Tool result(s) (output-available) from all steps
+            allToolResults.forEach((toolResult: ToolResult) => {
+              const matchingCall = allToolCalls.find(tc => tc.toolCallId === toolResult.toolCallId);
+              uiParts.push({
+                type: `tool-${toolResult.toolName}`,
+                toolCallId: toolResult.toolCallId,
+                state: 'output-available',
+                input: matchingCall?.args || {},
+                output: toolResult.result ?? {},
+              });
+            });
+
+            // 4. If there was a tool call but no tool result, create a fallback tool result part with the text as output
+            if (allToolCalls.length > 0 && allToolResults.length === 0) {
+              allToolCalls.forEach((tc: ToolCall) => {
                 uiParts.push({
-                  type: `tool-${toolResult.toolName}`,
-                  toolCallId: toolResult.toolCallId,
-                  input: {}, // Input is required for output-available state, but we might not have it
-                  state: 'output-available' as const,
-                  output: (toolResult as ToolResult).result || toolResult,
+                  type: `tool-${tc.toolName}`,
+                  toolCallId: tc.toolCallId,
+                  state: 'output-available',
+                  input: tc.args || {},
+                  output: text ? { text } : {},
                 });
               });
             }
 
-            // Save the complete message with all parts
+            // 5. Text (summary/response)
+            if (text) {
+              // Remove "**Thinking...**" header if present
+              const processedText = text.replace(/^\*\*Thinking\.{3,}\*\*\s*\n*/i, '');
+              const lines = processedText.split('\n');
+              const thinkingLines: string[] = [];
+              const nonThinkingLines: string[] = [];
+              let inThinkingBlock = false;
+              for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('>')) {
+                  inThinkingBlock = true;
+                  const thinkingContent = trimmedLine.substring(1).trim();
+                  if (thinkingContent) thinkingLines.push(thinkingContent);
+                } else if ((trimmedLine.startsWith('*') && trimmedLine.endsWith('*') && (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
+                  inThinkingBlock = true;
+                  const thinkingContent = trimmedLine.substring(1, trimmedLine.length - 1).trim();
+                  if (thinkingContent) thinkingLines.push(thinkingContent);
+                } else if (!(inThinkingBlock && trimmedLine === '')) {
+                  if (!trimmedLine.startsWith('*') && !trimmedLine.startsWith('>')) inThinkingBlock = false;
+                  if (!inThinkingBlock || trimmedLine !== '') nonThinkingLines.push(line);
+                }
+              }
+              // Add reasoning part if we found thinking content (and no reasoning part already added)
+              if (thinkingLines.length > 0 && !reasoning) {
+                const thinkingContent = thinkingLines.join('\n').trim();
+                if (thinkingContent) {
+                  uiParts.push({ type: 'reasoning', text: thinkingContent });
+                }
+              }
+              // Add cleaned text content if present
+              const cleanText = nonThinkingLines.join('\n').trim();
+              if (cleanText) {
+                uiParts.push({ type: 'text', text: cleanText });
+              }
+            }
+
+            // DEBUG: Log the full uiParts array before saving
+            console.log('[AI TOOL DEBUG] FINAL uiParts to save:', JSON.stringify(uiParts, null, 2));
+
+            // Log the full uiParts array before saving
+            console.log('[AI TOOL DEBUG] About to save assistant message parts:', JSON.stringify(uiParts, null, 2));
             await saveMessages({
               messages: [
                 {
@@ -509,62 +532,49 @@ export async function POST(request: Request) {
 
     // Create UI message stream with reasoning enabled and proper error handling
     try {
+      // Debug: Log all steps after streamText finishes
+      if (result?.steps) {
+        console.log('[AI TOOL DEBUG] All steps:', JSON.stringify(result.steps, null, 2));
+      }
+
       const stream = result.toUIMessageStream({
         sendReasoning: true,
       });
 
-      // Transform the stream to remove "**Thinking...**" and ">" prefixed thinking content during streaming
+      // ...existing code...
       let accumulatedText = '';
       let hasSeenContent = false;
 
       const transformedStream = stream.pipeThrough(
         new TransformStream({
           transform(chunk, controller) {
-            // If this is a text delta chunk, filter it
+            // ...existing code...
             if (chunk && typeof chunk === 'object' && 'type' in chunk) {
               if (chunk.type === 'text-delta' && 'textDelta' in chunk && typeof chunk.textDelta === 'string') {
                 const delta = chunk.textDelta;
-
-                // Skip any chunk that contains thinking patterns
                 if (delta.includes('**Thinking') ||
                   delta.includes('Thinking...') ||
                   delta.trim().startsWith('>') ||
                   (!hasSeenContent && delta.trim() === '')) {
-                  // Don't send this chunk, it's thinking content
                   return;
                 }
-
-                // Accumulate text to detect when real content starts
                 accumulatedText += delta;
-
-                // Once we see markdown or substantial content, mark that we've seen content
                 if (delta.includes('#') || delta.includes('##') || accumulatedText.length > 50) {
                   hasSeenContent = true;
                 }
-
-                // If we haven't seen real content yet, buffer and don't send
                 if (!hasSeenContent) {
                   return;
                 }
-
-                // Clean the delta before sending
                 let cleanedDelta = delta;
-
-                // Remove any thinking patterns that might appear
                 cleanedDelta = cleanedDelta.replace(/\*\*Thinking\.{3,}\*\*/gi, '');
                 cleanedDelta = cleanedDelta.replace(/Thinking\.{3,}/gi, '');
-
-                // Remove lines starting with >
                 const lines = cleanedDelta.split('\n');
                 const filteredLines = lines.filter(line => !line.trim().startsWith('>'));
                 cleanedDelta = filteredLines.join('\n');
-
-                // Only send if there's content
                 if (cleanedDelta.trim()) {
                   controller.enqueue({ ...chunk, textDelta: cleanedDelta });
                 }
               } else {
-                // Pass through other chunk types (like reasoning-delta)
                 controller.enqueue(chunk);
               }
             } else {
@@ -572,14 +582,12 @@ export async function POST(request: Request) {
             }
           },
           flush(_controller) {
-            // Reset state when stream ends
             accumulatedText = '';
             hasSeenContent = false;
           }
         })
       );
 
-      // Return the stream as a response
       return createUIMessageStreamResponse({ stream: transformedStream });
     } catch (error) {
       console.error('[API CHAT ROUTE ERROR]', error);

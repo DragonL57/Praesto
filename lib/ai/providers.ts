@@ -315,10 +315,26 @@ export function getStreamTextConfig(
   const modelOptions = getModelOptions();
   const providerOptions = getProviderOptions(supportsThinking, modelId, thinkingLevel);
 
+  // Filter out tool parts with state 'input-available' before sending to model
+  const filteredMessages = messages.map(msg => ({
+    ...msg,
+    parts: Array.isArray(msg.parts)
+      ? msg.parts.filter(
+        (part) =>
+          !(
+            part &&
+            typeof part === 'object' &&
+            'state' in part &&
+            ((part as { state?: string }).state === 'input-available' || (part as { state?: string }).state === 'call')
+          )
+      )
+      : msg.parts,
+  }));
+
   const baseConfig = {
     model: modelInstance,
     system: systemPrompt({ selectedChatModel: modelId, userTimeContext }),
-    messages: convertToModelMessages(messages),
+    messages: convertToModelMessages(filteredMessages),
     stopWhen: stepCountIs(10),
     ...modelOptions,
     providerOptions,
