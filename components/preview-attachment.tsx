@@ -1,5 +1,5 @@
-
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   FileArchive,
   FileCode,
@@ -37,6 +37,7 @@ export function PreviewAttachment({
   onRemove,
   isUploading = false,
 }: PreviewAttachmentProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string>('');
   const [fileSize, setFileSize] = useState<string>('');
@@ -216,9 +217,11 @@ export function PreviewAttachment({
 
   // Function to handle preview click
   const handlePreviewClick = (e: React.MouseEvent) => {
-    // Prevent event propagation to avoid UI refresh/rerender
     e.stopPropagation();
     e.preventDefault();
+    if (attachment.contentType?.startsWith('image/')) {
+      setIsModalOpen(true);
+    }
   };
 
   // Determine file type icon - use original file type for icon selection if available
@@ -277,58 +280,100 @@ export function PreviewAttachment({
     filename.length > 20 ? `${filename.substring(0, 20)}...` : filename;
 
   return (
-    <div
-      className="group relative flex items-center gap-2 rounded-md border bg-background p-2 shadow-sm"
-      data-testid="attachment-preview"
-    >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
-        {isUploading ? (
-          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-        ) : (
-          getFileIcon()
+    <>
+      <div
+        className="group relative flex items-center gap-2 rounded-md border bg-background p-2 shadow-sm"
+        data-testid="attachment-preview"
+      >
+        <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
+          {isUploading ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          ) : (
+            getFileIcon()
+          )}
+        </div>
+
+        <div className="flex flex-col">
+          <div
+            className="max-w-[140px] truncate text-sm font-medium"
+            title={filename}
+          >
+            {displayName}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {isUploading
+              ? 'Loading...'
+              : attachment.contentType?.startsWith('image/')
+                ? 'Click to preview'
+                : `${fileType}${fileSize ? ` • ${fileSize}` : ''}`}
+          </div>
+        </div>
+
+        {onRemove && !isUploading && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute -right-1 -top-1 size-5 rounded-full bg-gray-100 dark:bg-gray-800 shadow-sm z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <X size={12} className="text-gray-900 dark:text-gray-200" />
+            <span className="sr-only">Remove attachment</span>
+          </Button>
+        )}
+
+        {/* Make only images clickable for previews */}
+        {!isUploading && attachment.contentType?.startsWith('image/') && (
+          <button
+            type="button"
+            className="absolute inset-0 cursor-pointer"
+            onClick={handlePreviewClick}
+            aria-label="Preview image"
+          />
         )}
       </div>
 
-      <div className="flex flex-col">
+      {/* Modal for image preview */}
+      {isModalOpen && previewUrl && (
         <div
-          className="max-w-[140px] truncate text-sm font-medium"
-          title={filename}
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          aria-modal="true"
+          role="dialog"
         >
-          {displayName}
+          <button
+            type="button"
+            className="relative flex items-center justify-center outline-none border-none bg-transparent p-0 m-0"
+            style={{ maxHeight: '90vh', maxWidth: '90vw' }}
+            tabIndex={0}
+            aria-label="Close image preview"
+            onClick={() => setIsModalOpen(false)}
+          >
+            <Image
+              src={previewUrl}
+              alt={filename}
+              width={800}
+              height={600}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl border-2 border-white"
+              style={{ objectFit: 'contain' }}
+              unoptimized
+              onClick={(e) => e.stopPropagation()}
+            />
+          </button>
+          <button
+            type="button"
+            className="absolute top-6 right-6 text-white bg-black/60 rounded-full p-2 hover:bg-black/80 focus:outline-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(false);
+            }}
+            aria-label="Close preview"
+          >
+            <X size={24} />
+          </button>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {isUploading
-            ? 'Loading...'
-            : attachment.contentType?.startsWith('image/')
-              ? 'Click to preview'
-              : `${fileType}${fileSize ? ` • ${fileSize}` : ''}`}
-        </div>
-      </div>
-
-      {onRemove && !isUploading && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute -right-1 -top-1 size-5 rounded-full bg-gray-100 dark:bg-gray-800 shadow-sm z-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-        >
-          <X size={12} className="text-gray-900 dark:text-gray-200" />
-          <span className="sr-only">Remove attachment</span>
-        </Button>
       )}
-
-      {/* Make only images clickable for previews */}
-      {!isUploading && attachment.contentType?.startsWith('image/') && (
-        <button
-          type="button"
-          className="absolute inset-0 cursor-pointer"
-          onClick={handlePreviewClick}
-          aria-label="Preview image"
-        />
-      )}
-    </div>
+    </>
   );
 }
