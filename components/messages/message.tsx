@@ -786,7 +786,12 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               return (
                 <div
                   data-testid={`message-attachments`}
-                  className="flex flex-row justify-end gap-2"
+                  className="flex gap-2 flex-wrap items-start overflow-x-auto w-full"
+                  style={{
+                    flexFlow: 'row wrap',
+                    rowGap: '0.5rem',
+                    maxWidth: '100%',
+                  }}
                 >
                   {fileParts.map((filePart) => (
                     <PreviewAttachment

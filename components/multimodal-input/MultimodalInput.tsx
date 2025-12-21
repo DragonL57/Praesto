@@ -48,7 +48,15 @@ interface MultimodalInputProps {
   messages: Array<UIMessage>;
   setMessages: SetMessagesFunction;
   append: AppendFunction;
-  sendMessage: (message: { text: string; files?: Array<{ type: 'file'; filename?: string; mediaType: string; url: string }> }) => void;
+  sendMessage: (message: {
+    text: string;
+    files?: Array<{
+      type: 'file';
+      filename?: string;
+      mediaType: string;
+      url: string;
+    }>;
+  }) => void;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -141,7 +149,7 @@ function PureMultimodalInput({
     console.log('Submitting form with attachments:', attachments);
 
     // AI SDK 5.x: Convert attachments to FileUIPart format for sendMessage
-    const fileParts = attachments.map(att => ({
+    const fileParts = attachments.map((att) => ({
       type: 'file' as const,
       filename: att.name,
       mediaType: att.contentType || 'application/octet-stream',
@@ -292,8 +300,12 @@ function PureMultimodalInput({
             {(attachments.length > 0 || uploadQueue.length > 0) && (
               <div
                 data-testid="attachments-preview"
-                className="flex flex-wrap gap-2 items-start px-4 pb-2 max-h-40 overflow-y-auto"
-                style={{ scrollbarWidth: 'thin' }}
+                className="flex gap-2 items-start px-4 pb-2 max-h-40 overflow-y-auto overflow-x-auto w-full"
+                style={{
+                  flexWrap: 'wrap',
+                  flexFlow: 'row wrap',
+                  rowGap: '0.5rem',
+                }}
               >
                 {attachments.map((attachment, index) => (
                   <PreviewAttachment
@@ -421,8 +433,12 @@ function PureMultimodalInput({
                     <span className="mr-1.5 md:mr-2 shrink-0">
                       {pill.icon.props.children}
                     </span>
-                    <span className="hidden sm:inline truncate">{pill.label}</span>
-                    <span className="sm:hidden text-xs truncate">{pill.label.split(' ')[0]}</span>
+                    <span className="hidden sm:inline truncate">
+                      {pill.label}
+                    </span>
+                    <span className="sm:hidden text-xs truncate">
+                      {pill.label.split(' ')[0]}
+                    </span>
                   </button>
                 </HoverCardTrigger>
                 <HoverCardContent
