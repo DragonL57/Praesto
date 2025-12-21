@@ -61,14 +61,7 @@ const enhancedGpt5ChatModel = wrapLanguageModel({
   })
 });
 
-const enhancedZenoSonarReasoningModel = wrapLanguageModel({
-  model: poeProvider.chatModel('zeno-sonar-reasoning'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.7,
-    }
-  })
-});
+
 
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.6'),
@@ -96,22 +89,7 @@ const lightWeightModel = wrapLanguageModel({
 });
 
 // Google Gemini models with thinking configuration
-const gemini3ProModel = wrapLanguageModel({
-  model: google('gemini-3-pro-preview'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-      providerOptions: {
-        google: {
-          thinkingConfig: {
-            thinkingLevel: 'high', // Use 'high' for Gemini 3 Pro for maximum reasoning
-            includeThoughts: true, // Enable thought summaries
-          }
-        }
-      }
-    }
-  })
-});
+
 
 const gemini3FlashModel = wrapLanguageModel({
   model: google('gemini-3-flash-preview'),
@@ -143,6 +121,14 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
   },
   {
+    id: 'glm-4.6v',
+    name: 'GLM-4.6V',
+    description: 'GLM-4.6V: Z.AI flagship multimodal model (128K context, native function calling, SoTA visual understanding).',
+    provider: 'Z.AI',
+    supportsTools: true,
+    supportsThinking: true,
+  },
+  {
     id: 'grok-4.1-fast-reasoning',
     name: 'Grok-4.1',
     description: 'Grok-4.1 Fast Reasoning model via Poe API',
@@ -158,22 +144,8 @@ export const chatModels: ChatModel[] = [
     supportsTools: true,
     supportsThinking: false,
   },
-  {
-    id: 'zeno-sonar-reasoning',
-    name: 'Zeno Sonar Reasoning',
-    description: 'Zeno Sonar Reasoning model via Poe API - advanced reasoning capabilities',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'gemini-3-pro-preview',
-    name: 'Gemini 3 Pro Preview',
-    description: 'Google Gemini 3 Pro - Most capable model with advanced reasoning',
-    provider: 'Google',
-    supportsTools: true,
-    supportsThinking: true,
-  },
+  // zeno-sonar-reasoning removed
+  // gemini-3-pro-preview removed
   {
     id: 'gemini-3-flash-preview',
     name: 'Gemini 3 Flash Preview',
@@ -200,14 +172,27 @@ export const myProvider = customProvider({
     'glm-4.5': zaiProvider.chatModel('glm-4.5'),
     'glm-4.5-air': lightWeightModel,
     'glm-4.6': enhancedGlmModel,
+    'glm-4.6v': wrapLanguageModel({
+      model: zaiProvider.chatModel('glm-4.6v'),
+      middleware: defaultSettingsMiddleware({
+        settings: {
+          temperature: 0.7,
+          providerOptions: {
+            'z-ai': {
+              thinking: { type: 'enabled' }
+            }
+          }
+        }
+      })
+    }),
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
     'gpt-5-chat': enhancedGpt5ChatModel,
-    'zeno-sonar-reasoning': enhancedZenoSonarReasoningModel,
+    // zeno-sonar-reasoning removed
 
     // Google Gemini models with middleware
-    'gemini-3-pro-preview': gemini3ProModel,
+    // gemini-3-pro-preview removed
     'gemini-3-flash-preview': gemini3FlashModel,
 
     // Aliases for internal use (using enhanced models)

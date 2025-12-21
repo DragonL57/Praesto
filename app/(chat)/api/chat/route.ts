@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     const thinkingLevel = cookieStore.get('thinking-level')?.value || 'high';
 
     const isGeminiModel = finalSelectedChatModel.includes('gemini');
+    const isGLM46VModel = finalSelectedChatModel === 'glm-4.6v' || finalSelectedChatModel === 'glm-4.6v';
 
     // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
     const fileParts = getFilePartsFromMessage(userMessage);
@@ -173,10 +174,16 @@ export async function POST(request: Request) {
             continue;
           }
 
-          // Skip text extraction for PDF files if using Gemini - it has native PDF vision
+          // Skip text extraction for PDF files if using Gemini or GLM-4.6V - they have native vision/file processing
           const isPDF = attachment.contentType === 'application/pdf' || attachment.mediaType === 'application/pdf';
-          if (isPDF && isGeminiModel) {
-            console.log(`Skipping text extraction for PDF with Gemini: ${attachment.name || 'unknown PDF'} - using native vision processing`);
+          if (isPDF && (isGeminiModel || isGLM46VModel)) {
+            console.log(`Skipping text extraction for PDF with Gemini/GLM-4.6V: ${attachment.name || 'unknown PDF'} - using native vision/file processing`);
+            continue;
+          }
+
+          // Skip text extraction for any file if using GLM-4.6V (let model handle all files natively)
+          if (isGLM46VModel) {
+            console.log(`Skipping text extraction for file with GLM-4.6V: ${attachment.name || 'unknown file'} (${attachment.contentType || attachment.mediaType}) - using native file processing`);
             continue;
           }
 
