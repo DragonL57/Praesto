@@ -324,43 +324,73 @@ export function PreviewAttachment({
           </Button>
         )}
 
-        {/* Make only images clickable for previews */}
-        {!isUploading && attachment.contentType?.startsWith('image/') && (
-          <button
-            type="button"
-            className="absolute inset-0 cursor-pointer"
-            onClick={handlePreviewClick}
-            aria-label="Preview image"
-          />
-        )}
+        {/* Make images and PDFs clickable for previews */}
+        {!isUploading &&
+          (attachment.contentType?.startsWith('image/') ||
+            attachment.contentType === 'application/pdf') && (
+            <button
+              type="button"
+              className="absolute inset-0 cursor-pointer"
+              onClick={handlePreviewClick}
+              aria-label={
+                attachment.contentType === 'application/pdf'
+                  ? 'Preview PDF'
+                  : 'Preview image'
+              }
+            />
+          )}
       </div>
 
-      {/* Modal for image preview */}
+      {/* Modal for image or PDF preview */}
       {isModalOpen && previewUrl && (
         <div
           className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm"
           aria-modal="true"
           role="dialog"
         >
-          <button
-            type="button"
-            className="relative flex items-center justify-center outline-none border-none bg-transparent p-0 m-0"
-            style={{ maxHeight: '90vh', maxWidth: '90vw' }}
-            tabIndex={0}
-            aria-label="Close image preview"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <Image
-              src={previewUrl}
-              alt={filename}
-              width={800}
-              height={600}
-              className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl border-2 border-white"
-              style={{ objectFit: 'contain' }}
-              unoptimized
-              onClick={(e) => e.stopPropagation()}
-            />
-          </button>
+          {attachment.contentType === 'application/pdf' ? (
+            <button
+              type="button"
+              className="relative flex items-center justify-center outline-none border-none bg-black rounded-lg shadow-2xl border-2 border-white p-0 m-0"
+              style={{
+                maxHeight: '90vh',
+                maxWidth: '90vw',
+                width: '80vw',
+                height: '80vh',
+              }}
+              tabIndex={0}
+              aria-label="Close PDF preview"
+              onClick={() => setIsModalOpen(false)}
+            >
+              <embed
+                src={previewUrl}
+                type="application/pdf"
+                className="w-full h-full rounded-lg"
+                style={{ minHeight: '60vh', minWidth: '60vw' }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="relative flex items-center justify-center outline-none border-none bg-transparent p-0 m-0"
+              style={{ maxHeight: '90vh', maxWidth: '90vw' }}
+              tabIndex={0}
+              aria-label="Close image preview"
+              onClick={() => setIsModalOpen(false)}
+            >
+              <Image
+                src={previewUrl}
+                alt={filename}
+                width={800}
+                height={600}
+                className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl border-2 border-white"
+                style={{ objectFit: 'contain' }}
+                unoptimized
+                onClick={(e) => e.stopPropagation()}
+              />
+            </button>
+          )}
           <button
             type="button"
             className="absolute top-6 right-6 text-white bg-black/60 rounded-full p-2 hover:bg-black/80 focus:outline-none"
