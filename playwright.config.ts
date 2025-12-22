@@ -52,6 +52,11 @@ export default defineConfig({
   /* Configure projects */
   projects: [
     {
+      name: 'default',
+      testMatch: '**/*.test.{ts,tsx}',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
       name: 'setup:auth',
       testMatch: /auth.setup.ts/,
     },

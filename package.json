@@ -19,7 +19,7 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-    "test": "export PLAYWRIGHT=True && pnpm exec playwright test --workers=4"
+    "test": "cross-env PLAYWRIGHT=True pnpm exec playwright test --workers=4"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.49",
@@ -164,6 +164,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.8",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.1.3",

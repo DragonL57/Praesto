@@ -1,0 +1,24 @@
+{
+  "name": "unitaskai",
+  "version": "3.0.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "node vercel-build.js",
+    "build:next": "next build",
+    "build:with-migrations": "tsx lib/db/migrate && next build",
+    "start": "next start",
+    "lint": "next lint && biome lint --write --unsafe",
+    "lint:fix": "next lint --fix && biome lint --write --unsafe",
+    "format": "biome format --write",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "npx tsx lib/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push",
+    "db:pull": "drizzle-kit pull",
+    "db:check": "drizzle-kit check",
+    "db:up": "drizzle-kit up",
+    "test": "cross-env PLAYWRIGHT=True pnpm exec playwright test --workers=4"
+  }
+}

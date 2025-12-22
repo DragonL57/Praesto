@@ -136,7 +136,7 @@ export const document = pgTable(
 export type Document = InferSelectModel<typeof document>;
 
 export const suggestion = pgTable(
-  'Suggestion',
+  'suggestion',
   {
     id: uuid('id').notNull().defaultRandom(),
     documentId: uuid('documentId').notNull(),

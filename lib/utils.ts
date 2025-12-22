@@ -35,8 +35,8 @@ export const fetcher = async (url: string) => {
 };
 
 export function getLocalStorage(key: string) {
-  if (typeof window !== 'undefined') {
-    return JSON.parse(localStorage.getItem(key) || '[]');
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return JSON.parse(window.localStorage.getItem(key) || '[]');
   }
   return [];
 }
@@ -160,9 +160,8 @@ export function getDocumentTimestampByIndex(
   documents: Array<Document>,
   index: number,
 ) {
-  if (!documents) return new Date();
-  if (index > documents.length) return new Date();
-
+  if (!documents || documents.length === 0) return new Date();
+  if (index < 0 || index >= documents.length) return new Date();
   return documents[index].createdAt;
 }
 
