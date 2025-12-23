@@ -101,7 +101,7 @@
     "libreoffice-convert": "^1.7.0",
     "lucide-react": "^0.556.0",
     "nanoid": "^5.1.6",
-    "next": "^15.1.3",
+    "next": "15.1.11",
     "next-auth": "5.0.0-beta.27",
     "next-themes": "latest",
     "nodemailer": "^7.0.11",
