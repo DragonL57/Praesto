@@ -64,10 +64,10 @@ const enhancedGpt5ChatModel = wrapLanguageModel({
 
 
 const enhancedGlmModel = wrapLanguageModel({
-  model: zaiProvider.chatModel('glm-4.6'),
+  model: zaiProvider.chatModel('glm-4.7'),
   middleware: defaultSettingsMiddleware({
     settings: {
-      temperature: 0.7,
+      temperature: 1.0,
       providerOptions: {
         'z-ai': {
           thinking: {
@@ -112,9 +112,9 @@ const gemini3FlashModel = wrapLanguageModel({
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
   {
-    id: 'glm-4.6',
-    name: 'GLM-4.6',
-    description: 'GLM-4.6 model from Z.AI',
+    id: 'glm-4.7',
+    name: 'GLM-4.7',
+    description: 'GLM-4.7 model from Z.AI',
     provider: 'Z.AI',
     isDefault: true,
     supportsTools: true,
@@ -162,16 +162,15 @@ export const DEFAULT_CHAT_MODEL_ID = defaultModel
   ? defaultModel.id
   : (chatModels.length > 0
     ? chatModels[0].id
-    : 'glm-4.6');
+    : 'glm-4.7');
 
 // Export the configured provider for the application
 // Model IDs match those defined in chatModels array above
 export const myProvider = customProvider({
   languageModels: {
     // Enhanced Z.AI models with middleware
-    'glm-4.5': zaiProvider.chatModel('glm-4.5'),
+    'glm-4.7': enhancedGlmModel,
     'glm-4.5-air': lightWeightModel,
-    'glm-4.6': enhancedGlmModel,
     'glm-4.6v': wrapLanguageModel({
       model: zaiProvider.chatModel('glm-4.6v'),
       middleware: defaultSettingsMiddleware({

@@ -365,7 +365,7 @@ export function PreviewAttachment({
               <embed
                 src={previewUrl}
                 type="application/pdf"
-                className="w-full h-full rounded-lg"
+                className="size-full rounded-lg"
                 style={{ minHeight: '60vh', minWidth: '60vw' }}
                 onClick={(e) => e.stopPropagation()}
               />

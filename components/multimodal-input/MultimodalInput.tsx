@@ -300,7 +300,7 @@ function PureMultimodalInput({
             {(attachments.length > 0 || uploadQueue.length > 0) && (
               <div
                 data-testid="attachments-preview"
-                className="flex gap-2 items-start px-4 pb-2 max-h-40 overflow-y-auto overflow-x-auto w-full"
+                className="flex gap-2 items-start px-4 pb-2 max-h-40 overflow-auto w-full"
                 style={{
                   flexWrap: 'wrap',
                   flexFlow: 'row wrap',

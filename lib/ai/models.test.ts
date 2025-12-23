@@ -1,7 +1,7 @@
 import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import { simulateReadableStream } from 'ai';
 import { MockLanguageModelV2 } from 'ai/test';
-import { getResponseChunksByPrompt } from '@/tests/prompts/utils';
+import { getResponseChunksByPrompt } from '../../tests/prompts/utils';
 
 // AI SDK 5.x: MockLanguageModelV2 uses LanguageModelV2 interface
 // doGenerate returns { content, finishReason, usage, warnings }
