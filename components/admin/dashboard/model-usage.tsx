@@ -27,7 +27,6 @@ export function ModelUsage() {
   const modelData = [
     { name: 'GPT-4o', value: 4300000 },
     { name: 'Claude 3', value: 3200000 },
-    { name: 'Gemini', value: 2100000 },
     { name: 'Llama 3', value: 1600000 },
   ];
 
