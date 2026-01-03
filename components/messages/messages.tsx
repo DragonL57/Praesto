@@ -257,8 +257,7 @@ function PureMessages({
           </div>
         ) : (
           // Regular rendering for short conversations
-          <>
-            {messages.map((message, index) => (
+          messages.map((message, index) => (
               <div
                 key={message.id}
                 data-message-id={message.id} // Add data-message-id for selection
@@ -281,8 +280,7 @@ function PureMessages({
                   isReadonly={isReadonly}
                 />
               </div>
-            ))}
-          </>
+            ))
         )}
 
         <AnimatePresence>

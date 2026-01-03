@@ -15,8 +15,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
-    const page = Number.parseInt(searchParams.get('page') || '1');
-    const limit = Number.parseInt(searchParams.get('limit') || '20');
+    const page = Number.parseInt(searchParams.get('page') || '1', 10);
+    const limit = Number.parseInt(searchParams.get('limit') || '20', 10);
     const offset = (page - 1) * limit;
 
     // Subquery to get message counts per chat

@@ -11,7 +11,7 @@ const client = postgres(url);
 const db = drizzle(client);
 
 // GET a single conversation
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
     const { id } = params;

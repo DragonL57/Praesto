@@ -156,7 +156,6 @@ export async function GET(request: NextRequest) {
             if (attempt < maxRetries) {
                 // Wait before retrying (exponential backoff: 1s, 2s)
                 await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-                continue;
             }
         }
     }

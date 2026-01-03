@@ -13,8 +13,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     // Removed unused status variable
-    const limit = Number.parseInt(searchParams.get('limit') || '50');
-    const offset = Number.parseInt(searchParams.get('offset') || '0');
+    const limit = Number.parseInt(searchParams.get('limit') || '50', 10);
+    const offset = Number.parseInt(searchParams.get('offset') || '0', 10);
 
     // Subquery to get message counts per user
     const userMessages = db

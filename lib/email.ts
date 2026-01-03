@@ -36,7 +36,7 @@ const createTransporter = () => {
     maxConnections: 5, // Maximum number of connections in the pool
     maxMessages: 100, // Maximum number of messages per connection
     host: process.env.EMAIL_HOST,
-    port: Number.parseInt(process.env.EMAIL_PORT || '587'),
+    port: Number.parseInt(process.env.EMAIL_PORT || '587', 10),
     secure: process.env.EMAIL_SECURE === 'true',
     auth: {
       user: process.env.EMAIL_USER,

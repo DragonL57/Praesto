@@ -7,7 +7,7 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Create a VisuallyHidden component for accessibility
-const VisuallyHidden = ({
+const _VisuallyHidden = ({
   children
 }: {
   children: React.ReactNode
