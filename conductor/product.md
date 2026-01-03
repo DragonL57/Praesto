@@ -6,7 +6,7 @@ The goal is to turn this into an all-in-one AI companion that integrates deeply 
 
 # User Goals
 - **Personalized Integration:** Create an AI companion that deeply integrates into your life, acting as a true extension of your capabilities and memory.
-- **Model Flexibility:** Seamlessly switch between various AI models (OpenAI, Anthropic, Google, etc.) to utilize the best tool for any specific task.
+- **Model Flexibility:** Seamlessly switch between various AI models (OpenAI, Anthropic, etc.) to utilize the best tool for any specific task.
 - **Persistent Context:** Securely save and manage chat history and generated documents across sessions for long-term productivity.
 - **Real-Time Capabilities:** Enhance AI responses with real-time data through integrated web search and weather information tools.
 
