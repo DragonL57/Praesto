@@ -2,12 +2,12 @@
 
 ## Phase 1: Cleanup & Dependency Removal
 - [x] Task: Delete `app/api/set-thinking-level-cookie` directory and route. f5eac3e
-- [~] Task: Uninstall `@ai-sdk/google` dependency.
+- [x] Task: Uninstall `@ai-sdk/google` dependency. 38bb4a9
 - [ ] Task: Conductor - User Manual Verification 'Cleanup & Dependency Removal' (Protocol in workflow.md)
 
 ## Phase 2: AI Logic Refactor
-- [ ] Task: Refactor `lib/ai/providers.ts` to remove Google provider, Gemini models, GPT-5 model, and thinking-level logic.
-- [ ] Task: Refactor `app/(chat)/api/chat/route.ts` to remove Gemini-specific PDF handling and thought signature logic.
+- [x] Task: Refactor `lib/ai/providers.ts` to remove Google provider, Gemini models, GPT-5 model, and thinking-level logic. 38bb4a9
+- [x] Task: Refactor `app/(chat)/api/chat/route.ts` to remove Gemini-specific PDF handling and thought signature logic. 38bb4a9
 - [ ] Task: Conductor - User Manual Verification 'AI Logic Refactor' (Protocol in workflow.md)
 
 ## Phase 3: UI & Documentation Cleanup
