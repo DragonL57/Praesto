@@ -1,7 +1,7 @@
 # Plan: Remove Gemini and GPT-5-Chat Integration
 
 ## Phase 1: Cleanup & Dependency Removal
-- [~] Task: Delete `app/api/set-thinking-level-cookie` directory and route.
+- [x] Task: Delete `app/api/set-thinking-level-cookie` directory and route. f5eac3e
 - [ ] Task: Uninstall `@ai-sdk/google` dependency.
 - [ ] Task: Conductor - User Manual Verification 'Cleanup & Dependency Removal' (Protocol in workflow.md)
 
