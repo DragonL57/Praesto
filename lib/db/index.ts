@@ -13,10 +13,10 @@ if (!connectionString) {
 // Create a postgres connection with a reasonable timeout
 // This helps prevent hanging during builds
 const client = postgres(connectionString, {
-  idle_timeout: 20,       // Max idle time in seconds
-  connect_timeout: 10,    // Connection timeout in seconds
-  max_lifetime: 60 * 5,   // Connection max lifetime in seconds
-  max: 10,                // Maximum number of connections
+  idle_timeout: 20, // Max idle time in seconds
+  connect_timeout: 10, // Connection timeout in seconds
+  max_lifetime: 60 * 5, // Connection max lifetime in seconds
+  max: 10, // Maximum number of connections
 });
 
 // Create a drizzle database instance

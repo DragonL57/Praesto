@@ -1,7 +1,11 @@
 // eslint-disable-next-line import/no-unresolved
 import { auth } from '@/app/auth';
 // eslint-disable-next-line import/no-unresolved
-import { deleteDocumentsByIdAfterTimestamp, getDocumentsById, saveDocument, } from '@/lib/db/queries';
+import {
+  deleteDocumentsByIdAfterTimestamp,
+  getDocumentsById,
+  saveDocument,
+} from '@/lib/db/queries';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -50,8 +54,7 @@ export async function POST(request: Request) {
     content,
     title,
     kind,
-  }: { content: string; title: string; kind: string } =
-    await request.json();
+  }: { content: string; title: string; kind: string } = await request.json();
 
   const documents = await getDocumentsById({ id });
 

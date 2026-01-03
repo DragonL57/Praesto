@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 export function useScrollToBottom<T extends HTMLElement>(): [
   MutableRefObject<T | null>,
   MutableRefObject<T | null>,
-  () => void // Added manual scroll function
+  () => void, // Added manual scroll function
 ] {
   const containerRef = useRef<T>(null);
   const endRef = useRef<T>(null);
@@ -31,7 +31,7 @@ export function useScrollToBottom<T extends HTMLElement>(): [
       // If user has scrolled up, disable auto-scrolling
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      
+
       // Consider them at the bottom if within 100px (to account for slight differences)
       shouldAutoScrollRef.current = distanceFromBottom <= 100;
     };
@@ -49,18 +49,19 @@ export function useScrollToBottom<T extends HTMLElement>(): [
       const observer = new MutationObserver((mutations) => {
         // Only scroll automatically if we should be auto-scrolling
         if (!shouldAutoScrollRef.current) return;
-        
+
         // Check if the mutations are actually adding content
-        const hasNewContent = mutations.some(mutation => 
-          (mutation.type === 'childList' && mutation.addedNodes.length > 0) ||
-          (mutation.type === 'characterData')
+        const hasNewContent = mutations.some(
+          (mutation) =>
+            (mutation.type === 'childList' && mutation.addedNodes.length > 0) ||
+            mutation.type === 'characterData',
         );
 
         if (!hasNewContent) return;
-        
+
         // Debounce scrolling to avoid multiple unnecessary scrolls
         if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-        
+
         scrollTimerRef.current = setTimeout(() => {
           end.scrollIntoView({ behavior: 'instant', block: 'end' });
           scrollTimerRef.current = null;

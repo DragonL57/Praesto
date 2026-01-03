@@ -1,8 +1,4 @@
-import type {
-  CoreAssistantMessage,
-  CoreToolMessage,
-  UIMessage,
-} from 'ai';
+import type { CoreAssistantMessage, CoreToolMessage, UIMessage } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -62,8 +58,10 @@ function _addToolMessageToChat({
 }): Array<UIMessage> {
   return messages.map((message) => {
     // Find tool-invocation parts in the message
-    const hasToolInvocations = message.parts.some(part =>
-      part.type === 'tool-invocation' || (typeof part.type === 'string' && part.type.startsWith('tool-'))
+    const hasToolInvocations = message.parts.some(
+      (part) =>
+        part.type === 'tool-invocation' ||
+        (typeof part.type === 'string' && part.type.startsWith('tool-')),
     );
 
     if (hasToolInvocations) {
@@ -71,7 +69,10 @@ function _addToolMessageToChat({
         ...message,
         parts: message.parts.map((part) => {
           // Check if this is a tool-related part
-          if (part.type !== 'tool-invocation' && !(typeof part.type === 'string' && part.type.startsWith('tool-'))) {
+          if (
+            part.type !== 'tool-invocation' &&
+            !(typeof part.type === 'string' && part.type.startsWith('tool-'))
+          ) {
             return part;
           }
 

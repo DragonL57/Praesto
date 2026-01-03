@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { UsersRound, ActivitySquare, MessageSquare, Database } from "lucide-react";
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  UsersRound,
+  ActivitySquare,
+  MessageSquare,
+  Database,
+} from 'lucide-react';
 
 interface StatsData {
   userStats: {
@@ -51,7 +56,9 @@ export function StatusCards() {
             <UsersRound className="size-6 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Total Users
+            </p>
             <h3 className="text-2xl font-bold">
               {loading ? '...' : stats?.userStats.total.toLocaleString()}
             </h3>
@@ -64,7 +71,9 @@ export function StatusCards() {
             <ActivitySquare className="size-6 text-green-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Active Users
+            </p>
             <h3 className="text-2xl font-bold">
               {loading ? '...' : stats?.userStats.active.toLocaleString()}
             </h3>
@@ -77,7 +86,9 @@ export function StatusCards() {
             <MessageSquare className="size-6 text-blue-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Conversations</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Total Conversations
+            </p>
             <h3 className="text-2xl font-bold">
               {loading ? '...' : stats?.chatStats.total.toLocaleString()}
             </h3>
@@ -90,7 +101,9 @@ export function StatusCards() {
             <Database className="size-6 text-purple-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Messages</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Total Messages
+            </p>
             <h3 className="text-2xl font-bold">
               {loading ? '...' : stats?.messageStats.total.toLocaleString()}
             </h3>

@@ -410,7 +410,9 @@ export const systemPrompt = ({
 
   if (userTimeContext) {
     const yearMatch = userTimeContext.date.match(/\b\d{4}\b/);
-    const extractedYear = yearMatch ? yearMatch[0] : userTimeContext.date.split(',').pop()?.trim() || '';
+    const extractedYear = yearMatch
+      ? yearMatch[0]
+      : userTimeContext.date.split(',').pop()?.trim() || '';
 
     environmentContext = `
 <environment_context>

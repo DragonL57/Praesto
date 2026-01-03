@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { GalleryVerticalEnd, Search } from "lucide-react"
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { GalleryVerticalEnd, Search } from 'lucide-react';
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Sidebar,
   SidebarContent,
@@ -17,19 +17,19 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: "Introduction", url: "/docs" },
-  { title: "About", url: "/docs/about" },
-  { title: "Business Strategy", url: "/docs/business-strategy" },
-  { title: "Getting Started", url: "/docs/getting-started" },
-  { title: "Tools & Capabilities", url: "/docs/tools" },
-  { title: "Advanced Usage", url: "/docs/advanced" },
-]
+  { title: 'Introduction', url: '/docs' },
+  { title: 'About', url: '/docs/about' },
+  { title: 'Business Strategy', url: '/docs/business-strategy' },
+  { title: 'Getting Started', url: '/docs/getting-started' },
+  { title: 'Tools & Capabilities', url: '/docs/tools' },
+  { title: 'Advanced Usage', url: '/docs/advanced' },
+];
 
 export function AppSidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <Sidebar>
@@ -55,7 +55,11 @@ export function AppSidebar() {
               <Label htmlFor="search" className="sr-only">
                 Search
               </Label>
-              <Input id="search" placeholder="Search the docs..." className="pl-8" />
+              <Input
+                id="search"
+                placeholder="Search the docs..."
+                className="pl-8"
+              />
               <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 select-none opacity-50" />
             </SidebarGroupContent>
           </SidebarGroup>
@@ -78,5 +82,5 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

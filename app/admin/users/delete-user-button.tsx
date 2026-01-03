@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 
@@ -24,14 +24,14 @@ interface DeleteUserButtonProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function DeleteUserButton({ 
-  userId, 
-  email, 
+export function DeleteUserButton({
+  userId,
+  email,
   variant = 'button',
-  onOpenChange
+  onOpenChange,
 }: DeleteUserButtonProps) {
   const [open, setOpen] = useState(false);
-  
+
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     // Call the parent's onOpenChange handler if provided
@@ -39,7 +39,7 @@ export function DeleteUserButton({
       onOpenChange(newOpen);
     }
   };
-  
+
   const handleDelete = async () => {
     try {
       const formData = new FormData();
@@ -49,19 +49,19 @@ export function DeleteUserButton({
       console.error('Failed to delete user:', error);
     }
   };
-  
+
   const handleButtonClick = (e: React.MouseEvent) => {
     // Stop event propagation to prevent dropdown from closing
     e.stopPropagation();
     handleOpenChange(true);
   };
-  
+
   if (variant === 'menuItem') {
     return (
       <>
-        <button 
+        <button
           type="button"
-          className="flex items-center w-full text-destructive text-left" 
+          className="flex items-center w-full text-destructive text-left"
           onClick={handleButtonClick}
         >
           <Trash className="mr-2 size-4" />
@@ -72,8 +72,8 @@ export function DeleteUserButton({
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the user account for {email} and remove all their 
-                associated data. This action cannot be undone.
+                This will permanently delete the user account for {email} and
+                remove all their associated data. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -87,11 +87,11 @@ export function DeleteUserButton({
       </>
     );
   }
-  
+
   return (
     <>
-      <Button 
-        variant="destructive" 
+      <Button
+        variant="destructive"
         onClick={(e) => {
           e.stopPropagation();
           handleOpenChange(true);
@@ -105,15 +105,13 @@ export function DeleteUserButton({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the user account for {email} and remove all their 
-              associated data. This action cannot be undone.
+              This will permanently delete the user account for {email} and
+              remove all their associated data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

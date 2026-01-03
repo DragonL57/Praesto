@@ -16,7 +16,18 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
   const lastXRef = useRef(0);
 
   // Start dragging - but only if clicking on empty space or holding modifier key
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement> | { pageX: number; shiftKey: boolean; ctrlKey: boolean; preventDefault: () => void; target: EventTarget; currentTarget: EventTarget }) => {
+  const handleMouseDown = (
+    e:
+      | MouseEvent<HTMLDivElement>
+      | {
+          pageX: number;
+          shiftKey: boolean;
+          ctrlKey: boolean;
+          preventDefault: () => void;
+          target: EventTarget;
+          currentTarget: EventTarget;
+        },
+  ) => {
     if (!containerRef.current) return;
 
     const target = e.target as HTMLElement;
@@ -25,19 +36,21 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
     const isModifierKey = e.shiftKey || e.ctrlKey;
 
     // Check if the click is on actual text content
-    const isClickingOnText = target.tagName === 'SPAN' ||
-                            target.tagName === 'P' ||
-                            target.tagName === 'STRONG' ||
-                            target.tagName === 'EM' ||
-                            target.tagName === 'CODE' ||
-                            (target.textContent?.trim() && window.getSelection()?.toString() === '');
+    const isClickingOnText =
+      target.tagName === 'SPAN' ||
+      target.tagName === 'P' ||
+      target.tagName === 'STRONG' ||
+      target.tagName === 'EM' ||
+      target.tagName === 'CODE' ||
+      (target.textContent?.trim() && window.getSelection()?.toString() === '');
 
     // Check if clicking on empty space in cells or container
-    const isClickingOnEmptySpace = target.tagName === 'DIV' ||
-                                   (target.tagName === 'TD' && !target.textContent?.trim()) ||
-                                   (target.tagName === 'TH' && !target.textContent?.trim()) ||
-                                   target === containerRef.current ||
-                                   target === e.currentTarget;
+    const isClickingOnEmptySpace =
+      target.tagName === 'DIV' ||
+      (target.tagName === 'TD' && !target.textContent?.trim()) ||
+      (target.tagName === 'TH' && !target.textContent?.trim()) ||
+      target === containerRef.current ||
+      target === e.currentTarget;
 
     // Only start dragging if user is holding modifier key or clicking on empty space
     // But never if clicking on actual text content
@@ -62,30 +75,36 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
   };
 
   // Handle mouse move
-  const handleMouseMove = useCallback((e: globalThis.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
+  const handleMouseMove = useCallback(
+    (e: globalThis.MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
 
-    // Only prevent default if we're actually dragging
-    // This allows text selection to work normally
-    e.preventDefault();
-    const x = e.pageX - containerRef.current.offsetLeft;
-    const walk = (x - startX) * 1.8; // Speed multiplier
-    containerRef.current.scrollLeft = scrollLeft - walk;
+      // Only prevent default if we're actually dragging
+      // This allows text selection to work normally
+      e.preventDefault();
+      const x = e.pageX - containerRef.current.offsetLeft;
+      const walk = (x - startX) * 1.8; // Speed multiplier
+      containerRef.current.scrollLeft = scrollLeft - walk;
 
-    lastXRef.current = e.pageX;
-  }, [isDragging, startX, scrollLeft]);
+      lastXRef.current = e.pageX;
+    },
+    [isDragging, startX, scrollLeft],
+  );
 
   // Handle touch move
-  const handleTouchMove = useCallback((e: globalThis.TouchEvent) => {
-    if (!isDragging || !containerRef.current) return;
+  const handleTouchMove = useCallback(
+    (e: globalThis.TouchEvent) => {
+      if (!isDragging || !containerRef.current) return;
 
-    const touch = e.touches[0];
-    const x = touch.pageX - containerRef.current.offsetLeft;
-    const walk = (x - startX) * 1.8;
-    containerRef.current.scrollLeft = scrollLeft - walk;
+      const touch = e.touches[0];
+      const x = touch.pageX - containerRef.current.offsetLeft;
+      const walk = (x - startX) * 1.8;
+      containerRef.current.scrollLeft = scrollLeft - walk;
 
-    lastXRef.current = touch.pageX;
-  }, [isDragging, startX, scrollLeft]);
+      lastXRef.current = touch.pageX;
+    },
+    [isDragging, startX, scrollLeft],
+  );
 
   // Stop dragging
   const handleMouseUp = useCallback(() => {
@@ -101,7 +120,9 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchmove', handleTouchMove, {
+        passive: false,
+      });
       document.addEventListener('touchend', handleTouchEnd);
 
       // Add cursor styles only
@@ -117,7 +138,13 @@ export const TableWrapper = ({ children }: TableWrapperProps) => {
         document.body.style.cursor = '';
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [
+    isDragging,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchMove,
+    handleTouchEnd,
+  ]);
 
   return (
     <div className="table-container my-4">
@@ -179,7 +206,11 @@ export const Table = ({ children, node: _node, ...props }: TableProps) => {
 
   return (
     <TableWrapper tableRef={tableRef}>
-      <table ref={tableRef} style={{...tableStyles.table, ...props.style}} {...props}>
+      <table
+        ref={tableRef}
+        style={{ ...tableStyles.table, ...props.style }}
+        {...props}
+      >
         {children}
       </table>
     </TableWrapper>

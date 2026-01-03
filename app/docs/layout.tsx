@@ -1,17 +1,17 @@
-import "../globals.css"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "./components/app-sidebar"
+import '../globals.css';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from './components/app-sidebar';
 
 export const metadata = {
-  title: "UniTaskAI Documentation",
-  description: "A documentation site for UniTaskAI using Next.js App Router",
-  generator: 'v0.dev'
-}
+  title: 'UniTaskAI Documentation',
+  description: 'A documentation site for UniTaskAI using Next.js App Router',
+  generator: 'v0.dev',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="min-h-screen">
@@ -21,5 +21,5 @@ export default function RootLayout({
         <main className="flex-1 overflow-auto p-8 pt-16">{children}</main>
       </SidebarProvider>
     </div>
-  )
+  );
 }

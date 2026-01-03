@@ -120,37 +120,37 @@ const CodeBlock = memo(
         <div className="w-full max-w-full bg-transparent overflow-auto code-block-container">
           {isClient ? (
             <SyntaxHighlighter
-            language={highlighterLang}
-            style={currentSyntaxTheme}
-            customStyle={{
-              margin: 0,
-              padding: '1rem',
-              fontSize: '0.875rem',
-              background: 'transparent',
-              borderRadius: '0 0 0.375rem 0.375rem',
-            }}
-            showLineNumbers={highlighterLang !== 'text'}
-            showInlineLineNumbers={false}
-            wrapLines={true}
-            lineNumberContainerStyle={{
-              float: 'left',
-              paddingRight: '1em',
-              userSelect: 'none',
-              WebkitUserSelect: 'none',
-              MozUserSelect: 'none',
-              textAlign: 'right',
-              minWidth: '2.5em',
-              opacity: '0.5',
-              backgroundColor: 'transparent',
-            }}
-            codeTagProps={{
-              style: {
+              language={highlighterLang}
+              style={currentSyntaxTheme}
+              customStyle={{
+                margin: 0,
+                padding: '1rem',
+                fontSize: '0.875rem',
+                background: 'transparent',
+                borderRadius: '0 0 0.375rem 0.375rem',
+              }}
+              showLineNumbers={highlighterLang !== 'text'}
+              showInlineLineNumbers={false}
+              wrapLines={true}
+              lineNumberContainerStyle={{
+                float: 'left',
+                paddingRight: '1em',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                textAlign: 'right',
+                minWidth: '2.5em',
+                opacity: '0.5',
                 backgroundColor: 'transparent',
-              },
-            }}
-          >
-            {String(children)}
-          </SyntaxHighlighter>
+              }}
+              codeTagProps={{
+                style: {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              {String(children)}
+            </SyntaxHighlighter>
           ) : (
             <pre className="p-4 bg-transparent text-sm overflow-x-auto">
               <code>{String(children)}</code>

@@ -11,7 +11,7 @@ export function SessionProvider({
   session: Session | null;
 }) {
   return (
-    <NextAuthSessionProvider 
+    <NextAuthSessionProvider
       session={session}
       basePath="/api/auth"
       refetchInterval={15 * 60} // Refresh session every 15 minutes (900 seconds)

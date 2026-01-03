@@ -14,27 +14,29 @@ try {
   // Run database migrations with a timeout
   console.log('📊 Running database migrations...');
   try {
-    execSync('npx tsx lib/db/migrate.ts', { 
+    execSync('npx tsx lib/db/migrate.ts', {
       timeout: 30000, // 30 seconds timeout for migrations
-      stdio: 'inherit' 
+      stdio: 'inherit',
     });
     console.log('✅ Migrations completed successfully');
   } catch (migrationError) {
-    console.warn('⚠️ Migration step failed or timed out, continuing with build anyway');
+    console.warn(
+      '⚠️ Migration step failed or timed out, continuing with build anyway',
+    );
     console.warn('   Error details:', migrationError.message);
   }
 
   // Set NODE_ENV to production to ensure correct build behavior
   process.env.NODE_ENV = 'production';
-  
+
   // Run Next.js build regardless of migration success
   console.log('🏗️ Building Next.js application...');
-  execSync('next build', { 
+  execSync('next build', {
     stdio: 'inherit',
     env: {
       ...process.env,
-      NODE_ENV: 'production'
-    }
+      NODE_ENV: 'production',
+    },
   });
   console.log('✅ Next.js build completed successfully');
 } catch (error) {

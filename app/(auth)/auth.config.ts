@@ -25,7 +25,8 @@ export const authConfig = {
       const isSharedChat = nextUrl.pathname.match(/^\/chat\/[a-zA-Z0-9-]+$/); // Match shared chat URL pattern
 
       // Skip auth check for static assets and public files
-      const isStaticAsset = nextUrl.pathname.startsWith('/_next') ||
+      const isStaticAsset =
+        nextUrl.pathname.startsWith('/_next') ||
         nextUrl.pathname.startsWith('/images') ||
         nextUrl.pathname.startsWith('/fonts') ||
         nextUrl.pathname.includes('.');

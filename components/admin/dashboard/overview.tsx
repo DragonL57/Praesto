@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
 
 interface DailyActivity {
   date: string;
@@ -15,7 +24,9 @@ interface AnalyticsData {
 }
 
 export function Overview() {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +59,9 @@ export function Overview() {
   if (!analyticsData) {
     return (
       <div className="flex justify-center items-center h-[350px] w-full">
-        <div className="text-muted-foreground">Failed to load analytics data</div>
+        <div className="text-muted-foreground">
+          Failed to load analytics data
+        </div>
       </div>
     );
   }
@@ -72,14 +85,19 @@ export function Overview() {
           tickLine={false}
           axisLine={false}
         />
-        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
-        <Tooltip 
-          contentStyle={{ 
-            backgroundColor: 'var(--background)', 
+        <CartesianGrid
+          vertical={false}
+          strokeDasharray="3 3"
+          className="stroke-muted"
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: 'var(--background)',
             border: '1px solid var(--border)',
             borderRadius: '6px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-          }} 
+            boxShadow:
+              '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          }}
         />
         <Legend />
         <Bar

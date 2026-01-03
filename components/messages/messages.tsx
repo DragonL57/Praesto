@@ -86,7 +86,12 @@ function PureMessages({
     }
 
     // Scroll to bottom when conversation loads and has messages
-    if (!hasInitialScrolledRef.current && messages.length > 0 && end && container) {
+    if (
+      !hasInitialScrolledRef.current &&
+      messages.length > 0 &&
+      end &&
+      container
+    ) {
       // Use a small delay to ensure DOM is ready
       const timeoutId = setTimeout(() => {
         requestAnimationFrame(() => {
@@ -258,29 +263,29 @@ function PureMessages({
         ) : (
           // Regular rendering for short conversations
           messages.map((message, index) => (
-              <div
-                key={message.id}
-                data-message-id={message.id} // Add data-message-id for selection
-                className="transition-opacity duration-300 ease-in-out"
-              >
-                <PreviewMessage
-                  chatId={chatId}
-                  message={message}
-                  isLoading={
-                    status === 'streaming' && messages.length - 1 === index
-                  }
-                  vote={
-                    votes
-                      ? votes.find((vote) => vote.messageId === message.id)
-                      : undefined
-                  }
-                  setMessages={setMessages}
-                  reload={wrappedReload}
-                  append={append}
-                  isReadonly={isReadonly}
-                />
-              </div>
-            ))
+            <div
+              key={message.id}
+              data-message-id={message.id} // Add data-message-id for selection
+              className="transition-opacity duration-300 ease-in-out"
+            >
+              <PreviewMessage
+                chatId={chatId}
+                message={message}
+                isLoading={
+                  status === 'streaming' && messages.length - 1 === index
+                }
+                vote={
+                  votes
+                    ? votes.find((vote) => vote.messageId === message.id)
+                    : undefined
+                }
+                setMessages={setMessages}
+                reload={wrappedReload}
+                append={append}
+                isReadonly={isReadonly}
+              />
+            </div>
+          ))
         )}
 
         <AnimatePresence>

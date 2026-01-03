@@ -21,7 +21,13 @@ import {
 } from 'ai';
 
 import { auth } from '@/app/auth';
-import { deleteChatById, getChatById, saveChat, saveMessages, updateChatTimestamp } from '@/lib/db/queries';
+import {
+  deleteChatById,
+  getChatById,
+  saveChat,
+  saveMessages,
+  updateChatTimestamp,
+} from '@/lib/db/queries';
 import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 import { getStreamTextConfig } from '@/lib/ai/providers';
@@ -48,25 +54,29 @@ interface ToolResult {
   result?: unknown;
 }
 
-
 // Extract file parts from message parts (AI SDK 5.x approach)
 function getFilePartsFromMessage(message: UIMessage) {
   return message.parts
     .filter((part): part is FileUIPart => part.type === 'file')
-    .map((part: FileUIPart): FileAttachment => ({
-      url: part.url ?? '',
-      name: part.filename,
-      contentType: part.mediaType,
-      mediaType: part.mediaType,
-    }));
+    .map(
+      (part: FileUIPart): FileAttachment => ({
+        url: part.url ?? '',
+        name: part.filename,
+        contentType: part.mediaType,
+        mediaType: part.mediaType,
+      }),
+    );
 }
 
 // --- Configuration for Extracted Text Formatting ---
-const ATTACHMENT_TEXT_HEADER_PREFIX = "\n\n--- Content from attachment:";
-const ATTACHMENT_TEXT_FOOTER = "---\n--- End of attachment ---";
-const ATTACHMENT_ERROR_NOTE_PREFIX = "\n\n--- System Note: An error occurred while trying to extract text content from attachment:";
-const ATTACHMENT_ERROR_NOTE_SUFFIX = ". The file might be corrupted, password-protected, or in an unsupported format. ---";
-const ATTACHMENT_TEXT_TRUNCATED_SUFFIX = " [Content truncated as it exceeded 100,000 characters]";
+const ATTACHMENT_TEXT_HEADER_PREFIX = '\n\n--- Content from attachment:';
+const ATTACHMENT_TEXT_FOOTER = '---\n--- End of attachment ---';
+const ATTACHMENT_ERROR_NOTE_PREFIX =
+  '\n\n--- System Note: An error occurred while trying to extract text content from attachment:';
+const ATTACHMENT_ERROR_NOTE_SUFFIX =
+  '. The file might be corrupted, password-protected, or in an unsupported format. ---';
+const ATTACHMENT_TEXT_TRUNCATED_SUFFIX =
+  ' [Content truncated as it exceeded 100,000 characters]';
 const MAX_EXTRACTED_TEXT_CHARS = 100000; // Maximum number of characters for extracted text
 // --- End of Configuration ---
 
@@ -112,22 +122,35 @@ export async function POST(request: Request) {
     }
 
     // Debug: Log the user message structure as received
-    console.log('User message received:', JSON.stringify({
-      id: userMessage.id,
-      role: userMessage.role,
-      parts: userMessage.parts.map(p => ({
-        type: p.type,
-        ...(p.type === 'text' ? { textLength: (p as TextUIPart).text.length } : {}),
-        ...(p.type === 'file' ? {
-          url: (p as FileUIPart).url,
-          filename: (p as FileUIPart).filename,
-          mediaType: (p as FileUIPart).mediaType
-        } : {})
-      }))
-    }, null, 2));
+    console.log(
+      'User message received:',
+      JSON.stringify(
+        {
+          id: userMessage.id,
+          role: userMessage.role,
+          parts: userMessage.parts.map((p) => ({
+            type: p.type,
+            ...(p.type === 'text'
+              ? { textLength: (p as TextUIPart).text.length }
+              : {}),
+            ...(p.type === 'file'
+              ? {
+                  url: (p as FileUIPart).url,
+                  filename: (p as FileUIPart).filename,
+                  mediaType: (p as FileUIPart).mediaType,
+                }
+              : {}),
+          })),
+        },
+        null,
+        2,
+      ),
+    );
 
     // Store a copy of the original user message parts for saving to DB
-    const originalUserMessageParts = userMessage.parts.map(part => ({ ...part }));
+    const originalUserMessageParts = userMessage.parts.map((part) => ({
+      ...part,
+    }));
 
     // --- TEXT EXTRACTION FROM ATTACHMENTS ---
     let combinedUserTextAndAttachments = '';
@@ -135,7 +158,7 @@ export async function POST(request: Request) {
     // Get the original typed text from the user message parts
     const originalUserTypedText = userMessage.parts
       .filter((part): part is TextUIPart => part.type === 'text')
-      .map(part => part.text)
+      .map((part) => part.text)
       .join('\n');
 
     combinedUserTextAndAttachments = originalUserTypedText;
@@ -148,23 +171,38 @@ export async function POST(request: Request) {
     // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
     const fileParts = getFilePartsFromMessage(userMessage);
     if (fileParts.length > 0) {
-      const imageAttachments = fileParts.filter((att: FileAttachment) => att.contentType?.startsWith('image/') || att.mediaType?.startsWith('image/'));
-      const pdfAttachments = fileParts.filter((att: FileAttachment) => att.contentType === 'application/pdf' || att.mediaType === 'application/pdf');
-      const documentAttachments = fileParts.filter((att: FileAttachment) =>
-        !att.contentType?.startsWith('image/') &&
-        !att.mediaType?.startsWith('image/') &&
-        att.contentType !== 'application/pdf' &&
-        att.mediaType !== 'application/pdf'
+      const imageAttachments = fileParts.filter(
+        (att: FileAttachment) =>
+          att.contentType?.startsWith('image/') ||
+          att.mediaType?.startsWith('image/'),
+      );
+      const pdfAttachments = fileParts.filter(
+        (att: FileAttachment) =>
+          att.contentType === 'application/pdf' ||
+          att.mediaType === 'application/pdf',
+      );
+      const documentAttachments = fileParts.filter(
+        (att: FileAttachment) =>
+          !att.contentType?.startsWith('image/') &&
+          !att.mediaType?.startsWith('image/') &&
+          att.contentType !== 'application/pdf' &&
+          att.mediaType !== 'application/pdf',
       );
 
-      console.log(`Processing attachments: ${imageAttachments.length} images, ${pdfAttachments.length} PDFs, ${documentAttachments.length} documents`);
+      console.log(
+        `Processing attachments: ${imageAttachments.length} images, ${pdfAttachments.length} PDFs, ${documentAttachments.length} documents`,
+      );
 
       for (const attachment of fileParts) {
         if (attachment.url) {
           // Skip text extraction for image files - modern AI models can process these directly
-          const isImage = attachment.contentType?.startsWith('image/') || attachment.mediaType?.startsWith('image/');
+          const isImage =
+            attachment.contentType?.startsWith('image/') ||
+            attachment.mediaType?.startsWith('image/');
           if (isImage) {
-            console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType || attachment.mediaType})`);
+            console.log(
+              `Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType || attachment.mediaType})`,
+            );
             continue;
           }
 
@@ -177,7 +215,9 @@ export async function POST(request: Request) {
             const fileArrayBuffer = await response.arrayBuffer();
             const fileBuffer = Buffer.from(fileArrayBuffer);
 
-            console.log(`Parsing file: ${attachment.name || 'unknown file'} (${attachment.contentType || attachment.mediaType})`);
+            console.log(
+              `Parsing file: ${attachment.name || 'unknown file'} (${attachment.contentType || attachment.mediaType})`,
+            );
             const extractedText = await parseOfficeAsync(fileBuffer);
 
             if (extractedText && extractedText.trim().length > 0) {
@@ -188,17 +228,26 @@ export async function POST(request: Request) {
               if (finalText.length > MAX_EXTRACTED_TEXT_CHARS) {
                 finalText = finalText.substring(0, MAX_EXTRACTED_TEXT_CHARS);
                 truncationNote = ATTACHMENT_TEXT_TRUNCATED_SUFFIX;
-                console.log(`Text from ${attachment.name || 'file'} was truncated from ${extractedText.length} to ${MAX_EXTRACTED_TEXT_CHARS} characters.`);
+                console.log(
+                  `Text from ${attachment.name || 'file'} was truncated from ${extractedText.length} to ${MAX_EXTRACTED_TEXT_CHARS} characters.`,
+                );
               }
 
               combinedUserTextAndAttachments += `${ATTACHMENT_TEXT_HEADER_PREFIX} ${attachment.name || 'file'} ---\n${finalText}${truncationNote}${ATTACHMENT_TEXT_FOOTER}`;
-              console.log(`Successfully extracted text from ${attachment.name || 'file'}. Length: ${finalText.length}${truncationNote ? ' (truncated)' : ''}`);
+              console.log(
+                `Successfully extracted text from ${attachment.name || 'file'}. Length: ${finalText.length}${truncationNote ? ' (truncated)' : ''}`,
+              );
             } else {
               // This case means parsing was successful, but no text content was found (e.g., an empty .txt file or a PDF with only images).
-              console.log(`No text extracted or text was empty for ${attachment.name || 'file'} (parsing successful).`);
+              console.log(
+                `No text extracted or text was empty for ${attachment.name || 'file'} (parsing successful).`,
+              );
             }
           } catch (error) {
-            console.error(`Error processing attachment ${attachment.name || attachment.url}:`, error);
+            console.error(
+              `Error processing attachment ${attachment.name || attachment.url}:`,
+              error,
+            );
             // Add a notification to the combined text ONLY when an actual parsing error occurs.
             combinedUserTextAndAttachments += `${ATTACHMENT_ERROR_NOTE_PREFIX} ${attachment.name || 'file'}${ATTACHMENT_ERROR_NOTE_SUFFIX}`;
           }
@@ -208,30 +257,40 @@ export async function POST(request: Request) {
 
     // Update userMessage.parts to contain a single text part with the combined content.
     // The attachments themselves are still part of userMessage.experimental_attachments for record-keeping or other UI purposes.
-    if (combinedUserTextAndAttachments !== originalUserTypedText) { // Only update if text was actually added from attachments
-      const nonTextParts = userMessage.parts.filter(part => part.type !== 'text');
+    if (combinedUserTextAndAttachments !== originalUserTypedText) {
+      // Only update if text was actually added from attachments
+      const nonTextParts = userMessage.parts.filter(
+        (part) => part.type !== 'text',
+      );
       userMessage.parts = [
         ...nonTextParts,
-        { type: 'text', text: combinedUserTextAndAttachments } as TextUIPart
+        { type: 'text', text: combinedUserTextAndAttachments } as TextUIPart,
       ];
-      console.log('User message parts updated: non-text parts preserved, text consolidated with attachments.');
-      console.log('Final combined text for AI:', combinedUserTextAndAttachments);
+      console.log(
+        'User message parts updated: non-text parts preserved, text consolidated with attachments.',
+      );
+      console.log(
+        'Final combined text for AI:',
+        combinedUserTextAndAttachments,
+      );
     } else {
       // If no new text was added from attachments, userMessage.parts already contains the originalUserTypedText.
       // No change needed to userMessage.parts in this specific text-consolidation step.
-      console.log('No new text from attachments. Original user message parts retained.');
+      console.log(
+        'No new text from attachments. Original user message parts retained.',
+      );
     }
     // --- END OF TEXT EXTRACTION ---
 
     // Prepare messages for streamText:
     // 1. For the current userMessage, its .parts are already updated with combined text (if attachments were processed).
     // 2. AI SDK 5.x uses parts array for both text and files
-    // 
+    //
     // Mixed-attachment case handled as follows:
     // - Image attachments: Preserved as file parts in message.parts for direct model viewing
     // - Document attachments: Their extracted text is included in the message text part
     //   with appropriate headers/footers, while preserving image file parts
-    const messagesForStreamText = messages.map(msg => {
+    const messagesForStreamText = messages.map((msg) => {
       const processedMsg = { ...msg }; // Start with a shallow copy
 
       // If this specific message is the most recent user message we just processed,
@@ -276,32 +335,59 @@ export async function POST(request: Request) {
     await updateChatTimestamp({ id });
 
     // Prepare final messages for the model
-    const finalModelMessages = messagesForStreamText.map(msg => ({
+    const finalModelMessages = messagesForStreamText.map((msg) => ({
       ...msg,
       parts: msg.parts.map((part) => ({ ...part })),
     }));
 
     // Log information about image file parts being sent to the model
     const finalImagePartsForLogging = finalModelMessages
-      .filter(msg => msg.role === 'user')
-      .flatMap(msg => msg.parts.filter((part): part is FileUIPart => part.type === 'file' && (part.mediaType?.startsWith('image/') ?? false)));
+      .filter((msg) => msg.role === 'user')
+      .flatMap((msg) =>
+        msg.parts.filter(
+          (part): part is FileUIPart =>
+            part.type === 'file' &&
+            (part.mediaType?.startsWith('image/') ?? false),
+        ),
+      );
 
     if (finalImagePartsForLogging.length > 0) {
-      console.log(`Sending ${finalImagePartsForLogging.length} image file parts to the final model (${finalSelectedChatModel}):`,
-        finalImagePartsForLogging.map(img => ({ mediaType: img.mediaType, url: img.url, filename: img.filename })));
+      console.log(
+        `Sending ${finalImagePartsForLogging.length} image file parts to the final model (${finalSelectedChatModel}):`,
+        finalImagePartsForLogging.map((img) => ({
+          mediaType: img.mediaType,
+          url: img.url,
+          filename: img.filename,
+        })),
+      );
     }
 
     // Debug: Log the complete message structure before conversion
-    console.log('Messages before streamText:', JSON.stringify(finalModelMessages.map(m => ({
-      role: m.role,
-      parts: m.parts.map(p => ({ type: p.type, ...(p.type === 'file' ? { url: (p as FileUIPart).url, mediaType: (p as FileUIPart).mediaType } : {}) }))
-    })), null, 2));
+    console.log(
+      'Messages before streamText:',
+      JSON.stringify(
+        finalModelMessages.map((m) => ({
+          role: m.role,
+          parts: m.parts.map((p) => ({
+            type: p.type,
+            ...(p.type === 'file'
+              ? {
+                  url: (p as FileUIPart).url,
+                  mediaType: (p as FileUIPart).mediaType,
+                }
+              : {}),
+          })),
+        })),
+        null,
+        2,
+      ),
+    );
 
     // AI SDK 5.x: Direct approach - use streamText with custom onFinish to capture and save
     const streamTextConfig = getStreamTextConfig(
       finalSelectedChatModel,
       finalModelMessages,
-      userTimeContext
+      userTimeContext,
     );
 
     // Add calendar tools (server-only, loaded dynamically)
@@ -335,8 +421,14 @@ export async function POST(request: Request) {
       // Debug: Log every step as it finishes
       onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
         console.log('[AI TOOL DEBUG] Step finished');
-        console.log('[AI TOOL DEBUG] toolCalls:', JSON.stringify(toolCalls, null, 2));
-        console.log('[AI TOOL DEBUG] toolResults:', JSON.stringify(toolResults, null, 2));
+        console.log(
+          '[AI TOOL DEBUG] toolCalls:',
+          JSON.stringify(toolCalls, null, 2),
+        );
+        console.log(
+          '[AI TOOL DEBUG] toolResults:',
+          JSON.stringify(toolResults, null, 2),
+        );
         console.log('[AI TOOL DEBUG] text:', text);
         console.log('[AI TOOL DEBUG] finishReason:', finishReason);
         console.log('[AI TOOL DEBUG] usage:', usage);
@@ -346,16 +438,23 @@ export async function POST(request: Request) {
         if (session.user?.id) {
           try {
             // DEBUG: Log the entire result object after streaming
-            console.log('[AI TOOL DEBUG] result object after streaming:', JSON.stringify(result, null, 2));
+            console.log(
+              '[AI TOOL DEBUG] result object after streaming:',
+              JSON.stringify(result, null, 2),
+            );
 
             // --- Aggregate toolCalls/toolResults from all steps for robust persistence ---
-            const allSteps: Step[] = Array.isArray(result?.steps) ? result.steps : [];
+            const allSteps: Step[] = Array.isArray(result?.steps)
+              ? result.steps
+              : [];
             let allToolCalls: ToolCall[] = [];
             let allToolResults: ToolResult[] = [];
 
             // Fallback: If steps is missing/empty, extract from result.response.messages (POE/OpenAI format)
             if (!allSteps || allSteps.length === 0) {
-              const response = result?.response ? await result.response : undefined;
+              const response = result?.response
+                ? await result.response
+                : undefined;
               const messages = response?.messages || [];
               for (const msg of messages) {
                 if (msg.role === 'assistant' && Array.isArray(msg.content)) {
@@ -365,7 +464,10 @@ export async function POST(request: Request) {
                       allToolCalls.push({
                         toolName: part.toolName,
                         toolCallId: part.toolCallId,
-                        args: (part.input && typeof part.input === 'object') ? part.input as Record<string, unknown> : {},
+                        args:
+                          part.input && typeof part.input === 'object'
+                            ? (part.input as Record<string, unknown>)
+                            : {},
                       });
                     }
                   }
@@ -375,7 +477,11 @@ export async function POST(request: Request) {
                     if (part.type === 'tool-result') {
                       // POE format: output property is { type: 'json', value: ... } or just the value
                       let resultValue: unknown;
-                      if (part.output && typeof part.output === 'object' && 'value' in part.output) {
+                      if (
+                        part.output &&
+                        typeof part.output === 'object' &&
+                        'value' in part.output
+                      ) {
                         resultValue = part.output.value;
                       } else if (part.output !== undefined) {
                         resultValue = part.output;
@@ -391,20 +497,34 @@ export async function POST(request: Request) {
               }
             } else {
               allToolCalls = allSteps.flatMap((step) => step?.toolCalls || []);
-              allToolResults = allSteps.flatMap((step) => step?.toolResults || []);
+              allToolResults = allSteps.flatMap(
+                (step) => step?.toolResults || [],
+              );
             }
 
             // DEBUG: Log allToolCalls and allToolResults before building uiParts
-            console.log('[AI TOOL DEBUG] allToolCalls:', JSON.stringify(allToolCalls, null, 2));
-            console.log('[AI TOOL DEBUG] allToolResults:', JSON.stringify(allToolResults, null, 2));
+            console.log(
+              '[AI TOOL DEBUG] allToolCalls:',
+              JSON.stringify(allToolCalls, null, 2),
+            );
+            console.log(
+              '[AI TOOL DEBUG] allToolResults:',
+              JSON.stringify(allToolResults, null, 2),
+            );
 
             const uiParts: Array<UIMessage['parts'][number]> = [];
 
             // 1. Reasoning/thought signature (if any)
             if (reasoning) {
               const reasoningText = Array.isArray(reasoning)
-                ? reasoning.map((r: ReasoningItem) => typeof r === 'string' ? r : r.text).join('\n')
-                : typeof reasoning === 'string' ? reasoning : '';
+                ? reasoning
+                    .map((r: ReasoningItem) =>
+                      typeof r === 'string' ? r : r.text,
+                    )
+                    .join('\n')
+                : typeof reasoning === 'string'
+                  ? reasoning
+                  : '';
               if (reasoningText) {
                 uiParts.push({ type: 'reasoning', text: reasoningText });
               }
@@ -422,7 +542,9 @@ export async function POST(request: Request) {
 
             // 3. Tool result(s) (output-available) from all steps
             allToolResults.forEach((toolResult: ToolResult) => {
-              const matchingCall = allToolCalls.find(tc => tc.toolCallId === toolResult.toolCallId);
+              const matchingCall = allToolCalls.find(
+                (tc) => tc.toolCallId === toolResult.toolCallId,
+              );
               uiParts.push({
                 type: `tool-${toolResult.toolName}`,
                 toolCallId: toolResult.toolCallId,
@@ -448,7 +570,10 @@ export async function POST(request: Request) {
             // 5. Text (summary/response)
             if (text) {
               // Remove "**Thinking...**" header if present
-              const processedText = text.replace(/^\*\*Thinking\.{3,}\*\*\s*\n*/i, '');
+              const processedText = text.replace(
+                /^\*\*Thinking\.{3,}\*\*\s*\n*/i,
+                '',
+              );
               const lines = processedText.split('\n');
               const thinkingLines: string[] = [];
               const nonThinkingLines: string[] = [];
@@ -459,13 +584,25 @@ export async function POST(request: Request) {
                   inThinkingBlock = true;
                   const thinkingContent = trimmedLine.substring(1).trim();
                   if (thinkingContent) thinkingLines.push(thinkingContent);
-                } else if ((trimmedLine.startsWith('*') && trimmedLine.endsWith('*') && (trimmedLine.toLowerCase().includes('thinking') || inThinkingBlock))) {
+                } else if (
+                  trimmedLine.startsWith('*') &&
+                  trimmedLine.endsWith('*') &&
+                  (trimmedLine.toLowerCase().includes('thinking') ||
+                    inThinkingBlock)
+                ) {
                   inThinkingBlock = true;
-                  const thinkingContent = trimmedLine.substring(1, trimmedLine.length - 1).trim();
+                  const thinkingContent = trimmedLine
+                    .substring(1, trimmedLine.length - 1)
+                    .trim();
                   if (thinkingContent) thinkingLines.push(thinkingContent);
                 } else if (!(inThinkingBlock && trimmedLine === '')) {
-                  if (!trimmedLine.startsWith('*') && !trimmedLine.startsWith('>')) inThinkingBlock = false;
-                  if (!inThinkingBlock || trimmedLine !== '') nonThinkingLines.push(line);
+                  if (
+                    !trimmedLine.startsWith('*') &&
+                    !trimmedLine.startsWith('>')
+                  )
+                    inThinkingBlock = false;
+                  if (!inThinkingBlock || trimmedLine !== '')
+                    nonThinkingLines.push(line);
                 }
               }
               // Add reasoning part if we found thinking content (and no reasoning part already added)
@@ -483,10 +620,16 @@ export async function POST(request: Request) {
             }
 
             // DEBUG: Log the full uiParts array before saving
-            console.log('[AI TOOL DEBUG] FINAL uiParts to save:', JSON.stringify(uiParts, null, 2));
+            console.log(
+              '[AI TOOL DEBUG] FINAL uiParts to save:',
+              JSON.stringify(uiParts, null, 2),
+            );
 
             // Log the full uiParts array before saving
-            console.log('[AI TOOL DEBUG] About to save assistant message parts:', JSON.stringify(uiParts, null, 2));
+            console.log(
+              '[AI TOOL DEBUG] About to save assistant message parts:',
+              JSON.stringify(uiParts, null, 2),
+            );
             await saveMessages({
               messages: [
                 {
@@ -506,14 +649,17 @@ export async function POST(request: Request) {
             console.error('Failed to save chat:', error);
           }
         }
-      }
+      },
     });
 
     // Create UI message stream with reasoning enabled and proper error handling
     try {
       // Debug: Log all steps after streamText finishes
       if (result?.steps) {
-        console.log('[AI TOOL DEBUG] All steps:', JSON.stringify(result.steps, null, 2));
+        console.log(
+          '[AI TOOL DEBUG] All steps:',
+          JSON.stringify(result.steps, null, 2),
+        );
       }
 
       const stream = result.toUIMessageStream({
@@ -529,26 +675,41 @@ export async function POST(request: Request) {
           transform(chunk, controller) {
             // ...existing code...
             if (chunk && typeof chunk === 'object' && 'type' in chunk) {
-              if (chunk.type === 'text-delta' && 'textDelta' in chunk && typeof chunk.textDelta === 'string') {
+              if (
+                chunk.type === 'text-delta' &&
+                'textDelta' in chunk &&
+                typeof chunk.textDelta === 'string'
+              ) {
                 const delta = chunk.textDelta;
-                if (delta.includes('**Thinking') ||
+                if (
+                  delta.includes('**Thinking') ||
                   delta.includes('Thinking...') ||
                   delta.trim().startsWith('>') ||
-                  (!hasSeenContent && delta.trim() === '')) {
+                  (!hasSeenContent && delta.trim() === '')
+                ) {
                   return;
                 }
                 accumulatedText += delta;
-                if (delta.includes('#') || delta.includes('##') || accumulatedText.length > 50) {
+                if (
+                  delta.includes('#') ||
+                  delta.includes('##') ||
+                  accumulatedText.length > 50
+                ) {
                   hasSeenContent = true;
                 }
                 if (!hasSeenContent) {
                   return;
                 }
                 let cleanedDelta = delta;
-                cleanedDelta = cleanedDelta.replace(/\*\*Thinking\.{3,}\*\*/gi, '');
+                cleanedDelta = cleanedDelta.replace(
+                  /\*\*Thinking\.{3,}\*\*/gi,
+                  '',
+                );
                 cleanedDelta = cleanedDelta.replace(/Thinking\.{3,}/gi, '');
                 const lines = cleanedDelta.split('\n');
-                const filteredLines = lines.filter(line => !line.trim().startsWith('>'));
+                const filteredLines = lines.filter(
+                  (line) => !line.trim().startsWith('>'),
+                );
                 cleanedDelta = filteredLines.join('\n');
                 if (cleanedDelta.trim()) {
                   controller.enqueue({ ...chunk, textDelta: cleanedDelta });
@@ -563,22 +724,28 @@ export async function POST(request: Request) {
           flush(_controller) {
             accumulatedText = '';
             hasSeenContent = false;
-          }
-        })
+          },
+        }),
       );
 
       return createUIMessageStreamResponse({ stream: transformedStream });
     } catch (error) {
       console.error('[API CHAT ROUTE ERROR]', error);
-      return new Response('An error occurred while processing your request. Please try again.', {
-        status: 500,
-      });
+      return new Response(
+        'An error occurred while processing your request. Please try again.',
+        {
+          status: 500,
+        },
+      );
     }
   } catch (error) {
     console.error('[API CHAT ROUTE ERROR]', error);
-    return new Response('An error occurred while processing your request. Please try again.', {
-      status: 500,
-    });
+    return new Response(
+      'An error occurred while processing your request. Please try again.',
+      {
+        status: 500,
+      },
+    );
   }
 }
 
@@ -608,7 +775,7 @@ export async function DELETE(request: Request) {
     return new Response('Chat deleted', { status: 200 });
   } catch {
     return new Response('An error occurred while processing your request!', {
-      status: 500
+      status: 500,
     });
   }
 }

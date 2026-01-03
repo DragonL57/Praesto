@@ -3,26 +3,26 @@ export interface SpeechRecognitionErrorEvent extends Event {
   message: string;
 }
 
-export type SpeechRecognitionErrorCode = 
-  | "no-speech"
-  | "aborted"
-  | "audio-capture"
-  | "network"
-  | "not-allowed"
-  | "service-not-allowed"
-  | "language-not-supported"
-  | "phrases-not-supported";
+export type SpeechRecognitionErrorCode =
+  | 'no-speech'
+  | 'aborted'
+  | 'audio-capture'
+  | 'network'
+  | 'not-allowed'
+  | 'service-not-allowed'
+  | 'language-not-supported'
+  | 'phrases-not-supported';
 
-export type SpeechRecognitionMode = 
-  | "ondevice-preferred" 
-  | "ondevice-only" 
-  | "cloud-only";
+export type SpeechRecognitionMode =
+  | 'ondevice-preferred'
+  | 'ondevice-only'
+  | 'cloud-only';
 
-export type AvailabilityStatus = 
-  | "unavailable"
-  | "downloadable" 
-  | "downloading"
-  | "available";
+export type AvailabilityStatus =
+  | 'unavailable'
+  | 'downloadable'
+  | 'downloading'
+  | 'available';
 
 export interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
@@ -66,7 +66,7 @@ export interface SpeechRecognition extends EventTarget {
   maxAlternatives: number;
   mode: SpeechRecognitionMode;
   phrases: SpeechRecognitionPhraseList | null;
-  
+
   onstart: (event: Event) => void;
   onresult: (event: SpeechRecognitionEvent) => void;
   onerror: (event: SpeechRecognitionErrorEvent) => void;
@@ -78,7 +78,7 @@ export interface SpeechRecognition extends EventTarget {
   onsoundend: (event: Event) => void;
   onaudioend: (event: Event) => void;
   onnomatch: (event: SpeechRecognitionEvent) => void;
-  
+
   start(): void;
   start(audioTrack: MediaStreamTrack): void;
   stop(): void;
@@ -86,7 +86,7 @@ export interface SpeechRecognition extends EventTarget {
 }
 
 export interface SpeechRecognitionConstructor {
-  new(): SpeechRecognition;
+  new (): SpeechRecognition;
   prototype: SpeechRecognition;
   availableOnDevice(lang: string): Promise<AvailabilityStatus>;
   installOnDevice(lang: string): Promise<boolean>;

@@ -15,7 +15,9 @@ test.describe('Set Model Cookie API', () => {
     expect(result).toEqual({ success: true });
   });
 
-  test('should return error for missing model parameter', async ({ request }) => {
+  test('should return error for missing model parameter', async ({
+    request,
+  }) => {
     const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
       data: {},
     });
@@ -76,7 +78,9 @@ test.describe('Set Model Cookie API', () => {
     expect(result).toEqual({ success: true });
   });
 
-  test('should handle special characters in model name', async ({ request }) => {
+  test('should handle special characters in model name', async ({
+    request,
+  }) => {
     const specialModel = 'gpt-4-turbo-preview_special';
 
     const response = await request.post(`${baseUrl}/api/set-model-cookie`, {

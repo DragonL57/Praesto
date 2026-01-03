@@ -6,7 +6,7 @@ import {
   convertToModelMessages,
   smoothStream,
   stepCountIs,
-  type UIMessage
+  type UIMessage,
 } from 'ai';
 
 // Import tools and utilities
@@ -47,8 +47,8 @@ const enhancedGrok41FastReasoningModel = wrapLanguageModel({
   middleware: defaultSettingsMiddleware({
     settings: {
       temperature: 1,
-    }
-  })
+    },
+  }),
 });
 
 const enhancedGlmModel = wrapLanguageModel({
@@ -59,12 +59,12 @@ const enhancedGlmModel = wrapLanguageModel({
       providerOptions: {
         'z-ai': {
           thinking: {
-            type: 'enabled'
-          }
-        }
-      }
-    }
-  })
+            type: 'enabled',
+          },
+        },
+      },
+    },
+  }),
 });
 
 const lightWeightModel = wrapLanguageModel({
@@ -72,8 +72,8 @@ const lightWeightModel = wrapLanguageModel({
   middleware: defaultSettingsMiddleware({
     settings: {
       temperature: 0.5,
-    }
-  })
+    },
+  }),
 });
 
 // Model configurations with metadata
@@ -90,7 +90,8 @@ export const chatModels: ChatModel[] = [
   {
     id: 'glm-4.6v',
     name: 'GLM-4.6V',
-    description: 'GLM-4.6V: Z.AI flagship multimodal model (128K context, native function calling, SoTA visual understanding).',
+    description:
+      'GLM-4.6V: Z.AI flagship multimodal model (128K context, native function calling, SoTA visual understanding).',
     provider: 'Z.AI',
     supportsTools: true,
     supportsThinking: true,
@@ -106,12 +107,12 @@ export const chatModels: ChatModel[] = [
 ];
 
 // Default model configuration
-const defaultModel = chatModels.find(model => model.isDefault);
+const defaultModel = chatModels.find((model) => model.isDefault);
 export const DEFAULT_CHAT_MODEL_ID = defaultModel
   ? defaultModel.id
-  : (chatModels.length > 0
+  : chatModels.length > 0
     ? chatModels[0].id
-    : 'glm-4.7');
+    : 'glm-4.7';
 
 // Export the configured provider for the application
 // Model IDs match those defined in chatModels array above
@@ -127,11 +128,11 @@ export const myProvider = customProvider({
           temperature: 0.7,
           providerOptions: {
             'z-ai': {
-              thinking: { type: 'enabled' }
-            }
-          }
-        }
-      })
+              thinking: { type: 'enabled' },
+            },
+          },
+        },
+      }),
     }),
 
     // Enhanced Poe models with middleware
@@ -145,8 +146,9 @@ export const myProvider = customProvider({
 
 // Helper functions for model configuration
 export function getModelConfiguration(modelId: string) {
-  const currentModel = chatModels.find(model => model.id === modelId) ||
-    chatModels.find(model => model.id === 'chat-model') ||
+  const currentModel =
+    chatModels.find((model) => model.id === modelId) ||
+    chatModels.find((model) => model.id === 'chat-model') ||
     chatModels[0];
 
   return {
@@ -157,19 +159,23 @@ export function getModelConfiguration(modelId: string) {
 }
 
 // Get provider options for a specific model
-export function getProviderOptions(supportsThinking: boolean, _modelId?: string, _thinkingLevel?: string) {
+export function getProviderOptions(
+  supportsThinking: boolean,
+  _modelId?: string,
+  _thinkingLevel?: string,
+) {
   const baseOptions = {};
 
   return {
     openai: baseOptions,
     'z-ai': {
       thinking: {
-        type: supportsThinking ? 'enabled' : 'disabled'
+        type: supportsThinking ? 'enabled' : 'disabled',
       },
-      ...baseOptions
+      ...baseOptions,
     },
     poe: {
-      ...baseOptions
+      ...baseOptions,
     },
   };
 }
@@ -208,26 +214,31 @@ export function getStreamTextConfig(
     dayOfWeek: string;
     timeZone: string;
   },
-  thinkingLevel?: string
+  thinkingLevel?: string,
 ) {
   const { supportsTools, supportsThinking } = getModelConfiguration(modelId);
   const modelInstance = myProvider.languageModel(modelId);
   const modelOptions = getModelOptions();
-  const providerOptions = getProviderOptions(supportsThinking, modelId, thinkingLevel);
+  const providerOptions = getProviderOptions(
+    supportsThinking,
+    modelId,
+    thinkingLevel,
+  );
 
   // Filter out tool parts with state 'input-available' before sending to model
-  const filteredMessages = messages.map(msg => ({
+  const filteredMessages = messages.map((msg) => ({
     ...msg,
     parts: Array.isArray(msg.parts)
       ? msg.parts.filter(
-        (part) =>
-          !(
-            part &&
-            typeof part === 'object' &&
-            'state' in part &&
-            ((part as { state?: string }).state === 'input-available' || (part as { state?: string }).state === 'call')
-          )
-      )
+          (part) =>
+            !(
+              part &&
+              typeof part === 'object' &&
+              'state' in part &&
+              ((part as { state?: string }).state === 'input-available' ||
+                (part as { state?: string }).state === 'call')
+            ),
+        )
       : msg.parts,
   }));
 

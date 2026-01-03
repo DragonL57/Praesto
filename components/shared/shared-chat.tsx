@@ -6,10 +6,7 @@ import { useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
-import type {
-  ChatStatus,
-  SetMessagesFunction,
-} from '@/lib/ai/types';
+import type { ChatStatus, SetMessagesFunction } from '@/lib/ai/types';
 import { fetcher, generateUUID } from '@/lib/utils';
 import type { Vote } from '@/lib/db/schema';
 import { Messages } from '../messages/messages';
@@ -33,30 +30,29 @@ export function SharedChat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, setMessages, status } =
-    useChat({
-      id,
-      transport: new DefaultChatTransport({
-        api: '/api/chat',
-        body: {
-          id,
-          selectedChatModel: selectedChatModel,
-          userTimeContext: {
-            date: new Date().toDateString(),
-            time: new Date().toTimeString().split(' ')[0],
-            dayOfWeek: new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-            }),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          },
+  const { messages, setMessages, status } = useChat({
+    id,
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: {
+        id,
+        selectedChatModel: selectedChatModel,
+        userTimeContext: {
+          date: new Date().toDateString(),
+          time: new Date().toTimeString().split(' ')[0],
+          dayOfWeek: new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+          }),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
-      }),
-      messages: initialMessages,
-      generateId: generateUUID,
-      onError: () => {
-        toast.error('An error occurred, please try again!');
       },
-    });
+    }),
+    messages: initialMessages,
+    generateId: generateUUID,
+    onError: () => {
+      toast.error('An error occurred, please try again!');
+    },
+  });
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -82,23 +78,23 @@ export function SharedChat({
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
-        <SharedChatHeader />
+      <SharedChatHeader />
 
-        <div className="flex-1 overflow-hidden relative w-full">
-          <Messages
-            chatId={id}
-            status={status as ChatStatus}
-            votes={votes}
-            messages={messages}
-            setMessages={wrappedSetMessages}
-            reload={reload}
-            append={append}
-            isReadonly={isReadonly}
-            isArtifactVisible={false}
-            messagesContainerRef={messagesContainerRef}
-            messagesEndRef={messagesEndRef}
-          />
-        </div>
+      <div className="flex-1 overflow-hidden relative w-full">
+        <Messages
+          chatId={id}
+          status={status as ChatStatus}
+          votes={votes}
+          messages={messages}
+          setMessages={wrappedSetMessages}
+          reload={reload}
+          append={append}
+          isReadonly={isReadonly}
+          isArtifactVisible={false}
+          messagesContainerRef={messagesContainerRef}
+          messagesEndRef={messagesEndRef}
+        />
       </div>
+    </div>
   );
 }

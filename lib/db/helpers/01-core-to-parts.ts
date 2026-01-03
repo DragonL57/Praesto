@@ -105,14 +105,16 @@ async function createNewTable() {
 
           // Add user message
           if (userMessage) {
-            const userContent = (userMessage as { content?: string }).content || '';
+            const userContent =
+              (userMessage as { content?: string }).content || '';
             projectedUISection.push({
               id: userMessage.id,
               chatId: chat.id,
               parts: [{ type: 'text', text: userContent }],
               role: 'user',
               // Use createdAt if available on the message, otherwise use current date
-              createdAt: (userMessage as { createdAt?: Date }).createdAt || new Date(),
+              createdAt:
+                (userMessage as { createdAt?: Date }).createdAt || new Date(),
               attachments: [],
             });
           }

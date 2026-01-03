@@ -14,9 +14,9 @@ interface BreadcrumbSchemaProps {
 export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   const itemListElements = items.map((item, index) => ({
     '@type': 'ListItem',
-    'position': index + 1,
-    'name': item.name,
-    'item': item.url
+    position: index + 1,
+    name: item.name,
+    item: item.url,
   }));
 
   return (
@@ -24,7 +24,7 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
       data={{
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
-        'itemListElement': itemListElements
+        itemListElement: itemListElements,
       }}
     />
   );

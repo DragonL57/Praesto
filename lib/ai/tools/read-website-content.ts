@@ -74,16 +74,21 @@ export const readWebsiteContent = tool({
       });
 
       if (!response.ok) {
-        throw new Error(`Tavily API error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Tavily API error: ${response.status} ${response.statusText}`,
+        );
       }
 
-      const results = await response.json() as { results: Array<{ url: string; content?: string; raw_content?: string }> };
+      const results = (await response.json()) as {
+        results: Array<{ url: string; content?: string; raw_content?: string }>;
+      };
 
       if (!results || !results.results || results.results.length === 0) {
         throw new Error('No content found in Tavily extract response');
       }
 
-      const extractedContent = results.results[0].content || results.results[0].raw_content;
+      const extractedContent =
+        results.results[0].content || results.results[0].raw_content;
 
       if (!extractedContent) {
         throw new Error('No content extracted from webpage');
@@ -91,7 +96,9 @@ export const readWebsiteContent = tool({
 
       // Check if content has useful length (at least 100 chars)
       if (extractedContent.trim().length < 100) {
-        throw new Error('Extracted content is insufficient (less than 100 characters)');
+        throw new Error(
+          'Extracted content is insufficient (less than 100 characters)',
+        );
       }
 
       console.log('Website content fetched and converted successfully');
@@ -105,7 +112,9 @@ export const readWebsiteContent = tool({
       };
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      console.error(`Error fetching website content with Tavily: ${errorMessage}`);
+      console.error(
+        `Error fetching website content with Tavily: ${errorMessage}`,
+      );
 
       return {
         url: fullUrl,

@@ -19,7 +19,10 @@ const hideScrollbarCSS = `
 `;
 
 // Check if styles are already injected
-if (typeof window !== 'undefined' && !document.querySelector('#draggable-table-styles')) {
+if (
+  typeof window !== 'undefined' &&
+  !document.querySelector('#draggable-table-styles')
+) {
   const styleElement = document.createElement('style');
   styleElement.id = 'draggable-table-styles';
   styleElement.textContent = hideScrollbarCSS;

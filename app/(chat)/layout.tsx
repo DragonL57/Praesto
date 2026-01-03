@@ -14,7 +14,7 @@ export default async function Layout({
   const [session, cookieStore] = await Promise.all([auth(), await cookies()]);
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
   const isAuthenticated = !!session?.user;
-  
+
   // Only show the sidebar if the user is authenticated
   const showSidebar = isAuthenticated;
 
@@ -27,9 +27,7 @@ export default async function Layout({
       <SidebarProvider defaultOpen={showSidebar && !isCollapsed}>
         {showSidebar && <AppSidebar user={session?.user} />}
         <SidebarInset>
-          <Suspense fallback={<div />}>
-            {children}
-          </Suspense>
+          <Suspense fallback={<div />}>{children}</Suspense>
         </SidebarInset>
       </SidebarProvider>
     </>

@@ -11,10 +11,10 @@
 - [x] Task: Conductor - User Manual Verification 'AI Logic Refactor' (Protocol in workflow.md) 745d122
 
 ## Phase 3: UI & Documentation Cleanup
-- [~] Task: Remove `ThinkingLevelSelector` usage from `components/chat-header.tsx`.
-- [ ] Task: Delete `components/thinking-level-selector.tsx` file.
-- [ ] Task: Update `app/cookies/page.tsx` to remove references to the thinking-level cookie.
-- [ ] Task: Update `components/admin/dashboard/model-usage.tsx` to remove Gemini placeholder if present.
+- [x] Task: Remove `ThinkingLevelSelector` usage from `components/chat-header.tsx`. bcf4594
+- [x] Task: Delete `components/thinking-level-selector.tsx` file. f8ada76
+- [x] Task: Update `app/cookies/page.tsx` to remove references to the thinking-level cookie. (no changes needed)
+- [x] Task: Update `components/admin/dashboard/model-usage.tsx` to remove Gemini placeholder if present. 29c4b02
 - [ ] Task: Conductor - User Manual Verification 'UI & Documentation Cleanup' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification

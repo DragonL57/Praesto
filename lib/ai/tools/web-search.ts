@@ -44,31 +44,45 @@ export const webSearch = tool({
       .min(1)
       .max(20)
       .default(10)
-      .describe('The desired number of results to return (default: 10, max: 20)'),
+      .describe(
+        'The desired number of results to return (default: 10, max: 20)',
+      ),
     region: z
       .string()
       .default('us')
-      .describe('The 2-character country code for the search region (default: "us"). Example: "de" for Germany.'),
+      .describe(
+        'The 2-character country code for the search region (default: "us"). Example: "de" for Germany.',
+      ),
     safeSearch: z
       .boolean()
       .default(true)
-      .describe('Whether to enable safe search (filters explicit content). Default: true.'),
+      .describe(
+        'Whether to enable safe search (filters explicit content). Default: true.',
+      ),
     search_lang: z
       .string()
       .optional()
-      .describe('Optional: The 2-character language code for the search results (e.g., "en", "es", "fr").'),
+      .describe(
+        'Optional: The 2-character language code for the search results (e.g., "en", "es", "fr").',
+      ),
     freshness: z
       .string()
       .optional()
-      .describe("Optional: Filter search results by when they were discovered. Supported values: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year)."),
+      .describe(
+        "Optional: Filter search results by when they were discovered. Supported values: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year).",
+      ),
     result_filter: z
       .string()
       .optional()
-      .describe("Optional: Comma-delimited string of result types to include (e.g., 'news,web'). Supported types: news, research_paper, url, tweet."),
+      .describe(
+        "Optional: Comma-delimited string of result types to include (e.g., 'news,web'). Supported types: news, research_paper, url, tweet.",
+      ),
     summary: z
       .boolean()
       .optional()
-      .describe('Optional: Whether to request a summary of the search results. Default: false.'),
+      .describe(
+        'Optional: Whether to request a summary of the search results. Default: false.',
+      ),
   }),
   execute: async ({
     query,
@@ -107,23 +121,32 @@ export const webSearch = tool({
       });
 
       if (!response.ok) {
-        throw new Error(`Tavily API error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Tavily API error: ${response.status} ${response.statusText}`,
+        );
       }
 
-      const results = await response.json() as { results: Array<{ title: string; url: string; content?: string }>; answer?: string };
+      const results = (await response.json()) as {
+        results: Array<{ title: string; url: string; content?: string }>;
+        answer?: string;
+      };
 
       if (!results || !results.results) {
         throw new Error('Invalid response from Tavily Search');
       }
 
-      console.log(`Tavily Search Complete: Found ${results.results.length} results`);
+      console.log(
+        `Tavily Search Complete: Found ${results.results.length} results`,
+      );
 
       // Transform Tavily results to our SearchResult format
-      const transformedResults: SearchResult[] = results.results.slice(0, maxResults).map((result: { title?: string; url?: string; content?: string }) => ({
-        title: result.title || 'No title',
-        href: result.url || '',
-        body: result.content || 'No description available',
-      }));
+      const transformedResults: SearchResult[] = results.results
+        .slice(0, maxResults)
+        .map((result: { title?: string; url?: string; content?: string }) => ({
+          title: result.title || 'No title',
+          href: result.url || '',
+          body: result.content || 'No description available',
+        }));
 
       // Add answer if available and requested
       if (results.answer && summary) {

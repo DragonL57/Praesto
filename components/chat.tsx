@@ -181,64 +181,62 @@ export function Chat({
 
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
-        <ChatHeader
-          chatId={id}
-          selectedModelId={globallySelectedModelId}
-          selectedVisibilityType={selectedVisibilityType}
-          isReadonly={isReadonly}
-        />
+      <ChatHeader
+        chatId={id}
+        selectedModelId={globallySelectedModelId}
+        selectedVisibilityType={selectedVisibilityType}
+        isReadonly={isReadonly}
+      />
 
+      <div
+        className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}
+      >
         <div
-          className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}
+          className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}
         >
-          <div
-            className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}
-          >
-            <Messages
-              chatId={id}
-              status={status}
-              votes={votes}
-              messages={messages}
-              setMessages={setMessages}
-              reload={reload}
-              append={append}
-              isReadonly={isReadonly}
-              isArtifactVisible={false}
-              messagesContainerRef={messagesContainerRef}
-              messagesEndRef={messagesEndRef}
-            />
-          </div>
+          <Messages
+            chatId={id}
+            status={status}
+            votes={votes}
+            messages={messages}
+            setMessages={setMessages}
+            reload={reload}
+            append={append}
+            isReadonly={isReadonly}
+            isArtifactVisible={false}
+            messagesContainerRef={messagesContainerRef}
+            messagesEndRef={messagesEndRef}
+          />
+        </div>
 
-          <div
-            className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}
-          >
-            <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
-              {!isReadonly && (
-                <MultimodalInput
-                  chatId={id}
-                  input={input}
-                  setInput={setInput}
-                  sendMessage={sendMessage}
-                  status={status}
-                  stop={stop}
-                  attachments={attachments}
-                  setAttachments={setAttachments}
-                  messages={messages}
-                  setMessages={setMessages}
-                  append={append}
-                  messagesContainerRef={messagesContainerRef}
-                  messagesEndRef={messagesEndRef}
-                />
-              )}
-              {isReadonly && <InputSkeleton />}
-            </form>
-            {messages.length > 0 && (
-              <div className="text-center text-xs text-white-500 mt-0">
-                UniTaskAI can make mistake, double-check the info
-              </div>
+        <div className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}>
+          <form className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
+            {!isReadonly && (
+              <MultimodalInput
+                chatId={id}
+                input={input}
+                setInput={setInput}
+                sendMessage={sendMessage}
+                status={status}
+                stop={stop}
+                attachments={attachments}
+                setAttachments={setAttachments}
+                messages={messages}
+                setMessages={setMessages}
+                append={append}
+                messagesContainerRef={messagesContainerRef}
+                messagesEndRef={messagesEndRef}
+              />
             )}
-          </div>
+            {isReadonly && <InputSkeleton />}
+          </form>
+          {messages.length > 0 && (
+            <div className="text-center text-xs text-white-500 mt-0">
+              UniTaskAI can make mistake, double-check the info
+            </div>
+          )}
         </div>
       </div>
+    </div>
   );
 }

@@ -8,26 +8,41 @@ import { createUser, getUser, setVerificationToken } from '@/lib/db/queries';
 import { generateToken, sendVerificationEmail } from '@/lib/email';
 
 // Enhanced password validation schema - only for registration
-const passwordSchema = z.string()
-  .min(6, "Password must be at least 6 characters long")
-  .max(100, "Password is too long")
-  .refine(password => /[a-z]/.test(password), "Password must contain at least one lowercase letter")
-  .refine(password => /[0-9]/.test(password), "Password must contain at least one number");
+const passwordSchema = z
+  .string()
+  .min(6, 'Password must be at least 6 characters long')
+  .max(100, 'Password is too long')
+  .refine(
+    (password) => /[a-z]/.test(password),
+    'Password must contain at least one lowercase letter',
+  )
+  .refine(
+    (password) => /[0-9]/.test(password),
+    'Password must contain at least one number',
+  );
 
 // Registration form schema with strict password validation
 const registrationFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email('Please enter a valid email address'),
   password: passwordSchema,
 });
 
 // Login form schema with simple validation
 const loginFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export interface LoginActionState {
-  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data' | 'user_not_found' | 'wrong_password' | 'account_locked';
+  status:
+    | 'idle'
+    | 'in_progress'
+    | 'success'
+    | 'failed'
+    | 'invalid_data'
+    | 'user_not_found'
+    | 'wrong_password'
+    | 'account_locked';
   message?: string;
 }
 
@@ -46,7 +61,9 @@ export const login = async (
       if (validationError instanceof z.ZodError) {
         return {
           status: 'invalid_data',
-          message: validationError.errors[0]?.message || 'Invalid email or password format'
+          message:
+            validationError.errors[0]?.message ||
+            'Invalid email or password format',
         };
       }
     }
@@ -55,7 +72,7 @@ export const login = async (
     if (users.length === 0) {
       return {
         status: 'user_not_found',
-        message: 'No account found with this email. Please register first.'
+        message: 'No account found with this email. Please register first.',
       };
     }
 
@@ -69,18 +86,24 @@ export const login = async (
 
       return {
         status: 'failed',
-        message: 'Your email is not verified. We sent a new verification email, please check your inbox.'
+        message:
+          'Your email is not verified. We sent a new verification email, please check your inbox.',
       };
     }
 
     // Check if account is locked
-    if (userFromDbAction.accountLockedUntil && new Date(userFromDbAction.accountLockedUntil) > new Date()) {
+    if (
+      userFromDbAction.accountLockedUntil &&
+      new Date(userFromDbAction.accountLockedUntil) > new Date()
+    ) {
       const unlockTime = new Date(userFromDbAction.accountLockedUntil);
-      const minutesRemaining = Math.ceil((unlockTime.getTime() - Date.now()) / 60000);
+      const minutesRemaining = Math.ceil(
+        (unlockTime.getTime() - Date.now()) / 60000,
+      );
 
       return {
         status: 'account_locked',
-        message: `Your account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`
+        message: `Your account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`,
       };
     }
 
@@ -89,7 +112,7 @@ export const login = async (
         email: email,
         password: password,
         redirect: false,
-        callbackUrl: undefined
+        callbackUrl: undefined,
       });
       return { status: 'success' };
     } catch (signInError) {
@@ -98,42 +121,45 @@ export const login = async (
 
       // Check if account is now locked after this failed attempt
       const updatedUser = await getUser(email);
-      if (updatedUser.length > 0 &&
+      if (
+        updatedUser.length > 0 &&
         updatedUser[0].accountLockedUntil &&
-        new Date(updatedUser[0].accountLockedUntil) > new Date()) {
-
+        new Date(updatedUser[0].accountLockedUntil) > new Date()
+      ) {
         const unlockTime = new Date(updatedUser[0].accountLockedUntil);
-        const minutesRemaining = Math.ceil((unlockTime.getTime() - Date.now()) / 60000);
+        const minutesRemaining = Math.ceil(
+          (unlockTime.getTime() - Date.now()) / 60000,
+        );
 
         return {
           status: 'account_locked',
-          message: `Your account has been temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`
+          message: `Your account has been temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`,
         };
       }
 
       return {
         status: 'wrong_password',
-        message: 'Incorrect password. Please try again.'
+        message: 'Incorrect password. Please try again.',
       };
     }
   } catch (outerError) {
     console.error('Login action outer error:', outerError);
     return {
       status: 'failed',
-      message: 'An unexpected error occurred. Please try again later.'
+      message: 'An unexpected error occurred. Please try again later.',
     };
   }
 };
 
 export interface RegisterActionState {
   status:
-  | 'idle'
-  | 'in_progress'
-  | 'success'
-  | 'failed'
-  | 'user_exists'
-  | 'invalid_data'
-  | 'verification_email_sent';
+    | 'idle'
+    | 'in_progress'
+    | 'success'
+    | 'failed'
+    | 'user_exists'
+    | 'invalid_data'
+    | 'verification_email_sent';
   message?: string;
 }
 
@@ -149,7 +175,8 @@ export const register = async (
     if (existingUser.length > 0) {
       return {
         status: 'user_exists',
-        message: 'An account with this email already exists. Please sign in instead.'
+        message:
+          'An account with this email already exists. Please sign in instead.',
       };
     }
 
@@ -159,7 +186,9 @@ export const register = async (
       if (error instanceof z.ZodError) {
         return {
           status: 'invalid_data',
-          message: error.errors[0]?.message || 'Please check your email and password requirements'
+          message:
+            error.errors[0]?.message ||
+            'Please check your email and password requirements',
         };
       }
       throw error;
@@ -170,10 +199,13 @@ export const register = async (
     const users = await getUser(email);
     if (users.length === 0) {
       // This should ideally not happen if createUser succeeded
-      console.error('Failed to retrieve user immediately after creation:', email);
+      console.error(
+        'Failed to retrieve user immediately after creation:',
+        email,
+      );
       return {
         status: 'failed',
-        message: 'Failed to create account. Please try again later.'
+        message: 'Failed to create account. Please try again later.',
       };
     }
 
@@ -184,10 +216,14 @@ export const register = async (
 
     if (!emailSent) {
       // Log this failure, but still tell user account was created
-      console.error('Failed to send verification email during registration for:', email);
+      console.error(
+        'Failed to send verification email during registration for:',
+        email,
+      );
       return {
         status: 'verification_email_sent', // Still treat as success for user creation
-        message: 'Account created, but we couldn\'t send a verification email. Please contact support.'
+        message:
+          "Account created, but we couldn't send a verification email. Please contact support.",
       };
     }
 
@@ -202,13 +238,14 @@ export const register = async (
 
     return {
       status: 'verification_email_sent',
-      message: 'Account created! Please check your email to verify your account.'
+      message:
+        'Account created! Please check your email to verify your account.',
     };
   } catch (error) {
     console.error('Registration error:', error); // Keep this error log
     return {
       status: 'failed',
-      message: 'Failed to create account. Please try again later.'
+      message: 'Failed to create account. Please try again later.',
     };
   }
 };

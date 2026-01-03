@@ -1,4 +1,3 @@
-
 import { AppSidebar } from '@/components/sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { auth } from '@/app/auth';
@@ -12,10 +11,10 @@ export default async function SettingsLayout({
 }) {
   // Explicitly read headers and cookies first
   // await headers(); // Reading headers might not be necessary for settings
-  
+
   // Fetch session first
   const session = await auth();
-  
+
   const isAuthenticated = !!session?.user;
   // const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
   // For settings, let's keep the sidebar state consistent with chat, or default to collapsed
@@ -28,12 +27,10 @@ export default async function SettingsLayout({
         strategy="lazyOnload"
       />
       {/* Defaulting to false to ensure it's collapsed, matching chat page behavior */}
-      <SidebarProvider defaultOpen={false}> 
+      <SidebarProvider defaultOpen={false}>
         {showSidebar && <AppSidebar user={session?.user} />}
         <SidebarInset>
-          <Suspense fallback={<div>Loading...</div>}>
-            {children}
-          </Suspense>
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </SidebarInset>
       </SidebarProvider>
     </>

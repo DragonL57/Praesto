@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { ArrowRight, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowRight, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function CTA() {
   return (
@@ -28,12 +28,17 @@ export function CTA() {
             Your AI Productivity Revolution Starts Here
           </h2>
           <p className="mx-auto max-w-[700px] text-primary-foreground/80 md:text-xl">
-            Join thousands of professionals who are saving 20+ hours weekly with UniTaskAI. 
-            Write content, generate code, analyze data, and automate tasks—all through simple conversation.
+            Join thousands of professionals who are saving 20+ hours weekly with
+            UniTaskAI. Write content, generate code, analyze data, and automate
+            tasks—all through simple conversation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <Link href="/register" passHref>
-              <Button size="lg" variant="secondary" className="rounded-full h-12 px-8 text-base">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="rounded-full h-12 px-8 text-base"
+              >
                 Try UniTaskAI Free
                 <ArrowRight className="ml-2 size-4" />
               </Button>
@@ -49,10 +54,11 @@ export function CTA() {
             </Link>
           </div>
           <p className="text-sm text-primary-foreground/80 mt-4">
-            No credit card required. Unlimited AI chats. Start creating immediately.
+            No credit card required. Unlimited AI chats. Start creating
+            immediately.
           </p>
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

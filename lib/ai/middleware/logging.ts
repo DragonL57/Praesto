@@ -1,7 +1,10 @@
 // Simple logging middleware for debugging and monitoring model usage
 export const loggingMiddleware = {
   // Simple timing wrapper for generate operations
-  logGenerate: async <T>(operation: () => Promise<T>, operationName: string = 'Model Generation'): Promise<T> => {
+  logGenerate: async <T>(
+    operation: () => Promise<T>,
+    operationName: string = 'Model Generation',
+  ): Promise<T> => {
     const startTime = Date.now();
     console.log(`${operationName} Started`);
 
@@ -23,7 +26,10 @@ export const loggingMiddleware = {
   },
 
   // Simple timing wrapper for stream operations
-  logStream: async <T>(operation: () => Promise<T>, operationName: string = 'Model Streaming'): Promise<T> => {
+  logStream: async <T>(
+    operation: () => Promise<T>,
+    operationName: string = 'Model Streaming',
+  ): Promise<T> => {
     const startTime = Date.now();
     console.log(`${operationName} Started`);
 
@@ -45,19 +51,29 @@ export const loggingMiddleware = {
   },
 
   // Log basic operation info
-  logOperation: (operationName: string, details: Record<string, unknown> = {}) => {
+  logOperation: (
+    operationName: string,
+    details: Record<string, unknown> = {},
+  ) => {
     console.log(`${operationName}:`, details);
   },
 
   // Log operation completion
-  logCompletion: (operationName: string, duration: number, details: Record<string, unknown> = {}) => {
+  logCompletion: (
+    operationName: string,
+    duration: number,
+    details: Record<string, unknown> = {},
+  ) => {
     console.log(`${operationName} Completed in ${duration}ms:`, details);
   },
 };
 
 // Development-only logging middleware (only logs when not in production)
 export const devLoggingMiddleware = {
-  logGenerate: async <T>(operation: () => Promise<T>, operationName: string): Promise<T> => {
+  logGenerate: async <T>(
+    operation: () => Promise<T>,
+    operationName: string,
+  ): Promise<T> => {
     // Only log in development
     if (process.env.NODE_ENV === 'production') {
       return operation();
@@ -66,7 +82,10 @@ export const devLoggingMiddleware = {
     return loggingMiddleware.logGenerate(operation, operationName);
   },
 
-  logStream: async <T>(operation: () => Promise<T>, operationName: string): Promise<T> => {
+  logStream: async <T>(
+    operation: () => Promise<T>,
+    operationName: string,
+  ): Promise<T> => {
     // Only log in development
     if (process.env.NODE_ENV === 'production') {
       return operation();
@@ -75,7 +94,10 @@ export const devLoggingMiddleware = {
     return loggingMiddleware.logStream(operation, operationName);
   },
 
-  logOperation: (operationName: string, details: Record<string, unknown> = {}) => {
+  logOperation: (
+    operationName: string,
+    details: Record<string, unknown> = {},
+  ) => {
     // Only log in development
     if (process.env.NODE_ENV === 'production') {
       return;
@@ -84,7 +106,11 @@ export const devLoggingMiddleware = {
     loggingMiddleware.logOperation(operationName, details);
   },
 
-  logCompletion: (operationName: string, duration: number, details: Record<string, unknown> = {}) => {
+  logCompletion: (
+    operationName: string,
+    duration: number,
+    details: Record<string, unknown> = {},
+  ) => {
     // Only log in development
     if (process.env.NODE_ENV === 'production') {
       return;

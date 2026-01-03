@@ -61,7 +61,9 @@ export async function POST(request: Request) {
             // originalPathname: pathname, // could be useful
           }),
           // Provide callbackUrl for onUploadCompleted webhook
-          callbackUrl: process.env.VERCEL_BLOB_CALLBACK_URL || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/upload`,
+          callbackUrl:
+            process.env.VERCEL_BLOB_CALLBACK_URL ||
+            `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/upload`,
           // You can also set a validity period for the token if needed
           // validUntil: Date.now() + 60 * 60 * 1000, // 1 hour from now
         };
@@ -74,10 +76,15 @@ export async function POST(request: Request) {
 
         try {
           if (typeof tokenPayload !== 'string') {
-            console.warn('onUploadCompleted: tokenPayload is not a string or is missing.', tokenPayload);
+            console.warn(
+              'onUploadCompleted: tokenPayload is not a string or is missing.',
+              tokenPayload,
+            );
             // Decide how to handle this: throw error, or proceed if userId is not strictly necessary here
             // For now, let's assume if there's no valid tokenPayload, we can't get userId.
-            throw new Error('Invalid or missing tokenPayload for completed upload.');
+            throw new Error(
+              'Invalid or missing tokenPayload for completed upload.',
+            );
           }
           const { userId } = JSON.parse(tokenPayload);
           // Example: Update your database
@@ -100,7 +107,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(jsonResponse);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    const message =
+      error instanceof Error ? error.message : 'An unknown error occurred.';
     console.error('handleUpload error:', message, error);
     return NextResponse.json(
       { error: message },

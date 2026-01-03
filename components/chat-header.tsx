@@ -13,7 +13,15 @@ import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 
-const PlusIcon = ({ size }: { size: number }) => <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>;
+const PlusIcon = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor">
+    <path
+      fillRule="evenodd"
+      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
 
 interface PureChatHeaderProps {
   chatId: string;
@@ -33,13 +41,14 @@ function PureChatHeader({
   const { open } = useSidebar();
   const [mounted, setMounted] = useState(false);
   const { width: windowWidth } = useWindowSize();
-  
+
   const [globallySelectedModelId] = useLocalStorage(
     'chat-model',
-    initialSelectedModelId || DEFAULT_CHAT_MODEL_ID
+    initialSelectedModelId || DEFAULT_CHAT_MODEL_ID,
   );
 
-  const isInSavedChat = pathname?.startsWith('/chat/') && pathname !== '/chat/new';
+  const isInSavedChat =
+    pathname?.startsWith('/chat/') && pathname !== '/chat/new';
   const isInNewChat = pathname === '/chat' || pathname === '/chat/new';
 
   useEffect(() => {
@@ -80,8 +89,8 @@ function PureChatHeader({
             />
           )}
 
-          {!isReadonly && (
-            isInSavedChat ? (
+          {!isReadonly &&
+            (isInSavedChat ? (
               <ShareDialog
                 chatId={chatId}
                 selectedVisibilityType={selectedVisibilityType}
@@ -91,8 +100,7 @@ function PureChatHeader({
               <div className="md:ml-auto">
                 <ThemeToggle className="hidden md:flex h-10 px-3" />
               </div>
-            )
-          )}
+            ))}
         </>
       ) : (
         <div className="h-8 md:h-10 flex-1" />

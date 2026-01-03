@@ -24,7 +24,9 @@ export async function GET(request: Request) {
       .select({
         chatId: message.chatId,
         messageCount: count(message.id).as('messageCount'),
-        lastMessageTime: sql<string>`MAX(${message.createdAt})`.as('lastMessageTime'),
+        lastMessageTime: sql<string>`MAX(${message.createdAt})`.as(
+          'lastMessageTime',
+        ),
       })
       .from(message)
       .groupBy(message.chatId)
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
     console.error('Error fetching conversations:', error);
     return NextResponse.json(
       { error: 'Failed to fetch conversations' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

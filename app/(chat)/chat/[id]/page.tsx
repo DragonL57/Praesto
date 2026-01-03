@@ -44,7 +44,13 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       const originalParts = message.parts as UIMessage['parts'];
       let processedParts = [...originalParts];
 
-      console.log('Processing message:', message.id, 'with', originalParts.length, 'parts');
+      console.log(
+        'Processing message:',
+        message.id,
+        'with',
+        originalParts.length,
+        'parts',
+      );
       console.log('Parts structure:', JSON.stringify(originalParts, null, 2));
 
       // Process text parts to extract embedded thinking content (for older messages)
@@ -54,7 +60,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
         originalParts.forEach((part) => {
           // Preserve tool-call and tool-result parts as-is
-          if (part.type && (part.type.startsWith('tool-') || part.type === 'tool-call' || part.type === 'tool-result')) {
+          if (
+            part.type &&
+            (part.type.startsWith('tool-') ||
+              part.type === 'tool-call' ||
+              part.type === 'tool-result')
+          ) {
             newParts.push(part);
             return;
           }
@@ -87,7 +98,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             if (thinkingLines.length > 0) {
               const thinkingContent = thinkingLines.join('\n').trim();
               if (thinkingContent) {
-                console.log('Found thinking content in old message:', `${thinkingContent.substring(0, 100)}...`);
+                console.log(
+                  'Found thinking content in old message:',
+                  `${thinkingContent.substring(0, 100)}...`,
+                );
                 newParts.push({
                   type: 'reasoning',
                   text: thinkingContent,
@@ -127,7 +141,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       };
 
       console.log('Final message parts:', finalMessage.parts.length);
-      console.log('Final parts structure:', JSON.stringify(finalMessage.parts, null, 2));
+      console.log(
+        'Final parts structure:',
+        JSON.stringify(finalMessage.parts, null, 2),
+      );
 
       return finalMessage;
     });

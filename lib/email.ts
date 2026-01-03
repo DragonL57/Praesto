@@ -21,7 +21,6 @@ interface PasswordResetContext {
   year: number;
 }
 
-
 interface EmailOptions {
   to: string;
   subject: string;
@@ -45,7 +44,7 @@ const createTransporter = () => {
     tls: {
       // Do not fail on invalid certs
       rejectUnauthorized: process.env.NODE_ENV === 'production',
-      minVersion: 'TLSv1.2'
+      minVersion: 'TLSv1.2',
     },
     // Connection timeout settings
     connectionTimeout: 10000, // 10 seconds
@@ -53,7 +52,7 @@ const createTransporter = () => {
     socketTimeout: 10000,
     // Debug options
     debug: process.env.NODE_ENV === 'development',
-    logger: process.env.NODE_ENV === 'development'
+    logger: process.env.NODE_ENV === 'development',
   } as const;
 
   return createTransport(transportConfig);
@@ -61,7 +60,7 @@ const createTransporter = () => {
 
 // Email templates as functions
 const templates = {
-  'verification': (context: VerificationContext): string => `
+  verification: (context: VerificationContext): string => `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
       <div style="text-align: center; margin-bottom: 20px;">
         <img src="${context.logoUrl}" alt="UniTaskAI Logo" style="width: 60px; height: 60px;">
@@ -107,7 +106,12 @@ export const generateToken = (): string => {
 };
 
 // Send email with retry logic
-export const sendEmail = async ({ to, subject, template, context }: EmailOptions): Promise<boolean> => {
+export const sendEmail = async ({
+  to,
+  subject,
+  template,
+  context,
+}: EmailOptions): Promise<boolean> => {
   const maxRetries = 3;
   let retryCount = 0;
 
@@ -119,7 +123,7 @@ export const sendEmail = async ({ to, subject, template, context }: EmailOptions
         secure: process.env.EMAIL_SECURE,
         user: process.env.EMAIL_USER ? 'Set' : 'Not set',
         pass: process.env.EMAIL_PASSWORD ? 'Set' : 'Not set',
-        from: process.env.EMAIL_FROM || 'noreply@unitaskai.com'
+        from: process.env.EMAIL_FROM || 'noreply@unitaskai.com',
       });
 
       const fullContext = {
@@ -148,10 +152,14 @@ export const sendEmail = async ({ to, subject, template, context }: EmailOptions
         headers: {
           'X-Priority': '1',
           'X-MSMail-Priority': 'High',
-          'Importance': 'high'
-        }
+          Importance: 'high',
+        },
       };
-      console.log('Sending email with options:', { to, subject, from: mailOptions.from });
+      console.log('Sending email with options:', {
+        to,
+        subject,
+        from: mailOptions.from,
+      });
 
       const info = await transporter.sendMail(mailOptions);
       console.log('Email sent successfully:', info.messageId);
@@ -161,7 +169,10 @@ export const sendEmail = async ({ to, subject, template, context }: EmailOptions
       return true;
     } catch (error) {
       retryCount++;
-      console.error(`Failed to send email (attempt ${retryCount}/${maxRetries}):`, error);
+      console.error(
+        `Failed to send email (attempt ${retryCount}/${maxRetries}):`,
+        error,
+      );
 
       if (retryCount === maxRetries) {
         console.error('Max retries reached, giving up on sending email');
@@ -169,7 +180,9 @@ export const sendEmail = async ({ to, subject, template, context }: EmailOptions
       }
 
       // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.pow(2, retryCount) * 1000),
+      );
     }
   }
 
@@ -177,7 +190,10 @@ export const sendEmail = async ({ to, subject, template, context }: EmailOptions
 };
 
 // Send verification email
-export const sendVerificationEmail = async (email: string, token: string): Promise<boolean> => {
+export const sendVerificationEmail = async (
+  email: string,
+  token: string,
+): Promise<boolean> => {
   const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
   const logoUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/UniTaskAI_logo.png`;
 
@@ -189,13 +205,16 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
       name: email.split('@')[0],
       verificationUrl,
       logoUrl,
-      year: new Date().getFullYear()
+      year: new Date().getFullYear(),
     },
   });
 };
 
 // Send password reset email
-export const sendPasswordResetEmail = async (email: string, token: string): Promise<boolean> => {
+export const sendPasswordResetEmail = async (
+  email: string,
+  token: string,
+): Promise<boolean> => {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   const logoUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/UniTaskAI_logo.png`;
 
@@ -207,7 +226,7 @@ export const sendPasswordResetEmail = async (email: string, token: string): Prom
       name: email.split('@')[0],
       resetUrl,
       logoUrl,
-      year: new Date().getFullYear()
+      year: new Date().getFullYear(),
     },
   });
-}; 
+};

@@ -1,6 +1,13 @@
 'use client';
 
-import { startTransition, useCallback, useEffect, useMemo, useOptimistic, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,8 +30,11 @@ export function ModelSelector({
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   // Use local storage to persist model selection without server action
-  const [localModelId, setLocalModelId] = useLocalStorage('selected-chat-model-id', selectedModelId);
-  
+  const [localModelId, setLocalModelId] = useLocalStorage(
+    'selected-chat-model-id',
+    selectedModelId,
+  );
+
   // This optimistic state handles immediate UI updates
   const [optimisticModelId, setOptimisticModelId] = useOptimistic(localModelId);
 
@@ -70,7 +80,9 @@ export function ModelSelector({
           variant="outline"
           className="h-8 md:h-10 px-2 md:px-3 flex gap-1 md:gap-2 items-center text-xs md:text-sm"
         >
-          <span className="truncate max-w-[80px] md:max-w-none">{selectedChatModel?.name}</span>
+          <span className="truncate max-w-[80px] md:max-w-none">
+            {selectedChatModel?.name}
+          </span>
           <ChevronDownIcon size={16} />
         </Button>
       </DropdownMenuTrigger>
@@ -89,7 +101,7 @@ export function ModelSelector({
                   // Update local state first - this is immediate and doesn't refresh
                   setOptimisticModelId(id);
                   setLocalModelId(id);
-                  
+
                   // Then update server cookie in background without causing refresh
                   saveModelCookie(id);
                 });

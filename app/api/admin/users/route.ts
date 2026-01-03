@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       .where(
         searchQuery
           ? sql`LOWER(${user.email}) LIKE ${`%${searchQuery.toLowerCase()}%`}`
-          : sql`1=1`
+          : sql`1=1`,
       )
       .groupBy(user.id, user.email, userMessages.messageCount)
       .orderBy(desc(sql<string>`MAX(${chat.createdAt})`))
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Failed to fetch users' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

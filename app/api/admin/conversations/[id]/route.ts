@@ -11,20 +11,20 @@ const client = postgres(url);
 const db = drizzle(client);
 
 // GET a single conversation
-export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: Request,
+  props: { params: Promise<{ id: string }> },
+) {
   const params = await props.params;
   try {
     const { id } = params;
 
-    const result = await db
-      .select()
-      .from(chat)
-      .where(eq(chat.id, id));
+    const result = await db.select().from(chat).where(eq(chat.id, id));
 
     if (result.length === 0) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -33,13 +33,16 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     console.error('Error fetching conversation:', error);
     return NextResponse.json(
       { error: 'Failed to fetch conversation' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // PATCH to update conversation visibility
-export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+) {
   const params = await props.params;
   try {
     const { id } = params;
@@ -48,7 +51,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     if (!visibility || (visibility !== 'public' && visibility !== 'private')) {
       return NextResponse.json(
         { error: 'Invalid visibility value. Must be "public" or "private"' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +64,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     if (result.length === 0) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -70,7 +73,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     console.error('Error updating conversation visibility:', error);
     return NextResponse.json(
       { error: 'Failed to update conversation visibility' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

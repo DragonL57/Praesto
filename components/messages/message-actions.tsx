@@ -62,7 +62,11 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
-                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                isMobile
+                  ? shouldShowButtons
+                    ? 'opacity-100'
+                    : 'opacity-0'
+                  : 'opacity-0 group-hover/message:opacity-100'
               }`}
               variant="ghost"
               onClick={async () => {
@@ -93,7 +97,11 @@ export function PureMessageActions({
             <Button
               data-testid="message-upvote"
               className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground mr-1 transition-opacity duration-200 ${
-                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                isMobile
+                  ? shouldShowButtons
+                    ? 'opacity-100'
+                    : 'opacity-0'
+                  : 'opacity-0 group-hover/message:opacity-100'
               }`}
               disabled={vote?.isUpvoted}
               variant="ghost"
@@ -149,7 +157,11 @@ export function PureMessageActions({
             <Button
               data-testid="message-downvote"
               className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
-                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                isMobile
+                  ? shouldShowButtons
+                    ? 'opacity-100'
+                    : 'opacity-0'
+                  : 'opacity-0 group-hover/message:opacity-100'
               }`}
               variant="ghost"
               disabled={vote && !vote.isUpvoted}
@@ -205,20 +217,24 @@ export function PureMessageActions({
             <Button
               data-testid="message-delete-button"
               className={`p-2 md:px-2 h-fit rounded-full text-muted-foreground transition-opacity duration-200 ${
-                isMobile ? (shouldShowButtons ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover/message:opacity-100'
+                isMobile
+                  ? shouldShowButtons
+                    ? 'opacity-100'
+                    : 'opacity-0'
+                  : 'opacity-0 group-hover/message:opacity-100'
               }`}
               variant="ghost"
               onClick={async () => {
                 try {
                   await deleteMessage({ id: message.id, chatId });
-                  
+
                   // Update client-side messages state immediately
                   if (setMessages) {
                     setMessages((prevMessages) =>
-                      prevMessages.filter((m) => m.id !== message.id)
+                      prevMessages.filter((m) => m.id !== message.id),
                     );
                   }
-                  
+
                   toast.success('Message deleted.');
                   // Revalidate votes to remove the deleted message
                   mutate(`/api/vote?chatId=${chatId}`);

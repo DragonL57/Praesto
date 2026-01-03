@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../ui/button';
-import { LuArrowDownToLine } from "react-icons/lu";
+import { LuArrowDownToLine } from 'react-icons/lu';
 
 interface ScrollButtonProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -34,7 +34,7 @@ export function ScrollButton({ containerRef, endRef }: ScrollButtonProps) {
     checkIfShouldShowButtonRef.current = () => {
       // Skip visibility updates while button is being clicked
       if (isClickingRef.current) return;
-      
+
       const container = containerRef.current;
       if (!container) return;
 
@@ -58,7 +58,7 @@ export function ScrollButton({ containerRef, endRef }: ScrollButtonProps) {
       if (isClickingRef.current) return;
       checkIfShouldShowButtonRef.current();
     };
-    
+
     // Set up scroll listener with passive option for better performance
     container.addEventListener('scroll', handleScroll, { passive: true });
 
@@ -81,32 +81,35 @@ export function ScrollButton({ containerRef, endRef }: ScrollButtonProps) {
     }
   }, [isVisible]); // Only depend on isVisible
 
-  const scrollToBottom = useCallback((e: React.MouseEvent) => {
-    // Prevent default behavior
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Set flag to prevent scroll handlers during click
-    isClickingRef.current = true;
-    
-    // Use requestAnimationFrame for smoother scroll handling
-    requestAnimationFrame(() => {
-      if (endRef.current) {
-        endRef.current.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'end',
-          inline: 'nearest'
-        });
-        
-        // Reset the flag after scrolling is complete
-        setTimeout(() => {
+  const scrollToBottom = useCallback(
+    (e: React.MouseEvent) => {
+      // Prevent default behavior
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Set flag to prevent scroll handlers during click
+      isClickingRef.current = true;
+
+      // Use requestAnimationFrame for smoother scroll handling
+      requestAnimationFrame(() => {
+        if (endRef.current) {
+          endRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end',
+            inline: 'nearest',
+          });
+
+          // Reset the flag after scrolling is complete
+          setTimeout(() => {
+            isClickingRef.current = false;
+          }, 100);
+        } else {
           isClickingRef.current = false;
-        }, 100);
-      } else {
-        isClickingRef.current = false;
-      }
-    });
-  }, [endRef]);
+        }
+      });
+    },
+    [endRef],
+  );
 
   if (!shouldRender) {
     return null;

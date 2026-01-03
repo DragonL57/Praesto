@@ -2,12 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Popover,
   PopoverContent,
@@ -37,9 +32,10 @@ export function ShareDialog({
   });
 
   // Generate share URL using the new /share route instead of /chat
-  const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/share/${chatId}`
-    : '';
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/share/${chatId}`
+      : '';
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -54,7 +50,7 @@ export function ShareDialog({
           variant="outline"
           className={cn(
             'h-8 w-8 md:h-10 md:w-auto p-0 md:px-3 md:gap-2',
-            className
+            className,
           )}
         >
           <ShareIcon size={18} />
@@ -69,15 +65,17 @@ export function ShareDialog({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="visibility-switch" className="text-base">Make conversation public</Label>
+                <Label htmlFor="visibility-switch" className="text-base">
+                  Make conversation public
+                </Label>
                 <div className="text-xs text-muted-foreground">
-                  {visibilityType === 'public' 
-                    ? 'Anyone with the link can view this chat' 
+                  {visibilityType === 'public'
+                    ? 'Anyone with the link can view this chat'
                     : 'Only you can access this chat'}
                 </div>
               </div>
-              <Switch 
-                id="visibility-switch" 
+              <Switch
+                id="visibility-switch"
                 checked={visibilityType === 'public'}
                 onCheckedChange={(checked) => {
                   setVisibilityType(checked ? 'public' : 'private');
@@ -85,10 +83,12 @@ export function ShareDialog({
                 className="scale-110"
               />
             </div>
-            
+
             {visibilityType === 'public' && (
               <div className="pt-2">
-                <Label htmlFor="link" className="sr-only">Link</Label>
+                <Label htmlFor="link" className="sr-only">
+                  Link
+                </Label>
                 <div className="flex mt-1">
                   <Input
                     id="link"

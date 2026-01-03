@@ -1,14 +1,14 @@
-import { redirect } from "next/navigation";
+import { redirect } from 'next/navigation';
 // eslint-disable-next-line import/no-unresolved
-import { auth } from "@/app/auth";
+import { auth } from '@/app/auth';
 
 export default async function LandingPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/chat");
+    redirect('/chat');
   } else {
-    redirect("/login");
+    redirect('/login');
   }
 
   // This part will not be reached due to the redirects,

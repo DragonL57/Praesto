@@ -15,9 +15,9 @@ const runMigrate = async () => {
   // Connection with timeouts to avoid hanging
   const connection = postgres(process.env.POSTGRES_URL, {
     max: 1,
-    idle_timeout: 20,       // Max idle time in seconds
-    connect_timeout: 10,    // Connection timeout in seconds
-    max_lifetime: 60 * 5,   // Connection max lifetime in seconds
+    idle_timeout: 20, // Max idle time in seconds
+    connect_timeout: 10, // Connection timeout in seconds
+    max_lifetime: 60 * 5, // Connection max lifetime in seconds
   });
 
   const db = drizzle(connection);

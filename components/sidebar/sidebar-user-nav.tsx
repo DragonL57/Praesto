@@ -18,11 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '../toast';
 
 export function SidebarUserNav({ user }: { user: User }) {
@@ -32,22 +28,22 @@ export function SidebarUserNav({ user }: { user: User }) {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      
+
       // Show a toast for better UX
       toast({
-        type: "success",
-        description: "Signing out...",
+        type: 'success',
+        description: 'Signing out...',
       });
-      
+
       // First try normal sign out
       try {
         await signOut({ callbackUrl: '/' });
       } catch (error) {
-        console.error("Standard sign-out failed:", error);
-        
+        console.error('Standard sign-out failed:', error);
+
         // Fallback: try to clear cookies and redirect manually
         window.location.href = '/';
-        
+
         // Force reload after a short delay
         setTimeout(() => {
           window.location.reload();
@@ -56,8 +52,8 @@ export function SidebarUserNav({ user }: { user: User }) {
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
-        type: "error",
-        description: "Could not sign out. Please try again.",
+        type: 'error',
+        description: 'Could not sign out. Please try again.',
       });
       setIsSigningOut(false);
     }
@@ -84,13 +80,16 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuContent
               side="top"
               align="start"
-              alignOffset={-8} 
+              alignOffset={-8}
               className="w-64 min-w-64 md:w-64"
               sideOffset={0}
               style={{ marginLeft: '0', left: '0' }}
             >
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="cursor-pointer flex items-center w-full">
+                <Link
+                  href="/settings"
+                  className="cursor-pointer flex items-center w-full"
+                >
                   <Settings className="mr-2 size-4" />
                   Settings
                 </Link>
@@ -110,7 +109,7 @@ export function SidebarUserNav({ user }: { user: User }) {
                   disabled={isSigningOut}
                 >
                   <LogOut className="mr-2 size-4" />
-                  {isSigningOut ? "Signing out..." : "Sign out"}
+                  {isSigningOut ? 'Signing out...' : 'Sign out'}
                 </button>
               </DropdownMenuItem>
             </DropdownMenuContent>

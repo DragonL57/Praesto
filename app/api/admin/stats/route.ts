@@ -12,14 +12,14 @@ export async function GET() {
   try {
     // Get the current timestamp
     const now = new Date();
-    
+
     // Calculate timestamps for various periods
     const oneDayAgo = new Date(now);
     oneDayAgo.setDate(now.getDate() - 1);
-    
+
     const oneWeekAgo = new Date(now);
     oneWeekAgo.setDate(now.getDate() - 7);
-    
+
     const oneMonthAgo = new Date(now);
     oneMonthAgo.setMonth(now.getMonth() - 1);
 
@@ -28,10 +28,8 @@ export async function GET() {
     const totalUsers = totalUsersResult[0].count;
 
     // Get recent users (last 30 days)
-    const recentUsersQuery = db
-      .select({ count: count() })
-      .from(user);
-    
+    const recentUsersQuery = db.select({ count: count() }).from(user);
+
     const recentUsersResult = await recentUsersQuery;
     const recentUsers = recentUsersResult[0]?.count || 0;
 
@@ -44,12 +42,14 @@ export async function GET() {
       .select({ count: count() })
       .from(chat)
       .where(gte(chat.createdAt, oneMonthAgo));
-    
+
     const recentChatsResult = await recentChatsQuery;
     const recentChats = recentChatsResult[0].count;
 
     // Get total messages
-    const totalMessagesResult = await db.select({ count: count() }).from(message);
+    const totalMessagesResult = await db
+      .select({ count: count() })
+      .from(message);
     const totalMessages = totalMessagesResult[0].count;
 
     // Get recent messages (last 30 days)
@@ -57,7 +57,7 @@ export async function GET() {
       .select({ count: count() })
       .from(message)
       .where(gte(message.createdAt, oneMonthAgo));
-    
+
     const recentMessagesResult = await recentMessagesQuery;
     const recentMessages = recentMessagesResult[0].count;
 
@@ -66,7 +66,7 @@ export async function GET() {
       .select({ count: sql<number>`COUNT(DISTINCT ${chat.userId})` })
       .from(chat)
       .where(gte(chat.createdAt, oneWeekAgo));
-    
+
     const activeUsersResult = await activeUsersQuery;
     const activeUsers = activeUsersResult[0].count;
 
@@ -74,22 +74,22 @@ export async function GET() {
       userStats: {
         total: totalUsers,
         recent: recentUsers,
-        active: activeUsers
+        active: activeUsers,
       },
       chatStats: {
         total: totalChats,
-        recent: recentChats
+        recent: recentChats,
       },
       messageStats: {
         total: totalMessages,
-        recent: recentMessages
-      }
+        recent: recentMessages,
+      },
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
     return NextResponse.json(
       { error: 'Failed to fetch admin stats' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

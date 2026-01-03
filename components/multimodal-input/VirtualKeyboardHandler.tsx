@@ -11,7 +11,9 @@ interface VirtualKeyboardHandlerProps {
  * Component that handles virtual keyboard detection and viewport adjustments
  * This helps ensure proper layout when the virtual keyboard is shown on mobile devices
  */
-export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps) {
+export function VirtualKeyboardHandler({
+  isMobile,
+}: VirtualKeyboardHandlerProps) {
   const { width } = useWindowSize();
 
   useEffect(() => {
@@ -22,11 +24,17 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
       if (navigator.virtualKeyboard?.boundingRect) {
         const { height: kbHeight } = navigator.virtualKeyboard.boundingRect;
         keyboardHeight = kbHeight;
-        
+
         // Set custom properties for keyboard height and visibility
-        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
-        document.documentElement.style.setProperty('--keyboard-visible', keyboardHeight > 0 ? '1' : '0');
-        
+        document.documentElement.style.setProperty(
+          '--keyboard-height',
+          `${keyboardHeight}px`,
+        );
+        document.documentElement.style.setProperty(
+          '--keyboard-visible',
+          keyboardHeight > 0 ? '1' : '0',
+        );
+
         // Add a class to the body for CSS targeting when keyboard is visible
         if (keyboardHeight > 0) {
           document.body.classList.add('keyboard-visible');
@@ -42,39 +50,54 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
         // Opt out of the automatic virtual keyboard behavior
         // This allows us to use CSS env vars to handle layout adjustments
         navigator.virtualKeyboard.overlaysContent = true;
-        
+
         // Listen for keyboard resize events
-        navigator.virtualKeyboard.addEventListener('geometrychange', handleVirtualKeyboardResize);
-        
+        navigator.virtualKeyboard.addEventListener(
+          'geometrychange',
+          handleVirtualKeyboardResize,
+        );
+
         console.log('VirtualKeyboard API enabled with overlaysContent=true');
       } catch (error) {
         console.warn('Failed to initialize VirtualKeyboard API:', error);
       }
     }
-    
+
     // Fallback for devices without VirtualKeyboard API
     const handleResize = () => {
       // Only apply on mobile
       if (width < 768) {
         const visualViewport = window.visualViewport;
         if (!visualViewport) return;
-        
+
         // Detect keyboard by comparing visual viewport to window inner height
-        const newKeyboardHeight = Math.max(0, window.innerHeight - visualViewport.height);
-        
+        const newKeyboardHeight = Math.max(
+          0,
+          window.innerHeight - visualViewport.height,
+        );
+
         // If keyboard height changed significantly, update it
         if (Math.abs(newKeyboardHeight - keyboardHeight) > 50) {
           keyboardHeight = newKeyboardHeight;
-          
+
           // Set custom properties for keyboard height and visibility
-          document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
-          document.documentElement.style.setProperty('--keyboard-visible', keyboardHeight > 0 ? '1' : '0');
-          
+          document.documentElement.style.setProperty(
+            '--keyboard-height',
+            `${keyboardHeight}px`,
+          );
+          document.documentElement.style.setProperty(
+            '--keyboard-visible',
+            keyboardHeight > 0 ? '1' : '0',
+          );
+
           // Update viewport positioning based on visual viewport
           if (visualViewport) {
-            document.documentElement.style.setProperty('--viewport-offset-y', `${visualViewport.offsetTop}px`);
+            document.documentElement.style.setProperty(
+              '--viewport-offset-y',
+              `${visualViewport.offsetTop}px`,
+            );
           }
-          
+
           // Add a class to the body for CSS targeting when keyboard is visible
           if (keyboardHeight > 0) {
             document.body.classList.add('keyboard-visible');
@@ -84,7 +107,7 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
         }
       }
     };
-    
+
     // Add CSS to document head for keyboard inset variables fallback
     const style = document.createElement('style');
     style.innerHTML = `
@@ -96,13 +119,16 @@ export function VirtualKeyboardHandler({ isMobile }: VirtualKeyboardHandlerProps
       }
     `;
     document.head.appendChild(style);
-    
+
     window.visualViewport?.addEventListener('resize', handleResize);
     window.visualViewport?.addEventListener('scroll', handleResize);
-    
+
     return () => {
       if (navigator.virtualKeyboard) {
-        navigator.virtualKeyboard.removeEventListener('geometrychange', handleVirtualKeyboardResize);
+        navigator.virtualKeyboard.removeEventListener(
+          'geometrychange',
+          handleVirtualKeyboardResize,
+        );
       }
       window.visualViewport?.removeEventListener('resize', handleResize);
       window.visualViewport?.removeEventListener('scroll', handleResize);

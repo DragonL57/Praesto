@@ -17,7 +17,7 @@ export async function DELETE() {
       id: userId,
       limit: 1000, // Using a high limit to get all chats
       startingAfter: null,
-      endingBefore: null
+      endingBefore: null,
     });
 
     // No chats found for user
@@ -26,21 +26,21 @@ export async function DELETE() {
     }
 
     // Delete each chat (deleteChatById also deletes associated messages and votes)
-    const deletePromises = userChats.map(chat =>
-      deleteChatById({ id: chat.id })
+    const deletePromises = userChats.map((chat) =>
+      deleteChatById({ id: chat.id }),
     );
 
     await Promise.all(deletePromises);
 
     return NextResponse.json({
       success: true,
-      deleted: userChats.length
+      deleted: userChats.length,
     });
   } catch (error) {
     console.error('Error deleting chats:', error);
     return NextResponse.json(
       { error: 'Failed to delete chats' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

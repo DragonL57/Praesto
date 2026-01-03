@@ -8,23 +8,29 @@ import { getAuthorizationUrl } from '@/lib/google-calendar-api';
  * Usage: /api/auth/google?action=authorize
  */
 export async function GET(request: Request) {
-    const url = new URL(request.url);
-    const action = url.searchParams.get('action');
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action');
 
-    if (action === 'authorize') {
-        try {
-            const authUrl = getAuthorizationUrl();
-            return NextResponse.redirect(authUrl);
-        } catch {
-            return NextResponse.json({
-                success: false,
-                error: 'Failed to generate authorization URL',
-            }, { status: 500 });
-        }
+  if (action === 'authorize') {
+    try {
+      const authUrl = getAuthorizationUrl();
+      return NextResponse.redirect(authUrl);
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to generate authorization URL',
+        },
+        { status: 500 },
+      );
     }
+  }
 
-    return NextResponse.json({
-        success: false,
-        error: 'Invalid action',
-    }, { status: 400 });
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Invalid action',
+    },
+    { status: 400 },
+  );
 }
