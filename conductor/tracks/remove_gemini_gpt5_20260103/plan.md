@@ -5,7 +5,7 @@
 - [x] Task: Uninstall `@ai-sdk/google` dependency. 38bb4a9
 - [x] Task: Conductor - User Manual Verification 'Cleanup & Dependency Removal' (Protocol in workflow.md) 400490b
 
-## Phase 2: AI Logic Refactor [checkpoint: 38bb4a9]
+## Phase 2: AI Logic Refactor [checkpoint: 2e09ea6]
 - [x] Task: Refactor `lib/ai/providers.ts` to remove Google provider, Gemini models, GPT-5 model, and thinking-level logic. 38bb4a9
 - [x] Task: Refactor `app/(chat)/api/chat/route.ts` to remove Gemini-specific PDF handling and thought signature logic. 38bb4a9
 - [x] Task: Conductor - User Manual Verification 'AI Logic Refactor' (Protocol in workflow.md) 745d122
