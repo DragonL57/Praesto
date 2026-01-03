@@ -17,6 +17,6 @@
 - [x] Task: Update `components/admin/dashboard/model-usage.tsx` to remove Gemini placeholder if present. 29c4b02
 - [ ] Task: Conductor - User Manual Verification 'UI & Documentation Cleanup' (Protocol in workflow.md)
 
-## Phase 4: Final Verification
+## Phase 4: Final Verification [checkpoint: 06dadf6]
 - [x] Task: Run `pnpm run lint` and `pnpm exec tsc --noEmit` to ensure no regressions. 4076b69
-- [~] Task: Conductor - User Manual Verification 'Final Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Final Verification' (Protocol in workflow.md) 06dadf6
