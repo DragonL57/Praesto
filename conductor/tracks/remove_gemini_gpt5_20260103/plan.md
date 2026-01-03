@@ -18,5 +18,5 @@
 - [ ] Task: Conductor - User Manual Verification 'UI & Documentation Cleanup' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification
-- [ ] Task: Run `pnpm run lint` and `pnpm exec tsc --noEmit` to ensure no regressions.
-- [ ] Task: Conductor - User Manual Verification 'Final Verification' (Protocol in workflow.md)
+- [x] Task: Run `pnpm run lint` and `pnpm exec tsc --noEmit` to ensure no regressions. 4076b69
+- [~] Task: Conductor - User Manual Verification 'Final Verification' (Protocol in workflow.md)
