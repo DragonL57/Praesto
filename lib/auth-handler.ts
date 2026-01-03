@@ -11,7 +11,7 @@ import {
 } from '@/lib/db/queries';
 import { authConfig } from '@/app/(auth)/auth.config';
 
-export const { auth } = NextAuth({
+export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
     session: {
         strategy: 'jwt',
