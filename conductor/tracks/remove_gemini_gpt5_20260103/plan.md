@@ -10,7 +10,7 @@
 - [x] Task: Refactor `app/(chat)/api/chat/route.ts` to remove Gemini-specific PDF handling and thought signature logic. 38bb4a9
 - [x] Task: Conductor - User Manual Verification 'AI Logic Refactor' (Protocol in workflow.md) 745d122
 
-## Phase 3: UI & Documentation Cleanup
+## Phase 3: UI & Documentation Cleanup [checkpoint: 1824ef7]
 - [x] Task: Remove `ThinkingLevelSelector` usage from `components/chat-header.tsx`. bcf4594
 - [x] Task: Delete `components/thinking-level-selector.tsx` file. f8ada76
 - [x] Task: Update `app/cookies/page.tsx` to remove references to the thinking-level cookie. (no changes needed)
