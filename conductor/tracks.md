@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Remove Gemini and GPT-5-Chat Integration
+## [x] Track: Remove Gemini and GPT-5-Chat Integration
 *Link: [./conductor/tracks/remove_gemini_gpt5_20260103/](./conductor/tracks/remove_gemini_gpt5_20260103/)*
