@@ -145,11 +145,6 @@ export async function POST(request: Request) {
     const cookieModel = cookieStore.get('chat-model')?.value;
     const finalSelectedChatModel = cookieModel || 'chat-model';
 
-    // Get thinking level from cookie (for Gemini 3 models)
-    const thinkingLevel = cookieStore.get('thinking-level')?.value || 'high';
-
-    const isGeminiModel = finalSelectedChatModel.includes('gemini');
-
     // AI SDK 5.x: Use file parts from message.parts instead of experimental_attachments
     const fileParts = getFilePartsFromMessage(userMessage);
     if (fileParts.length > 0) {
@@ -170,13 +165,6 @@ export async function POST(request: Request) {
           const isImage = attachment.contentType?.startsWith('image/') || attachment.mediaType?.startsWith('image/');
           if (isImage) {
             console.log(`Skipping text extraction for image: ${attachment.name || 'unknown image'} (${attachment.contentType || attachment.mediaType})`);
-            continue;
-          }
-
-          // Skip text extraction for PDF files if using Gemini - Gemini has native vision/file processing
-          const isPDF = attachment.contentType === 'application/pdf' || attachment.mediaType === 'application/pdf';
-          if (isPDF && isGeminiModel) {
-            console.log(`Skipping text extraction for PDF with Gemini: ${attachment.name || 'unknown PDF'} - using native vision/file processing`);
             continue;
           }
 
@@ -287,18 +275,10 @@ export async function POST(request: Request) {
     // This ensures the conversation moves to the top of the sidebar right away
     await updateChatTimestamp({ id });
 
-    // AI SDK 5.x: Messages already use parts array, thought signatures are preserved in parts
-    // Gemini 3 requires thought signatures to be circulated back for proper reasoning
+    // Prepare final messages for the model
     const finalModelMessages = messagesForStreamText.map(msg => ({
       ...msg,
-      parts: msg.parts.map((part) => {
-        // Preserve thoughtSignature field if it exists (critical for Gemini 3)
-        // This maintains reasoning context across turns
-        if ('thoughtSignature' in part && part.thoughtSignature) {
-          return { ...part, thoughtSignature: part.thoughtSignature };
-        }
-        return { ...part };
-      }),
+      parts: msg.parts.map((part) => ({ ...part })),
     }));
 
     // Log information about image file parts being sent to the model
@@ -321,8 +301,7 @@ export async function POST(request: Request) {
     const streamTextConfig = getStreamTextConfig(
       finalSelectedChatModel,
       finalModelMessages,
-      userTimeContext,
-      thinkingLevel
+      userTimeContext
     );
 
     // Add calendar tools (server-only, loaded dynamically)

@@ -1,5 +1,4 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { google } from '@ai-sdk/google';
 import {
   customProvider,
   wrapLanguageModel,
@@ -52,17 +51,6 @@ const enhancedGrok41FastReasoningModel = wrapLanguageModel({
   })
 });
 
-const enhancedGpt5ChatModel = wrapLanguageModel({
-  model: poeProvider.chatModel('gpt-5-chat'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.7,
-    }
-  })
-});
-
-
-
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.7'),
   middleware: defaultSettingsMiddleware({
@@ -88,27 +76,6 @@ const lightWeightModel = wrapLanguageModel({
   })
 });
 
-// Google Gemini models with thinking configuration
-
-
-const gemini3FlashModel = wrapLanguageModel({
-  model: google('gemini-3-flash-preview'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-      providerOptions: {
-        google: {
-          thinkingConfig: {
-            thinkingLevel: 'high', // Use 'high' for Gemini 3 models for maximum reasoning
-            includeThoughts: true, // Enable thought summaries
-          }
-        }
-      }
-    }
-  })
-});
-
-
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
   {
@@ -133,24 +100,6 @@ export const chatModels: ChatModel[] = [
     name: 'Grok-4.1',
     description: 'Grok-4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'gpt-5-chat',
-    name: 'GPT-5 Chat',
-    description: 'GPT-5 Chat model via Poe API - supports image reading and analysis',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: false,
-  },
-  // zeno-sonar-reasoning removed
-  // gemini-3-pro-preview removed
-  {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash Preview',
-    description: 'Google Gemini 3 Flash Preview - Pro-level intelligence at Flash speed',
-    provider: 'Google',
     supportsTools: true,
     supportsThinking: true,
   },
@@ -187,12 +136,6 @@ export const myProvider = customProvider({
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
-    'gpt-5-chat': enhancedGpt5ChatModel,
-    // zeno-sonar-reasoning removed
-
-    // Google Gemini models with middleware
-    // gemini-3-pro-preview removed
-    'gemini-3-flash-preview': gemini3FlashModel,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGlmModel,
@@ -214,26 +157,8 @@ export function getModelConfiguration(modelId: string) {
 }
 
 // Get provider options for a specific model
-export function getProviderOptions(supportsThinking: boolean, modelId?: string, thinkingLevel?: string) {
+export function getProviderOptions(supportsThinking: boolean, _modelId?: string, _thinkingLevel?: string) {
   const baseOptions = {};
-
-  // Gemini 3 models use thinkingLevel
-  const isGemini3 = modelId?.includes('gemini-3');
-  const isGemini3Flash = modelId?.includes('gemini-3-flash');
-
-  // Validate thinking level based on model
-  let validatedThinkingLevel = thinkingLevel || 'high';
-  if (isGemini3Flash) {
-    // Flash supports: minimal, low, medium, high
-    if (!['minimal', 'low', 'medium', 'high'].includes(validatedThinkingLevel)) {
-      validatedThinkingLevel = 'high';
-    }
-  } else if (isGemini3) {
-    // Pro supports: low, high
-    if (!['low', 'high'].includes(validatedThinkingLevel)) {
-      validatedThinkingLevel = 'high';
-    }
-  }
 
   return {
     openai: baseOptions,
@@ -246,15 +171,6 @@ export function getProviderOptions(supportsThinking: boolean, modelId?: string, 
     poe: {
       ...baseOptions
     },
-    google: {
-      ...(supportsThinking && isGemini3 && {
-        thinkingConfig: {
-          thinkingLevel: validatedThinkingLevel as 'minimal' | 'low' | 'medium' | 'high',
-          includeThoughts: true,
-        }
-      }),
-      ...baseOptions
-    }
   };
 }
 

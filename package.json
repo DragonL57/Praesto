@@ -22,7 +22,6 @@
     "test": "cross-env PLAYWRIGHT=True pnpm exec playwright test --workers=4"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.49",
     "@ai-sdk/openai": "^2.0.0",
     "@ai-sdk/openai-compatible": "1.0.28",
     "@ai-sdk/provider": "^2.0.0",
