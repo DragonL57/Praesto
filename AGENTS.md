@@ -23,6 +23,14 @@
 ├── lib/                    # Core utilities
 │   ├── actions/            # Server actions (auth, chat, admin)
 │   ├── ai/                 # AI SDK integrations
+│   │   ├── chat/           # Chat-specific AI utilities
+│   │   │   ├── types.ts           # Type definitions
+│   │   │   ├── attachments.ts     # File processing logic
+│   │   │   ├── message-builder.ts # Message part construction
+│   │   │   ├── stream-transformer.ts # Stream cleaning
+│   │   │   └── handlers.ts        # Chat persistence handlers
+│   │   ├── providers.ts    # Model provider configuration
+│   │   └── calendar-tools.ts # Calendar integration
 │   └── db/                 # Database schema + queries
 └── tests/                  # Playwright E2E tests
 ```
@@ -113,6 +121,7 @@ export function Component({ className, variant, ...props }: Props) {
 | `lib/utils.ts` | Shared utilities (cn, fetcher, UUID) |
 | `lib/constants.ts` | App-wide constants (routes, env flags) |
 | `lib/actions/` | Server actions by domain (auth, chat, admin) |
+| `lib/ai/chat/` | Modular chat handling (attachments, messages, streaming) |
 | `lib/db/schema.ts` | Drizzle schema definitions |
 | `lib/ai/providers.ts` | AI model providers config |
 | `app/(auth)/auth.config.ts` | NextAuth configuration |
