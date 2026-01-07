@@ -4,7 +4,7 @@ import { and, asc, eq, gte, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-import { message, vote, document, type DBMessage } from './schema';
+import { message, document, type DBMessage } from './schema';
 
 const url = process.env.POSTGRES_URL;
 if (!url) throw new Error('POSTGRES_URL is not defined');
@@ -37,46 +37,7 @@ export async function getMessagesByChatId({ id }: { id: string }) {
   }
 }
 
-export async function voteMessage({
-  chatId,
-  messageId,
-  type,
-}: {
-  chatId: string;
-  messageId: string;
-  type: 'up' | 'down';
-}) {
-  try {
-    const [existingVote] = await db
-      .select()
-      .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
 
-    if (existingVote) {
-      return await db
-        .update(vote)
-        .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
-    }
-    return await db.insert(vote).values({
-      chatId,
-      messageId,
-      isUpvoted: type === 'up',
-    });
-  } catch (error) {
-    console.error('Failed to upvote message in database', error);
-    throw error;
-  }
-}
-
-export async function getVotesByChatId({ id }: { id: string }) {
-  try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
-  } catch (error) {
-    console.error('Failed to get votes by chat id from database');
-    throw error;
-  }
-}
 
 export async function getMessageById({ id }: { id: string }) {
   try {
@@ -105,12 +66,6 @@ export async function deleteMessagesByChatIdAfterTimestamp({
     const messageIds = messagesToDelete.map((message) => message.id);
 
     if (messageIds.length > 0) {
-      await db
-        .delete(vote)
-        .where(
-          and(eq(vote.chatId, chatId), inArray(vote.messageId, messageIds)),
-        );
-
       return await db
         .delete(message)
         .where(
@@ -155,9 +110,6 @@ export async function deleteMessageById({
         await db.delete(document).where(inArray(document.id, documentIds));
       }
     }
-
-    // Delete associated votes
-    await db.delete(vote).where(eq(vote.messageId, messageId));
 
     // Delete the message
     return await db

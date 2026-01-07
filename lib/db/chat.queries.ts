@@ -4,7 +4,7 @@ import { and, desc, eq, gt, lt, type SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-import { chat, message, vote, type Chat as ActualDbChat } from './schema';
+import { chat, message, type Chat as ActualDbChat } from './schema';
 
 export type Chat = ActualDbChat;
 
@@ -38,7 +38,6 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
 
     return await db.delete(chat).where(eq(chat.id, id));

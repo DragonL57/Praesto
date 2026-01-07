@@ -57,9 +57,9 @@ pnpm exec playwright test --project=chat  # Single project
 - **API Routes**: All in `app/api/` organized by domain
   - `api/auth/` - Authentication endpoints (session, signout, verify, etc.)
   - `api/chat/` - Chat operations (create, rename, delete, history, etc.)
-  - `api/admin/` - Admin management (users, analytics, conversations)
-  - `api/cron/` - Scheduled background tasks
-  - `api/public/` - Public endpoints (metadata, transcripts, model-cookie, og)
+- `api/admin/` - Admin management (users, analytics, conversations)
+- `api/cron/` - Scheduled background tasks
+- `api/public/` - Public endpoints (metadata, transcripts, model-cookie, og)
 
 #### Server Actions
 - Consolidated in `lib/actions/` by domain:
@@ -149,7 +149,6 @@ export function Component({ className, variant, ...props }: Props) {
 - `files/upload/` - File upload handling
 - `history/` - Chat history
 - `suggestions/` - AI suggestions
-- `vote/` - Message voting
 
 ### Admin (`api/admin/`)
 - `users/` - User management

@@ -4,11 +4,9 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useMemo, useRef } from 'react';
 import { toast } from 'sonner';
-import useSWR from 'swr';
 
 import type { ChatStatus, SetMessagesFunction } from '@/lib/ai/types';
-import { fetcher, generateUUID } from '@/lib/utils';
-import type { Vote } from '@/lib/db/schema';
+import { generateUUID } from '@/lib/utils';
 import { Messages } from '../messages/messages';
 import type { VisibilityType } from '../visibility-selector';
 import { SharedChatHeader } from './shared-chat-header';
@@ -54,15 +52,6 @@ export function SharedChat({
     },
   });
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
-
   // Wrap setMessages to match custom type
   const wrappedSetMessages = useMemo<SetMessagesFunction>(
     () => (msgs) => {
@@ -84,7 +73,6 @@ export function SharedChat({
         <Messages
           chatId={id}
           status={status as ChatStatus}
-          votes={votes}
           messages={messages}
           setMessages={wrappedSetMessages}
           reload={reload}

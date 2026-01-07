@@ -10,7 +10,6 @@ import {
     user,
     chat,
     message,
-    vote,
     document,
     suggestion,
 } from '@/lib/db/schema';
@@ -47,34 +46,29 @@ export async function deleteUser(formData: FormData) {
             .where(eq(chat.userId, userId));
         const chatIds = userChats.map((c) => c.id);
 
-        // 2. Delete all votes related to user's chats
-        if (chatIds.length > 0) {
-            await db.delete(vote).where(inArray(vote.chatId, chatIds));
-        }
-
-        // 3. Delete all messages related to user's chats
+        // 2. Delete all messages related to user's chats
         if (chatIds.length > 0) {
             await db.delete(message).where(inArray(message.chatId, chatIds));
         }
 
-        // 4. Delete all chats by user
+        // 3. Delete all chats by user
         await db.delete(chat).where(eq(chat.userId, userId));
 
-        // 5. Get all documents by this user
+        // 4. Get all documents by this user
         const userDocuments = await db
             .select({ id: document.id, createdAt: document.createdAt })
             .from(document)
             .where(eq(document.userId, userId));
 
-        // 6. Delete all suggestions related to user's documents
+        // 5. Delete all suggestions related to user's documents
         for (const doc of userDocuments) {
             await db.delete(suggestion).where(eq(suggestion.documentId, doc.id));
         }
 
-        // 7. Delete all documents by user
+        // 6. Delete all documents by user
         await db.delete(document).where(eq(document.userId, userId));
 
-        // 8. Delete the user
+        // 7. Delete the user
         await db.delete(user).where(eq(user.id, userId));
 
         revalidatePath('/admin/users');

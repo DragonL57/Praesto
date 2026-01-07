@@ -3,7 +3,7 @@
 import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { unstable_serialize } from 'swr/infinite';
 import { useLocalStorage } from 'usehooks-ts';
 import { toast } from 'sonner';
@@ -13,14 +13,13 @@ import { InputSkeleton, MultimodalInput } from './multimodal-input';
 import { Messages } from './messages/messages';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
-import { fetcher, generateUUID } from '@/lib/utils';
+import { generateUUID } from '@/lib/utils';
 
 import type {
   AppendFunction,
   Attachment,
   SetMessagesFunction,
 } from '@/lib/ai/types';
-import type { Vote } from '@/lib/db/schema';
 import type { VisibilityType } from './visibility-selector';
 
 export function Chat({
@@ -168,15 +167,6 @@ export function Chat({
     [sendMessage],
   );
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
-
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
   return (
@@ -197,7 +187,6 @@ export function Chat({
           <Messages
             chatId={id}
             status={status}
-            votes={votes}
             messages={messages}
             setMessages={setMessages}
             reload={reload}

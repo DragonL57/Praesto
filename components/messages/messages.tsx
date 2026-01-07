@@ -1,7 +1,6 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { memo, useEffect, useRef, useState, useMemo } from 'react';
-import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import { AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -16,7 +15,6 @@ import type {
 interface MessagesProps {
   chatId: string;
   status: ChatStatus;
-  votes: Array<Vote> | undefined;
   messages: Array<UIMessage>;
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
@@ -30,7 +28,6 @@ interface MessagesProps {
 function PureMessages({
   chatId,
   status,
-  votes,
   messages,
   setMessages,
   reload,
@@ -246,11 +243,6 @@ function PureMessages({
                     isLoading={
                       status === 'streaming' && messages.length - 1 === index
                     }
-                    vote={
-                      votes
-                        ? votes.find((vote) => vote.messageId === message.id)
-                        : undefined
-                    }
                     setMessages={setMessages}
                     reload={wrappedReload}
                     append={append}
@@ -273,11 +265,6 @@ function PureMessages({
                 message={message}
                 isLoading={
                   status === 'streaming' && messages.length - 1 === index
-                }
-                vote={
-                  votes
-                    ? votes.find((vote) => vote.messageId === message.id)
-                    : undefined
                 }
                 setMessages={setMessages}
                 reload={wrappedReload}
@@ -317,7 +304,6 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.status && nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
 
   return true;
 });

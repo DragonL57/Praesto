@@ -26,7 +26,6 @@ import { Calendar } from '../calendar';
 import { cn } from '@/lib/utils';
 import { deleteTrailingMessages, deleteMessage } from '@/lib/actions/chat';
 import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
-import type { Vote } from '@/lib/db/schema';
 import type { UIMessage } from 'ai';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -173,7 +172,6 @@ const UserTextWithLineBreaks = ({ text }: { text: string }) => {
 export type PurePreviewMessageProps = {
   chatId: string;
   message: UIMessage;
-  vote?: Vote;
   isLoading: boolean;
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
@@ -185,7 +183,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
   ({
     chatId,
     message,
-    vote,
     isLoading,
     setMessages,
     reload,
@@ -1114,7 +1111,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   key={`action-${message.id}`}
                   chatId={chatId}
                   message={message}
-                  vote={vote}
                   isLoading={isLoading}
                   setMessages={setMessages}
                 />
@@ -1275,7 +1271,6 @@ const MemoizedPurePreviewMessage = memo(
     return (
       prevProps.chatId === nextProps.chatId &&
       equal(prevProps.message, nextProps.message) && // Use deep equal for message object
-      equal(prevProps.vote, nextProps.vote) && // Deep equal for vote
       prevProps.isLoading === nextProps.isLoading &&
       prevProps.setMessages === nextProps.setMessages &&
       prevProps.reload === nextProps.reload &&

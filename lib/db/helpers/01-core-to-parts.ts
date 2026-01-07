@@ -4,8 +4,6 @@ import {
   chat,
   message,
   messageDeprecated,
-  vote,
-  voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { inArray } from 'drizzle-orm';
@@ -34,12 +32,6 @@ type NewMessageInsert = {
   createdAt: Date;
 };
 
-type NewVoteInsert = {
-  messageId: string;
-  chatId: string;
-  isUpvoted: boolean;
-};
-
 async function createNewTable() {
   const chats = await db.select().from(chat);
   let processedCount = 0;
@@ -55,23 +47,16 @@ async function createNewTable() {
       .from(messageDeprecated)
       .where(inArray(messageDeprecated.chatId, chatIds));
 
-    const allVotes = await db
-      .select()
-      .from(voteDeprecated)
-      .where(inArray(voteDeprecated.chatId, chatIds));
-
     // Prepare batches for insertion
     const newMessagesToInsert: NewMessageInsert[] = [];
-    const newVotesToInsert: NewVoteInsert[] = [];
 
     // Process each chat in the batch
     for (const chat of chatBatch) {
       processedCount++;
       console.info(`Processed ${processedCount}/${chats.length} chats`);
 
-      // Filter messages and votes for this specific chat
+      // Filter messages for this specific chat
       const messages = allMessages.filter((msg) => msg.chatId === chat.id);
-      const votes = allVotes.filter((v) => v.chatId === chat.id);
 
       // Group messages into sections
       const messageSection: Array<UIMessage> = [];
@@ -153,17 +138,6 @@ async function createNewTable() {
           // Add messages to batch
           for (const msg of projectedUISection) {
             newMessagesToInsert.push(msg);
-
-            if (msg.role === 'assistant') {
-              const voteByMessage = votes.find((v) => v.messageId === msg.id);
-              if (voteByMessage) {
-                newVotesToInsert.push({
-                  messageId: msg.id,
-                  chatId: msg.chatId,
-                  isUpvoted: voteByMessage.isUpvoted,
-                });
-              }
-            }
           }
         } catch (error) {
           console.error(`Error processing chat ${chat.id}: ${error}`);
@@ -186,14 +160,6 @@ async function createNewTable() {
         }));
 
         await db.insert(message).values(validMessageBatch);
-      }
-    }
-
-    // Batch insert votes
-    for (let j = 0; j < newVotesToInsert.length; j += INSERT_BATCH_SIZE) {
-      const voteBatch = newVotesToInsert.slice(j, j + INSERT_BATCH_SIZE);
-      if (voteBatch.length > 0) {
-        await db.insert(vote).values(voteBatch);
       }
     }
   }
