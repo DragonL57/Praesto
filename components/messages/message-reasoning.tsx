@@ -11,30 +11,8 @@ import {
 } from '@/components/ai-elements/chain-of-thought';
 import { Markdown } from '../markdown';
 
-// Define the structure for WebSearch data within the reasoning content
-interface WebSearchResult {
-  title: string;
-  href: string;
-  body: string;
-}
-
-interface WebSearchData {
-  results: WebSearchResult[];
-  query: string;
-  count: number;
-}
-
-// Define data structure for Fetched Page Info (mirroring message.tsx)
-interface FetchedPageInfoData {
-  url: string;
-  query?: string | null;
-}
-
-// Updated ReasoningContentItem type
-type ReasoningContentItem =
-  | string
-  | { type: 'webSearch'; data: WebSearchData }
-  | { type: 'fetchedPageInfo'; data: FetchedPageInfoData };
+// Import shared types
+import type { ReasoningContentItem } from './message-types';
 
 interface MessageReasoningProps {
   isLoading: boolean;

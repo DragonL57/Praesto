@@ -1,4 +1,3 @@
-import type { UIMessage } from 'ai';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,19 +13,16 @@ import {
 import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { deleteMessage } from '@/lib/actions/chat';
-import type { SetMessagesFunction } from '@/lib/ai/types';
+
+// Import shared types
+import type { MessageActionsProps } from './message-types';
 
 export function PureMessageActions({
   chatId,
   message,
   isLoading,
   setMessages,
-}: {
-  chatId: string;
-  message: UIMessage;
-  isLoading: boolean;
-  setMessages?: SetMessagesFunction;
-}) {
+}: MessageActionsProps) {
   const [_, copyToClipboard] = useCopyToClipboard();
   const [shouldShowButtons, setShouldShowButtons] = useState(false);
   const isMobile = useIsMobile();
