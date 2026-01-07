@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-import { register, type RegisterActionState } from '../actions';
+import { register, type RegisterActionState } from '@/lib/actions/auth';
 
 export default function RegisterPage() {
   const router = useRouter();

@@ -5,7 +5,7 @@ import { useFormStatus } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { changeUserPassword } from '../actions';
+import { changeUserPassword } from '@/lib/actions/admin';
 
 export function ChangePasswordForm({ userId }: { userId: string }) {
   const [message, setMessage] = useState<{

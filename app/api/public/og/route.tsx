@@ -96,6 +96,7 @@ export async function GET() {
       </svg>
       {/* Using img in OG image generation as Image component requires React context */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* biome-ignore lint/performance/noImgElement: Required for OG image generation without React context */}
       <img
         src={`data:image/png;base64,${logo.toString('base64')}`}
         alt="UniTaskAI Logo"

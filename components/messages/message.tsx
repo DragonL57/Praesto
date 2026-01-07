@@ -24,7 +24,7 @@ import { Weather } from '../weather';
 import { Calendar } from '../calendar';
 
 import { cn } from '@/lib/utils';
-import { deleteTrailingMessages, deleteMessage } from '@/app/(chat)/actions';
+import { deleteTrailingMessages, deleteMessage } from '@/lib/actions/chat';
 import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
 import type { Vote } from '@/lib/db/schema';
 import type { UIMessage } from 'ai';

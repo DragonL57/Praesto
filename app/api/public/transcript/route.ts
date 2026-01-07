@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       const baseUrl = url.origin;
 
       // Direct URL to Python function with debug parameter
-      const apiUrl = `${baseUrl}/api/get_transcript?videoId=${encodeURIComponent(videoId)}${languages
+      const apiUrl = `${baseUrl}/api/public/transcript?videoId=${encodeURIComponent(videoId)}${languages
         .map((lang) => `&languages=${encodeURIComponent(lang)}`)
         .join('')}${debug ? '&debug=true' : ''}`;
 

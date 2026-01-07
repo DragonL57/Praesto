@@ -16,7 +16,7 @@ import {
 import { memo, useEffect, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
-import { deleteMessage } from '@/app/(chat)/actions';
+import { deleteMessage } from '@/lib/actions/chat';
 import type { SetMessagesFunction } from '@/lib/ai/types';
 
 export function PureMessageActions({

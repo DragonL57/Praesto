@@ -66,7 +66,7 @@ export function Chat({
     id,
 
     transport: new DefaultChatTransport({
-      api: '/api/chat',
+      api: '/api/chat/chat',
       body: {
         id,
         selectedChatModel: globallySelectedModelId,

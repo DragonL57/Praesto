@@ -5,7 +5,7 @@
       "runtime": "@vercel/python@3.1.0",
       "memory": 1024
     },
-    "app/api/get_transcript/route.ts": {
+    "app/api/public/transcript/route.ts": {
       "memory": 1024,
       "maxDuration": 30
     },
@@ -22,7 +22,7 @@
   },
   "routes": [
     {
-      "src": "/api/get_transcript",
+      "src": "/api/public/transcript",
       "dest": "/api/api"
     }
   ]

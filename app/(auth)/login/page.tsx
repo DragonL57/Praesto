@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/toast';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { login, type LoginActionState } from '../actions';
+import { login, type LoginActionState } from '@/lib/actions/auth';
 
 export default function LoginPage() {
   const router = useRouter();

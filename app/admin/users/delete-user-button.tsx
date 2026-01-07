@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash } from 'lucide-react';
 
-import { deleteUser } from '../actions';
+import { deleteUser } from '@/lib/actions/admin';
 
 interface DeleteUserButtonProps {
   userId: string;

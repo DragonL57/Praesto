@@ -42,7 +42,7 @@ export function ModelSelector({
   const saveModelCookie = useCallback(async (modelId: string) => {
     try {
       // Use fetch API directly instead of server action to avoid any page transitions
-      await fetch('/api/set-model-cookie', {
+      await fetch('/api/public/model-cookie', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -33,7 +33,7 @@ export function SharedChat({
   const { messages, setMessages, status } = useChat({
     id,
     transport: new DefaultChatTransport({
-      api: '/api/chat',
+      api: '/api/chat/chat',
       body: {
         id,
         selectedChatModel: selectedChatModel,

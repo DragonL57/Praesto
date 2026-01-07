@@ -29,7 +29,7 @@ import {
   updateChatTimestamp,
 } from '@/lib/db/queries';
 import { generateUUID, getMostRecentUserMessage } from '@/lib/utils';
-import { generateTitleFromUserMessage } from '../../actions';
+import { generateTitleFromUserMessage } from '@/lib/actions/chat';
 import { getStreamTextConfig } from '@/lib/ai/providers';
 import { getCalendarTools } from '@/lib/ai/calendar-tools';
 
@@ -135,10 +135,10 @@ export async function POST(request: Request) {
               : {}),
             ...(p.type === 'file'
               ? {
-                  url: (p as FileUIPart).url,
-                  filename: (p as FileUIPart).filename,
-                  mediaType: (p as FileUIPart).mediaType,
-                }
+                url: (p as FileUIPart).url,
+                filename: (p as FileUIPart).filename,
+                mediaType: (p as FileUIPart).mediaType,
+              }
               : {}),
           })),
         },
@@ -372,9 +372,9 @@ export async function POST(request: Request) {
             type: p.type,
             ...(p.type === 'file'
               ? {
-                  url: (p as FileUIPart).url,
-                  mediaType: (p as FileUIPart).mediaType,
-                }
+                url: (p as FileUIPart).url,
+                mediaType: (p as FileUIPart).mediaType,
+              }
               : {}),
           })),
         })),
@@ -518,10 +518,10 @@ export async function POST(request: Request) {
             if (reasoning) {
               const reasoningText = Array.isArray(reasoning)
                 ? reasoning
-                    .map((r: ReasoningItem) =>
-                      typeof r === 'string' ? r : r.text,
-                    )
-                    .join('\n')
+                  .map((r: ReasoningItem) =>
+                    typeof r === 'string' ? r : r.text,
+                  )
+                  .join('\n')
                 : typeof reasoning === 'string'
                   ? reasoning
                   : '';

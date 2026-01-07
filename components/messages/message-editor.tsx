@@ -6,7 +6,7 @@ import type { UIMessage } from 'ai';
 
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { deleteTrailingMessages } from '@/app/(chat)/actions';
+import { deleteTrailingMessages } from '@/lib/actions/chat';
 import type { ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
 
 // Define proper types for message parts
