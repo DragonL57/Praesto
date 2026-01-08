@@ -9,8 +9,15 @@ import type {
   AppendFunction,
   ChatStatus,
 } from '@/lib/ai/types';
+import type { UseChatHelpers } from '@ai-sdk/react';
 // Removing framer-motion for better performance
 // import { motion, AnimatePresence } from 'framer-motion';
+
+interface Suggestion {
+  title: string;
+  label: string;
+  action: string;
+}
 
 interface MessagesProps {
   chatId: string;
@@ -23,6 +30,9 @@ interface MessagesProps {
   isArtifactVisible: boolean;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
+  suggestions?: Suggestion[];
+  suggestionsLoading?: boolean;
+  sendMessage?: UseChatHelpers<UIMessage>['sendMessage'];
 }
 
 function PureMessages({
@@ -35,6 +45,9 @@ function PureMessages({
   isReadonly,
   messagesContainerRef: externalContainerRef,
   messagesEndRef: externalEndRef,
+  suggestions,
+  suggestionsLoading,
+  sendMessage,
 }: MessagesProps) {
   // Use external refs if provided, otherwise create our own
   const internalContainerRef = useRef<HTMLDivElement>(null);
@@ -221,6 +234,9 @@ function PureMessages({
             {virtualItems.map((virtualItem) => {
               const message = messages[virtualItem.index];
               const index = virtualItem.index;
+              const isLastAssistantMessage = 
+                message.role === 'assistant' && 
+                index === messages.length - 1;
 
               return (
                 <div
@@ -247,6 +263,13 @@ function PureMessages({
                     reload={wrappedReload}
                     append={append}
                     isReadonly={isReadonly}
+                    suggestions={
+                      isLastAssistantMessage && !isReadonly ? suggestions : undefined
+                    }
+                    suggestionsLoading={
+                      isLastAssistantMessage && !isReadonly ? suggestionsLoading : false
+                    }
+                    sendMessage={sendMessage}
                   />
                 </div>
               );
@@ -254,25 +277,39 @@ function PureMessages({
           </div>
         ) : (
           // Regular rendering for short conversations
-          messages.map((message, index) => (
-            <div
-              key={message.id}
-              data-message-id={message.id} // Add data-message-id for selection
-              className="transition-opacity duration-300 ease-in-out"
-            >
-              <PreviewMessage
-                chatId={chatId}
-                message={message}
-                isLoading={
-                  status === 'streaming' && messages.length - 1 === index
-                }
-                setMessages={setMessages}
-                reload={wrappedReload}
-                append={append}
-                isReadonly={isReadonly}
-              />
-            </div>
-          ))
+          messages.map((message, index) => {
+            const isLastAssistantMessage = 
+              message.role === 'assistant' && 
+              index === messages.length - 1;
+            
+            return (
+              <div
+                key={message.id}
+                data-message-id={message.id} // Add data-message-id for selection
+                className="transition-opacity duration-300 ease-in-out"
+              >
+                <PreviewMessage
+                  chatId={chatId}
+                  message={message}
+                  isLoading={
+                    status === 'streaming' && messages.length - 1 === index
+                  }
+                  setMessages={setMessages}
+                  reload={wrappedReload}
+                  append={append}
+                  isReadonly={isReadonly}
+                  suggestions={
+                    isLastAssistantMessage && !isReadonly ? suggestions : undefined
+                  }
+                  suggestionsLoading={
+                    isLastAssistantMessage && !isReadonly ? suggestionsLoading : false
+                  }
+                  sendMessage={sendMessage}
+                  status={status}
+                />
+              </div>
+            );
+          })
         )}
 
         <AnimatePresence>

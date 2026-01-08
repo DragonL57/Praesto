@@ -34,15 +34,16 @@ import { MessageContent } from './message-content';
 import { MessageAttachments } from './message-attachments';
 import { MessageUserActions } from './message-user-actions';
 import { ToolCallSkeleton } from './message-tools';
+import { SuggestedActions } from '../suggested-actions';
 
 // ============================================================================
 // Main Message Component
 // ============================================================================
 
 const PurePreviewMessage = memo<PurePreviewMessageProps>(
-  ({ chatId, message, isLoading, setMessages, reload, append, isReadonly }) => {
+  ({ chatId, message, isLoading, setMessages, reload, append, isReadonly, suggestions, suggestionsLoading, sendMessage, status }) => {
     const [mode, setMode] = useState<'view' | 'edit'>('view');
-    const [, copyFn] = useCopyToClipboard();
+    const [_copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
     const [shouldShowButtons, setShouldShowButtons] = useState(false);
     const isMobile = useIsMobile();
@@ -230,6 +231,19 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               return null;
             })}
 
+            {/* Render suggestions inside the message if provided */}
+            {!isReadonly && (suggestions || suggestionsLoading) && sendMessage && message.role === 'assistant' && status !== 'streaming' && (
+              <div data-exclude-from-copy="true" className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <SuggestedActions
+                  chatId={chatId}
+                  _messages={[message]}
+                  suggestions={suggestions}
+                  isLoading={suggestionsLoading}
+                  sendMessage={sendMessage}
+                />
+              </div>
+            )}
+
             {/* Render assistant message actions */}
             {!isReadonly && message.role === 'assistant' && (
               <div className="flex justify-start mt-1">
@@ -277,6 +291,8 @@ const MemoizedPurePreviewMessage = memo(
       prevProps.chatId === nextProps.chatId &&
       equal(prevProps.message, nextProps.message) &&
       prevProps.isLoading === nextProps.isLoading &&
+      equal(prevProps.suggestions, nextProps.suggestions) &&
+      prevProps.suggestionsLoading === nextProps.suggestionsLoading &&
       prevProps.setMessages === nextProps.setMessages &&
       prevProps.reload === nextProps.reload &&
       prevProps.append === nextProps.append &&

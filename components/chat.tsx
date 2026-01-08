@@ -22,6 +22,12 @@ import type {
 } from '@/lib/ai/types';
 import type { VisibilityType } from './visibility-selector';
 
+interface Suggestion {
+  title: string;
+  label: string;
+  action: string;
+}
+
 export function Chat({
   id,
   initialMessages,
@@ -58,6 +64,15 @@ export function Chat({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // State for suggestions
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+  // Debug: Log suggestions changes
+  useEffect(() => {
+    console.log('[Chat] Suggestions state updated:', suggestions);
+  }, [suggestions]);
+
   // Manage input state manually (AI SDK 5.x change)
   const [input, setInput] = useState('');
 
@@ -83,7 +98,7 @@ export function Chat({
     messages: initialMessages,
     generateId: generateUUID,
 
-    onFinish: () => {
+    onFinish: async () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
 
@@ -105,10 +120,57 @@ export function Chat({
     regenerate,
   } = chatHelpers;
 
+  // Fetch suggestions when status changes from streaming to ready
+  const prevStatusRef = useRef<typeof status>(status);
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (
+        prevStatusRef.current === 'streaming' && 
+        status === 'ready' && 
+        rawMessages.length > 0 &&
+        rawMessages[rawMessages.length - 1].role === 'assistant'
+      ) {
+        setSuggestionsLoading(true);
+        
+        try {
+          console.log('[Chat] Fetching suggestions for messages:', rawMessages.length);
+          console.log('[Chat] Last message role:', rawMessages[rawMessages.length - 1]?.role);
+          
+          const response = await fetch('/api/chat/generate-suggestions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ messages: rawMessages }),
+          });
+
+          if (response.ok) {
+            const newSuggestions = await response.json();
+            console.log('[Chat] Received suggestions:', newSuggestions);
+            setSuggestions(newSuggestions);
+          } else {
+            const errorText = await response.text();
+            console.error('[Chat] Suggestions API error:', response.status, errorText);
+          }
+        } catch (error) {
+          console.error('[Chat] Failed to fetch suggestions:', error);
+        } finally {
+          setSuggestionsLoading(false);
+        }
+      }
+      
+      prevStatusRef.current = status;
+    };
+
+    fetchSuggestions();
+  }, [status, rawMessages]);
+
   // Create handleSubmit wrapper for compatibility
   const _handleSubmit = (e?: { preventDefault?: () => void }) => {
     e?.preventDefault?.();
     if (input.trim()) {
+      // Clear suggestions when sending new message
+      setSuggestions([]);
       sendMessage({ text: input });
       setInput('');
     }
@@ -116,6 +178,8 @@ export function Chat({
 
   // Create reload wrapper for compatibility
   const reload = async (): Promise<string | null | undefined> => {
+    // Clear suggestions when regenerating
+    setSuggestions([]);
     await regenerate();
     return null;
   };
@@ -195,6 +259,9 @@ export function Chat({
             isArtifactVisible={false}
             messagesContainerRef={messagesContainerRef}
             messagesEndRef={messagesEndRef}
+            suggestions={suggestions}
+            suggestionsLoading={suggestionsLoading}
+            sendMessage={sendMessage}
           />
         </div>
 

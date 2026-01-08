@@ -60,6 +60,7 @@ export function PureMessageActions({
               }`}
               variant="ghost"
               onClick={async () => {
+                // Get all text parts from message
                 const textFromParts = message.parts
                   ?.filter((part) => part.type === 'text')
                   .map((part) => part.text)

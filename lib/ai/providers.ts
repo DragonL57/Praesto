@@ -51,6 +51,16 @@ const enhancedGrok41FastReasoningModel = wrapLanguageModel({
   }),
 });
 
+// Fast non-reasoning Grok model for quick responses
+const grok41FastNonReasoningModel = wrapLanguageModel({
+  model: poeProvider.chatModel('grok-4.1-fast-non-reasoning'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.7,
+    },
+  }),
+});
+
 const enhancedGlmModel = wrapLanguageModel({
   model: zaiProvider.chatModel('glm-4.7'),
   middleware: defaultSettingsMiddleware({
@@ -137,10 +147,12 @@ export const myProvider = customProvider({
 
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
+    'grok-4.1-fast-non-reasoning': grok41FastNonReasoningModel,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGlmModel,
     'title-model': lightWeightModel,
+    'fast-model': grok41FastNonReasoningModel,
   },
 });
 
@@ -230,15 +242,15 @@ export function getStreamTextConfig(
     ...msg,
     parts: Array.isArray(msg.parts)
       ? msg.parts.filter(
-          (part) =>
-            !(
-              part &&
-              typeof part === 'object' &&
-              'state' in part &&
-              ((part as { state?: string }).state === 'input-available' ||
-                (part as { state?: string }).state === 'call')
-            ),
-        )
+        (part) =>
+          !(
+            part &&
+            typeof part === 'object' &&
+            'state' in part &&
+            ((part as { state?: string }).state === 'input-available' ||
+              (part as { state?: string }).state === 'call')
+          ),
+      )
       : msg.parts,
   }));
 

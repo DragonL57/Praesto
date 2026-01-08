@@ -5,6 +5,17 @@
 
 import type { UIMessage } from 'ai';
 import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
+import type { UseChatHelpers } from '@ai-sdk/react';
+
+// ============================================================================
+// Suggestion Type
+// ============================================================================
+
+export interface Suggestion {
+    title: string;
+    label: string;
+    action: string;
+}
 
 // ============================================================================
 // Tool & Reasoning Types
@@ -64,6 +75,10 @@ export interface PurePreviewMessageProps {
     reload: () => Promise<string | null | undefined>;
     append: AppendFunction;
     isReadonly: boolean;
+    suggestions?: Suggestion[];
+    suggestionsLoading?: boolean;
+    sendMessage?: UseChatHelpers<UIMessage>['sendMessage'];
+    status?: 'submitted' | 'streaming' | 'ready' | 'error';
 }
 
 export interface PreviewMessageProps

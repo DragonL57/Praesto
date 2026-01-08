@@ -6,9 +6,9 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import 'katex/dist/katex.min.css';
 
-import { SuggestionButton } from '@/components/suggestion-button';
 import { CitationButton } from './citations';
 import { createHeadingComponents } from './headings';
 import { createTableComponents } from './tables';
@@ -30,6 +30,19 @@ const katexOptions = {
   macros: {},
   errorColor: '#FF5555',
   globalGroup: true,
+};
+
+// Sanitize schema - allows our custom elements but blocks unknown HTML tags
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    'citation-button',
+  ],
+  attributes: {
+    ...defaultSchema.attributes,
+    'citation-button': ['num', 'url'],
+  },
 };
 
 const NonMemoizedMarkdown = ({
@@ -64,17 +77,8 @@ const NonMemoizedMarkdown = ({
         if (!num || !url) return null;
         return <CitationButton num={num} url={url} />;
       },
-
-      // Custom suggestion button
-      'suggestion-button': ({ node }: { node?: HastNodeWithProperties }) => {
-        if (!node?.properties || !append) return null;
-        const text = node.properties.text as string;
-        const query = node.properties.query as string;
-        if (!text || !query) return null;
-        return <SuggestionButton text={text} query={query} append={append} />;
-      },
     }),
-    [baseHeadingLevel, append],
+    [baseHeadingLevel],
   );
 
   // Early return for empty content (after hooks)
@@ -85,7 +89,11 @@ const NonMemoizedMarkdown = ({
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[[rehypeKatex, katexOptions], rehypeRaw]}
+      rehypePlugins={[
+        [rehypeKatex, katexOptions],
+        rehypeRaw,
+        [rehypeSanitize, sanitizeSchema],
+      ]}
       skipHtml={false}
       components={components}
     >
