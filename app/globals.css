@@ -53,10 +53,11 @@
 }
 
 body {
-  font-family: 'Baloo 2', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
-               "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", 
-               "Segoe UI Emoji", "Segoe UI Symbol";
-  font-size: 17px; /* Increasing base font size from default 16px to 18px */
+  font-family: 'Baloo 2', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 17px;
+  /* Increasing base font size from default 16px to 18px */
 }
 
 @layer utilities {
@@ -67,23 +68,30 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* Slightly lighter off-white for main background */
-    --foreground: 240 10% 10%; /* Dark gray instead of black for better readability */
-    --card: 0 0% 95%; /* Slightly darker than background for layering */
+    --background: 0 0% 98%;
+    /* Slightly lighter off-white for main background */
+    --foreground: 240 10% 10%;
+    /* Dark gray instead of black for better readability */
+    --card: 0 0% 95%;
+    /* Slightly darker than background for layering */
     --card-foreground: 240 10% 10%;
     --popover: 0 0% 95%;
     --popover-foreground: 240 10% 10%;
-    --primary: 221 70% 50%; /* Adjusted blue for better contrast on light background - further darkened */
+    --primary: 221 70% 50%;
+    /* Adjusted blue for better contrast on light background - further darkened */
     --primary-foreground: 0 0% 98%;
-    --secondary: 210 5% 93%; /* Subtle secondary */
+    --secondary: 210 5% 93%;
+    /* Subtle secondary */
     --secondary-foreground: 240 5% 10%;
     --muted: 210 5% 93%;
-    --muted-foreground: 240 5% 45%; /* Lighter for secondary text */
+    --muted-foreground: 240 5% 45%;
+    /* Lighter for secondary text */
     --accent: 210 5% 93%;
     --accent-foreground: 240 5% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 90%; /* Subtle border color */
+    --border: 220 13% 90%;
+    /* Subtle border color */
     --input: 220 13% 90%;
     --ring: 221 70% 55%;
     --chart-1: 12 76% 61%;
@@ -92,28 +100,36 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 1rem;
-    --sidebar-background: 210 10% 95%; /* Slightly darker sidebar for contrast */
+    --sidebar-background: 210 10% 95%;
+    /* Slightly darker sidebar for contrast */
     --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 221 70% 45%; /* Slightly darker primary for sidebar */
+    --sidebar-primary: 221 70% 45%;
+    /* Slightly darker primary for sidebar */
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 210 10% 90%;
     --sidebar-accent-foreground: 240 5% 10%;
     --sidebar-border: 220 13% 90%;
     --sidebar-ring: 221 70% 55%;
   }
+
   .dark {
-    --background: 210 5% 10%; /* Slightly adjusted for better contrast */
-    --foreground: 0 0% 90%; /* Not pure white for reduced eye strain */
-    --card: 210 5% 12%; /* Slightly lighter than background for layering */
+    --background: 210 5% 10%;
+    /* Slightly adjusted for better contrast */
+    --foreground: 0 0% 90%;
+    /* Not pure white for reduced eye strain */
+    --card: 210 5% 12%;
+    /* Slightly lighter than background for layering */
     --card-foreground: 0 0% 90%;
     --popover: 210 5% 12%;
     --popover-foreground: 0 0% 90%;
     --primary: 217 91% 60%;
     --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 4% 16%; /* Slightly adjusted for better contrast */
+    --secondary: 240 4% 16%;
+    /* Slightly adjusted for better contrast */
     --secondary-foreground: 0 0% 90%;
     --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%; /* Slightly lighter for better readability */
+    --muted-foreground: 240 5% 65%;
+    /* Slightly lighter for better readability */
     --accent: 240 4% 16%;
     --accent-foreground: 0 0% 90%;
     --destructive: 0 62.8% 30.6%;
@@ -126,7 +142,8 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 210 6% 8%; /* Darker sidebar for contrast */
+    --sidebar-background: 210 6% 8%;
+    /* Darker sidebar for contrast */
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -139,27 +156,30 @@ body {
 
 @layer base {
   html {
-    font-size: 105%; /* Set root font size to 18px (112.5% of the default 16px) */
+    font-size: 105%;
+    /* Set root font size to 18px (112.5% of the default 16px) */
   }
 
   * {
     border-color: hsl(var(--border));
   }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
+
   /* Remove all focus styles */
   *:focus {
     outline: none;
   }
+
   *:focus-visible {
     outline: none;
     box-shadow: none;
   }
-  
+
   /* Override focus styles for all interactive elements */
   button:focus,
   a:focus,
@@ -189,6 +209,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -246,8 +267,13 @@ body {
 
 /* Simple fade-in animation */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Styling for copy operations is handled by the onCopy event in messages/message.tsx */
@@ -262,7 +288,7 @@ body {
  * react-syntax-highlighter renders line numbers in a separate container when showInlineLineNumbers={false}.
  * This targets the line number container element.
  */
-.code-block-container code > span:first-child {
+.code-block-container code>span:first-child {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -280,10 +306,27 @@ body {
 }
 
 /* Target the line number container (rendered separately with float: left) */
-.code-block-container pre > span[style*="float"],
-.code-block-container pre > span[style*="user-select: none"] {
+.code-block-container pre>span[style*="float"],
+.code-block-container pre>span[style*="user-select: none"] {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* Hide scrollbar for horizontal scroll on mobile navigation */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area for mobile devices with notches */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
 }
