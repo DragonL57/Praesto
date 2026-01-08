@@ -48,9 +48,9 @@ const sanitizeSchema = {
 const NonMemoizedMarkdown = ({
   children,
   baseHeadingLevel = 1,
-  append,
+  append: _append,
 }: MarkdownProps) => {
-  // Memoize components based on baseHeadingLevel and append
+  // Memoize components based on baseHeadingLevel
   // Must be called before any early returns (React hooks rules)
   const components = useMemo<CustomMarkdownComponents>(
     () => ({
