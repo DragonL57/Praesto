@@ -85,18 +85,20 @@ export function MessageReasoning({
                 status="complete"
               >
                 <ChainOfThoughtSearchResults>
-                  {item.data.results.map((result) => (
-                    <a
-                      key={result.href}
-                      href={result.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ChainOfThoughtSearchResult>
-                        {new URL(result.href).hostname}
-                      </ChainOfThoughtSearchResult>
-                    </a>
-                  ))}
+                  {item.data.results
+                    .filter((result) => result.href && result.href.trim() !== '')
+                    .map((result) => (
+                      <a
+                        key={result.href}
+                        href={result.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ChainOfThoughtSearchResult>
+                          {new URL(result.href).hostname}
+                        </ChainOfThoughtSearchResult>
+                      </a>
+                    ))}
                 </ChainOfThoughtSearchResults>
               </ChainOfThoughtStep>
             );
