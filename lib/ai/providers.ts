@@ -54,6 +54,15 @@ const grok41FastNonReasoningModel = wrapLanguageModel({
   }),
 });
 
+const glm5Model = wrapLanguageModel({
+  model: poeProvider.chatModel('glm-5'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 1,
+    },
+  }),
+});
+
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
   {
@@ -62,6 +71,14 @@ export const chatModels: ChatModel[] = [
     description: 'Grok-4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
     isDefault: true,
+    supportsTools: true,
+    supportsThinking: true,
+  },
+  {
+    id: 'glm-5',
+    name: 'GLM-5',
+    description: 'GLM-5 model via Poe API',
+    provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
   },
@@ -82,6 +99,7 @@ export const myProvider = customProvider({
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
     'grok-4.1-fast-non-reasoning': grok41FastNonReasoningModel,
+    'glm-5': glm5Model,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGrok41FastReasoningModel,
