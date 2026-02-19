@@ -24,17 +24,14 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env
+.env.*
+.env*
 
 # turbo
 .turbo
 
-.env
 .vercel
-.env*.local
 
 # Playwright
 /test-results/

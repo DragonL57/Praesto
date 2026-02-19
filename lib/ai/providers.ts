@@ -27,13 +27,6 @@ export interface ChatModel {
   supportsThinking?: boolean;
 }
 
-// Z.AI OpenAI-compatible provider for main chat
-const zaiProvider = createOpenAICompatible({
-  name: 'z-ai',
-  apiKey: process.env.ZAI_API_KEY || '',
-  baseURL: 'https://api.z.ai/api/coding/paas/v4',
-});
-
 // Poe API OpenAI-compatible provider
 const poeProvider = createOpenAICompatible({
   name: 'poe',
@@ -61,56 +54,14 @@ const grok41FastNonReasoningModel = wrapLanguageModel({
   }),
 });
 
-const enhancedGlmModel = wrapLanguageModel({
-  model: zaiProvider.chatModel('glm-4.7'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1.0,
-      providerOptions: {
-        'z-ai': {
-          thinking: {
-            type: 'enabled',
-          },
-        },
-      },
-    },
-  }),
-});
-
-const lightWeightModel = wrapLanguageModel({
-  model: zaiProvider.chatModel('glm-4.5-air'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.5,
-    },
-  }),
-});
-
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
-  {
-    id: 'glm-4.7',
-    name: 'GLM-4.7',
-    description: 'GLM-4.7 model from Z.AI',
-    provider: 'Z.AI',
-    isDefault: true,
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'glm-4.6v',
-    name: 'GLM-4.6V',
-    description:
-      'GLM-4.6V: Z.AI flagship multimodal model (128K context, native function calling, SoTA visual understanding).',
-    provider: 'Z.AI',
-    supportsTools: true,
-    supportsThinking: true,
-  },
   {
     id: 'grok-4.1-fast-reasoning',
     name: 'Grok-4.1',
     description: 'Grok-4.1 Fast Reasoning model via Poe API',
     provider: 'Poe',
+    isDefault: true,
     supportsTools: true,
     supportsThinking: true,
   },
@@ -122,36 +73,19 @@ export const DEFAULT_CHAT_MODEL_ID = defaultModel
   ? defaultModel.id
   : chatModels.length > 0
     ? chatModels[0].id
-    : 'glm-4.7';
+    : 'grok-4.1-fast-reasoning';
 
 // Export the configured provider for the application
 // Model IDs match those defined in chatModels array above
 export const myProvider = customProvider({
   languageModels: {
-    // Enhanced Z.AI models with middleware
-    'glm-4.7': enhancedGlmModel,
-    'glm-4.5-air': lightWeightModel,
-    'glm-4.6v': wrapLanguageModel({
-      model: zaiProvider.chatModel('glm-4.6v'),
-      middleware: defaultSettingsMiddleware({
-        settings: {
-          temperature: 0.7,
-          providerOptions: {
-            'z-ai': {
-              thinking: { type: 'enabled' },
-            },
-          },
-        },
-      }),
-    }),
-
     // Enhanced Poe models with middleware
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
     'grok-4.1-fast-non-reasoning': grok41FastNonReasoningModel,
 
     // Aliases for internal use (using enhanced models)
-    'chat-model': enhancedGlmModel,
-    'title-model': lightWeightModel,
+    'chat-model': enhancedGrok41FastReasoningModel,
+    'title-model': grok41FastNonReasoningModel,
     'fast-model': grok41FastNonReasoningModel,
   },
 });
@@ -180,13 +114,10 @@ export function getProviderOptions(
 
   return {
     openai: baseOptions,
-    'z-ai': {
+    poe: {
       thinking: {
         type: supportsThinking ? 'enabled' : 'disabled',
       },
-      ...baseOptions,
-    },
-    poe: {
       ...baseOptions,
     },
   };
