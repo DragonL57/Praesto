@@ -158,6 +158,22 @@ export const webSearch = tool({
     summary,
     units,
   }) => {
+    // Check if API key is configured
+    if (!BRAVE_API_KEY) {
+      console.error('[Brave Search] Missing BRAVE_API_KEY environment variable');
+      return {
+        results: [
+          {
+            title: 'Search Configuration Error',
+            href: '',
+            body: 'Web search is not available. The BRAVE_API_KEY environment variable is not set. Please configure your Brave Search API key to use web search.',
+          },
+        ],
+        count: 0,
+        query: query,
+      };
+    }
+
     let logParams = `Brave Search: query='${query}', count=${count}, country=${country}, lang=${search_lang}, safesearch=${safesearch}`;
     if (freshness) logParams += `, freshness=${freshness}`;
     if (offset !== undefined) logParams += `, offset=${offset}`;
@@ -200,8 +216,17 @@ export const webSearch = tool({
       );
 
       if (!response.ok) {
+        let errorDetail = `${response.status} ${response.statusText}`;
+
+        // Add specific guidance for common HTTP errors
+        if (response.status === 422) {
+          errorDetail += ' (Unprocessable Entity - check API key validity and request parameters)';
+        } else if (response.status === 401 || response.status === 403) {
+          errorDetail += ' (Authentication failed - verify BRAVE_API_KEY is valid)';
+        }
+
         throw new Error(
-          `Brave Search API error: ${response.status} ${response.statusText}`,
+          `Brave Search API error: ${errorDetail}`,
         );
       }
 
