@@ -63,6 +63,15 @@ const glm5Model = wrapLanguageModel({
   }),
 });
 
+const minimaxM25Model = wrapLanguageModel({
+  model: poeProvider.chatModel('minimax-m2.5'),
+  middleware: defaultSettingsMiddleware({
+    settings: {
+      temperature: 0.8,
+    },
+  }),
+});
+
 // Model configurations with metadata
 export const chatModels: ChatModel[] = [
   {
@@ -78,6 +87,14 @@ export const chatModels: ChatModel[] = [
     id: 'glm-5',
     name: 'GLM-5',
     description: 'GLM-5 model via Poe API',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: true,
+  },
+  {
+    id: 'minimax-m2.5',
+    name: 'Minimax M2.5',
+    description: 'Minimax M2.5 model via Poe API',
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
@@ -100,6 +117,7 @@ export const myProvider = customProvider({
     'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
     'grok-4.1-fast-non-reasoning': grok41FastNonReasoningModel,
     'glm-5': glm5Model,
+    'minimax-m2.5': minimaxM25Model,
 
     // Aliases for internal use (using enhanced models)
     'chat-model': enhancedGrok41FastReasoningModel,
