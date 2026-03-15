@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 // Import tools and utilities
 import { chatModels } from './models';
 import { systemPrompt } from './prompts';
+// messages are OpenAI/Poe formatted message objects
 
 // Poe API OpenAI-compatible provider client
 export const openai = new OpenAI({
@@ -46,7 +47,7 @@ export async function getAvailableTools() {
  */
 export async function getChatCompletionParams(
   modelId: string,
-  messages: any[],
+  messages: Record<string, unknown>[],
   userTimeContext?: {
     date: string;
     time: string;
@@ -62,7 +63,7 @@ export async function getChatCompletionParams(
   if (modelId === 'chat-model') actualModel = 'grok-4.1-fast-reasoning';
   if (modelId === 'title-model' || modelId === 'fast-model') actualModel = 'grok-4.1-fast-non-reasoning';
 
-  const baseConfig: any = {
+  const baseConfig: Record<string, unknown> = {
     model: actualModel,
     messages: [
       {
@@ -78,19 +79,19 @@ export async function getChatCompletionParams(
   // Add model-specific extra_body parameters if defined in config
   if (extraParams) {
     baseConfig.extra_body = {
-      ...extraParams
+      ...extraParams,
     };
   }
 
   // Use custom function calling tools for models that support them
   if (supportsTools) {
     const { tools } = await getAvailableTools();
-    baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, any]) => ({
+    baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, unknown]) => ({
       type: 'function',
       function: {
         name,
-        description: tool.description,
-        parameters: tool.parameters,
+        description: (tool as Record<string, unknown>)?.description,
+        parameters: (tool as Record<string, unknown>)?.parameters,
       },
     }));
   }

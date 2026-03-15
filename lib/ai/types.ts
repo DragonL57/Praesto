@@ -26,14 +26,14 @@ export type ToolCallPart = {
   type: 'tool-call';
   toolCallId: string;
   toolName: string;
-  args: any;
+  args: Record<string, unknown> | unknown;
 };
 
 export type ToolResultPart = {
   type: 'tool-result';
   toolCallId: string;
   toolName: string;
-  result: any;
+  result: unknown;
 };
 
 export type FilePart = {
@@ -43,13 +43,13 @@ export type FilePart = {
   contentType?: string;
 };
 
-export type MessagePart = 
-  | TextPart 
-  | ReasoningPart 
-  | ToolCallPart 
-  | ToolResultPart 
+export type MessagePart =
+  | TextPart
+  | ReasoningPart
+  | ToolCallPart
+  | ToolResultPart
   | FilePart
-  | { type: string; [key: string]: any }; // Allow for specialized tool parts
+  | { type: string;[key: string]: unknown }; // Allow for specialized tool parts
 
 export interface Message {
   id: string;
@@ -63,7 +63,7 @@ export type ChatStatus = 'idle' | 'submitted' | 'streaming' | 'ready' | 'error';
 
 export interface ChatRequestOptions {
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
 }
 
 export type SetMessagesFunction = (

@@ -37,25 +37,29 @@ export const getWeather = {
     },
     required: ['latitude', 'longitude'],
   },
-  execute: async ({
-    latitude,
-    longitude,
-    timezone = 'auto',
-    temperature_unit = 'celsius',
-    wind_speed_unit = 'kmh',
-    precipitation_unit = 'mm',
-    forecast_days = 7,
-  }: any) => {
+  execute: async (params?: Record<string, unknown>) => {
+    const p: Record<string, unknown> = params ?? {};
+    const latRaw = p.latitude;
+    const lonRaw = p.longitude;
+    const timezone = typeof p.timezone === 'string' ? p.timezone : 'auto';
+    const temperature_unit = typeof p.temperature_unit === 'string' ? p.temperature_unit : 'celsius';
+    const wind_speed_unit = typeof p.wind_speed_unit === 'string' ? p.wind_speed_unit : 'kmh';
+    const precipitation_unit = typeof p.precipitation_unit === 'string' ? p.precipitation_unit : 'mm';
+    const forecast_days_raw = p.forecast_days;
+
+    const lat = Number(latRaw ?? NaN);
+    const lon = Number(lonRaw ?? NaN);
+    const fd = typeof forecast_days_raw === 'number' ? forecast_days_raw : Number(forecast_days_raw ?? 7);
     const url = new URL('https://api.open-meteo.com/v1/forecast');
 
     // Set basic parameters
-    url.searchParams.set('latitude', latitude.toString());
-    url.searchParams.set('longitude', longitude.toString());
+    url.searchParams.set('latitude', lat.toString());
+    url.searchParams.set('longitude', lon.toString());
     url.searchParams.set('timezone', timezone);
     url.searchParams.set('temperature_unit', temperature_unit);
     url.searchParams.set('wind_speed_unit', wind_speed_unit);
     url.searchParams.set('precipitation_unit', precipitation_unit);
-    url.searchParams.set('forecast_days', forecast_days.toString());
+    url.searchParams.set('forecast_days', fd.toString());
 
     // Set current weather variables - comprehensive set
     url.searchParams.set(
@@ -135,7 +139,7 @@ export const getWeather = {
 
     try {
       console.log(
-        `Fetching weather data for coordinates: ${latitude}, ${longitude}`,
+        `Fetching weather data for coordinates: ${lat}, ${lon}`,
       );
       const response = await fetch(url.toString());
 

@@ -7,7 +7,7 @@ export type StreamPartType = 'text' | 'reasoning' | 'tool-call' | 'tool-result' 
 
 export interface StreamPart {
   type: StreamPartType;
-  data: any;
+  data: unknown;
 }
 
 /**
@@ -39,7 +39,7 @@ export const PREFIX_TO_TYPE: Record<string, StreamPartType> = Object.fromEntries
  * Formats a single part of the stream for sending over the wire.
  * Format: <prefix>:<JSON_data>\n
  */
-export function formatStreamPart(type: StreamPartType, data: any): string {
+export function formatStreamPart(type: StreamPartType, data: unknown): string {
   const prefix = PROTOCOL_PREFIXES[type];
   if (!prefix) {
     throw new Error(`Unknown stream part type: ${type}`);
@@ -50,7 +50,7 @@ export function formatStreamPart(type: StreamPartType, data: any): string {
 /**
  * Helper to encode a string into a Uint8Array for the ReadableStream.
  */
-export function encodeStreamPart(type: StreamPartType, data: any): Uint8Array {
+export function encodeStreamPart(type: StreamPartType, data: unknown): Uint8Array {
   const encoder = new TextEncoder();
   return encoder.encode(formatStreamPart(type, data));
 }

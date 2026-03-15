@@ -48,7 +48,10 @@ interface MultimodalInputProps {
   messages: Array<Message>;
   setMessages: SetMessagesFunction;
   append: AppendFunction;
-  sendMessage: (args: { text: string; attachments?: any[] }) => Promise<void>;
+  sendMessage: (args: {
+    text: string;
+    attachments?: Attachment[];
+  }) => Promise<void>;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -371,7 +374,7 @@ function PureMultimodalInput({
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none" />
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
-                  status={status} 
+                  status={status}
                 />
               </div>
 

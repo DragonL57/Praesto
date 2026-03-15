@@ -1,10 +1,10 @@
 import 'server-only';
 import { generateUUID } from '@/lib/utils';
 import { openai, getChatCompletionParams, getAvailableTools } from '@/lib/ai/providers';
-import { 
-  getChatById, 
-  saveChat, 
-  saveMessages, 
+import {
+  getChatById,
+  saveChat,
+  saveMessages,
   updateChatTimestamp,
   getMessageById,
   deleteMessagesByChatIdAfterTimestamp
@@ -12,7 +12,9 @@ import {
 import { generateTitleFromUserMessage } from '@/lib/actions/chat';
 import { processMessageAttachments, updateMessageWithProcessedText } from './attachments';
 import { StreamProtocol } from './stream-protocol';
+import type { StreamPartType } from './stream-protocol';
 import type { Message, MessagePart } from '@/lib/ai/types';
+import type { UIMessage } from 'ai';
 import type { UserTimeContext } from './types';
 
 /**
@@ -33,7 +35,7 @@ export async function handleChatRequest({
   modelId: string;
   controller: ReadableStreamDefaultController;
 }) {
-  const send = (type: any, data: any) => controller.enqueue(StreamProtocol.encode(type, data));
+  const send = (type: StreamPartType | string, data: unknown) => controller.enqueue(StreamProtocol.encode(type as StreamPartType, data));
 
   try {
     // 1. Process attachments and update the latest user message
@@ -44,17 +46,17 @@ export async function handleChatRequest({
 
     const originalParts = JSON.parse(JSON.stringify(userMessage.parts));
     const originalTypedText = userMessage.parts
-      .filter((part: any) => part.type === 'text')
-      .map((part: any) => part.text)
+      .filter((part: MessagePart) => part.type === 'text')
+      .map((part) => (part as { text: string }).text)
       .join('\n');
 
-    const combinedText = await processMessageAttachments(userMessage as any);
-    updateMessageWithProcessedText(userMessage as any, combinedText, originalTypedText);
+    const combinedText = await processMessageAttachments(userMessage as unknown as UIMessage);
+    updateMessageWithProcessedText(userMessage as unknown as UIMessage, combinedText, originalTypedText);
 
     // 2. Manage Chat initialization and title generation
     const chat = await getChatById({ id });
     if (!chat) {
-      const title = await generateTitleFromUserMessage({ message: userMessage as any });
+      const title = await generateTitleFromUserMessage({ message: userMessage as unknown as UIMessage });
       await saveChat({ id, userId, title });
       // Send title metadata to frontend immediately so UI can update
       send('metadata', { title });
@@ -89,93 +91,127 @@ export async function handleChatRequest({
     const assistantId = generateUUID();
     let finalFullContent = '';
     let finalFullReasoning = '';
-    const allToolCallsForUI: any[] = [];
-    const allToolResultsForUI: any[] = [];
+    type Tool = {
+      description?: string;
+      parameters?: Record<string, unknown> | unknown;
+      execute: (args?: Record<string, unknown>) => Promise<unknown>;
+    };
+
+    const allToolCallsForUI: Array<{ id?: string; name?: string; args?: unknown }> = [];
+    const allToolResultsForUI: Array<{ toolCallId?: string; toolName?: string; result?: unknown; args?: unknown }> = [];
     const { tools: availableTools } = await getAvailableTools();
+    const toolsRegistry = availableTools as Record<string, Tool>;
 
     // Inner recursive function to handle potential tool-call loops
-    const runCompletion = async (currentMsgs: any[], retryCount = 0): Promise<void> => {
+    type ToolCallEntry = {
+      id?: string;
+      type: 'function';
+      function: { name: string; arguments: string };
+    };
+
+    const runCompletion = async (currentMsgs: Record<string, unknown>[], retryCount = 0): Promise<void> => {
       let stepContent = '';
       let stepReasoning = '';
-      const stepToolCalls: any[] = [];
+      const stepToolCalls: Array<ToolCallEntry | null> = [];
 
       try {
         const params = await getChatCompletionParams(modelId, currentMsgs, userTimeContext);
-        
-        // Execute completion with Poe API (OpenAI-compatible)
-        const responseStream = await openai.chat.completions.create(params as any);
 
-        for await (const chunk of (responseStream as any)) {
-          const delta = chunk.choices[0]?.delta;
+        // Execute completion with Poe API (OpenAI-compatible)
+        // Bind the create method so its internal `this` (client) is available at runtime
+        // CreateFn: explicit function type for the provider's streaming create method
+        type CreateFn = (body: unknown) => Promise<AsyncIterable<unknown>>;
+        const createFn = (openai.chat.completions.create as unknown as CreateFn).bind(openai.chat.completions) as CreateFn;
+        const responseStream = await createFn(params);
+
+        for await (const chunk of (responseStream as AsyncIterable<unknown>)) {
+          const chunkRec = chunk as Record<string, unknown>;
+          const choices = chunkRec.choices as Array<Record<string, unknown>> | undefined;
+          const delta = choices?.[0]?.delta as Record<string, unknown> | undefined;
           if (!delta) continue;
 
           // Handle text content
-          if (delta.content) {
-            stepContent += delta.content;
-            finalFullContent += delta.content;
-            send('text', delta.content);
+          const deltaRec = delta as Record<string, unknown>;
+          if (typeof deltaRec.content === 'string') {
+            const text = deltaRec.content as string;
+            stepContent += text;
+            finalFullContent += text;
+            send('text', text);
           }
 
           // Handle reasoning/thinking
-          const reasoning = (delta as any).reasoning_content || (delta as any).thinking;
-          if (reasoning) {
+          const reasoning = (typeof deltaRec.reasoning_content !== 'undefined') ? deltaRec.reasoning_content : deltaRec.thinking;
+          if (typeof reasoning === 'string' && reasoning.length > 0) {
             stepReasoning += reasoning;
             finalFullReasoning += reasoning;
             send('reasoning', reasoning);
           }
 
           // Accumulate tool calls
-          if (delta.tool_calls) {
-            for (const tcDelta of delta.tool_calls) {
-              if (tcDelta.index === undefined) continue;
-              
-              if (!stepToolCalls[tcDelta.index]) {
-                stepToolCalls[tcDelta.index] = { 
-                  id: tcDelta.id, 
-                  type: 'function', 
-                  function: { name: '', arguments: '' } 
+          if (deltaRec.tool_calls) {
+            for (const tcDeltaRaw of (deltaRec.tool_calls as Array<Record<string, unknown>>) || []) {
+              const tcDelta = tcDeltaRaw as Record<string, unknown>;
+              const rawIndex = tcDelta.index as unknown;
+              const idx =
+                typeof rawIndex === 'number'
+                  ? rawIndex
+                  : typeof rawIndex === 'string' && rawIndex && !Number.isNaN(Number(rawIndex))
+                    ? Number(rawIndex)
+                    : undefined;
+              if (idx === undefined) continue;
+
+              if (!stepToolCalls[idx]) {
+                stepToolCalls[idx] = {
+                  id: tcDelta.id as string | undefined,
+                  type: 'function',
+                  function: { name: '', arguments: '' }
                 };
               }
-              
-              const tc = stepToolCalls[tcDelta.index];
-              if (tcDelta.id) tc.id = tcDelta.id;
-              if (tcDelta.function?.name) tc.function.name += tcDelta.function.name;
-              if (tcDelta.function?.arguments) tc.function.arguments += tcDelta.function.arguments;
+
+              const tc = stepToolCalls[idx];
+              if (!tc) continue;
+              if (tcDelta.id) tc.id = String(tcDelta.id as unknown);
+              if (tcDelta.function && typeof tcDelta.function === 'object') {
+                const fn = tcDelta.function as Record<string, unknown>;
+                if (typeof fn.name === 'string') tc.function.name += fn.name;
+                if (typeof fn.arguments === 'string') tc.function.arguments += fn.arguments;
+              }
             }
           }
         }
 
         // Process accumulated tool calls
-        const filteredToolCalls = stepToolCalls.filter(Boolean);
+        const filteredToolCalls = stepToolCalls.filter(Boolean) as ToolCallEntry[];
         if (filteredToolCalls.length > 0) {
           // Build history for the next step
-          const toolMessages = [...currentMsgs, { 
-            role: 'assistant', 
-            content: stepContent || null, 
+          const toolMessages = [...currentMsgs, {
+            role: 'assistant',
+            content: stepContent || null,
             reasoning_content: stepReasoning || undefined,
-            tool_calls: filteredToolCalls 
+            tool_calls: filteredToolCalls
           }];
 
           for (const tc of filteredToolCalls) {
+            if (!tc || !tc.function) continue;
             const toolName = tc.function.name;
             const toolArgsString = tc.function.arguments || '{}';
             let toolArgs = {};
-            try { 
-              toolArgs = JSON.parse(toolArgsString); 
+            try {
+              toolArgs = JSON.parse(toolArgsString);
             } catch {
               console.error('[ChatService] Failed to parse tool arguments:', toolArgsString);
             }
-            
+
             // Add to UI tracking
             allToolCallsForUI.push({ id: tc.id, name: toolName, args: toolArgs });
             send('tool-call', { toolCallId: tc.id, toolName, args: toolArgs });
 
-            const tool = (availableTools as any)[toolName];
-            if (tool) {
+            const tool = toolsRegistry[toolName];
+            if (tool && typeof tool.execute === 'function') {
               try {
                 const result = await tool.execute(toolArgs);
                 allToolResultsForUI.push({ toolCallId: tc.id, toolName, result, args: toolArgs });
-                
+
                 send('tool-result', { toolCallId: tc.id, toolName, result });
 
                 toolMessages.push({
@@ -183,7 +219,7 @@ export async function handleChatRequest({
                   tool_call_id: tc.id,
                   content: typeof result === 'string' ? result : JSON.stringify(result),
                 });
-              } catch (toolError) {
+              } catch (toolError: unknown) {
                 const errorMessage = toolError instanceof Error ? toolError.message : String(toolError);
                 console.error(`[ChatService] Error executing tool ${toolName}:`, toolError);
 
@@ -197,27 +233,28 @@ export async function handleChatRequest({
                   tool_call_id: tc.id,
                   content: JSON.stringify(errorResult),
                 });
-              }            }
+              }
+            }
           }
-          
+
           // Recursive call for follow-up response after tool execution
           await runCompletion(toolMessages);
         }
-      } catch (error: any) {
-        console.error(`[Completion Error] (Attempt ${retryCount + 1}):`, error);
-        
+      } catch (error: unknown) {
+        const err = error as unknown as Record<string, unknown> | Error | undefined;
+        console.error(`[Completion Error] (Attempt ${retryCount + 1}):`, err);
+
         // Robust retry for upstream errors
-        const isRetryable = error.type === 'internal_error' || error.status === 500 || error.status === 429;
+        const errRec = err as Record<string, unknown> | undefined;
+        const isRetryable = !!(errRec && (String(errRec.type) === 'internal_error' || Number(errRec.status) === 500 || Number(errRec.status) === 429));
         if (retryCount < 2 && isRetryable) {
           const delay = Math.pow(2, retryCount) * 1000;
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           // Reset step progress for this attempt
-          // Note: In a real stream we'd need to tell the UI we're retrying if content was already sent,
-          // but for now we just try to continue.
           return runCompletion(currentMsgs, retryCount + 1);
         }
-        throw error;
+        throw err;
       }
     };
 
@@ -229,7 +266,7 @@ export async function handleChatRequest({
     const uiParts: MessagePart[] = [];
     if (finalFullReasoning) uiParts.push({ type: 'reasoning', text: finalFullReasoning });
     if (finalFullContent) uiParts.push({ type: 'text', text: finalFullContent });
-    
+
     // Map tool calls for UI persistence
     allToolCallsForUI.forEach(tc => {
       uiParts.push({
@@ -238,7 +275,7 @@ export async function handleChatRequest({
         toolName: tc.name,
         args: tc.args,
         state: 'input-available'
-      } as any);
+      } as MessagePart);
     });
 
     // Map tool results for UI persistence
@@ -250,7 +287,7 @@ export async function handleChatRequest({
         result: tr.result,
         args: tr.args,
         state: 'output-available'
-      } as any);
+      } as MessagePart);
     });
 
     await saveMessages({
@@ -265,9 +302,11 @@ export async function handleChatRequest({
     });
     await updateChatTimestamp({ id });
 
-  } catch (error: any) {
-    console.error('[ChatService Final Catch]', error);
-    send('error', error.message || 'An error occurred during completion');
+  } catch (error: unknown) {
+    const err = error as unknown as Record<string, unknown> | Error | undefined;
+    console.error('[ChatService Final Catch]', err);
+    const message = err instanceof Error ? err.message : String((err as Record<string, unknown>)?.message ?? 'An error occurred during completion');
+    send('error', message);
   } finally {
     controller.close();
   }
@@ -276,33 +315,30 @@ export async function handleChatRequest({
 /**
  * Helper to convert UI messages to the format expected by OpenAI/Poe API
  */
-export function convertToOpenAIMessages(messages: Message[]): any[] {
-  const result: any[] = [];
+export function convertToOpenAIMessages(messages: Message[]): Record<string, unknown>[] {
+  const result: Record<string, unknown>[] = [];
 
   for (const m of messages) {
     if (m.role === 'user' || m.role === 'system') {
-      const content = m.parts
-        ? m.parts
-            .filter((part) => part.type === 'text')
-            .map((part) => (part as { text: string }).text)
-            .join('\n')
-        : (m as any).content || '';
-      
+      const raw = m.parts?.filter((part) => part.type === 'text').map((part) => (part as { text: string }).text).join('\n') ?? undefined;
+      const fallback = (m as unknown as Record<string, unknown>).content;
+      const content = String(raw ?? fallback ?? '');
+
       result.push({ role: m.role, content: content || '' });
-    } 
+    }
     else if (m.role === 'assistant') {
       const textParts = m.parts?.filter((p) => p.type === 'text') || [];
-      const content = textParts.map((p: any) => p.text).join('\n').trim();
+      const content = textParts.map((p) => (p as { text?: string }).text || '').join('\n').trim();
 
       const reasoningParts = m.parts?.filter((p) => p.type === 'reasoning') || [];
-      const reasoning = reasoningParts.map((p: any) => p.text).join('\n').trim();
+      const reasoning = reasoningParts.map((p) => (p as { text?: string }).text || '').join('\n').trim();
 
       // Get reasoning from raw property if parts are missing (for internal recursion)
-      const finalReasoning = reasoning || (m as any).reasoning_content || (m as any).thinking;
+      const finalReasoning = reasoning || (m as unknown as Record<string, unknown>).reasoning_content || (m as unknown as Record<string, unknown>).thinking;
 
       const toolCallParts = m.parts?.filter(p => p.type === 'tool-call') || [];
-      
-      const assistantMsg: any = {
+
+      const assistantMsg: Record<string, unknown> = {
         role: 'assistant',
         content: content || null,
       };
@@ -313,27 +349,31 @@ export function convertToOpenAIMessages(messages: Message[]): any[] {
       }
 
       if (toolCallParts.length > 0) {
-        assistantMsg.tool_calls = toolCallParts.map((p: any) => ({
-          id: p.toolCallId,
-          type: 'function',
-          function: {
-            name: p.toolName,
-            arguments: typeof p.args === 'string' ? p.args : JSON.stringify(p.args || {}),
-          },
-        }));
+        (assistantMsg as Record<string, unknown>).tool_calls = toolCallParts.map((p) => {
+          const pr = p as Record<string, unknown>;
+          return {
+            id: pr.toolCallId,
+            type: 'function',
+            function: {
+              name: pr.toolName,
+              arguments: typeof pr.args === 'string' ? (pr.args as string) : JSON.stringify(pr.args || {}),
+            },
+          };
+        });
       }
 
       result.push(assistantMsg);
-    } 
+    }
     else if (m.role === 'tool') {
       const toolResultPart = m.parts.find(p => p.type === 'tool-result');
       if (toolResultPart && 'toolCallId' in toolResultPart) {
-        const toolResult = (toolResultPart as any).result;
+        const tr = toolResultPart as Record<string, unknown>;
+        const toolResult = tr.result;
         result.push({
           role: 'tool',
-          tool_call_id: (toolResultPart as any).toolCallId,
-          content: typeof toolResult === 'string' 
-            ? toolResult 
+          tool_call_id: tr.toolCallId,
+          content: typeof toolResult === 'string'
+            ? (toolResult as string)
             : JSON.stringify(toolResult ?? {}),
         });
       }

@@ -4,13 +4,14 @@
  * Without AI SDK dependency
  */
 
-import type { 
-  Message, 
-  MessagePart, 
-  AppendFunction, 
-  SetMessagesFunction,
-  ChatStatus 
-} from '@/lib/ai/types';
+import type {
+    Message,
+    MessagePart,
+    AppendFunction,
+    SetMessagesFunction,
+    ChatStatus,
+    Attachment } from '@/lib/ai/types';
+
 
 // ============================================================================
 // Suggestion Type
@@ -81,7 +82,7 @@ export interface PurePreviewMessageProps {
     isReadonly: boolean;
     suggestions?: Suggestion[];
     suggestionsLoading?: boolean;
-    sendMessage?: (args: { text: string; [key: string]: any }) => Promise<void>;
+    sendMessage?: (args: { text: string; attachments?: Attachment[] }) => Promise<void>;
     status?: ChatStatus;
 }
 

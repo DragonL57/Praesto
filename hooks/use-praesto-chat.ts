@@ -8,7 +8,7 @@ import { StreamProtocol } from '@/lib/ai/chat/stream-protocol';
 interface UsePraestoChatProps {
   id: string;
   initialMessages?: Message[];
-  body?: any;
+  body?: unknown;
   onFinish?: (message: Message) => void;
   onError?: (error: Error) => void;
 }
@@ -105,18 +105,20 @@ export function usePraestoChat({
           messagesToSend = [...currentMessages, userMessage];
         }
 
+        const mergedBody: Record<string, unknown> = {
+          id,
+          messages: messagesToSend,
+          ...(typeof body === 'object' && body ? (body as Record<string, unknown>) : {}),
+          ...(typeof options?.body === 'object' && options?.body ? (options.body as Record<string, unknown>) : {}),
+        };
+
         const response = await fetch('/api/chat/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...options?.headers,
           },
-          body: JSON.stringify({
-            id,
-            messages: messagesToSend,
-            ...body,
-            ...options?.body,
-          }),
+          body: JSON.stringify(mergedBody),
           signal: abortController.signal,
         });
 
@@ -161,35 +163,65 @@ export function usePraestoChat({
 
               const { type, data } = part;
 
-              // Handle different stream part types
+              // Handle different stream part types with runtime type checks
               if (type === 'text') {
-                assistantMessageParts = updateOrAddTextPart(assistantMessageParts, data);
+                if (typeof data === 'string') {
+                  assistantMessageParts = updateOrAddTextPart(assistantMessageParts, data);
+                } else if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  if (typeof d.text === 'string') {
+                    assistantMessageParts = updateOrAddTextPart(assistantMessageParts, d.text);
+                  }
+                }
               } else if (type === 'reasoning') {
-                assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, data);
+                if (typeof data === 'string') {
+                  assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, data);
+                } else if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  if (typeof d.text === 'string') {
+                    assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, d.text);
+                  }
+                }
               } else if (type === 'tool-call') {
-                assistantMessageParts.push({
-                  type: 'tool-call',
-                  toolCallId: data.toolCallId,
-                  toolName: data.toolName,
-                  args: data.args,
-                  state: 'input-available',
-                } as any);
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : generateUUID();
+                  const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
+                  const args = (d.args as Record<string, unknown> | undefined) ?? {};
+                  assistantMessageParts.push({
+                    type: 'tool-call',
+                    toolCallId,
+                    toolName,
+                    args,
+                  });
+                }
               } else if (type === 'tool-result') {
-                assistantMessageParts.push({
-                  type: 'tool-result',
-                  toolCallId: data.toolCallId,
-                  toolName: data.toolName,
-                  result: data.result,
-                  state: 'output-available',
-                } as any);
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : generateUUID();
+                  const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
+                  const resultValue = d.result as unknown;
+                  assistantMessageParts.push({
+                    type: 'tool-result',
+                    toolCallId,
+                    toolName,
+                    result: resultValue,
+                  });
+                }
               } else if (type === 'error') {
-                throw new Error(data || 'Stream Error');
+                const errMsg = typeof data === 'string'
+                  ? data
+                  : (typeof data === 'object' && data
+                    ? (typeof (data as Record<string, unknown>).message === 'string' ? (data as Record<string, unknown>).message : 'Stream Error')
+                    : 'Stream Error');
+                throw new Error(String(errMsg));
               } else if (type === 'metadata') {
                 console.log('[usePraestoChat] Received metadata:', data);
-                if (data.title && onFinish) {
-                  // If we got a title, it's a new chat, we might want to trigger a refresh
-                  // We can't easily trigger the SWR mutate here without access to it, 
-                  // but we can at least log it or handle it if we add a dedicated callback.
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  if (typeof d.title === 'string' && onFinish) {
+                    // If we got a title, it's a new chat, we might want to trigger a refresh
+                  }
                 }
               }
 
@@ -222,13 +254,17 @@ export function usePraestoChat({
         }
         result = assistantMessageId;
 
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
+      } catch (error: unknown) {
+        const err = error as unknown as Record<string, unknown> | Error | undefined;
+        const name = err && typeof (err as Record<string, unknown>).name === 'string' ? (err as Record<string, unknown>).name as string : undefined;
+        const isAbort = name === 'AbortError';
+        if (isAbort) {
           console.log('Fetch aborted');
         } else {
           console.error('[usePraestoChat Error]', error);
           setStatus('error');
-          if (onError) onError(error);
+          const errObj = error instanceof Error ? error : new Error(String(error));
+          if (onError) onError(errObj);
         }
         result = null;
       } finally {
@@ -292,7 +328,7 @@ export function usePraestoChat({
 function updateOrAddTextPart(parts: MessagePart[], text: string): MessagePart[] {
   const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
   if (lastPart && lastPart.type === 'text') {
-    (lastPart as any).text += text;
+    (lastPart as { type: 'text'; text: string }).text += text;
     return [...parts];
   }
   return [...parts, { type: 'text', text }];
@@ -302,7 +338,7 @@ function updateOrAddTextPart(parts: MessagePart[], text: string): MessagePart[] 
 function updateOrAddReasoningPart(parts: MessagePart[], text: string): MessagePart[] {
   const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
   if (lastPart && lastPart.type === 'reasoning') {
-    (lastPart as any).text += text;
+    (lastPart as { type: 'reasoning'; text: string }).text += text;
     return [...parts];
   }
   return [...parts, { type: 'reasoning', text }];

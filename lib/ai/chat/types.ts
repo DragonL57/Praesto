@@ -45,15 +45,13 @@ export interface UserTimeContext {
  */
 export function getFilePartsFromMessage(message: any): FileAttachment[] {
     if (!message || !Array.isArray(message.parts)) return [];
-    
+
     return message.parts
         .filter((part: any) => part.type === 'file')
-        .map(
-            (part: any): FileAttachment => ({
-                url: part.url ?? '',
-                name: part.filename,
-                contentType: part.mediaType,
-                mediaType: part.mediaType,
-            }),
-        );
+        .map((part: any): FileAttachment => ({
+            url: part.url ?? '',
+            name: part.filename,
+            contentType: part.mediaType,
+            mediaType: part.mediaType,
+        }));
 }

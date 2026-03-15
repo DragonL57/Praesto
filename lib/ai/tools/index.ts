@@ -32,7 +32,7 @@ export function getTools(toolNames?: ToolName[]) {
     };
   }
 
-  const tools: Record<string, any> = {};
+  const tools: Record<string, unknown> = {};
   const activeToolNames: ToolName[] = [];
 
   for (const name of toolNames) {

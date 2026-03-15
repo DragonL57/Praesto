@@ -8,6 +8,7 @@ import type {
   AppendFunction,
   ChatStatus,
   Message,
+  Attachment,
 } from '@/lib/ai/types';
 
 interface Suggestion {
@@ -29,7 +30,10 @@ interface MessagesProps {
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   suggestions?: Suggestion[];
   suggestionsLoading?: boolean;
-  sendMessage?: (args: { text: string; [key: string]: any }) => Promise<void>;
+  sendMessage?: (args: {
+    text: string;
+    attachments?: Attachment[];
+  }) => Promise<void>;
 }
 
 function PureMessages({
@@ -113,7 +117,7 @@ function PureMessages({
     const container = containerRef.current;
     if (!container) return;
 
-    const SCROLL_UP_THRESHOLD = 100; 
+    const SCROLL_UP_THRESHOLD = 100;
     let scrollTimeout: NodeJS.Timeout | null = null;
 
     const handleScroll = () => {
@@ -167,7 +171,7 @@ function PureMessages({
         });
       }
       lastUserMessageIdRef.current = lastMessage.id;
-      setUserHasScrolledUp(false); 
+      setUserHasScrolledUp(false);
       prevMessagesLengthRef.current = messages.length;
       isStreamingRef.current = status === 'streaming';
       return;
@@ -222,9 +226,8 @@ function PureMessages({
             {virtualItems.map((virtualItem) => {
               const message = messages[virtualItem.index];
               const index = virtualItem.index;
-              const isLastAssistantMessage = 
-                message.role === 'assistant' && 
-                index === messages.length - 1;
+              const isLastAssistantMessage =
+                message.role === 'assistant' && index === messages.length - 1;
 
               return (
                 <div
@@ -252,10 +255,14 @@ function PureMessages({
                     append={append}
                     isReadonly={isReadonly}
                     suggestions={
-                      isLastAssistantMessage && !isReadonly ? suggestions : undefined
+                      isLastAssistantMessage && !isReadonly
+                        ? suggestions
+                        : undefined
                     }
                     suggestionsLoading={
-                      isLastAssistantMessage && !isReadonly ? suggestionsLoading : false
+                      isLastAssistantMessage && !isReadonly
+                        ? suggestionsLoading
+                        : false
                     }
                     sendMessage={sendMessage}
                     status={status}
@@ -266,14 +273,13 @@ function PureMessages({
           </div>
         ) : (
           messages.map((message, index) => {
-            const isLastAssistantMessage = 
-              message.role === 'assistant' && 
-              index === messages.length - 1;
-            
+            const isLastAssistantMessage =
+              message.role === 'assistant' && index === messages.length - 1;
+
             return (
               <div
                 key={message.id}
-                data-message-id={message.id} 
+                data-message-id={message.id}
                 className="transition-opacity duration-300 ease-in-out"
               >
                 <PreviewMessage
@@ -287,10 +293,14 @@ function PureMessages({
                   append={append}
                   isReadonly={isReadonly}
                   suggestions={
-                    isLastAssistantMessage && !isReadonly ? suggestions : undefined
+                    isLastAssistantMessage && !isReadonly
+                      ? suggestions
+                      : undefined
                   }
                   suggestionsLoading={
-                    isLastAssistantMessage && !isReadonly ? suggestionsLoading : false
+                    isLastAssistantMessage && !isReadonly
+                      ? suggestionsLoading
+                      : false
                   }
                   sendMessage={sendMessage}
                   status={status}
@@ -327,7 +337,8 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
 
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
-  if (prevProps.suggestionsLoading !== nextProps.suggestionsLoading) return false;
+  if (prevProps.suggestionsLoading !== nextProps.suggestionsLoading)
+    return false;
   if (!equal(prevProps.suggestions, nextProps.suggestions)) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
 

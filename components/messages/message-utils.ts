@@ -49,7 +49,7 @@ export const isToolResultAvailable = (part: MessagePart): boolean => {
  */
 export const getToolOutput = (
     part: MessagePart,
-): any | undefined => {
+): unknown | undefined => {
     if (part.type === 'tool-result') {
         return (part as ToolResultPart).result;
     }
