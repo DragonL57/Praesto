@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { chatModels } from '@/lib/ai/providers';
+import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from 'usehooks-ts';
 

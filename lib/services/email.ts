@@ -123,7 +123,7 @@ export const sendEmail = async ({
         secure: process.env.EMAIL_SECURE,
         user: process.env.EMAIL_USER ? 'Set' : 'Not set',
         pass: process.env.EMAIL_PASSWORD ? 'Set' : 'Not set',
-        from: process.env.EMAIL_FROM || 'noreply@unitaskai.com',
+        from: process.env.EMAIL_FROM || 'noreply@unitaskai.thelong.online',
       });
 
       const fullContext = {
@@ -145,7 +145,7 @@ export const sendEmail = async ({
 
       // Send mail
       const mailOptions = {
-        from: `"UniTaskAI" <${process.env.EMAIL_FROM || 'noreply@unitaskai.com'}>`,
+        from: `"UniTaskAI" <${process.env.EMAIL_FROM || 'noreply@unitaskai.thelong.online'}>`,
         to,
         subject,
         html,

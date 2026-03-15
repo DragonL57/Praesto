@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getUser, setPasswordResetToken } from '@/lib/db/queries';
-import { generateToken, sendPasswordResetEmail } from '@/lib/email';
+import { generateToken, sendPasswordResetEmail } from '@/lib/services/email';
 
 export async function POST(request: NextRequest) {
   console.log('[API /api/auth/forgot-password] Route hit');

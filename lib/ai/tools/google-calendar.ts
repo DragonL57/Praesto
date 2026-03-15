@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getGoogleCalendarClient } from '@/lib/google-calendar-api';
+import { getGoogleCalendarClient } from '@/lib/services/google-calendar-api';
 
 // Calendar event schema for creating/updating events
 const calendarEventSchema = z.object({

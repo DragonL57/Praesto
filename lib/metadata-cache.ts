@@ -112,12 +112,11 @@ export const metadataCache = {
 
       try {
         const response = await fetch(
-          `/api/metadata?url=${encodeURIComponent(url)}`,
+          `/api/public/metadata?url=${encodeURIComponent(url)}`,
           {
             signal: controller.signal,
           },
         );
-
         const data: Metadata = await response.json();
 
         // Always cache the response, even if it's not OK (e.g., 403 errors)

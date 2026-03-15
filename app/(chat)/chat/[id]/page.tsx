@@ -5,7 +5,7 @@ import { Chat } from '@/components/chat';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';
 import { auth } from '@/app/auth';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 
 import type { Attachment } from '@/lib/ai/types';

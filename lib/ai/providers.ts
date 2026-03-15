@@ -1,3 +1,4 @@
+import 'server-only';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   customProvider,
@@ -10,22 +11,9 @@ import {
 } from 'ai';
 
 // Import tools and utilities
-import { getWeather } from './tools/get-weather';
-import { webSearch } from './tools/web-search';
-import { readWebsiteContent } from './tools/read-website-content';
+import { chatModels } from './models';
 import { systemPrompt } from './prompts';
 import { isProductionEnvironment } from '@/lib/constants';
-
-// Model interface and configuration
-export interface ChatModel {
-  id: string;
-  name: string;
-  description: string;
-  provider?: string;
-  isDefault?: boolean;
-  supportsTools?: boolean;
-  supportsThinking?: boolean;
-}
 
 // Poe API OpenAI-compatible provider
 const poeProvider = createOpenAICompatible({
@@ -71,43 +59,6 @@ const minimaxM25Model = wrapLanguageModel({
     },
   }),
 });
-
-// Model configurations with metadata
-export const chatModels: ChatModel[] = [
-  {
-    id: 'grok-4.1-fast-reasoning',
-    name: 'Grok-4.1',
-    description: 'Grok-4.1 Fast Reasoning model via Poe API',
-    provider: 'Poe',
-    isDefault: true,
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'glm-5',
-    name: 'GLM-5',
-    description: 'GLM-5 model via Poe API',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'minimax-m2.5',
-    name: 'Minimax M2.5',
-    description: 'Minimax M2.5 model via Poe API',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-];
-
-// Default model configuration
-const defaultModel = chatModels.find((model) => model.isDefault);
-export const DEFAULT_CHAT_MODEL_ID = defaultModel
-  ? defaultModel.id
-  : chatModels.length > 0
-    ? chatModels[0].id
-    : 'grok-4.1-fast-reasoning';
 
 // Export the configured provider for the application
 // Model IDs match those defined in chatModels array above
@@ -168,23 +119,13 @@ export function getModelOptions() {
 }
 
 // Get available tools for models that support them
-export function getAvailableTools() {
-  return {
-    experimental_activeTools: [
-      'getWeather',
-      'webSearch',
-      'readWebsiteContent',
-    ] as ('getWeather' | 'webSearch' | 'readWebsiteContent')[],
-    tools: {
-      getWeather,
-      webSearch,
-      readWebsiteContent,
-    },
-  };
+export async function getAvailableTools() {
+  const { getTools } = await import('./tools');
+  return getTools();
 }
 
 // Get stream text configuration
-export function getStreamTextConfig(
+export async function getStreamTextConfig(
   modelId: string,
   messages: Array<Omit<UIMessage, 'id'>>,
   userTimeContext?: {
@@ -237,9 +178,10 @@ export function getStreamTextConfig(
 
   // Use custom function calling tools for models that support them
   if (supportsTools) {
+    const tools = await getAvailableTools();
     return {
       ...baseConfig,
-      ...getAvailableTools(),
+      ...tools,
     };
   }
 

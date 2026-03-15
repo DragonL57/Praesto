@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthorizationUrl } from '@/lib/google-calendar-api';
+import { getAuthorizationUrl } from '@/lib/services/google-calendar-api';
 
 /**
  * Google Calendar OAuth Start Handler

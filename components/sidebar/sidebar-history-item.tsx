@@ -78,8 +78,8 @@ const PureChatItem = ({
     setIsSaving(true);
 
     try {
-      const response = await fetch('/api/chat/rename', {
-        method: 'POST',
+      const response = await fetch('/api/chat/chat', {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },

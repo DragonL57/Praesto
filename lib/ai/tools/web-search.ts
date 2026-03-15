@@ -69,15 +69,15 @@ export const webSearch = tool({
       .describe('Number of search results to return (default: 10, max: 20)'),
     country: z
       .string()
-      .default('US')
+      .default('VN')
       .describe(
-        'The 2-character country code (e.g., "US", "DE", "VN"). Default: "US".',
+        'The 2-character country code (e.g., "US", "DE", "VN"). Default: "VN".',
       ),
     search_lang: z
       .string()
-      .default('en')
+      .default('vi')
       .describe(
-        'The 2+ character language code for search results (e.g., "en", "es", "de"). Default: "en".',
+        'The 2+ character language code for search results (e.g., "en", "es", "vi"). Default: "vi".',
       ),
     ui_lang: z
       .string()
@@ -146,7 +146,7 @@ export const webSearch = tool({
     query,
     count = 10,
     country = 'VN',
-    search_lang = 'en',
+    search_lang = 'vi',
     ui_lang,
     safesearch = 'moderate',
     freshness,

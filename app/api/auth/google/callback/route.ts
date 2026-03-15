@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import {
   getTokensFromCode,
   getAuthorizationUrl,
-} from '@/lib/google-calendar-api';
+} from '@/lib/services/google-calendar-api';
 
 /**
  * Google Calendar OAuth Callback Handler

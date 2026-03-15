@@ -11,6 +11,7 @@ import { Toaster } from 'sonner';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SessionProvider } from '@/components/auth-session-provider';
 import { auth } from '@/app/auth';
+import { baseUrl } from '@/lib/constants';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -19,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.unitaskai.com'),
+  metadataBase: new URL(baseUrl),
   title: {
     default: 'UniTaskAI - AI-Powered Workspace for Enhanced Productivity',
     template: '%s | UniTaskAI',
@@ -49,9 +50,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: 'https://www.unitaskai.com',
+    canonical: baseUrl,
     languages: {
-      'en-US': 'https://www.unitaskai.com',
+      'en-US': baseUrl,
     },
   },
   icons: {
@@ -79,7 +80,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://www.unitaskai.com',
+    url: baseUrl,
     title: 'UniTaskAI - AI-Powered Workspace for Enhanced Productivity',
     description:
       'Transform your workflow with UniTaskAI - the all-in-one AI platform for content creation, code generation, data analysis, and task automation.',
@@ -111,7 +112,7 @@ export const metadata: Metadata = {
   applicationName: 'UniTaskAI',
   appLinks: {
     web: {
-      url: 'https://www.unitaskai.com',
+      url: baseUrl,
     },
   },
   category: 'productivity',
@@ -165,7 +166,7 @@ export default async function RootLayout({
                 name: 'UniTaskAI',
                 description:
                   'AI-powered workspace for content creation, code generation, data analysis, and task automation.',
-                url: 'https://www.unitaskai.com',
+                url: baseUrl,
                 applicationCategory: 'ProductivityApplication',
                 operatingSystem: 'All',
                 offers: {

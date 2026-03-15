@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import fs from 'node:fs';
 import path from 'node:path';
+import { baseUrl as appBaseUrl } from '@/lib/constants';
 
 /**
  * This function dynamically generates a sitemap by scanning the app directory structure
@@ -8,7 +9,7 @@ import path from 'node:path';
  * many dynamically generated routes that should be included in the sitemap.
  */
 export default function dynamicSitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.unitaskai.com';
+  const baseUrl = appBaseUrl;
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
   // Start with core static routes

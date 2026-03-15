@@ -23,7 +23,7 @@ export function DataSettings() {
   const handleDeleteAllChats = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/chat/delete-all', {
+      const response = await fetch('/api/chat/chat', {
         method: 'DELETE',
       });
 

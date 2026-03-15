@@ -2,10 +2,14 @@ import { cookies } from 'next/headers';
 import { createUIMessageStreamResponse, streamText } from 'ai';
 
 import { auth } from '@/app/auth';
-import { deleteChatById, getChatById } from '@/lib/db/queries';
+import {
+  deleteChatById,
+  getChatById,
+  getChatsByUserId,
+  updateChatTitleById,
+} from '@/lib/db/queries';
 import { getMostRecentUserMessage } from '@/lib/utils';
 import { getStreamTextConfig } from '@/lib/ai/providers';
-import { getCalendarTools } from '@/lib/ai/calendar-tools';
 
 import type { UIMessage } from 'ai';
 import type { UserTimeContext, RequestData } from '@/lib/ai/chat/types';
@@ -92,38 +96,16 @@ export async function POST(request: Request) {
     });
 
     // Get stream text configuration
-    const streamTextConfig = getStreamTextConfig(
+    // Tools are now included by default in getStreamTextConfig via getAvailableTools
+    const streamTextConfig = await getStreamTextConfig(
       finalSelectedChatModel,
       messagesForStreamText,
       userTimeContext,
     );
 
-    // Add calendar tools
-    const calendarTools = await getCalendarTools();
-    let configWithCalendar = streamTextConfig;
-
-    if ('tools' in streamTextConfig && streamTextConfig.tools) {
-      const toolsConfig = streamTextConfig as typeof streamTextConfig & {
-        experimental_activeTools?: readonly string[];
-        tools: Record<string, unknown>;
-      };
-
-      configWithCalendar = {
-        ...streamTextConfig,
-        experimental_activeTools: [
-          ...(toolsConfig.experimental_activeTools || []),
-          ...calendarTools.experimental_activeTools,
-        ] as readonly string[],
-        tools: {
-          ...toolsConfig.tools,
-          ...calendarTools.tools,
-        },
-      } as typeof streamTextConfig;
-    }
-
     // Create stream with handlers
     const result = streamText({
-      ...configWithCalendar,
+      ...streamTextConfig,
       onStepFinish: createOnStepFinishHandler(),
       onFinish: createOnFinishHandler(id, session.user.id),
     });
@@ -151,22 +133,80 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const { id, title }: { id: string; title: string } = await request.json();
+
+    if (!id || !title) {
+      return new Response('Missing required fields', { status: 400 });
+    }
+
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const chat = await getChatById({ id });
+
+    if (!chat) {
+      return new Response('Chat not found', { status: 404 });
+    }
+
+    if (chat.userId !== session.user.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    await updateChatTitleById({ chatId: id, title });
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error renaming chat:', error);
+    return new Response('An error occurred while processing your request', {
+      status: 500,
+    });
+  }
+}
+
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) {
-    return new Response('Not Found', { status: 404 });
-  }
-
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
   }
 
   try {
+    // If no ID is provided, delete all chats for the user
+    if (!id) {
+      const { chats: userChats } = await getChatsByUserId({
+        id: session.user.id,
+        limit: 1000,
+        startingAfter: null,
+        endingBefore: null,
+      });
+
+      if (userChats.length > 0) {
+        await Promise.all(userChats.map((chat) => deleteChatById({ id: chat.id })));
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, deleted: userChats.length }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
+    // Delete single chat
     const chat = await getChatById({ id });
+
+    if (!chat) {
+      return new Response('Chat not found', { status: 404 });
+    }
 
     if (chat.userId !== session.user.id) {
       return new Response('Unauthorized', { status: 401 });
@@ -175,7 +215,8 @@ export async function DELETE(request: Request) {
     await deleteChatById({ id });
 
     return new Response('Chat deleted', { status: 200 });
-  } catch {
+  } catch (error) {
+    console.error('Error deleting chat(s):', error);
     return new Response('An error occurred while processing your request!', {
       status: 500,
     });

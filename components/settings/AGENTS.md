@@ -89,7 +89,7 @@ Data management with destructive actions (delete all chats).
 - Toast notifications
 
 **API Integration:**
-- `DELETE /api/chat/delete-all`
+- `DELETE /api/chat/chat` (without ID parameter to delete all chats)
 
 ### AccountSettings (`account-settings.tsx`)
 Profile and account information display.
@@ -177,7 +177,7 @@ Profile and account information display.
 ### Endpoints
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/chat/delete-all` | DELETE | Delete all user chats |
+| `/api/chat/chat` | DELETE | Delete all user chats (if no ID param) |
 
 ### Error Handling
 - Try-catch blocks with toast notifications
