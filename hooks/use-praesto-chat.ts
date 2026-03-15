@@ -3,29 +3,38 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Message, ChatStatus, ChatRequestOptions, MessagePart } from '@/lib/ai/types';
 import { generateUUID } from '@/lib/utils';
+import { StreamProtocol } from '@/lib/ai/chat/stream-protocol';
 
-interface UseChatProps {
+interface UsePraestoChatProps {
   id: string;
   initialMessages?: Message[];
+  body?: any;
   onFinish?: (message: Message) => void;
   onError?: (error: Error) => void;
-  body?: any;
 }
 
+/**
+ * usePraestoChat
+ * A custom hook to manage the chat state and handle the streaming response 
+ * from the Praesto Chat API.
+ */
 export function usePraestoChat({
-  id: chatId,
+  id,
   initialMessages = [],
+  body,
   onFinish,
   onError,
-  body: chatBody = {},
-}: UseChatProps) {
+}: UsePraestoChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
-  const [status, setStatus] = useState<ChatStatus>('ready');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [status, setStatus] = useState<ChatStatus>('ready');
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  /**
+   * Stop the current generation
+   */
   const stop = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -35,204 +44,231 @@ export function usePraestoChat({
     setIsLoading(false);
   }, []);
 
-  const triggerChat = useCallback(async (currentMessages: Message[], options?: ChatRequestOptions) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  /**
+   * Core function to append a new message and trigger the API
+   */
+  const append = useCallback(
+    async (
+      { 
+        role, 
+        parts, 
+        id: existingId, 
+        createdAt: existingCreatedAt 
+      }: { 
+        role: 'user' | 'assistant'; 
+        parts: MessagePart[]; 
+        id?: string; 
+        createdAt?: Date 
+      },
+      options?: ChatRequestOptions
+    ) => {
+      const userMessageId = existingId || generateUUID();
+      const assistantMessageId = generateUUID();
 
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
+      const userMessage: Message = {
+        id: userMessageId,
+        role,
+        parts,
+        createdAt: existingCreatedAt || new Date(),
+      };
 
-    setStatus('submitted');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/chat/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        body: JSON.stringify({
-          id: chatId,
-          messages: currentMessages,
-          ...chatBody,
-          ...options?.body,
-        }),
-        signal: abortController.signal,
+      // 1. Update UI with user message immediately
+      // If it's an existing ID, we replace the last message, otherwise append
+      setMessages((prev) => {
+        const lastIdx = prev.findIndex(m => m.id === userMessageId);
+        if (lastIdx !== -1) {
+          const newMessages = [...prev];
+          newMessages[lastIdx] = userMessage;
+          return newMessages;
+        }
+        return [...prev, userMessage];
       });
 
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
+      setStatus('submitted');
+      setIsLoading(true);
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
+      // Create AbortController for this request
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
-      const decoder = new TextDecoder();
-      let currentAssistantMessage: Message = {
-        id: generateUUID(),
-        role: 'assistant',
-        parts: [],
-      };
-
-      // Helper to update messages state with a new assistant message object
-      const syncMessages = (msg: Message) => {
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.id === msg.id) {
-            return [...prev.slice(0, -1), msg];
-          }
-          return [...prev, msg];
-        });
-      };
-
-      setStatus('streaming');
-      syncMessages(currentAssistantMessage);
-
-      let buffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
+      try {
+        // ... (fetch logic remains same but sends updated messages)
+        const currentMessages = [...messages];
+        const existingIdx = currentMessages.findIndex(m => m.id === userMessageId);
         
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; 
+        let messagesToSend: Message[];
+        if (existingIdx !== -1) {
+          // Truncate everything after the target message
+          messagesToSend = [...currentMessages.slice(0, existingIdx), userMessage];
+        } else {
+          messagesToSend = [...currentMessages, userMessage];
+        }
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          
-          const colonIndex = line.indexOf(':');
-          if (colonIndex === -1) continue;
+        const response = await fetch('/api/chat/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+          body: JSON.stringify({
+            id,
+            messages: messagesToSend,
+            ...body,
+            ...options?.body,
+          }),
+          signal: abortController.signal,
+        });
 
-          const type = line.substring(0, colonIndex);
-          const dataStr = line.substring(colonIndex + 1);
-          
-          try {
-            const data = JSON.parse(dataStr);
-            
-            if (type === '0') { // Text delta
-              const parts = [...currentAssistantMessage.parts];
-              const lastPart = parts[parts.length - 1];
-              
-              if (lastPart?.type === 'text') {
-                parts[parts.length - 1] = { ...lastPart, text: lastPart.text + data };
-              } else {
-                parts.push({ type: 'text', text: data });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Failed to fetch response');
+        }
+
+        if (!response.body) {
+          throw new Error('Response body is empty');
+        }
+
+        // 3. Handle the streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let assistantMessageParts: MessagePart[] = [];
+        let done = false;
+
+        setStatus('streaming');
+
+        // Create the initial assistant message in UI
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMessageId,
+            role: 'assistant',
+            parts: [],
+            createdAt: new Date(),
+          },
+        ]);
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              const part = StreamProtocol.parse(line);
+              if (!part) continue;
+
+              const { type, data } = part;
+
+              // Handle different stream part types
+              if (type === 'text') {
+                assistantMessageParts = updateOrAddTextPart(assistantMessageParts, data);
+              } else if (type === 'reasoning') {
+                assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, data);
+              } else if (type === 'tool-call') {
+                assistantMessageParts.push({
+                  type: 'tool-call',
+                  toolCallId: data.toolCallId,
+                  toolName: data.toolName,
+                  args: data.args,
+                  state: 'input-available',
+                } as any);
+              } else if (type === 'tool-result') {
+                assistantMessageParts.push({
+                  type: 'tool-result',
+                  toolCallId: data.toolCallId,
+                  toolName: data.toolName,
+                  result: data.result,
+                  state: 'output-available',
+                } as any);
+              } else if (type === 'error') {
+                throw new Error(data || 'Stream Error');
+              } else if (type === 'metadata') {
+                console.log('[usePraestoChat] Received metadata:', data);
+                if (data.title && onFinish) {
+                  // If we got a title, it's a new chat, we might want to trigger a refresh
+                  // We can't easily trigger the SWR mutate here without access to it, 
+                  // but we can at least log it or handle it if we add a dedicated callback.
+                }
               }
-              
-              currentAssistantMessage = { ...currentAssistantMessage, parts };
-              syncMessages(currentAssistantMessage);
-            } 
-            else if (type === 'h') { // Reasoning delta (new type for backend)
-              const parts = [...currentAssistantMessage.parts];
-              const lastPart = parts[parts.length - 1];
-              
-              if (lastPart?.type === 'reasoning') {
-                parts[parts.length - 1] = { ...lastPart, text: lastPart.text + data };
-              } else {
-                parts.push({ type: 'reasoning', text: data });
-              }
-              
-              currentAssistantMessage = { ...currentAssistantMessage, parts };
-              syncMessages(currentAssistantMessage);
+
+              // Update the assistant message in state
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastIdx = newMessages.length - 1;
+                if (newMessages[lastIdx].id === assistantMessageId) {
+                  newMessages[lastIdx] = {
+                    ...newMessages[lastIdx],
+                    parts: [...assistantMessageParts],
+                  };
+                }
+                return newMessages;
+              });
             }
-            else if (type === '9') { // Tool call
-              const parts = [...currentAssistantMessage.parts, {
-                type: 'tool-call',
-                toolCallId: data.toolCallId,
-                toolName: data.toolName,
-                args: data.args,
-                state: 'input-available' // Add state for UI
-              } as any];
-              
-              currentAssistantMessage = { ...currentAssistantMessage, parts };
-              syncMessages(currentAssistantMessage);
-            }
-            else if (type === 'a') { // Tool result
-              const parts = [...currentAssistantMessage.parts, {
-                type: 'tool-result',
-                toolCallId: data.toolCallId,
-                toolName: data.toolName,
-                result: data.result,
-                state: 'output-available' // Add state for UI
-              } as any];
-              
-              currentAssistantMessage = { ...currentAssistantMessage, parts };
-              syncMessages(currentAssistantMessage);
-            }
-            else if (type === 'e') { // Error
-              throw new Error(data);
-            }
-          } catch (e) {
-            if (e instanceof Error && e.message === 'AbortError') throw e;
-            console.error('Error parsing stream part:', e, line);
           }
         }
+
+        // 4. Wrap up
+        const finalAssistantMessage: Message = {
+          id: assistantMessageId,
+          role: 'assistant',
+          parts: assistantMessageParts,
+          createdAt: new Date(),
+        };
+
+        if (onFinish) {
+          onFinish(finalAssistantMessage);
+        }
+
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('[usePraestoChat Error]', error);
+          setStatus('error');
+          if (onError) onError(error);
+        }
+      } finally {
+        setIsLoading(false);
+        setStatus((prev) => (prev === 'streaming' || prev === 'submitted' ? 'ready' : prev));
+        abortControllerRef.current = null;
       }
+    },
+    [id, messages, body, onFinish, onError]
+  );
 
-      setStatus('ready');
-      onFinish?.(currentAssistantMessage);
+  /**
+   * Send a simple text message
+   */
+  const sendMessage = useCallback(
+    async ({ text }: { text: string }) => {
+      const parts: MessagePart[] = [{ type: 'text', text }];
+      await append({ role: 'user', parts });
+    },
+    [append]
+  );
 
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.error('Chat error:', err);
-      setStatus('error');
-      onError?.(err);
-    } finally {
-      setIsLoading(false);
-      setStatus((prevStatus) => 
-        (prevStatus === 'streaming' || prevStatus === 'submitted') 
-          ? 'ready' 
-          : prevStatus
-      );
-    }
-  }, [chatId, chatBody, onFinish, onError]);
+  /**
+   * Reload the last user message
+   */
+  const reload = useCallback(async () => {
+    const lastUserMessageIdx = [...messages].reverse().findIndex((m) => m.role === 'user');
+    if (lastUserMessageIdx === -1) return;
 
-  const append = useCallback(async (
-    message: { role: 'user' | 'assistant'; parts: MessagePart[] },
-    options?: ChatRequestOptions
-  ) => {
-    const newMessage: Message = {
-      id: generateUUID(),
-      role: message.role,
-      parts: message.parts,
-      createdAt: new Date(),
-    };
+    const actualIdx = messages.length - 1 - lastUserMessageIdx;
+    const lastUserMessage = messages[actualIdx];
 
-    const newMessages = [...messages, newMessage];
-    setMessages(newMessages);
-    await triggerChat(newMessages, options);
-    return newMessage.id;
-  }, [messages, triggerChat]);
-
-  const reload = useCallback(async (options?: ChatRequestOptions) => {
-    if (messages.length === 0) return;
+    // Truncate the UI state to just before this message
+    // (append will handle replacing/updating the message itself)
+    setMessages((prev) => prev.slice(0, actualIdx));
     
-    const lastUserIndex = [...messages].reverse().findIndex(m => m.role === 'user');
-    if (lastUserIndex === -1) return;
-    
-    const actualIndex = messages.length - 1 - lastUserIndex;
-    const truncatedMessages = messages.slice(0, actualIndex + 1);
-    
-    setMessages(truncatedMessages);
-    await triggerChat(truncatedMessages, options);
-    return truncatedMessages[truncatedMessages.length - 1].id;
-  }, [messages, triggerChat]);
-
-  const sendMessage = useCallback(async ({ text, attachments }: { text: string, attachments?: any[] }) => {
-    if (!text.trim() && (!attachments || attachments.length === 0)) return;
-
-    const parts: MessagePart[] = [{ type: 'text', text }];
-    if (attachments) {
-      attachments.forEach(a => {
-        parts.push({ type: 'file', url: a.url, filename: a.name, contentType: a.contentType });
-      });
-    }
-
-    await append({ role: 'user', parts });
-  }, [append]);
+    await append({
+      role: 'user',
+      parts: lastUserMessage.parts,
+      id: lastUserMessage.id,
+      createdAt: lastUserMessage.createdAt,
+    });
+  }, [messages, append]);
 
   return {
     messages,
@@ -244,6 +280,26 @@ export function usePraestoChat({
     stop,
     status,
     isLoading,
-    sendMessage
+    sendMessage,
   };
+}
+
+// Helper: Update or add a text part in the parts array
+function updateOrAddTextPart(parts: MessagePart[], text: string): MessagePart[] {
+  const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
+  if (lastPart && lastPart.type === 'text') {
+    (lastPart as any).text += text;
+    return [...parts];
+  }
+  return [...parts, { type: 'text', text }];
+}
+
+// Helper: Update or add a reasoning part in the parts array
+function updateOrAddReasoningPart(parts: MessagePart[], text: string): MessagePart[] {
+  const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
+  if (lastPart && lastPart.type === 'reasoning') {
+    (lastPart as any).text += text;
+    return [...parts];
+  }
+  return [...parts, { type: 'reasoning', text }];
 }

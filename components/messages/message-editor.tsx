@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { Message, TextPart } from '@/lib/ai/types';
+import type { Message, TextPart, ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
 
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { deleteTrailingMessages } from '@/lib/actions/chat';
-import type { ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
 
 export type MessageEditorProps = {
   message: Message;

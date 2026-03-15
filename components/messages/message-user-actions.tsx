@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Message, TextPart } from '@/lib/ai/types';
+import type { Message, TextPart, SetMessagesFunction } from '@/lib/ai/types';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
 import { RefreshCwIcon } from 'lucide-react';
@@ -17,7 +17,6 @@ import {
 } from '../ui/tooltip';
 import { CopyIcon, PencilEditIcon, TrashIcon } from '../icons';
 import { deleteMessage, deleteTrailingMessages } from '@/lib/actions/chat';
-import type { SetMessagesFunction } from '@/lib/ai/types';
 
 interface MessageUserActionsProps {
   message: Message;

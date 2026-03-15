@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/ai/types';
+import equal from 'fast-deep-equal';
 
 interface Suggestion {
   title: string;

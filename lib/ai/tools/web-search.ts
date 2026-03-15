@@ -60,6 +60,11 @@ const SUPPORTED_COUNTRIES = [
   'AR', 'AU', 'AT', 'BE', 'BR', 'CA', 'CL', 'DK', 'FI', 'FR', 'DE', 'GR', 'HK', 'IN', 'ID', 'IT', 'JP', 'KR', 'MY', 'MX', 'NL', 'NZ', 'NO', 'CN', 'PL', 'PT', 'PH', 'RU', 'SA', 'ZA', 'ES', 'SE', 'CH', 'TW', 'TR', 'GB', 'US', 'ALL'
 ];
 
+// Supported UI languages for Brave Search API
+const UI_LANGUAGES = [
+  'es-AR', 'en-AU', 'de-AT', 'nl-BE', 'fr-BE', 'pt-BR', 'en-CA', 'fr-CA', 'es-CL', 'da-DK', 'fi-FI', 'fr-FR', 'de-DE', 'el-GR', 'zh-HK', 'en-IN', 'en-ID', 'it-IT', 'ja-JP', 'ko-KR', 'en-MY', 'es-MX', 'nl-NL', 'en-NZ', 'no-NO', 'zh-CN', 'pl-PL', 'en-PH', 'ru-RU', 'en-ZA', 'es-ES', 'sv-SE', 'fr-CH', 'de-CH', 'zh-TW', 'tr-TR', 'en-GB', 'en-US', 'es-US'
+];
+
 /**
  * Web search tool configuration for OpenAI SDK
  */
@@ -198,7 +203,10 @@ export const webSearch = {
       });
 
       // Add optional parameters
-      if (ui_lang) params.append('ui_lang', ui_lang);
+      if (ui_lang) {
+        const validatedUiLang = UI_LANGUAGES.includes(ui_lang) ? ui_lang : 'en-US';
+        params.append('ui_lang', validatedUiLang);
+      }
       if (freshness) params.append('freshness', freshness);
       if (offset !== undefined) params.append('offset', offset.toString());
       if (result_filter) params.append('result_filter', result_filter);

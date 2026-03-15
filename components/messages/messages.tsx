@@ -258,6 +258,7 @@ function PureMessages({
                       isLastAssistantMessage && !isReadonly ? suggestionsLoading : false
                     }
                     sendMessage={sendMessage}
+                    status={status}
                   />
                 </div>
               );
@@ -326,6 +327,8 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
 
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
+  if (prevProps.suggestionsLoading !== nextProps.suggestionsLoading) return false;
+  if (!equal(prevProps.suggestions, nextProps.suggestions)) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
 
   return true;

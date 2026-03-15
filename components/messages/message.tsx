@@ -293,6 +293,7 @@ const MemoizedPurePreviewMessage = memo(
       prevProps.chatId === nextProps.chatId &&
       equal(prevProps.message, nextProps.message) &&
       prevProps.isLoading === nextProps.isLoading &&
+      prevProps.status === nextProps.status &&
       equal(prevProps.suggestions, nextProps.suggestions) &&
       prevProps.suggestionsLoading === nextProps.suggestionsLoading &&
       prevProps.setMessages === nextProps.setMessages &&

@@ -107,13 +107,15 @@ export function Chat({
   // Fetch suggestions when status changes from streaming to ready
   const prevStatusRef = useRef<ChatStatus>(status);
   useEffect(() => {
+    let isMounted = true;
+
     const fetchSuggestions = async () => {
       const lastMessage = messages[messages.length - 1];
+      const isTransitioningToReady = prevStatusRef.current === 'streaming' && status === 'ready';
       
       if (
         !isReadonly &&
-        prevStatusRef.current === 'streaming' && 
-        status === 'ready' && 
+        isTransitioningToReady && 
         lastMessage &&
         lastMessage.role === 'assistant' &&
         lastMessage.id !== lastFetchedSuggestionsMessageIdRef.current
@@ -130,9 +132,10 @@ export function Chat({
             body: JSON.stringify({ messages }),
           });
 
+          if (!isMounted) return;
+
           if (response.ok) {
             const newSuggestions = await response.json();
-            // Only set if we got actual suggestions back
             if (Array.isArray(newSuggestions) && newSuggestions.length > 0) {
               setSuggestions(newSuggestions);
             } else {
@@ -143,16 +146,19 @@ export function Chat({
           }
         } catch (error) {
           console.error('[Chat] Failed to fetch suggestions:', error);
-          setSuggestions([]);
+          if (isMounted) setSuggestions([]);
         } finally {
-          setSuggestionsLoading(false);
+          if (isMounted) setSuggestionsLoading(false);
         }
       }
-      
-      prevStatusRef.current = status;
     };
 
     fetchSuggestions();
+    prevStatusRef.current = status;
+
+    return () => {
+      isMounted = false;
+    };
   }, [status, messages, isReadonly]);
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
