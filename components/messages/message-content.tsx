@@ -4,15 +4,14 @@
  */
 
 import React from 'react';
-import type { UIMessage } from 'ai';
+import type { Message, AppendFunction } from '@/lib/ai/types';
 import { cn } from '@/lib/utils';
 import { Markdown } from '../markdown';
 import { UserTextWithLineBreaks } from './user-text';
 import { getGradientStyle } from './message-utils';
-import type { AppendFunction } from '@/lib/ai/types';
 
 interface MessageContentProps {
-  message: UIMessage;
+  message: Message;
   text: string;
   messageId: string;
   onCopy?: (event: React.ClipboardEvent<HTMLDivElement>) => void;

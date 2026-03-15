@@ -1,7 +1,6 @@
-import type { UIMessage } from 'ai';
-
 /**
- * Shared AI types for components without AI SDK dependency
+ * Praesto Core AI Types
+ * Fully decoupled from Vercel AI SDK
  */
 
 export type Attachment = {
@@ -11,28 +10,74 @@ export type Attachment = {
   mediaType?: string;
 };
 
-// Re-export UIMessage from AI SDK to avoid conflicts
-export type { UIMessage };
+export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
-// Extract UIMessagePart from UIMessage if possible, or define a compatible one
-export type UIMessagePart = UIMessage['parts'][number];
+export type TextPart = {
+  type: 'text';
+  text: string;
+};
 
-// Type for setMessages that works with UIMessage
+export type ReasoningPart = {
+  type: 'reasoning';
+  text: string;
+};
+
+export type ToolCallPart = {
+  type: 'tool-call';
+  toolCallId: string;
+  toolName: string;
+  args: any;
+};
+
+export type ToolResultPart = {
+  type: 'tool-result';
+  toolCallId: string;
+  toolName: string;
+  result: any;
+};
+
+export type FilePart = {
+  type: 'file';
+  url: string;
+  filename?: string;
+  contentType?: string;
+};
+
+export type MessagePart = 
+  | TextPart 
+  | ReasoningPart 
+  | ToolCallPart 
+  | ToolResultPart 
+  | FilePart
+  | { type: string; [key: string]: any }; // Allow for specialized tool parts
+
+export interface Message {
+  id: string;
+  role: MessageRole;
+  parts: MessagePart[];
+  content?: string; // Legacy/fallback support
+  createdAt?: Date;
+}
+
+export type ChatStatus = 'idle' | 'submitted' | 'streaming' | 'ready' | 'error';
+
+export interface ChatRequestOptions {
+  headers?: Record<string, string>;
+  body?: any;
+}
+
 export type SetMessagesFunction = (
-  messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
+  messages: Message[] | ((messages: Message[]) => Message[]),
 ) => void;
 
-// Type for append that works with restricted message types (user/assistant only)
 export type AppendFunction = (
   message: {
     role: 'user' | 'assistant';
-    content: string;
-    attachments?: Attachment[];
+    parts: MessagePart[];
   },
+  options?: ChatRequestOptions
 ) => Promise<string | null | undefined>;
 
-// Type for reload function
-export type ReloadFunction = () => Promise<string | null | undefined>;
-
-// Chat status type from AI SDK or equivalent
-export type ChatStatus = 'idle' | 'submitted' | 'streaming' | 'ready' | 'error';
+export type ReloadFunction = (
+  options?: ChatRequestOptions
+) => Promise<string | null | undefined>;

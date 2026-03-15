@@ -4,20 +4,20 @@
  */
 
 import React from 'react';
-import type { UIMessage } from 'ai';
+import type { Message, FilePart } from '@/lib/ai/types';
 import { PreviewAttachment } from '../preview-attachment';
 
 interface MessageAttachmentsProps {
-  message: UIMessage;
+  message: Message;
 }
 
 /**
- * Renders file attachments from message parts (AI SDK 5.x)
+ * Renders file attachments from message parts
  */
 export const MessageAttachments: React.FC<MessageAttachmentsProps> = ({ message }) => {
   const fileParts = message.parts.filter(
     (part) => part.type === 'file',
-  ) as Array<{ type: 'file'; url: string; mediaType: string }>;
+  ) as FilePart[];
 
   if (fileParts.length === 0) return null;
 
@@ -36,8 +36,8 @@ export const MessageAttachments: React.FC<MessageAttachmentsProps> = ({ message 
           key={filePart.url}
           attachment={{
             url: filePart.url,
-            contentType: filePart.mediaType,
-            name: filePart.url.split('/').pop() || 'file',
+            contentType: filePart.contentType,
+            name: filePart.filename || filePart.url.split('/').pop() || 'file',
           }}
         />
       ))}

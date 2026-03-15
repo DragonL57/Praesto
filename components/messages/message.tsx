@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import types
 import type { PurePreviewMessageProps, PreviewMessageProps } from './message-types';
+import type { TextPart, ToolCallPart } from '@/lib/ai/types';
 
 // Import hooks
 import { useReasoningElements, useProcessedParts } from './message-hooks';
@@ -136,8 +137,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               hasResponseStarted={processedParts.some((part) => {
                 if (
                   part.type === 'text' &&
-                  typeof (part as any).text === 'string' &&
-                  (part as any).text.trim().length > 0
+                  part.text.trim().length > 0
                 ) {
                   return true;
                 }
@@ -176,13 +176,14 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               const key = `message-${message.id}-part-${index}`;
 
               // Render text parts
-              if (part.type === 'text' && (part as any).text?.trim().length > 0) {
+              if (part.type === 'text' && part.text?.trim().length > 0) {
+                const textPart = part as TextPart;
                 if (mode === 'view') {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
                       <MessageContent
                         message={message}
-                        text={(part as any).text}
+                        text={textPart.text}
                         messageId={message.id}
                         onCopy={handleCopy}
                         append={append}
@@ -209,11 +210,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               // Render tool call skeletons (input-available state)
               if (
                 isToolPart(part) &&
-                'state' in part &&
-                (part as { state: string }).state === 'input-available'
+                (part as any).state === 'input-available'
               ) {
+                const toolPart = part as ToolCallPart;
                 const toolName = extractToolName(part);
-                const toolCallId = 'toolCallId' in part ? (part as { toolCallId: string }).toolCallId : '';
+                const toolCallId = toolPart.toolCallId || '';
 
                 // Skip reasoning tools
                 if (isReasoningTool(toolName)) return null;
@@ -240,7 +241,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   _messages={[message]}
                   suggestions={suggestions}
                   isLoading={suggestionsLoading}
-                  sendMessage={sendMessage as any}
+                  sendMessage={sendMessage}
                 />
               </div>
             )}

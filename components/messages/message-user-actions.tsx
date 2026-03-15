@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { UIMessage } from 'ai';
+import type { Message, TextPart } from '@/lib/ai/types';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
 import { RefreshCwIcon } from 'lucide-react';
@@ -20,7 +20,7 @@ import { deleteMessage, deleteTrailingMessages } from '@/lib/actions/chat';
 import type { SetMessagesFunction } from '@/lib/ai/types';
 
 interface MessageUserActionsProps {
-  message: UIMessage;
+  message: Message;
   chatId: string;
   setMode: (mode: 'view' | 'edit') => void;
   setMessages: SetMessagesFunction;
@@ -48,11 +48,8 @@ export const MessageUserActions: React.FC<MessageUserActionsProps> = ({
   const [, copyFn] = useCopyToClipboard();
 
   const handleCopy = async () => {
-    const userTextPart = message.parts?.find((part) => part.type === 'text');
-    const textToCopy =
-      userTextPart && typeof userTextPart.text === 'string'
-        ? userTextPart.text
-        : null;
+    const userTextPart = message.parts?.find((part): part is TextPart => part.type === 'text');
+    const textToCopy = userTextPart?.text || null;
 
     if (textToCopy?.trim()) {
       try {

@@ -2,22 +2,27 @@
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const BRAVE_API_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 
-// Global rate limiter: Track last request time
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL_MS = 1200; // 1.2 seconds between requests
+// Global rate limiter: Track next available time slot
+let nextAvailableTime = 0;
+const MIN_REQUEST_INTERVAL_MS = 1500; // 1.5 seconds between requests for Free plan safety
 
-// Rate limiting: Ensure minimum interval between requests
+// Rate limiting: Ensure minimum interval between requests by reserving slots
 async function rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
   const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
+  
+  // Calculate wait time based on the next available slot
+  // If nextAvailableTime is in the past, we can go now (waitTime = 0)
+  const waitTime = Math.max(0, nextAvailableTime - now);
+  
+  // Reserve the slot for this request and update the next available time
+  // This ensures even simultaneous calls get sequential slots
+  nextAvailableTime = Math.max(now, nextAvailableTime) + MIN_REQUEST_INTERVAL_MS;
 
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
-    const waitTime = MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest;
-    console.log(`[Rate Limit] Waiting ${waitTime}ms before next request`);
+  if (waitTime > 0) {
+    console.log(`[Rate Limit] Waiting ${waitTime}ms to avoid 429 (Brave Search Free plan limit)`);
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
-  lastRequestTime = Date.now();
   return fetch(url, options);
 }
 
@@ -50,6 +55,11 @@ interface SearchResult {
   body: string;
 }
 
+// Supported country codes for Brave Search API
+const SUPPORTED_COUNTRIES = [
+  'AR', 'AU', 'AT', 'BE', 'BR', 'CA', 'CL', 'DK', 'FI', 'FR', 'DE', 'GR', 'HK', 'IN', 'ID', 'IT', 'JP', 'KR', 'MY', 'MX', 'NL', 'NZ', 'NO', 'CN', 'PL', 'PT', 'PH', 'RU', 'SA', 'ZA', 'ES', 'SE', 'CH', 'TW', 'TR', 'GB', 'US', 'ALL'
+];
+
 /**
  * Web search tool configuration for OpenAI SDK
  */
@@ -73,8 +83,8 @@ export const webSearch = {
       },
       country: {
         type: 'string',
-        default: 'VN',
-        description: 'The 2-character country code (e.g., "US", "DE", "VN"). Default: "VN".',
+        default: 'ALL',
+        description: 'The 2-character country code (e.g., "US", "DE", "GB"). Use "ALL" for global results. Default: "ALL".',
       },
       search_lang: {
         type: 'string',
@@ -134,7 +144,7 @@ export const webSearch = {
   execute: async ({
     query,
     count = 10,
-    country = 'VN',
+    country = 'ALL',
     search_lang = 'vi',
     ui_lang,
     safesearch = 'moderate',
@@ -147,6 +157,11 @@ export const webSearch = {
     summary,
     units,
   }: any) => {
+    // Validate country code - Brave Search only supports specific countries
+    const validatedCountry = SUPPORTED_COUNTRIES.includes(country?.toUpperCase()) 
+      ? country.toUpperCase() 
+      : 'ALL';
+
     // Check if API key is configured
     if (!BRAVE_API_KEY) {
       console.error('[Brave Search] Missing BRAVE_API_KEY environment variable');
@@ -163,7 +178,7 @@ export const webSearch = {
       };
     }
 
-    let logParams = `Brave Search: query='${query}', count=${count}, country=${country}, lang=${search_lang}, safesearch=${safesearch}`;
+    let logParams = `Brave Search: query='${query}', count=${count}, country=${validatedCountry}, lang=${search_lang}, safesearch=${safesearch}`;
     if (freshness) logParams += `, freshness=${freshness}`;
     if (offset !== undefined) logParams += `, offset=${offset}`;
     if (result_filter) logParams += `, filter=${result_filter}`;
@@ -175,7 +190,7 @@ export const webSearch = {
       const params = new URLSearchParams({
         q: query,
         count: Math.min(count, 20).toString(),
-        country,
+        country: validatedCountry,
         search_lang,
         safesearch,
         text_decorations: text_decorations.toString(),
@@ -206,10 +221,12 @@ export const webSearch = {
 
       if (!response.ok) {
         let errorDetail = `${response.status} ${response.statusText}`;
+        const errorBody = await response.text();
+        console.error(`[Brave Search Debug] Error body: ${errorBody}`);
 
         // Add specific guidance for common HTTP errors
         if (response.status === 422) {
-          errorDetail += ' (Unprocessable Entity - check API key validity and request parameters)';
+          errorDetail += ` (Unprocessable Entity - ${errorBody})`;
         } else if (response.status === 401 || response.status === 403) {
           errorDetail += ' (Authentication failed - verify BRAVE_API_KEY is valid)';
         }

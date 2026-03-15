@@ -3,9 +3,8 @@
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { memo } from 'react';
-import type { UseChatHelpers } from '@ai-sdk/react';
-import type { UIMessage } from 'ai';
 import { cn } from '@/lib/utils';
+import type { Message } from '@/lib/ai/types';
 
 interface Suggestion {
   title: string;
@@ -15,9 +14,9 @@ interface Suggestion {
 
 interface SuggestedActionsProps {
   chatId: string;
-  _messages: UIMessage[];
+  _messages: Message[];
   suggestions?: Suggestion[];
-  sendMessage: UseChatHelpers<UIMessage>['sendMessage'];
+  sendMessage: (args: { text: string }) => Promise<void>;
   isLoading?: boolean;
 }
 

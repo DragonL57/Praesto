@@ -7,9 +7,11 @@ export interface ChatModel {
   isDefault?: boolean;
   supportsTools?: boolean;
   supportsThinking?: boolean;
+  extraParams?: Record<string, any>;
 }
 
 // Model configurations with metadata
+// extraParams are passed to Poe via extra_body in the OpenAI SDK
 export const chatModels: ChatModel[] = [
   {
     id: 'grok-4.1-fast-reasoning',
@@ -19,6 +21,7 @@ export const chatModels: ChatModel[] = [
     isDefault: true,
     supportsTools: true,
     supportsThinking: true,
+    // Grok-4.1 doesn't require extra params for reasoning via Poe's OpenAI-compatible API
   },
   {
     id: 'glm-5',
@@ -27,6 +30,9 @@ export const chatModels: ChatModel[] = [
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
+    extraParams: {
+      enable_thinking: true,
+    },
   },
   {
     id: 'minimax-m2.5',
@@ -35,6 +41,7 @@ export const chatModels: ChatModel[] = [
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
+    // Minimax thinks by default, no extra params needed
   },
 ];
 

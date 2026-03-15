@@ -1,8 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import type { UseChatHelpers } from '@ai-sdk/react';
-import type { UIMessage } from 'ai';
+import type { ChatStatus } from '@/lib/ai/types';
 
 import { Button } from '../ui/button';
 import { PaperclipIcon } from '../icons';
@@ -15,7 +14,7 @@ import {
 
 interface AttachmentsButtonProps {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  status: UseChatHelpers<UIMessage>['status'];
+  status: ChatStatus;
 }
 
 function PureAttachmentsButton({
@@ -33,7 +32,7 @@ function PureAttachmentsButton({
               event.preventDefault();
               fileInputRef.current?.click();
             }}
-            disabled={status !== 'ready'}
+            disabled={status !== 'ready' && status !== 'idle'}
             variant="ghost"
             aria-label="Attach files"
           >

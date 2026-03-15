@@ -22,6 +22,7 @@ export function getModelConfiguration(modelId: string) {
     model: currentModel,
     supportsTools: currentModel?.supportsTools ?? true,
     supportsThinking: currentModel?.supportsThinking ?? true,
+    extraParams: currentModel?.extraParams,
   };
 }
 
@@ -29,7 +30,7 @@ export function getModelConfiguration(modelId: string) {
 export function getModelOptions() {
   return {
     temperature: 1,
-    max_tokens: 128000, // Set max context length to 128,000 tokens for all models
+    max_tokens: 8192, // Use a more reasonable output limit for better stability
   };
 }
 
@@ -41,7 +42,7 @@ export async function getAvailableTools() {
 
 /**
  * Get chat completion parameters for OpenAI client
- * This replaces getStreamTextConfig for Vercel AI SDK
+ * Restored to single-agent logic
  */
 export async function getChatCompletionParams(
   modelId: string,
@@ -51,10 +52,9 @@ export async function getChatCompletionParams(
     time: string;
     dayOfWeek: string;
     timeZone: string;
-  },
-  _thinkingLevel?: string,
+  }
 ) {
-  const { supportsTools, supportsThinking } = getModelConfiguration(modelId);
+  const { supportsTools, extraParams } = getModelConfiguration(modelId);
   const modelOptions = getModelOptions();
 
   // Map modelId to actual Poe bot name if needed
@@ -75,24 +75,22 @@ export async function getChatCompletionParams(
     stream: true,
   };
 
-  // Add Poe-specific extra_body parameters if needed
-  if (supportsThinking) {
+  // Add model-specific extra_body parameters if defined in config
+  if (extraParams) {
     baseConfig.extra_body = {
-      thinking: 'enabled',
+      ...extraParams
     };
   }
 
   // Use custom function calling tools for models that support them
   if (supportsTools) {
     const { tools } = await getAvailableTools();
-    // Transform tools to OpenAI format if they are not already
-    // (Assuming tools will be refactored to OpenAI format)
     baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, any]) => ({
       type: 'function',
       function: {
         name,
         description: tool.description,
-        parameters: tool.parameters, // Assuming these are JSON schemas
+        parameters: tool.parameters,
       },
     }));
   }

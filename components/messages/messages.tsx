@@ -7,7 +7,7 @@ import type {
   SetMessagesFunction,
   AppendFunction,
   ChatStatus,
-  UIMessage,
+  Message,
 } from '@/lib/ai/types';
 
 interface Suggestion {
@@ -19,7 +19,7 @@ interface Suggestion {
 interface MessagesProps {
   chatId: string;
   status: ChatStatus;
-  messages: Array<UIMessage>;
+  messages: Array<Message>;
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
   append: AppendFunction;
@@ -83,23 +83,20 @@ function PureMessages({
 
   // Scroll to bottom when opening a conversation (chatId changes)
   useEffect(() => {
-    const container = containerRef.current;
+    const _container = containerRef.current;
     const end = endRef.current;
 
-    // Check if chatId has changed or if this is the first mount
     if (chatId !== prevChatIdRef.current) {
       prevChatIdRef.current = chatId;
       hasInitialScrolledRef.current = false;
     }
 
-    // Scroll to bottom when conversation loads and has messages
     if (
       !hasInitialScrolledRef.current &&
       messages.length > 0 &&
       end &&
-      container
+      _container
     ) {
-      // Use a small delay to ensure DOM is ready
       const timeoutId = setTimeout(() => {
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'instant', block: 'end' });
@@ -116,14 +113,13 @@ function PureMessages({
     const container = containerRef.current;
     if (!container) return;
 
-    const SCROLL_UP_THRESHOLD = 100; // Pixels from bottom to consider "scrolled up"
+    const SCROLL_UP_THRESHOLD = 100; 
     let scrollTimeout: NodeJS.Timeout | null = null;
 
     const handleScroll = () => {
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
-      // Debounce scroll event slightly to avoid excessive state updates
       scrollTimeout = setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = container;
         const distanceScrolledFromBottom =
@@ -132,7 +128,6 @@ function PureMessages({
         if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
           if (!userHasScrolledUp) setUserHasScrolledUp(true);
         } else {
-          // If user is close to the bottom (e.g., within 5px), consider them "at bottom"
           if (userHasScrolledUp && distanceScrolledFromBottom < 5) {
             setUserHasScrolledUp(false);
           }
@@ -149,8 +144,8 @@ function PureMessages({
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const _container = containerRef.current;
+    if (!_container) return;
 
     const lastMessage =
       messages.length > 0 ? messages[messages.length - 1] : null;
@@ -172,7 +167,7 @@ function PureMessages({
         });
       }
       lastUserMessageIdRef.current = lastMessage.id;
-      setUserHasScrolledUp(false); // Reset user scroll state when new user message is sent
+      setUserHasScrolledUp(false); 
       prevMessagesLengthRef.current = messages.length;
       isStreamingRef.current = status === 'streaming';
       return;
@@ -189,7 +184,6 @@ function PureMessages({
         (status === 'streaming' && isStreamingRef.current);
 
       if (shouldScrollToBottom && !userHasScrolledUp) {
-        // Modified condition
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
@@ -200,11 +194,9 @@ function PureMessages({
     isStreamingRef.current = status === 'streaming';
   }, [messages, status, containerRef, endRef, userHasScrolledUp]);
 
-  // Check if there are any visible elements that would require scrolling
   const hasVisibleContent =
     messages.length > 0 || (status === 'submitted' && messages.length > 0);
 
-  // Determine if we should use virtualization
   const shouldVirtualize = messages.length > 20;
 
   return (
@@ -220,7 +212,6 @@ function PureMessages({
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
         {shouldVirtualize ? (
-          // Virtualized rendering for long conversations
           <div
             style={{
               height: `${totalSize}px`,
@@ -273,7 +264,6 @@ function PureMessages({
             })}
           </div>
         ) : (
-          // Regular rendering for short conversations
           messages.map((message, index) => {
             const isLastAssistantMessage = 
               message.role === 'assistant' && 
@@ -282,7 +272,7 @@ function PureMessages({
             return (
               <div
                 key={message.id}
-                data-message-id={message.id} // Add data-message-id for selection
+                data-message-id={message.id} 
                 className="transition-opacity duration-300 ease-in-out"
               >
                 <PreviewMessage
@@ -335,7 +325,6 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.isArtifactVisible && nextProps.isArtifactVisible) return true;
 
   if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.status && nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
 

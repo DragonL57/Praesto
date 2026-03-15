@@ -33,7 +33,7 @@ import type {
   Attachment,
   ChatStatus,
   SetMessagesFunction,
-  UIMessage,
+  Message,
 } from '@/lib/ai/types';
 import type { SpeechRecognition } from './types';
 
@@ -45,7 +45,7 @@ interface MultimodalInputProps {
   stop: () => void;
   attachments: Array<Attachment>;
   setAttachments: React.Dispatch<React.SetStateAction<Array<Attachment>>>;
-  messages: Array<UIMessage>;
+  messages: Array<Message>;
   setMessages: SetMessagesFunction;
   append: AppendFunction;
   sendMessage: (args: { text: string; attachments?: any[] }) => Promise<void>;
@@ -198,7 +198,7 @@ function PureMultimodalInput({
 
   // Send prompt to AI
   const handlePillClick = (prompt: string) => {
-    append({ role: 'user', content: prompt });
+    append({ role: 'user', parts: [{ type: 'text', text: prompt }] });
   };
 
   // Main wrapper with transition for centering in empty chats
@@ -346,7 +346,7 @@ function PureMultimodalInput({
                   ) {
                     event.preventDefault();
 
-                    if (status !== 'ready') {
+                    if (activeStopButtonStatuses.includes(status)) {
                       toast.error(
                         'Please wait for the model to finish its response!',
                       );
@@ -371,7 +371,7 @@ function PureMultimodalInput({
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none" />
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
-                  status={status as any} // Correctly pass status, internal logic handles disabling
+                  status={status} 
                 />
               </div>
 
@@ -380,7 +380,7 @@ function PureMultimodalInput({
                 <SpeechToTextButton
                   recognitionRef={recognitionRef}
                   setInput={setInput}
-                  status={status as any}
+                  status={status}
                 />
                 {activeStopButtonStatuses.includes(status) ? (
                   <StopButton stop={stop} setMessages={setMessages} />

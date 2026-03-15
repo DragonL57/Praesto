@@ -5,8 +5,8 @@
  */
 
 import type { 
-  UIMessage, 
-  UIMessagePart, 
+  Message, 
+  MessagePart, 
   AppendFunction, 
   SetMessagesFunction,
   ChatStatus 
@@ -61,7 +61,7 @@ export interface ThinkToolResult {
 // Enhanced Message Part Types
 // ============================================================================
 
-export type EnhancedMessagePart = UIMessagePart & {
+export type EnhancedMessagePart = MessagePart & {
     connectNext?: boolean;
     connectPrevious?: boolean;
     toolIndex?: number;
@@ -73,7 +73,7 @@ export type EnhancedMessagePart = UIMessagePart & {
 
 export interface PurePreviewMessageProps {
     chatId: string;
-    message: UIMessage;
+    message: Message;
     isLoading: boolean;
     setMessages: SetMessagesFunction;
     reload: () => Promise<string | null | undefined>;
@@ -92,7 +92,7 @@ export interface PreviewMessageProps
 
 export interface MessageActionsProps {
     chatId: string;
-    message: UIMessage;
+    message: Message;
     isLoading: boolean;
     setMessages?: SetMessagesFunction;
 }
@@ -102,7 +102,7 @@ export interface MessageActionsProps {
 // ============================================================================
 
 export interface ToolCallPart {
-    type: string; // 'tool-<name>' or 'dynamic-tool'
+    type: string; // 'tool-<name>' or 'tool-call'
     toolName?: string;
     toolCallId?: string;
     state?: string;

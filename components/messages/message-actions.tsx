@@ -63,7 +63,7 @@ export function PureMessageActions({
                 // Get all text parts from message
                 const textFromParts = message.parts
                   ?.filter((part) => part.type === 'text')
-                  .map((part) => part.text)
+                  .map((part) => (part as any).text)
                   .join('\n')
                   .trim();
 

@@ -3,30 +3,26 @@
  * Helpers for tool detection, extraction, and styling
  */
 
-import type { UIMessage } from 'ai';
+import type { Message, MessagePart, ToolCallPart, ToolResultPart } from '@/lib/ai/types';
 import type { EnhancedMessagePart } from './message-types';
 
 // ============================================================================
-// Tool Part Detection & Extraction Helpers (AI SDK 5.x)
+// Tool Part Detection & Extraction Helpers
 // ============================================================================
 
 /**
- * Check if a part is a tool call part
- * AI SDK 5.x: Tool parts have type 'tool-<name>' or 'dynamic-tool'
+ * Check if a part is a tool call or tool result part
  */
-export const isToolPart = (part: UIMessage['parts'][0]): boolean => {
-    return part.type.startsWith('tool-') || part.type === 'dynamic-tool';
+export const isToolPart = (part: MessagePart): boolean => {
+    return part.type === 'tool-call' || part.type === 'tool-result';
 };
 
 /**
  * Extract tool name from a tool part
  */
-export const extractToolName = (part: UIMessage['parts'][0]): string => {
-    if (part.type === 'dynamic-tool' && 'toolName' in part) {
-        return (part as { toolName: string }).toolName;
-    }
-    if (part.type.startsWith('tool-')) {
-        return part.type.substring(5); // Remove 'tool-' prefix
+export const extractToolName = (part: MessagePart): string => {
+    if (part.type === 'tool-call' || part.type === 'tool-result') {
+        return (part as ToolCallPart | ToolResultPart).toolName;
     }
     return '';
 };
@@ -34,32 +30,28 @@ export const extractToolName = (part: UIMessage['parts'][0]): string => {
 /**
  * Get tool call ID from a tool part
  */
-export const getToolCallId = (part: UIMessage['parts'][0]): string => {
-    if ('toolCallId' in part) {
-        return (part as { toolCallId: string }).toolCallId;
+export const getToolCallId = (part: MessagePart): string => {
+    if (part.type === 'tool-call' || part.type === 'tool-result') {
+        return (part as ToolCallPart | ToolResultPart).toolCallId;
     }
     return '';
 };
 
 /**
  * Check if tool result is available
- * AI SDK 5.x: Check for 'output-available' state
  */
-export const isToolResultAvailable = (part: UIMessage['parts'][0]): boolean => {
-    if ('state' in part) {
-        return (part as { state: string }).state === 'output-available';
-    }
-    return false;
+export const isToolResultAvailable = (part: MessagePart): boolean => {
+    return part.type === 'tool-result';
 };
 
 /**
  * Get tool output/result
  */
 export const getToolOutput = (
-    part: UIMessage['parts'][0],
-): Record<string, unknown> | undefined => {
-    if ('output' in part) {
-        return part.output as Record<string, unknown>;
+    part: MessagePart,
+): any | undefined => {
+    if (part.type === 'tool-result') {
+        return (part as ToolResultPart).result;
     }
     return undefined;
 };
@@ -72,7 +64,7 @@ export const getToolOutput = (
  * Generate a consistent gradient style for user messages
  * Uses message ID hash to provide variety while remaining consistent per message
  */
-export const getGradientStyle = (message: UIMessage): string => {
+export const getGradientStyle = (message: Message): string => {
     // Hash function for string to number
     const hashCode = (str: string) => {
         let hash = 0;
@@ -184,7 +176,7 @@ export const applyToolGrouping = (
                 const potentialNextPart = enhancedParts[j];
                 if (
                     potentialNextPart.type === 'text' &&
-                    potentialNextPart.text?.trim().length > 0
+                    (potentialNextPart as any).text?.trim().length > 0
                 ) {
                     textEncounteredNext = true;
                     break;
@@ -210,7 +202,7 @@ export const applyToolGrouping = (
                 const potentialPrevPart = enhancedParts[j];
                 if (
                     potentialPrevPart.type === 'text' &&
-                    potentialPrevPart.text?.trim().length > 0
+                    (potentialPrevPart as any).text?.trim().length > 0
                 ) {
                     textEncounteredPrev = true;
                     break;

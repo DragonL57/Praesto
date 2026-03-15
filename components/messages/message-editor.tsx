@@ -2,29 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { UIMessage } from 'ai';
+import type { Message, TextPart } from '@/lib/ai/types';
 
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { deleteTrailingMessages } from '@/lib/actions/chat';
 import type { ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
 
-// Define proper types for message parts
-interface TextMessagePart {
-  type: 'text';
-  text: string;
-}
-
-interface ImageMessagePart {
-  type: 'image';
-  image: string;
-}
-
-// Prefix with underscore since it's not directly used yet but helps with type safety
-type _MessagePart = TextMessagePart | ImageMessagePart;
-
 export type MessageEditorProps = {
-  message: UIMessage;
+  message: Message;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
   setMessages: SetMessagesFunction;
   reload: ReloadFunction;
@@ -38,12 +24,10 @@ export function MessageEditor({
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // AI SDK 5.x: Extract text content from message parts (content property no longer exists)
   const extractMessageText = () => {
-    // Extract text from message parts
     if (message.parts && message.parts.length > 0) {
       return message.parts
-        .filter((part): part is TextMessagePart => part.type === 'text')
+        .filter((part): part is TextPart => part.type === 'text')
         .map((part) => part.text)
         .join('\n')
         .trim();
@@ -109,14 +93,12 @@ export function MessageEditor({
               id: message.id,
             });
 
-            // @ts-expect-error todo: support UIMessage in setMessages
             setMessages((messages) => {
               const index = messages.findIndex((m) => m.id === message.id);
 
               if (index !== -1) {
-                const updatedMessage = {
+                const updatedMessage: Message = {
                   ...message,
-                  content: draftContent,
                   parts: [{ type: 'text', text: draftContent }],
                 };
 
