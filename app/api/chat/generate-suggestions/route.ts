@@ -98,30 +98,7 @@ export async function POST(request: Request) {
             }
         } catch (parseError) {
             console.error('[SUGGESTIONS PARSE ERROR]', parseError);
-
-            // Fallback to default suggestions if parsing fails
-            suggestions = [
-                {
-                    title: 'Tell me more',
-                    label: 'about this topic',
-                    action: 'Can you tell me more about this topic?',
-                },
-                {
-                    title: 'Explain further',
-                    label: 'with examples',
-                    action: 'Can you explain that further with some examples?',
-                },
-                {
-                    title: 'Related topics',
-                    label: 'I should know about',
-                    action: 'What are some related topics I should know about?',
-                },
-                {
-                    title: 'Practical application',
-                    label: 'how to use this',
-                    action: 'How can I practically apply this information?',
-                },
-            ];
+            throw new Error('Failed to parse contextual suggestions');
         }
 
         return Response.json(suggestions, { status: 200 });

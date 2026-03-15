@@ -101,17 +101,25 @@ export function Chat({
     }
   });
 
+  // Track which message ID we last fetched suggestions for
+  const lastFetchedSuggestionsMessageIdRef = useRef<string | null>(null);
+
   // Fetch suggestions when status changes from streaming to ready
   const prevStatusRef = useRef<ChatStatus>(status);
   useEffect(() => {
     const fetchSuggestions = async () => {
+      const lastMessage = messages[messages.length - 1];
+      
       if (
+        !isReadonly &&
         prevStatusRef.current === 'streaming' && 
         status === 'ready' && 
-        messages.length > 0 &&
-        messages[messages.length - 1].role === 'assistant'
+        lastMessage &&
+        lastMessage.role === 'assistant' &&
+        lastMessage.id !== lastFetchedSuggestionsMessageIdRef.current
       ) {
         setSuggestionsLoading(true);
+        lastFetchedSuggestionsMessageIdRef.current = lastMessage.id;
         
         try {
           const response = await fetch('/api/chat/generate-suggestions', {
@@ -124,10 +132,18 @@ export function Chat({
 
           if (response.ok) {
             const newSuggestions = await response.json();
-            setSuggestions(newSuggestions);
+            // Only set if we got actual suggestions back
+            if (Array.isArray(newSuggestions) && newSuggestions.length > 0) {
+              setSuggestions(newSuggestions);
+            } else {
+              setSuggestions([]);
+            }
+          } else {
+            setSuggestions([]);
           }
         } catch (error) {
           console.error('[Chat] Failed to fetch suggestions:', error);
+          setSuggestions([]);
         } finally {
           setSuggestionsLoading(false);
         }
@@ -137,7 +153,7 @@ export function Chat({
     };
 
     fetchSuggestions();
-  }, [status, messages]);
+  }, [status, messages, isReadonly]);
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
