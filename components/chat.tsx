@@ -13,11 +13,7 @@ import { getChatHistoryPaginationKey } from '@/components/sidebar';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { usePraestoChat } from '@/hooks/use-praesto-chat';
 
-import type {
-  Message,
-  Attachment,
-  ChatStatus,
-} from '@/lib/ai/types';
+import type { Message, Attachment, ChatStatus } from '@/lib/ai/types';
 import type { VisibilityType } from './visibility-selector';
 
 interface Suggestion {
@@ -75,7 +71,7 @@ export function Chat({
     reload,
     stop,
     status,
-    sendMessage
+    sendMessage,
   } = usePraestoChat({
     id,
     initialMessages,
@@ -98,7 +94,7 @@ export function Chat({
       toast.error(
         'An error occurred, please try again! Check the browser console for more details.',
       );
-    }
+    },
   });
 
   // Track which message ID we last fetched suggestions for
@@ -111,18 +107,19 @@ export function Chat({
 
     const fetchSuggestions = async () => {
       const lastMessage = messages[messages.length - 1];
-      const isTransitioningToReady = prevStatusRef.current === 'streaming' && status === 'ready';
-      
+      const isTransitioningToReady =
+        prevStatusRef.current === 'streaming' && status === 'ready';
+
       if (
         !isReadonly &&
-        isTransitioningToReady && 
+        isTransitioningToReady &&
         lastMessage &&
         lastMessage.role === 'assistant' &&
         lastMessage.id !== lastFetchedSuggestionsMessageIdRef.current
       ) {
         setSuggestionsLoading(true);
         lastFetchedSuggestionsMessageIdRef.current = lastMessage.id;
-        
+
         try {
           const response = await fetch('/api/chat/generate-suggestions', {
             method: 'POST',
@@ -163,6 +160,26 @@ export function Chat({
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
+  // Wrap the hook's sendMessage to match the UI components' expected signature
+  const sendMessageForUI = async (args: {
+    text: string;
+    attachments?: Attachment[];
+  }) => {
+    if (args.attachments && args.attachments.length > 0) {
+      const parts = [
+        { type: 'text', text: args.text },
+        ...args.attachments.map((a) => ({
+          type: 'file',
+          url: a.url,
+          filename: a.name,
+          contentType: a.contentType,
+        })),
+      ];
+      await append({ role: 'user', parts });
+    } else {
+      await sendMessage({ text: args.text });
+    }
+  };
   return (
     <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
       <ChatHeader
@@ -191,7 +208,7 @@ export function Chat({
             messagesEndRef={messagesEndRef}
             suggestions={suggestions}
             suggestionsLoading={suggestionsLoading}
-            sendMessage={sendMessage as any}
+            sendMessage={sendMessageForUI}
           />
         </div>
 
@@ -202,7 +219,7 @@ export function Chat({
                 chatId={id}
                 input={input}
                 setInput={setInput}
-                sendMessage={sendMessage as any}
+                sendMessage={sendMessageForUI}
                 status={status}
                 stop={stop}
                 attachments={attachments}

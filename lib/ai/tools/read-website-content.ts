@@ -45,7 +45,7 @@ export const readWebsiteContent = {
     },
     required: ['url'],
   },
-  execute: async ({ url, query }: any) => {
+  execute: async ({ url, query }: { url: string; query?: string }) => {
     console.log(
       `Fetching website content from: ${url} ${query ? `with query: ${query}` : ''}`,
     );

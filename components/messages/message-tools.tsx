@@ -65,9 +65,10 @@ export const ToolResult: React.FC<ToolResultProps> = ({ part, messageId }) => {
   const toolName = extractToolName(part);
   const toolCallId = getToolCallId(part);
   const result = getToolOutput(part) || {};
-  const toolIndex = typeof part.toolIndex === 'number' && part.toolIndex >= 0
-    ? `_${part.toolIndex}`
-    : '';
+  const toolIndex =
+    typeof part.toolIndex === 'number' && part.toolIndex >= 0
+      ? `_${part.toolIndex}`
+      : '';
 
   return (
     <div
@@ -77,7 +78,9 @@ export const ToolResult: React.FC<ToolResultProps> = ({ part, messageId }) => {
       {toolName === 'getWeather' ? (
         <Weather
           weatherAtLocation={
-            result as unknown as Parameters<typeof Weather>[0]['weatherAtLocation']
+            result as unknown as Parameters<
+              typeof Weather
+            >[0]['weatherAtLocation']
           }
         />
       ) : isCalendarTool(toolName) ? (
@@ -100,7 +103,11 @@ interface ToolGroupProps {
 /**
  * Renders a group of related tool results
  */
-export const ToolGroup: React.FC<ToolGroupProps> = ({ parts, messageId, toolIndex }) => {
+export const ToolGroup: React.FC<ToolGroupProps> = ({
+  parts,
+  messageId,
+  toolIndex,
+}) => {
   return (
     <div
       key={`tool-group-${toolIndex}`}
@@ -140,7 +147,10 @@ interface MessageToolsProps {
  * Organizes and renders all tool results for a message
  * Handles grouping logic and filtering
  */
-export const MessageTools: React.FC<MessageToolsProps> = ({ parts, messageId }) => {
+export const MessageTools: React.FC<MessageToolsProps> = ({
+  parts,
+  messageId,
+}) => {
   // Organize parts into tool groups
   const toolGroups: { [key: number]: EnhancedMessagePart[] } = {};
   parts.forEach((part) => {
@@ -159,21 +169,21 @@ export const MessageTools: React.FC<MessageToolsProps> = ({ parts, messageId }) 
   const toolResultIds = new Set(
     parts
       .filter(
-        (p) =>
-          isToolPart(p) &&
-          isToolResultAvailable(p) &&
-          getToolCallId(p),
+        (p) => isToolPart(p) && isToolResultAvailable(p) && getToolCallId(p),
       )
       .map((p) => getToolCallId(p)),
   );
 
   const filteredParts = parts.filter((part) => {
-    if (
-      isToolPart(part) &&
-      (part as any).state === 'input-available' &&
-      toolResultIds.has(getToolCallId(part))
-    ) {
-      return false; // Hide input-available if output-available exists
+    if (isToolPart(part)) {
+      const state = (part as unknown as { state?: unknown }).state;
+      if (
+        typeof state === 'string' &&
+        state === 'input-available' &&
+        toolResultIds.has(getToolCallId(part))
+      ) {
+        return false; // Hide input-available if output-available exists
+      }
     }
     return true;
   });

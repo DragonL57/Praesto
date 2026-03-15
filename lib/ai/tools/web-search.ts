@@ -9,11 +9,11 @@ const MIN_REQUEST_INTERVAL_MS = 1500; // 1.5 seconds between requests for Free p
 // Rate limiting: Ensure minimum interval between requests by reserving slots
 async function rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
   const now = Date.now();
-  
+
   // Calculate wait time based on the next available slot
   // If nextAvailableTime is in the past, we can go now (waitTime = 0)
   const waitTime = Math.max(0, nextAvailableTime - now);
-  
+
   // Reserve the slot for this request and update the next available time
   // This ensures even simultaneous calls get sequential slots
   nextAvailableTime = Math.max(now, nextAvailableTime) + MIN_REQUEST_INTERVAL_MS;
@@ -146,6 +146,8 @@ export const webSearch = {
     },
     required: ['query'],
   },
+  // Parameters interface for web search
+
   execute: async ({
     query,
     count = 10,
@@ -161,10 +163,25 @@ export const webSearch = {
     extra_snippets,
     summary,
     units,
-  }: any) => {
+  }: {
+    query: string;
+    count?: number;
+    country?: string;
+    search_lang?: string;
+    ui_lang?: string;
+    safesearch?: string;
+    freshness?: string;
+    offset?: number;
+    spellcheck?: boolean;
+    result_filter?: string;
+    text_decorations?: boolean;
+    extra_snippets?: boolean;
+    summary?: boolean;
+    units?: string;
+  }) => {
     // Validate country code - Brave Search only supports specific countries
-    const validatedCountry = SUPPORTED_COUNTRIES.includes(country?.toUpperCase()) 
-      ? country.toUpperCase() 
+    const validatedCountry = SUPPORTED_COUNTRIES.includes(country?.toUpperCase())
+      ? country.toUpperCase()
       : 'ALL';
 
     // Check if API key is configured
@@ -319,8 +336,8 @@ export const webSearch = {
           type: string;
           results: BraveFAQ[];
         };
-        infobox?: any;
-        locations?: any;
+        infobox?: unknown;
+        locations?: unknown;
       }
 
       const data = (await response.json()) as BraveResponse;

@@ -7,7 +7,7 @@ export interface ChatModel {
   isDefault?: boolean;
   supportsTools?: boolean;
   supportsThinking?: boolean;
-  extraParams?: Record<string, any>;
+  extraParams?: Record<string, unknown>;
 }
 
 // Model configurations with metadata

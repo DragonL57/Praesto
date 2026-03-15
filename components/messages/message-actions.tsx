@@ -16,6 +16,7 @@ import { deleteMessage } from '@/lib/actions/chat';
 
 // Import shared types
 import type { MessageActionsProps } from './message-types';
+import type { TextPart } from '@/lib/ai/types';
 
 export function PureMessageActions({
   chatId,
@@ -60,10 +61,10 @@ export function PureMessageActions({
               }`}
               variant="ghost"
               onClick={async () => {
-                // Get all text parts from message
+                // Get all text parts from message with proper type narrowing
                 const textFromParts = message.parts
-                  ?.filter((part) => part.type === 'text')
-                  .map((part) => (part as any).text)
+                  ?.filter((part): part is TextPart => part.type === 'text')
+                  .map((part) => part.text)
                   .join('\n')
                   .trim();
 

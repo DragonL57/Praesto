@@ -3,7 +3,7 @@
  * Helpers for tool detection, extraction, and styling
  */
 
-import type { Message, MessagePart, ToolCallPart, ToolResultPart } from '@/lib/ai/types';
+import type { Message, MessagePart, ToolCallPart, ToolResultPart, TextPart } from '@/lib/ai/types';
 import type { EnhancedMessagePart } from './message-types';
 
 // ============================================================================
@@ -13,8 +13,12 @@ import type { EnhancedMessagePart } from './message-types';
 /**
  * Check if a part is a tool call or tool result part
  */
-export const isToolPart = (part: MessagePart): boolean => {
+export const isToolPart = (part: MessagePart): part is ToolCallPart | ToolResultPart => {
     return part.type === 'tool-call' || part.type === 'tool-result';
+};
+
+export const isTextPart = (part: MessagePart): part is TextPart => {
+    return part.type === 'text';
 };
 
 /**
@@ -175,8 +179,8 @@ export const applyToolGrouping = (
             for (let j = i + 1; j < enhancedParts.length; j++) {
                 const potentialNextPart = enhancedParts[j];
                 if (
-                    potentialNextPart.type === 'text' &&
-                    (potentialNextPart as any).text?.trim().length > 0
+                    isTextPart(potentialNextPart) &&
+                    potentialNextPart.text.trim().length > 0
                 ) {
                     textEncounteredNext = true;
                     break;
@@ -201,8 +205,8 @@ export const applyToolGrouping = (
             for (let j = i - 1; j >= 0; j--) {
                 const potentialPrevPart = enhancedParts[j];
                 if (
-                    potentialPrevPart.type === 'text' &&
-                    (potentialPrevPart as any).text?.trim().length > 0
+                    isTextPart(potentialPrevPart) &&
+                    potentialPrevPart.text.trim().length > 0
                 ) {
                     textEncounteredPrev = true;
                     break;

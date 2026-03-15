@@ -14,7 +14,10 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import types
-import type { PurePreviewMessageProps, PreviewMessageProps } from './message-types';
+import type {
+  PurePreviewMessageProps,
+  PreviewMessageProps,
+} from './message-types';
 import type { TextPart, ToolCallPart } from '@/lib/ai/types';
 
 // Import hooks
@@ -24,6 +27,7 @@ import { useReasoningElements, useProcessedParts } from './message-hooks';
 import {
   isToolPart,
   extractToolName,
+  isTextPart,
   isToolResultAvailable,
   isReasoningTool,
 } from './message-utils';
@@ -43,7 +47,19 @@ import { SuggestedActions } from '../suggested-actions';
 // ============================================================================
 
 const PurePreviewMessage = memo<PurePreviewMessageProps>(
-  ({ chatId, message, isLoading, setMessages, reload, append, isReadonly, suggestions, suggestionsLoading, sendMessage, status }) => {
+  ({
+    chatId,
+    message,
+    isLoading,
+    setMessages,
+    reload,
+    append,
+    isReadonly,
+    suggestions,
+    suggestionsLoading,
+    sendMessage,
+    status,
+  }) => {
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [_copyFn] = useCopyToClipboard();
     const [isRetrying, setIsRetrying] = useState(false);
@@ -51,7 +67,8 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const isMobile = useIsMobile();
 
     // Extract reasoning elements and process parts using hooks
-    const { reasoningElements, indicesToFilter } = useReasoningElements(message);
+    const { reasoningElements, indicesToFilter } =
+      useReasoningElements(message);
     const processedParts = useProcessedParts(message, indicesToFilter);
 
     // Effect to handle button visibility
@@ -130,15 +147,13 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
       >
         {/* Render MessageReasoning for assistant messages */}
         {message.role === 'assistant' &&
-          (isLoading || (reasoningElements && reasoningElements.length > 0)) && (
+          (isLoading ||
+            (reasoningElements && reasoningElements.length > 0)) && (
             <MessageReasoning
               content={reasoningElements || []}
               isLoading={isLoading}
               hasResponseStarted={processedParts.some((part) => {
-                if (
-                  part.type === 'text' &&
-                  part.text.trim().length > 0
-                ) {
+                if (isTextPart(part) && part.text.trim().length > 0) {
                   return true;
                 }
                 if (
@@ -176,7 +191,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               const key = `message-${message.id}-part-${index}`;
 
               // Render text parts
-              if (part.type === 'text' && part.text?.trim().length > 0) {
+              if (isTextPart(part) && part.text.trim().length > 0) {
                 const textPart = part as TextPart;
                 if (mode === 'view') {
                   return (
@@ -208,43 +223,57 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               }
 
               // Render tool call skeletons (input-available state)
-              if (
-                isToolPart(part) &&
-                (part as any).state === 'input-available'
-              ) {
-                const toolPart = part as ToolCallPart;
-                const toolName = extractToolName(part);
-                const toolCallId = toolPart.toolCallId || '';
+              if (isToolPart(part)) {
+                const state = (part as unknown as { state?: unknown }).state;
+                if (typeof state === 'string' && state === 'input-available') {
+                  const toolPart = part as ToolCallPart;
+                  const toolName = extractToolName(part);
+                  const toolCallId = toolPart.toolCallId || '';
 
-                // Skip reasoning tools
-                if (isReasoningTool(toolName)) return null;
+                  // Skip reasoning tools
+                  if (isReasoningTool(toolName)) return null;
 
-                return (
-                  <ToolCallSkeleton
-                    key={key}
-                    toolName={toolName}
-                    toolCallId={toolCallId}
-                    toolIndex={(part as any).toolIndex}
-                    messageId={message.id}
-                  />
-                );
+                  const rawToolIndex = (
+                    part as unknown as { toolIndex?: unknown }
+                  ).toolIndex;
+                  const toolIndex =
+                    typeof rawToolIndex === 'number' && rawToolIndex >= 0
+                      ? rawToolIndex
+                      : undefined;
+
+                  return (
+                    <ToolCallSkeleton
+                      key={key}
+                      toolName={toolName}
+                      toolCallId={toolCallId}
+                      toolIndex={toolIndex}
+                      messageId={message.id}
+                    />
+                  );
+                }
               }
-
               return null;
             })}
 
             {/* Render suggestions inside the message if provided */}
-            {!isReadonly && (suggestions || suggestionsLoading) && sendMessage && message.role === 'assistant' && status !== 'streaming' && (
-              <div data-exclude-from-copy="true" className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                <SuggestedActions
-                  chatId={chatId}
-                  _messages={[message]}
-                  suggestions={suggestions}
-                  isLoading={suggestionsLoading}
-                  sendMessage={sendMessage}
-                />
-              </div>
-            )}
+            {!isReadonly &&
+              (suggestions || suggestionsLoading) &&
+              sendMessage &&
+              message.role === 'assistant' &&
+              status !== 'streaming' && (
+                <div
+                  data-exclude-from-copy="true"
+                  className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800"
+                >
+                  <SuggestedActions
+                    chatId={chatId}
+                    _messages={[message]}
+                    suggestions={suggestions}
+                    isLoading={suggestionsLoading}
+                    sendMessage={sendMessage}
+                  />
+                </div>
+              )}
 
             {/* Render assistant message actions */}
             {!isReadonly && message.role === 'assistant' && (

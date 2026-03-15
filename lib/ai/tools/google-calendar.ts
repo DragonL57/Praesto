@@ -1,5 +1,55 @@
 import { getGoogleCalendarClient } from '@/lib/services/google-calendar-api';
 
+// Parameter interfaces for calendar tools
+interface ListEventsParams {
+  calendarId?: string;
+  timeMin?: string;
+  timeMax?: string;
+  maxResults?: number;
+  query?: string;
+  singleEvents?: boolean;
+  orderBy?: string;
+}
+
+interface CreateEventParams {
+  calendarId?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  startDateTime?: string;
+  endDateTime?: string;
+  timeZone?: string;
+  attendees?: string[];
+  reminders?: Array<{ method?: string; minutes?: number }>;
+  colorId?: string;
+  recurrence?: string[];
+  sendUpdates?: string;
+}
+
+interface UpdateEventParams extends CreateEventParams {
+  eventId: string;
+}
+
+interface DeleteEventParams {
+  calendarId?: string;
+  eventId: string;
+  sendUpdates?: string;
+}
+
+interface FindFreeTimeSlotsParams {
+  calendarId?: string;
+  timeMin: string;
+  timeMax: string;
+  duration: number;
+  workingHoursOnly?: boolean;
+  timeZone?: string;
+}
+
+interface GetEventParams {
+  calendarId?: string;
+  eventId: string;
+}
+
 // Parameters schema for creating/updating events
 const calendarEventParameters = {
   type: 'object',
@@ -104,7 +154,7 @@ export const listCalendarEvents = {
     query,
     singleEvents = true,
     orderBy = 'startTime',
-  }: any) => {
+  }: ListEventsParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -135,7 +185,7 @@ export const listCalendarEvents = {
         location: event.location,
         start: event.start?.dateTime || event.start?.date,
         end: event.end?.dateTime || event.end?.date,
-        attendees: event.attendees?.map((a) => a.email) || [],
+        attendees: (event.attendees?.map((a) => a?.email).filter((e): e is string => typeof e === 'string')) || [],
         status: event.status,
         htmlLink: event.htmlLink,
         colorId: event.colorId,
@@ -205,7 +255,7 @@ export const createCalendarEvent = {
     colorId,
     recurrence,
     sendUpdates,
-  }: any) => {
+  }: CreateEventParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -224,9 +274,9 @@ export const createCalendarEvent = {
         attendees: attendees?.map((email: string) => ({ email })),
         reminders: reminders
           ? {
-              useDefault: false,
-              overrides: reminders,
-            }
+            useDefault: false,
+            overrides: reminders,
+          }
           : undefined,
         colorId,
         recurrence,
@@ -297,7 +347,7 @@ export const updateCalendarEvent = {
     colorId,
     recurrence,
     sendUpdates = 'all',
-  }: any) => {
+  }: UpdateEventParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -308,7 +358,7 @@ export const updateCalendarEvent = {
       });
 
       // Build the update object with only provided fields
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, unknown> = {
         ...existingEvent.data,
       };
 
@@ -395,7 +445,7 @@ export const deleteCalendarEvent = {
     },
     required: ['eventId'],
   },
-  execute: async ({ calendarId = 'primary', eventId, sendUpdates = 'all' }: any) => {
+  execute: async ({ calendarId = 'primary', eventId, sendUpdates = 'all' }: DeleteEventParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -474,7 +524,7 @@ export const findFreeTimeSlots = {
     duration,
     workingHoursOnly = true,
     timeZone = 'America/New_York',
-  }: any) => {
+  }: FindFreeTimeSlotsParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -569,7 +619,7 @@ export const getCalendarEvent = {
     },
     required: ['eventId'],
   },
-  execute: async ({ calendarId = 'primary', eventId }: any) => {
+  execute: async ({ calendarId = 'primary', eventId }: GetEventParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -590,9 +640,9 @@ export const getCalendarEvent = {
           start: event.start?.dateTime || event.start?.date,
           end: event.end?.dateTime || event.end?.date,
           attendees: event.attendees?.map((a) => ({
-            email: a.email,
-            displayName: a.displayName,
-            responseStatus: a.responseStatus,
+            email: a?.email ?? undefined,
+            displayName: a?.displayName ?? undefined,
+            responseStatus: a?.responseStatus ?? undefined,
           })),
           status: event.status,
           htmlLink: event.htmlLink,

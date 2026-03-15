@@ -43,15 +43,17 @@ export interface UserTimeContext {
 /**
  * Extract file parts from message parts without AI SDK types
  */
-export function getFilePartsFromMessage(message: any): FileAttachment[] {
+import type { MessagePart, FilePart } from '../types';
+
+export function getFilePartsFromMessage(message: { parts?: MessagePart[] } | null | undefined): FileAttachment[] {
     if (!message || !Array.isArray(message.parts)) return [];
 
     return message.parts
-        .filter((part: any) => part.type === 'file')
-        .map((part: any): FileAttachment => ({
+        .filter((part): part is FilePart => part.type === 'file')
+        .map((part): FileAttachment => ({
             url: part.url ?? '',
             name: part.filename,
-            contentType: part.mediaType,
-            mediaType: part.mediaType,
+            contentType: part.contentType,
+            mediaType: part.contentType ?? undefined,
         }));
 }
