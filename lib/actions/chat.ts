@@ -1,26 +1,31 @@
 'use server';
 
-import { generateText } from 'ai';
 import type { UIMessage } from 'ai';
-// eslint-disable-next-line import/no-unresolved
+import { openai } from '@/lib/ai/providers';
 import {
-    deleteMessagesByChatIdAfterTimestamp,
-    deleteMessageById,
-    getMessageById,
-    updateChatVisiblityById,
+  deleteMessagesByChatIdAfterTimestamp,
+  deleteMessageById,
+  getMessageById,
+  updateChatVisiblityById,
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
-// eslint-disable-next-line import/no-unresolved
-import { myProvider } from '@/lib/ai/providers';
 
 export async function generateTitleFromUserMessage({
-    message,
+  message,
 }: {
-    message: UIMessage;
+  message: UIMessage;
 }) {
-    const { text: title } = await generateText({
-        model: myProvider.languageModel('title-model'),
-        system: `\n
+  const userContent = message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => (part as { text: string }).text)
+    .join('\n');
+
+  const response = await openai.chat.completions.create({
+    model: 'grok-4.1-fast-non-reasoning',
+    messages: [
+      {
+        role: 'system',
+        content: `
     - You are a conversation title generator.
     - Your goal is to generate a short, concise title (MAX 4 WORDS) for a conversation based on the user's first message.
     - IF the user asks for news, headlines, or updates on current events, you MUST use the exact title: "Latest News Headlines".
@@ -31,46 +36,53 @@ export async function generateTitleFromUserMessage({
     Example for news:
     User: "Show me the latest news headlines"
     Title: "Latest News Headlines"`,
-        prompt: JSON.stringify(message),
-    });
+      },
+      {
+        role: 'user',
+        content: userContent,
+      },
+    ],
+    temperature: 0.7,
+    max_tokens: 20,
+  });
 
-    return title;
+  return response.choices[0].message.content?.trim() || 'New Chat';
 }
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
-    const [message] = await getMessageById({ id });
+  const [message] = await getMessageById({ id });
 
-    // Check if message exists before accessing its properties
-    if (!message) {
-        console.error(`No message found with id: ${id}`);
-        return;
-    }
+  // Check if message exists before accessing its properties
+  if (!message) {
+    console.error(`No message found with id: ${id}`);
+    return;
+  }
 
-    await deleteMessagesByChatIdAfterTimestamp({
-        chatId: message.chatId,
-        timestamp: message.createdAt,
-    });
+  await deleteMessagesByChatIdAfterTimestamp({
+    chatId: message.chatId,
+    timestamp: message.createdAt,
+  });
 }
 
 export async function deleteMessage({
-    id,
-    chatId,
+  id,
+  chatId,
 }: {
-    id: string;
-    chatId: string;
+  id: string;
+  chatId: string;
 }) {
-    await deleteMessageById({
-        messageId: id,
-        chatId,
-    });
+  await deleteMessageById({
+    messageId: id,
+    chatId,
+  });
 }
 
 export async function updateChatVisibility({
-    chatId,
-    visibility,
+  chatId,
+  visibility,
 }: {
-    chatId: string;
-    visibility: VisibilityType;
+  chatId: string;
+  visibility: VisibilityType;
 }) {
-    await updateChatVisiblityById({ chatId, visibility });
+  await updateChatVisiblityById({ chatId, visibility });
 }

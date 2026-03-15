@@ -1,11 +1,16 @@
 /**
  * Type definitions for message components
  * Shared across message.tsx, message-reasoning.tsx, and related components
+ * Without AI SDK dependency
  */
 
-import type { UIMessage } from 'ai';
-import type { AppendFunction, SetMessagesFunction } from '@/lib/ai/types';
-import type { UseChatHelpers } from '@ai-sdk/react';
+import type { 
+  UIMessage, 
+  UIMessagePart, 
+  AppendFunction, 
+  SetMessagesFunction,
+  ChatStatus 
+} from '@/lib/ai/types';
 
 // ============================================================================
 // Suggestion Type
@@ -56,11 +61,10 @@ export interface ThinkToolResult {
 // Enhanced Message Part Types
 // ============================================================================
 
-export type EnhancedMessagePart = UIMessage['parts'][0] & {
+export type EnhancedMessagePart = UIMessagePart & {
     connectNext?: boolean;
     connectPrevious?: boolean;
     toolIndex?: number;
-    state?: string; // for tool parts: 'input-available', 'output-available', etc.
 };
 
 // ============================================================================
@@ -77,8 +81,8 @@ export interface PurePreviewMessageProps {
     isReadonly: boolean;
     suggestions?: Suggestion[];
     suggestionsLoading?: boolean;
-    sendMessage?: UseChatHelpers<UIMessage>['sendMessage'];
-    status?: 'submitted' | 'streaming' | 'ready' | 'error';
+    sendMessage?: (args: { text: string; [key: string]: any }) => Promise<void>;
+    status?: ChatStatus;
 }
 
 export interface PreviewMessageProps
@@ -94,7 +98,7 @@ export interface MessageActionsProps {
 }
 
 // ============================================================================
-// Tool Part Types (AI SDK 5.x compatibility)
+// Tool Part Types
 // ============================================================================
 
 export interface ToolCallPart {

@@ -108,6 +108,7 @@
     "next-themes": "latest",
     "nodemailer": "^7.0.11",
     "officeparser": "^5.2.2",
+    "openai": "^6.29.0",
     "orderedmap": "^2.1.1",
     "papaparse": "^5.5.3",
     "pdfjs-dist": "^5.4.449",

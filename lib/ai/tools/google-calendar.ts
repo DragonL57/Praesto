@@ -1,105 +1,110 @@
-import { tool } from 'ai';
-import { z } from 'zod';
 import { getGoogleCalendarClient } from '@/lib/services/google-calendar-api';
 
-// Calendar event schema for creating/updating events
-const calendarEventSchema = z.object({
-  summary: z.string().describe('Title/summary of the event'),
-  description: z
-    .string()
-    .optional()
-    .describe('Detailed description of the event'),
-  location: z.string().optional().describe('Location of the event'),
-  startDateTime: z
-    .string()
-    .describe(
-      'Start date and time in ISO 8601 format (e.g., "2024-03-20T10:00:00")',
-    ),
-  endDateTime: z
-    .string()
-    .describe(
-      'End date and time in ISO 8601 format (e.g., "2024-03-20T11:00:00")',
-    ),
-  timeZone: z
-    .string()
-    .default('America/New_York')
-    .describe(
-      'Time zone for the event (e.g., "America/New_York", "Europe/London")',
-    ),
-  attendees: z
-    .array(z.string())
-    .optional()
-    .describe('Array of email addresses for attendees'),
-  reminders: z
-    .array(
-      z.object({
-        method: z.enum(['email', 'popup']),
-        minutes: z
-          .number()
-          .describe('Minutes before the event to send the reminder'),
-      }),
-    )
-    .optional()
-    .describe('Reminder notifications for the event'),
-  colorId: z.string().optional().describe('Color ID for the event (1-11)'),
-  recurrence: z
-    .array(z.string())
-    .optional()
-    .describe(
-      'Recurrence rules in RRULE format (e.g., ["RRULE:FREQ=DAILY;COUNT=10"])',
-    ),
-});
+// Parameters schema for creating/updating events
+const calendarEventParameters = {
+  type: 'object',
+  properties: {
+    summary: { type: 'string', description: 'Title/summary of the event' },
+    description: {
+      type: 'string',
+      description: 'Detailed description of the event',
+    },
+    location: { type: 'string', description: 'Location of the event' },
+    startDateTime: {
+      type: 'string',
+      description: 'Start date and time in ISO 8601 format (e.g., "2024-03-20T10:00:00")',
+    },
+    endDateTime: {
+      type: 'string',
+      description: 'End date and time in ISO 8601 format (e.g., "2024-03-20T11:00:00")',
+    },
+    timeZone: {
+      type: 'string',
+      default: 'America/New_York',
+      description: 'Time zone for the event (e.g., "America/New_York", "Europe/London")',
+    },
+    attendees: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Array of email addresses for attendees',
+    },
+    reminders: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          method: { type: 'string', enum: ['email', 'popup'] },
+          minutes: {
+            type: 'number',
+            description: 'Minutes before the event to send the reminder',
+          },
+        },
+      },
+      description: 'Reminder notifications for the event',
+    },
+    colorId: { type: 'string', description: 'Color ID for the event (1-11)' },
+    recurrence: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Recurrence rules in RRULE format (e.g., ["RRULE:FREQ=DAILY;COUNT=10"])',
+    },
+  },
+};
 
 // List events tool
-export const listCalendarEvents = tool({
+export const listCalendarEvents = {
   description:
     'List calendar events within a specified time range. Use this to check availability, view scheduled events, or search for specific meetings.',
-  inputSchema: z.object({
-    calendarId: z
-      .string()
-      .default(process.env.GOOGLE_CALENDAR_ID || 'primary')
-      .describe(
-        'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
-      ),
-    timeMin: z
-      .string()
-      .describe(
-        'Start date/time in ISO 8601 format (e.g., "2024-03-20T00:00:00Z")',
-      ),
-    timeMax: z
-      .string()
-      .optional()
-      .describe(
-        'End date/time in ISO 8601 format (e.g., "2024-03-27T23:59:59Z")',
-      ),
-    maxResults: z
-      .number()
-      .min(1)
-      .max(100)
-      .default(10)
-      .describe('Maximum number of events to return (1-100, default: 10)'),
-    query: z
-      .string()
-      .optional()
-      .describe('Free text search query to filter events'),
-    singleEvents: z
-      .boolean()
-      .default(true)
-      .describe('Whether to expand recurring events into instances'),
-    orderBy: z
-      .enum(['startTime', 'updated'])
-      .default('startTime')
-      .describe('Order of events in the result'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      calendarId: {
+        type: 'string',
+        default: process.env.GOOGLE_CALENDAR_ID || 'primary',
+        description: 'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
+      },
+      timeMin: {
+        type: 'string',
+        description: 'Start date/time in ISO 8601 format (e.g., "2024-03-20T00:00:00Z")',
+      },
+      timeMax: {
+        type: 'string',
+        description: 'End date/time in ISO 8601 format (e.g., "2024-03-27T23:59:59Z")',
+      },
+      maxResults: {
+        type: 'number',
+        minimum: 1,
+        maximum: 100,
+        default: 10,
+        description: 'Maximum number of events to return (1-100, default: 10)',
+      },
+      query: {
+        type: 'string',
+        description: 'Free text search query to filter events',
+      },
+      singleEvents: {
+        type: 'boolean',
+        default: true,
+        description: 'Whether to expand recurring events into instances',
+      },
+      orderBy: {
+        type: 'string',
+        enum: ['startTime', 'updated'],
+        default: 'startTime',
+        description: 'Order of events in the result',
+      },
+    },
+    required: ['timeMin'],
+  },
   execute: async ({
-    calendarId,
+    calendarId = 'primary',
     timeMin,
     timeMax,
-    maxResults,
+    maxResults = 10,
     query,
-    singleEvents,
-    orderBy,
-  }) => {
+    singleEvents = true,
+    orderBy = 'startTime',
+  }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -144,7 +149,6 @@ export const listCalendarEvents = tool({
         events: formattedEvents,
       };
     } catch (error: unknown) {
-      // BEGIN DEBUG LOGGING
       console.error('[Google Calendar] Error in listCalendarEvents:', {
         error,
         calendarId,
@@ -154,13 +158,7 @@ export const listCalendarEvents = tool({
         query,
         singleEvents,
         orderBy,
-        env: {
-          GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-          GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
-          GOOGLE_SERVICE_ACCOUNT_KEY: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
-        },
       });
-      // END DEBUG LOGGING
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       return {
@@ -170,26 +168,32 @@ export const listCalendarEvents = tool({
       };
     }
   },
-});
+};
 
 // Create event tool
-export const createCalendarEvent = tool({
+export const createCalendarEvent = {
   description:
     'Create a new calendar event. Use this to schedule meetings, appointments, reminders, or any time-blocked activities.',
-  inputSchema: calendarEventSchema.extend({
-    calendarId: z
-      .string()
-      .default(process.env.GOOGLE_CALENDAR_ID || 'primary')
-      .describe(
-        'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
-      ),
-    sendUpdates: z
-      .enum(['all', 'externalOnly', 'none'])
-      .default('none')
-      .describe('Whether to send notifications to attendees'),
-  }),
+  parameters: {
+    ...calendarEventParameters,
+    properties: {
+      ...calendarEventParameters.properties,
+      calendarId: {
+        type: 'string',
+        default: process.env.GOOGLE_CALENDAR_ID || 'primary',
+        description: 'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
+      },
+      sendUpdates: {
+        type: 'string',
+        enum: ['all', 'externalOnly', 'none'],
+        default: 'none',
+        description: 'Whether to send notifications to attendees',
+      },
+    },
+    required: ['summary', 'startDateTime', 'endDateTime'],
+  },
   execute: async ({
-    calendarId,
+    calendarId = 'primary',
     summary,
     description,
     location,
@@ -201,7 +205,7 @@ export const createCalendarEvent = tool({
     colorId,
     recurrence,
     sendUpdates,
-  }) => {
+  }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -217,7 +221,7 @@ export const createCalendarEvent = tool({
           dateTime: endDateTime,
           timeZone,
         },
-        attendees: attendees?.map((email) => ({ email })),
+        attendees: attendees?.map((email: string) => ({ email })),
         reminders: reminders
           ? {
               useDefault: false,
@@ -254,28 +258,31 @@ export const createCalendarEvent = tool({
       };
     }
   },
-});
+};
 
 // Update event tool
-export const updateCalendarEvent = tool({
+export const updateCalendarEvent = {
   description:
     'Update an existing calendar event. Use this to modify event details, reschedule meetings, or update attendees.',
-  inputSchema: calendarEventSchema
-    .extend({
-      calendarId: z
-        .string()
-        .default('primary')
-        .describe(
-          'Calendar ID (default: "primary" for the user\'s primary calendar)',
-        ),
-      eventId: z.string().describe('ID of the event to update'),
-      sendUpdates: z
-        .enum(['all', 'externalOnly', 'none'])
-        .default('all')
-        .describe('Whether to send notifications to attendees'),
-    })
-    .partial()
-    .required({ eventId: true }),
+  parameters: {
+    type: 'object',
+    properties: {
+      ...calendarEventParameters.properties,
+      calendarId: {
+        type: 'string',
+        default: 'primary',
+        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+      },
+      eventId: { type: 'string', description: 'ID of the event to update' },
+      sendUpdates: {
+        type: 'string',
+        enum: ['all', 'externalOnly', 'none'],
+        default: 'all',
+        description: 'Whether to send notifications to attendees',
+      },
+    },
+    required: ['eventId'],
+  },
   execute: async ({
     calendarId = 'primary',
     eventId,
@@ -290,7 +297,7 @@ export const updateCalendarEvent = tool({
     colorId,
     recurrence,
     sendUpdates = 'all',
-  }) => {
+  }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -301,7 +308,7 @@ export const updateCalendarEvent = tool({
       });
 
       // Build the update object with only provided fields
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         ...existingEvent.data,
       };
 
@@ -324,7 +331,7 @@ export const updateCalendarEvent = tool({
       }
 
       if (attendees !== undefined) {
-        updateData.attendees = attendees.map((email) => ({ email }));
+        updateData.attendees = attendees.map((email: string) => ({ email }));
       }
 
       if (reminders !== undefined) {
@@ -364,26 +371,31 @@ export const updateCalendarEvent = tool({
       };
     }
   },
-});
+};
 
 // Delete event tool
-export const deleteCalendarEvent = tool({
+export const deleteCalendarEvent = {
   description:
     'Delete a calendar event. Use this to cancel meetings, remove appointments, or clear your schedule.',
-  inputSchema: z.object({
-    calendarId: z
-      .string()
-      .default('primary')
-      .describe(
-        'Calendar ID (default: "primary" for the user\'s primary calendar)',
-      ),
-    eventId: z.string().describe('ID of the event to delete'),
-    sendUpdates: z
-      .enum(['all', 'externalOnly', 'none'])
-      .default('all')
-      .describe('Whether to send cancellation notifications to attendees'),
-  }),
-  execute: async ({ calendarId, eventId, sendUpdates }) => {
+  parameters: {
+    type: 'object',
+    properties: {
+      calendarId: {
+        type: 'string',
+        default: 'primary',
+        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+      },
+      eventId: { type: 'string', description: 'ID of the event to delete' },
+      sendUpdates: {
+        type: 'string',
+        enum: ['all', 'externalOnly', 'none'],
+        default: 'all',
+        description: 'Whether to send cancellation notifications to attendees',
+      },
+    },
+    required: ['eventId'],
+  },
+  execute: async ({ calendarId = 'primary', eventId, sendUpdates = 'all' }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -416,45 +428,53 @@ export const deleteCalendarEvent = tool({
       };
     }
   },
-});
+};
 
 // Find free time slots tool
-export const findFreeTimeSlots = tool({
+export const findFreeTimeSlots = {
   description:
     'Find available time slots in the calendar. Use this to help schedule meetings by finding when the user is free.',
-  inputSchema: z.object({
-    calendarId: z
-      .string()
-      .default('primary')
-      .describe(
-        'Calendar ID (default: "primary" for the user\'s primary calendar)',
-      ),
-    timeMin: z
-      .string()
-      .describe('Start date/time to search from in ISO 8601 format'),
-    timeMax: z
-      .string()
-      .describe('End date/time to search until in ISO 8601 format'),
-    duration: z
-      .number()
-      .describe('Duration of the desired time slot in minutes'),
-    workingHoursOnly: z
-      .boolean()
-      .default(true)
-      .describe('Only consider working hours (9 AM - 5 PM)'),
-    timeZone: z
-      .string()
-      .default('America/New_York')
-      .describe('Time zone for the search'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      calendarId: {
+        type: 'string',
+        default: 'primary',
+        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+      },
+      timeMin: {
+        type: 'string',
+        description: 'Start date/time to search from in ISO 8601 format',
+      },
+      timeMax: {
+        type: 'string',
+        description: 'End date/time to search until in ISO 8601 format',
+      },
+      duration: {
+        type: 'number',
+        description: 'Duration of the desired time slot in minutes',
+      },
+      workingHoursOnly: {
+        type: 'boolean',
+        default: true,
+        description: 'Only consider working hours (9 AM - 5 PM)',
+      },
+      timeZone: {
+        type: 'string',
+        default: 'America/New_York',
+        description: 'Time zone for the search',
+      },
+    },
+    required: ['timeMin', 'timeMax', 'duration'],
+  },
   execute: async ({
-    calendarId,
+    calendarId = 'primary',
     timeMin,
     timeMax,
     duration,
-    workingHoursOnly,
-    timeZone,
-  }) => {
+    workingHoursOnly = true,
+    timeZone = 'America/New_York',
+  }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -532,21 +552,24 @@ export const findFreeTimeSlots = tool({
       };
     }
   },
-});
+};
 
 // Get event details tool
-export const getCalendarEvent = tool({
+export const getCalendarEvent = {
   description: 'Get detailed information about a specific calendar event.',
-  inputSchema: z.object({
-    calendarId: z
-      .string()
-      .default('primary')
-      .describe(
-        'Calendar ID (default: "primary" for the user\'s primary calendar)',
-      ),
-    eventId: z.string().describe('ID of the event to retrieve'),
-  }),
-  execute: async ({ calendarId, eventId }) => {
+  parameters: {
+    type: 'object',
+    properties: {
+      calendarId: {
+        type: 'string',
+        default: 'primary',
+        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+      },
+      eventId: { type: 'string', description: 'ID of the event to retrieve' },
+    },
+    required: ['eventId'],
+  },
+  execute: async ({ calendarId = 'primary', eventId }: any) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -589,4 +612,4 @@ export const getCalendarEvent = tool({
       };
     }
   },
-});
+};

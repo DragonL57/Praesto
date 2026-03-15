@@ -3,6 +3,7 @@
 /**
  * Main message component (refactored for modularity)
  * Orchestrates all message sub-components
+ * Without AI SDK dependency
  */
 
 import React, { memo, useEffect, useState } from 'react';
@@ -135,8 +136,8 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               hasResponseStarted={processedParts.some((part) => {
                 if (
                   part.type === 'text' &&
-                  typeof part.text === 'string' &&
-                  part.text.trim().length > 0
+                  typeof (part as any).text === 'string' &&
+                  (part as any).text.trim().length > 0
                 ) {
                   return true;
                 }
@@ -175,13 +176,13 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
               const key = `message-${message.id}-part-${index}`;
 
               // Render text parts
-              if (part.type === 'text' && part.text?.trim().length > 0) {
+              if (part.type === 'text' && (part as any).text?.trim().length > 0) {
                 if (mode === 'view') {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
                       <MessageContent
                         message={message}
-                        text={part.text}
+                        text={(part as any).text}
                         messageId={message.id}
                         onCopy={handleCopy}
                         append={append}
@@ -222,7 +223,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     key={key}
                     toolName={toolName}
                     toolCallId={toolCallId}
-                    toolIndex={part.toolIndex}
+                    toolIndex={(part as any).toolIndex}
                     messageId={message.id}
                   />
                 );
@@ -239,7 +240,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   _messages={[message]}
                   suggestions={suggestions}
                   isLoading={suggestionsLoading}
-                  sendMessage={sendMessage}
+                  sendMessage={sendMessage as any}
                 />
               </div>
             )}

@@ -1,4 +1,3 @@
-import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { memo, useEffect, useRef, useState, useMemo } from 'react';
 import equal from 'fast-deep-equal';
@@ -8,10 +7,8 @@ import type {
   SetMessagesFunction,
   AppendFunction,
   ChatStatus,
+  UIMessage,
 } from '@/lib/ai/types';
-import type { UseChatHelpers } from '@ai-sdk/react';
-// Removing framer-motion for better performance
-// import { motion, AnimatePresence } from 'framer-motion';
 
 interface Suggestion {
   title: string;
@@ -32,7 +29,7 @@ interface MessagesProps {
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   suggestions?: Suggestion[];
   suggestionsLoading?: boolean;
-  sendMessage?: UseChatHelpers<UIMessage>['sendMessage'];
+  sendMessage?: (args: { text: string; [key: string]: any }) => Promise<void>;
 }
 
 function PureMessages({
@@ -148,7 +145,7 @@ function PureMessages({
       if (scrollTimeout) clearTimeout(scrollTimeout);
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [containerRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)
+  }, [containerRef, userHasScrolledUp]);
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
@@ -201,7 +198,7 @@ function PureMessages({
 
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
-  }, [messages, status, containerRef, endRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies
+  }, [messages, status, containerRef, endRef, userHasScrolledUp]);
 
   // Check if there are any visible elements that would require scrolling
   const hasVisibleContent =

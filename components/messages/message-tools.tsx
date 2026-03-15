@@ -170,7 +170,7 @@ export const MessageTools: React.FC<MessageToolsProps> = ({ parts, messageId }) 
   const filteredParts = parts.filter((part) => {
     if (
       isToolPart(part) &&
-      part.state === 'input-available' &&
+      (part as any).state === 'input-available' &&
       toolResultIds.has(getToolCallId(part))
     ) {
       return false; // Hide input-available if output-available exists

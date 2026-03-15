@@ -28,22 +28,23 @@ export function getTools(toolNames?: ToolName[]) {
   if (!toolNames) {
     return {
       tools: allTools,
-      experimental_activeTools: Object.keys(allTools) as ToolName[],
+      activeToolNames: Object.keys(allTools) as ToolName[],
     };
   }
 
   const tools: Record<string, any> = {};
-  const experimental_activeTools: ToolName[] = [];
+  const activeToolNames: ToolName[] = [];
 
   for (const name of toolNames) {
-    if (allTools[name]) {
-      tools[name] = allTools[name];
-      experimental_activeTools.push(name);
+    const toolName = name as ToolName;
+    if (allTools[toolName]) {
+      tools[toolName] = allTools[toolName];
+      activeToolNames.push(toolName);
     }
   }
 
   return {
     tools,
-    experimental_activeTools,
+    activeToolNames,
   };
 }

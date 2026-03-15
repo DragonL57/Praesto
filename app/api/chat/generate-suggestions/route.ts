@@ -1,7 +1,6 @@
 import { auth } from '@/app/auth';
 import { SUGGESTIONS_AGENT_PROMPT } from '@/lib/ai/suggestions-prompt';
-import { myProvider } from '@/lib/ai/providers';
-import { generateText } from 'ai';
+import { openai } from '@/lib/ai/providers';
 import type { UIMessage } from 'ai';
 
 export const maxDuration = 30;
@@ -15,8 +14,6 @@ interface Suggestion {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log('[SUGGESTIONS API] Received body:', JSON.stringify(body).substring(0, 200));
-
         const { messages }: { messages: Array<UIMessage> } = body;
 
         const session = await auth();
@@ -27,7 +24,6 @@ export async function POST(request: Request) {
 
         // Validate messages
         if (!messages || messages.length === 0) {
-            console.error('[SUGGESTIONS API] No messages provided:', { messages });
             return Response.json(
                 { error: 'No messages provided' },
                 { status: 400 },
@@ -35,10 +31,9 @@ export async function POST(request: Request) {
         }
 
         // Use fast model for suggestions (grok-4.1-fast-non-reasoning)
-        const model = myProvider.languageModel('fast-model');
+        const model = 'grok-4.1-fast-non-reasoning';
 
         // Build conversation context for the suggestions agent
-        // Take last 4 messages max to keep context relevant but concise
         const recentMessages = messages.slice(-4);
         const conversationContext = recentMessages
             .map((msg) => {
@@ -51,24 +46,28 @@ export async function POST(request: Request) {
             })
             .join('\n\n');
 
-        console.log('[SUGGESTIONS] Conversation context:', conversationContext);
-
         // Generate suggestions using the separate agent
-        const result = await generateText({
+        const response = await openai.chat.completions.create({
             model,
-            system: SUGGESTIONS_AGENT_PROMPT,
-            prompt: `Based on this conversation, generate 4 contextual follow-up suggestions:\n\n${conversationContext}`,
+            messages: [
+                {
+                    role: 'system',
+                    content: SUGGESTIONS_AGENT_PROMPT,
+                },
+                {
+                    role: 'user',
+                    content: `Based on this conversation, generate 4 contextual follow-up suggestions:\n\n${conversationContext}`,
+                },
+            ],
             temperature: 0.7,
+            stream: false,
         });
 
-        console.log('[SUGGESTIONS] Generated text:', result.text);
+        const text = response.choices[0].message.content?.trim() || '';
 
         // Parse the JSON response
         let suggestions: Suggestion[];
         try {
-            // Try to extract JSON from the response
-            const text = result.text.trim();
-
             // Handle cases where model might wrap JSON in markdown code blocks
             let jsonText = text;
             if (text.startsWith('```json')) {
@@ -99,7 +98,6 @@ export async function POST(request: Request) {
             }
         } catch (parseError) {
             console.error('[SUGGESTIONS PARSE ERROR]', parseError);
-            console.error('[SUGGESTIONS RAW TEXT]', result.text);
 
             // Fallback to default suggestions if parsing fails
             suggestions = [

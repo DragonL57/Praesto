@@ -1,5 +1,3 @@
-import type { FileUIPart, UIMessage } from 'ai';
-
 // Type for a step in the result.steps array
 export interface Step {
     toolCalls?: ToolCall[];
@@ -42,12 +40,16 @@ export interface UserTimeContext {
     timeZone: string;
 }
 
-// Extract file parts from message parts (AI SDK 5.x approach)
-export function getFilePartsFromMessage(message: UIMessage): FileAttachment[] {
+/**
+ * Extract file parts from message parts without AI SDK types
+ */
+export function getFilePartsFromMessage(message: any): FileAttachment[] {
+    if (!message || !Array.isArray(message.parts)) return [];
+    
     return message.parts
-        .filter((part): part is FileUIPart => part.type === 'file')
+        .filter((part: any) => part.type === 'file')
         .map(
-            (part: FileUIPart): FileAttachment => ({
+            (part: any): FileAttachment => ({
                 url: part.url ?? '',
                 name: part.filename,
                 contentType: part.mediaType,

@@ -1,80 +1,14 @@
 import 'server-only';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import {
-  customProvider,
-  wrapLanguageModel,
-  defaultSettingsMiddleware,
-  convertToModelMessages,
-  smoothStream,
-  stepCountIs,
-  type UIMessage,
-} from 'ai';
+import OpenAI from 'openai';
 
 // Import tools and utilities
 import { chatModels } from './models';
 import { systemPrompt } from './prompts';
-import { isProductionEnvironment } from '@/lib/constants';
 
-// Poe API OpenAI-compatible provider
-const poeProvider = createOpenAICompatible({
-  name: 'poe',
+// Poe API OpenAI-compatible provider client
+export const openai = new OpenAI({
   apiKey: process.env.POE_API_KEY || '',
   baseURL: 'https://api.poe.com/v1',
-});
-
-// Enhanced Grok-4.1-fast-reasoning model
-const enhancedGrok41FastReasoningModel = wrapLanguageModel({
-  model: poeProvider.chatModel('grok-4.1-fast-reasoning'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-    },
-  }),
-});
-
-// Fast non-reasoning Grok model for quick responses
-const grok41FastNonReasoningModel = wrapLanguageModel({
-  model: poeProvider.chatModel('grok-4.1-fast-non-reasoning'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.7,
-    },
-  }),
-});
-
-const glm5Model = wrapLanguageModel({
-  model: poeProvider.chatModel('glm-5'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-    },
-  }),
-});
-
-const minimaxM25Model = wrapLanguageModel({
-  model: poeProvider.chatModel('minimax-m2.5'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.8,
-    },
-  }),
-});
-
-// Export the configured provider for the application
-// Model IDs match those defined in chatModels array above
-export const myProvider = customProvider({
-  languageModels: {
-    // Enhanced Poe models with middleware
-    'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
-    'grok-4.1-fast-non-reasoning': grok41FastNonReasoningModel,
-    'glm-5': glm5Model,
-    'minimax-m2.5': minimaxM25Model,
-
-    // Aliases for internal use (using enhanced models)
-    'chat-model': enhancedGrok41FastReasoningModel,
-    'title-model': grok41FastNonReasoningModel,
-    'fast-model': grok41FastNonReasoningModel,
-  },
 });
 
 // Helper functions for model configuration
@@ -91,30 +25,11 @@ export function getModelConfiguration(modelId: string) {
   };
 }
 
-// Get provider options for a specific model
-export function getProviderOptions(
-  supportsThinking: boolean,
-  _modelId?: string,
-  _thinkingLevel?: string,
-) {
-  const baseOptions = {};
-
-  return {
-    openai: baseOptions,
-    poe: {
-      thinking: {
-        type: supportsThinking ? 'enabled' : 'disabled',
-      },
-      ...baseOptions,
-    },
-  };
-}
-
 // Get standard model options
 export function getModelOptions() {
   return {
     temperature: 1,
-    maxTokens: 128000, // Set max context length to 128,000 tokens for all models
+    max_tokens: 128000, // Set max context length to 128,000 tokens for all models
   };
 }
 
@@ -124,65 +39,62 @@ export async function getAvailableTools() {
   return getTools();
 }
 
-// Get stream text configuration
-export async function getStreamTextConfig(
+/**
+ * Get chat completion parameters for OpenAI client
+ * This replaces getStreamTextConfig for Vercel AI SDK
+ */
+export async function getChatCompletionParams(
   modelId: string,
-  messages: Array<Omit<UIMessage, 'id'>>,
+  messages: any[],
   userTimeContext?: {
     date: string;
     time: string;
     dayOfWeek: string;
     timeZone: string;
   },
-  thinkingLevel?: string,
+  _thinkingLevel?: string,
 ) {
   const { supportsTools, supportsThinking } = getModelConfiguration(modelId);
-  const modelInstance = myProvider.languageModel(modelId);
   const modelOptions = getModelOptions();
-  const providerOptions = getProviderOptions(
-    supportsThinking,
-    modelId,
-    thinkingLevel,
-  );
 
-  // Filter out tool parts with state 'input-available' before sending to model
-  const filteredMessages = messages.map((msg) => ({
-    ...msg,
-    parts: Array.isArray(msg.parts)
-      ? msg.parts.filter(
-        (part) =>
-          !(
-            part &&
-            typeof part === 'object' &&
-            'state' in part &&
-            ((part as { state?: string }).state === 'input-available' ||
-              (part as { state?: string }).state === 'call')
-          ),
-      )
-      : msg.parts,
-  }));
+  // Map modelId to actual Poe bot name if needed
+  let actualModel = modelId;
+  if (modelId === 'chat-model') actualModel = 'grok-4.1-fast-reasoning';
+  if (modelId === 'title-model' || modelId === 'fast-model') actualModel = 'grok-4.1-fast-non-reasoning';
 
-  const baseConfig = {
-    model: modelInstance,
-    system: systemPrompt({ selectedChatModel: modelId, userTimeContext }),
-    messages: convertToModelMessages(filteredMessages),
-    stopWhen: stepCountIs(10),
+  const baseConfig: any = {
+    model: actualModel,
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt({ selectedChatModel: actualModel, userTimeContext }),
+      },
+      ...messages,
+    ],
     ...modelOptions,
-    providerOptions,
-    experimental_transform: smoothStream({ chunking: 'line' }),
-    experimental_telemetry: {
-      isEnabled: isProductionEnvironment,
-      functionId: 'stream-text',
-    },
+    stream: true,
   };
+
+  // Add Poe-specific extra_body parameters if needed
+  if (supportsThinking) {
+    baseConfig.extra_body = {
+      thinking: 'enabled',
+    };
+  }
 
   // Use custom function calling tools for models that support them
   if (supportsTools) {
-    const tools = await getAvailableTools();
-    return {
-      ...baseConfig,
-      ...tools,
-    };
+    const { tools } = await getAvailableTools();
+    // Transform tools to OpenAI format if they are not already
+    // (Assuming tools will be refactored to OpenAI format)
+    baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, any]) => ({
+      type: 'function',
+      function: {
+        name,
+        description: tool.description,
+        parameters: tool.parameters, // Assuming these are JSON schemas
+      },
+    }));
   }
 
   return baseConfig;

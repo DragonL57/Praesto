@@ -1,35 +1,42 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-
-export const getWeather = tool({
-  description:
-    'Get detailed weather information for a location using Open Meteo API',
-  inputSchema: z.object({
-    latitude: z.number().describe('Latitude of the location'),
-    longitude: z.number().describe('Longitude of the location'),
-    timezone: z
-      .string()
-      .optional()
-      .describe('Timezone (e.g., "auto", "Europe/Berlin", "America/New_York")'),
-    temperature_unit: z
-      .enum(['celsius', 'fahrenheit'])
-      .optional()
-      .describe('Temperature unit (default: celsius)'),
-    wind_speed_unit: z
-      .enum(['kmh', 'ms', 'mph', 'kn'])
-      .optional()
-      .describe('Wind speed unit (default: kmh)'),
-    precipitation_unit: z
-      .enum(['mm', 'inch'])
-      .optional()
-      .describe('Precipitation unit (default: mm)'),
-    forecast_days: z
-      .number()
-      .min(1)
-      .max(16)
-      .optional()
-      .describe('Number of forecast days (1-16, default: 7)'),
-  }),
+/**
+ * Weather tool configuration for OpenAI SDK
+ */
+export const getWeather = {
+  description: 'Get detailed weather information for a location using Open Meteo API',
+  parameters: {
+    type: 'object',
+    properties: {
+      latitude: { type: 'number', description: 'Latitude of the location' },
+      longitude: { type: 'number', description: 'Longitude of the location' },
+      timezone: {
+        type: 'string',
+        description: 'Timezone (e.g., "auto", "Europe/Berlin", "America/New_York")',
+        default: 'auto',
+      },
+      temperature_unit: {
+        type: 'string',
+        enum: ['celsius', 'fahrenheit'],
+        description: 'Temperature unit (default: celsius)',
+      },
+      wind_speed_unit: {
+        type: 'string',
+        enum: ['kmh', 'ms', 'mph', 'kn'],
+        description: 'Wind speed unit (default: kmh)',
+      },
+      precipitation_unit: {
+        type: 'string',
+        enum: ['mm', 'inch'],
+        description: 'Precipitation unit (default: mm)',
+      },
+      forecast_days: {
+        type: 'number',
+        minimum: 1,
+        maximum: 16,
+        description: 'Number of forecast days (1-16, default: 7)',
+      },
+    },
+    required: ['latitude', 'longitude'],
+  },
   execute: async ({
     latitude,
     longitude,
@@ -38,7 +45,7 @@ export const getWeather = tool({
     wind_speed_unit = 'kmh',
     precipitation_unit = 'mm',
     forecast_days = 7,
-  }) => {
+  }: any) => {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
 
     // Set basic parameters
@@ -159,7 +166,7 @@ export const getWeather = tool({
       };
     }
   },
-});
+};
 
 /**
  * Interpret WMO weather codes and provide human-readable descriptions
@@ -200,7 +207,6 @@ function interpretWeatherCodes(
     99: 'Thunderstorm with heavy hail',
   };
 
-  // Define a specific type for weather interpretations
   interface WeatherInterpretation {
     current?: string;
     daily?: string[];
@@ -209,19 +215,16 @@ function interpretWeatherCodes(
 
   const interpretation: WeatherInterpretation = {};
 
-  // Interpret current weather code
   if (currentCode !== undefined) {
     interpretation.current = weatherCodeMeanings[currentCode] || 'Unknown';
   }
 
-  // Interpret daily weather codes - using optional chaining
   if (dailyCodes?.length) {
     interpretation.daily = dailyCodes.map(
       (code) => weatherCodeMeanings[code] || 'Unknown',
     );
   }
 
-  // Interpret hourly weather codes - using optional chaining
   if (hourlyCodes?.length) {
     interpretation.hourly = hourlyCodes.map(
       (code) => weatherCodeMeanings[code] || 'Unknown',

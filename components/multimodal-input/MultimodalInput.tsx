@@ -5,7 +5,6 @@ import cx from 'classnames';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
-import type { UIMessage } from 'ai';
 
 import { PreviewAttachment } from '../preview-attachment';
 import { Textarea } from '../ui/textarea';
@@ -34,6 +33,7 @@ import type {
   Attachment,
   ChatStatus,
   SetMessagesFunction,
+  UIMessage,
 } from '@/lib/ai/types';
 import type { SpeechRecognition } from './types';
 
@@ -48,15 +48,7 @@ interface MultimodalInputProps {
   messages: Array<UIMessage>;
   setMessages: SetMessagesFunction;
   append: AppendFunction;
-  sendMessage: (message: {
-    text: string;
-    files?: Array<{
-      type: 'file';
-      filename?: string;
-      mediaType: string;
-      url: string;
-    }>;
-  }) => void;
+  sendMessage: (args: { text: string; attachments?: any[] }) => Promise<void>;
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
@@ -79,8 +71,7 @@ function PureMultimodalInput({
   messagesEndRef,
 }: MultimodalInputProps) {
   // Mark append as unused with an underscore variable
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _append = append; // Create a local unused variable instead
+  const _append = append;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -96,9 +87,6 @@ function PureMultimodalInput({
 
   // Define the set of statuses where the StopButton should be active
   const activeStopButtonStatuses: ChatStatus[] = ['submitted', 'streaming'];
-
-  // Use VirtualKeyboardHandler to manage keyboard on mobile
-  // (doesn't render anything)
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
@@ -148,20 +136,10 @@ function PureMultimodalInput({
 
     console.log('Submitting form with attachments:', attachments);
 
-    // AI SDK 5.x: Convert attachments to FileUIPart format for sendMessage
-    const fileParts = attachments.map((att) => ({
-      type: 'file' as const,
-      filename: att.name,
-      mediaType: att.contentType || 'application/octet-stream',
-      url: att.url,
-    }));
-
-    console.log('Converted file parts:', fileParts);
-
-    // Send message with files using AI SDK 5.x API
+    // Send message with attachments
     sendMessage({
       text: input,
-      files: fileParts.length > 0 ? fileParts : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     setInput('');
@@ -393,7 +371,7 @@ function PureMultimodalInput({
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none" />
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
-                  status={status} // Correctly pass status, internal logic handles disabling
+                  status={status as any} // Correctly pass status, internal logic handles disabling
                 />
               </div>
 
@@ -402,8 +380,7 @@ function PureMultimodalInput({
                 <SpeechToTextButton
                   recognitionRef={recognitionRef}
                   setInput={setInput}
-                  status={status}
-                  // input={input} // Optional prop, can be omitted if not strictly needed by SpeechToTextButton's logic
+                  status={status as any}
                 />
                 {activeStopButtonStatuses.includes(status) ? (
                   <StopButton stop={stop} setMessages={setMessages} />

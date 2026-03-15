@@ -1,10 +1,11 @@
 /**
  * Custom hooks for message processing
  * Handles reasoning elements extraction and message parts processing
+ * Without AI SDK dependency
  */
 
 import { useMemo } from 'react';
-import type { UIMessage } from 'ai';
+import type { UIMessage } from '@/lib/ai/types';
 import type {
     ReasoningContentItem,
     EnhancedMessagePart,
@@ -53,15 +54,12 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                 };
                 let content = '';
 
-                // AI SDK 5.x uses 'text' property for reasoning
                 if (typeof reasoningPart.text === 'string') {
                     content = reasoningPart.text;
-                } else if (typeof reasoningPart.reasoningText === 'string') {
-                    // Fallback for older format
-                    content = reasoningPart.reasoningText;
-                } else if (Array.isArray(reasoningPart.details)) {
-                    // Fallback for details array format
-                    content = (reasoningPart.details as Array<{ type: string; text?: string }>)
+                } else if (typeof (reasoningPart as any).reasoningText === 'string') {
+                    content = (reasoningPart as any).reasoningText;
+                } else if (Array.isArray((reasoningPart as any).details)) {
+                    content = ((reasoningPart as any).details as Array<{ type: string; text?: string }>)
                         .map((detail) => {
                             return detail.type === 'text' && detail.text ? detail.text : '';
                         })
@@ -77,15 +75,15 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
             else if (
                 message.role === 'assistant' &&
                 part.type === 'text' &&
-                typeof part.text === 'string'
+                typeof (part as any).text === 'string'
             ) {
-                const thinkMatch = part.text.match(thinkTagRegex);
+                const partText = (part as any).text;
+                const thinkMatch = partText.match(thinkTagRegex);
                 if (thinkMatch?.[1]) {
                     elements.push(thinkMatch[1].trim());
-                    // Text part itself isn't filtered, just cleaned later
                 } else {
                     // Check for Poe API thinking format (lines starting with >)
-                    const lines = part.text.split('\n');
+                    const lines = partText.split('\n');
                     const thinkingLines: string[] = [];
                     const nonThinkingLines: string[] = [];
                     let inThinkingBlock = false;
@@ -93,21 +91,17 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                     for (const line of lines) {
                         const trimmedLine = line.trim();
                         if (trimmedLine.startsWith('>')) {
-                            // This is a thinking line
                             inThinkingBlock = true;
-                            // Remove the > prefix and any following space
                             const thinkingContent = trimmedLine.substring(1).trim();
                             if (thinkingContent) {
                                 thinkingLines.push(thinkingContent);
                             }
                         } else if (!(inThinkingBlock && trimmedLine === '')) {
-                            // Non-thinking line or meaningful line, end of thinking block
                             inThinkingBlock = false;
                             nonThinkingLines.push(line);
                         }
                     }
 
-                    // If we found thinking content, add it to reasoning elements
                     if (thinkingLines.length > 0) {
                         const thinkingContent = thinkingLines.join('\n').trim();
                         if (thinkingContent) {
@@ -115,9 +109,8 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                         }
                     }
 
-                    // Update the text part to remove thinking content if we had thinking content
                     if (thinkingLines.length > 0) {
-                        part.text = nonThinkingLines.join('\n');
+                        (part as any).text = nonThinkingLines.join('\n');
                     }
                 }
             }
@@ -127,7 +120,6 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                 const result = getToolOutput(part);
 
                 if (result && typeof result === 'object') {
-                    // i) Handle 'think' tool results
                     if (toolName === 'think') {
                         const thought = (result as ThinkToolResult).thought;
                         if (typeof thought === 'string' && thought.trim()) {
@@ -135,7 +127,6 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                             filterIndices.add(index);
                         }
                     }
-                    // ii) Handle 'webSearch' tool results
                     else if (toolName === 'webSearch') {
                         const searchResult = result as {
                             results: WebSearchResult[];
@@ -151,7 +142,6 @@ export function useReasoningElements(message: UIMessage): ReasoningElementsResul
                             filterIndices.add(index);
                         }
                     }
-                    // iii) Handle 'readWebsiteContent' results
                     else if (toolName === 'readWebsiteContent') {
                         const webContentResult = result as {
                             content?: string;
@@ -203,9 +193,9 @@ export function useProcessedParts(
                 if (
                     message.role === 'assistant' &&
                     originalPart.type === 'text' &&
-                    typeof originalPart.text === 'string'
+                    typeof (originalPart as any).text === 'string'
                 ) {
-                    const cleanedText = originalPart.text
+                    const cleanedText = (originalPart as any).text
                         .replace(thinkTagRegexForReplace, '')
                         .trim();
                     if (cleanedText.length === 0 && message.parts.length > 1) {
@@ -215,7 +205,7 @@ export function useProcessedParts(
                 }
                 return { ...originalPart };
             })
-            .filter((part) => part !== null) as Array<UIMessage['parts'][0]>;
+            .filter((part) => part !== null) as any[];
 
         // Step 2: Create enhanced parts with initial properties
         const enhancedParts = partsForMainFlow.map((part) => {

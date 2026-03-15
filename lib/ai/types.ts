@@ -1,19 +1,21 @@
-/**
- * Shared AI types for components
- *
- * These types help bridge the gap between different versions of the AI SDK
- * where UIMessage and Message have slight type differences.
- */
 import type { UIMessage } from 'ai';
 
-// Custom Attachment type for AI SDK 5.x compatibility
-// In v5, attachments are now part of the message parts array as file parts
+/**
+ * Shared AI types for components without AI SDK dependency
+ */
+
 export type Attachment = {
   url: string;
   name?: string;
   contentType?: string;
   mediaType?: string;
 };
+
+// Re-export UIMessage from AI SDK to avoid conflicts
+export type { UIMessage };
+
+// Extract UIMessagePart from UIMessage if possible, or define a compatible one
+export type UIMessagePart = UIMessage['parts'][number];
 
 // Type for setMessages that works with UIMessage
 export type SetMessagesFunction = (
@@ -25,7 +27,6 @@ export type AppendFunction = (
   message: {
     role: 'user' | 'assistant';
     content: string;
-    // In AI SDK 5.x, attachments are handled via parts array
     attachments?: Attachment[];
   },
 ) => Promise<string | null | undefined>;
@@ -33,5 +34,5 @@ export type AppendFunction = (
 // Type for reload function
 export type ReloadFunction = () => Promise<string | null | undefined>;
 
-// Chat status type for AI SDK compatibility
-export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
+// Chat status type from AI SDK or equivalent
+export type ChatStatus = 'idle' | 'submitted' | 'streaming' | 'ready' | 'error';

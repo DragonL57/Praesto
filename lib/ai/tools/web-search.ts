@@ -1,6 +1,3 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-
 // Brave Search API configuration
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const BRAVE_API_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
@@ -53,95 +50,87 @@ interface SearchResult {
   body: string;
 }
 
-export const webSearch = tool({
+/**
+ * Web search tool configuration for OpenAI SDK
+ */
+export const webSearch = {
   description:
     'Perform a web search using Brave Search and return the results. Supports real-time information lookup with high-quality sources, news, videos, and more.',
-  inputSchema: z.object({
-    query: z
-      .string()
-      .max(400)
-      .describe('The search query (max 400 characters, 50 words)'),
-    count: z
-      .number()
-      .min(1)
-      .max(20)
-      .default(10)
-      .describe('Number of search results to return (default: 10, max: 20)'),
-    country: z
-      .string()
-      .default('VN')
-      .describe(
-        'The 2-character country code (e.g., "US", "DE", "VN"). Default: "VN".',
-      ),
-    search_lang: z
-      .string()
-      .default('vi')
-      .describe(
-        'The 2+ character language code for search results (e.g., "en", "es", "vi"). Default: "vi".',
-      ),
-    ui_lang: z
-      .string()
-      .optional()
-      .describe(
-        'UI language preference in format <language>-<country> (e.g., "en-US", "vi-VN").',
-      ),
-    safesearch: z
-      .enum(['off', 'moderate', 'strict'])
-      .default('moderate')
-      .describe(
-        'Safe search filter: "off" (no filtering), "moderate" (filter explicit content), "strict" (drop all adult content). Default: "moderate".',
-      ),
-    freshness: z
-      .string()
-      .optional()
-      .describe(
-        "Filter by freshness: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year), or date range '2024-01-01to2024-12-31'.",
-      ),
-    offset: z
-      .number()
-      .min(0)
-      .max(9)
-      .optional()
-      .describe(
-        'Pagination offset (0-9). Use with count to paginate results.',
-      ),
-    spellcheck: z
-      .boolean()
-      .default(true)
-      .describe(
-        'Whether to spellcheck the query. Modified query appears in response. Default: true.',
-      ),
-    result_filter: z
-      .string()
-      .optional()
-      .describe(
-        'Comma-delimited result types to include: discussions, faq, infobox, news, query, summarizer, videos, web, locations. Example: "news,videos".',
-      ),
-    text_decorations: z
-      .boolean()
-      .default(true)
-      .describe(
-        'Include decoration markers (highlighting) in snippets. Default: true.',
-      ),
-    extra_snippets: z
-      .boolean()
-      .optional()
-      .describe(
-        'Get up to 5 additional alternative excerpts per result. Requires premium plan.',
-      ),
-    summary: z
-      .boolean()
-      .optional()
-      .describe(
-        'Enable summary key generation in results. Required for summarizer. Requires premium plan.',
-      ),
-    units: z
-      .enum(['metric', 'imperial'])
-      .optional()
-      .describe(
-        'Measurement units: "metric" (standardized) or "imperial" (British system). Auto-detected from country if not provided.',
-      ),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        maxLength: 400,
+        description: 'The search query (max 400 characters, 50 words)',
+      },
+      count: {
+        type: 'number',
+        minimum: 1,
+        maximum: 20,
+        default: 10,
+        description: 'Number of search results to return (default: 10, max: 20)',
+      },
+      country: {
+        type: 'string',
+        default: 'VN',
+        description: 'The 2-character country code (e.g., "US", "DE", "VN"). Default: "VN".',
+      },
+      search_lang: {
+        type: 'string',
+        default: 'vi',
+        description: 'The 2+ character language code for search results (e.g., "en", "es", "vi"). Default: "vi".',
+      },
+      ui_lang: {
+        type: 'string',
+        description: 'UI language preference in format <language>-<country> (e.g., "en-US", "vi-VN").',
+      },
+      safesearch: {
+        type: 'string',
+        enum: ['off', 'moderate', 'strict'],
+        default: 'moderate',
+        description: 'Safe search filter: "off" (no filtering), "moderate" (filter explicit content), "strict" (drop all adult content). Default: "moderate".',
+      },
+      freshness: {
+        type: 'string',
+        description: "Filter by freshness: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year), or date range '2024-01-01to2024-12-31'.",
+      },
+      offset: {
+        type: 'number',
+        minimum: 0,
+        maximum: 9,
+        description: 'Pagination offset (0-9). Use with count to paginate results.',
+      },
+      spellcheck: {
+        type: 'boolean',
+        default: true,
+        description: 'Whether to spellcheck the query. Modified query appears in response. Default: true.',
+      },
+      result_filter: {
+        type: 'string',
+        description: 'Comma-delimited result types to include: discussions, faq, infobox, news, query, summarizer, videos, web, locations. Example: "news,videos".',
+      },
+      text_decorations: {
+        type: 'boolean',
+        default: true,
+        description: 'Include decoration markers (highlighting) in snippets. Default: true.',
+      },
+      extra_snippets: {
+        type: 'boolean',
+        description: 'Get up to 5 additional alternative excerpts per result. Requires premium plan.',
+      },
+      summary: {
+        type: 'boolean',
+        description: 'Enable summary key generation in results. Required for summarizer. Requires premium plan.',
+      },
+      units: {
+        type: 'string',
+        enum: ['metric', 'imperial'],
+        description: 'Measurement units: "metric" (standardized) or "imperial" (British system). Auto-detected from country if not provided.',
+      },
+    },
+    required: ['query'],
+  },
   execute: async ({
     query,
     count = 10,
@@ -157,7 +146,7 @@ export const webSearch = tool({
     extra_snippets,
     summary,
     units,
-  }) => {
+  }: any) => {
     // Check if API key is configured
     if (!BRAVE_API_KEY) {
       console.error('[Brave Search] Missing BRAVE_API_KEY environment variable');
@@ -432,4 +421,4 @@ export const webSearch = tool({
       };
     }
   },
-});
+};

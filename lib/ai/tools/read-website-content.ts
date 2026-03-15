@@ -1,6 +1,3 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-
 // Tavily API configuration
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY || '';
 const TAVILY_EXTRACT_ENDPOINT = 'https://api.tavily.com/extract';
@@ -28,19 +25,27 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-export const readWebsiteContent = tool({
+/**
+ * Read website content tool configuration for OpenAI SDK
+ */
+export const readWebsiteContent = {
   description:
     'Fetch and return the text content of a webpage/article in nicely formatted markdown for easy readability.',
-  inputSchema: z.object({
-    url: z.string().describe('The URL of the webpage to fetch content from'),
-    query: z
-      .string()
-      .optional()
-      .describe(
-        'Optional search query to find specific content within the page',
-      ),
-  }),
-  execute: async ({ url, query }) => {
+  parameters: {
+    type: 'object',
+    properties: {
+      url: {
+        type: 'string',
+        description: 'The URL of the webpage to fetch content from',
+      },
+      query: {
+        type: 'string',
+        description: 'Optional search query to find specific content within the page',
+      },
+    },
+    required: ['url'],
+  },
+  execute: async ({ url, query }: any) => {
     console.log(
       `Fetching website content from: ${url} ${query ? `with query: ${query}` : ''}`,
     );
@@ -125,7 +130,7 @@ export const readWebsiteContent = tool({
       };
     }
   },
-});
+};
 
 // Helper function to format error messages
 function formatErrorMessage(url: string, error: string): string {
