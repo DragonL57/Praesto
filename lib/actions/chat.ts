@@ -21,10 +21,16 @@ export async function generateTitleFromUserMessage({
     const { text: title } = await generateText({
         model: myProvider.languageModel('title-model'),
         system: `\n
-    - you will generate a short title based on the first message a user begins a conversation with
-    - ensure it is not more than 4 words long
-    - the title should be a summary of the user's message
-    - do not use quotes or colons`,
+    - You are a conversation title generator.
+    - Your goal is to generate a short, concise title (MAX 4 WORDS) for a conversation based on the user's first message.
+    - IF the user asks for news, headlines, or updates on current events, you MUST use the exact title: "Latest News Headlines".
+    - OTHERWISE, summarize the user's message in 4 words or less.
+    - Do not use quotes, colons, or any other punctuation.
+    - Do not output the whole message; only the short title.
+    
+    Example for news:
+    User: "Show me the latest news headlines"
+    Title: "Latest News Headlines"`,
         prompt: JSON.stringify(message),
     });
 
