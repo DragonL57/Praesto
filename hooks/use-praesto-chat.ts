@@ -49,16 +49,16 @@ export function usePraestoChat({
    */
   const append = useCallback(
     async (
-      { 
-        role, 
-        parts, 
-        id: existingId, 
-        createdAt: existingCreatedAt 
-      }: { 
-        role: 'user' | 'assistant'; 
-        parts: MessagePart[]; 
-        id?: string; 
-        createdAt?: Date 
+      {
+        role,
+        parts,
+        id: existingId,
+        createdAt: existingCreatedAt
+      }: {
+        role: 'user' | 'assistant';
+        parts: MessagePart[];
+        id?: string;
+        createdAt?: Date
       },
       options?: ChatRequestOptions
     ) => {
@@ -91,11 +91,12 @@ export function usePraestoChat({
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
+      let result: string | null | undefined;
       try {
         // ... (fetch logic remains same but sends updated messages)
         const currentMessages = [...messages];
         const existingIdx = currentMessages.findIndex(m => m.id === userMessageId);
-        
+
         let messagesToSend: Message[];
         if (existingIdx !== -1) {
           // Truncate everything after the target message
@@ -219,6 +220,7 @@ export function usePraestoChat({
         if (onFinish) {
           onFinish(finalAssistantMessage);
         }
+        result = assistantMessageId;
 
       } catch (error: any) {
         if (error.name === 'AbortError') {
@@ -228,11 +230,13 @@ export function usePraestoChat({
           setStatus('error');
           if (onError) onError(error);
         }
+        result = null;
       } finally {
         setIsLoading(false);
         setStatus((prev) => (prev === 'streaming' || prev === 'submitted' ? 'ready' : prev));
         abortControllerRef.current = null;
       }
+      return result;
     },
     [id, messages, body, onFinish, onError]
   );
@@ -243,7 +247,7 @@ export function usePraestoChat({
   const sendMessage = useCallback(
     async ({ text }: { text: string }) => {
       const parts: MessagePart[] = [{ type: 'text', text }];
-      await append({ role: 'user', parts });
+      return await append({ role: 'user', parts });
     },
     [append]
   );
@@ -261,8 +265,8 @@ export function usePraestoChat({
     // Truncate the UI state to just before this message
     // (append will handle replacing/updating the message itself)
     setMessages((prev) => prev.slice(0, actualIdx));
-    
-    await append({
+
+    return await append({
       role: 'user',
       parts: lastUserMessage.parts,
       id: lastUserMessage.id,
