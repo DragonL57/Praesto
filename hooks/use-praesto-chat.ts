@@ -135,7 +135,6 @@ export function usePraestoChat({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let assistantMessageParts: MessagePart[] = [];
-        let done = false;
         let buffer = '';
 
         setStatus('streaming');
@@ -151,16 +150,18 @@ export function usePraestoChat({
           },
         ]);
 
-        while (!done) {
+        while (true) {
           const { value, done: readerDone } = await reader.read();
-          done = readerDone;
+          
           if (value) {
             buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            
-            // Keep the last partial line in the buffer
-            buffer = lines.pop() || '';
+          }
 
+          const lines = buffer.split('\n');
+          // Keep the last partial line in the buffer
+          buffer = lines.pop() || '';
+
+          if (lines.length > 0) {
             for (const line of lines) {
               if (!line.trim()) continue;
               const part = StreamProtocol.parse(line);
@@ -170,22 +171,14 @@ export function usePraestoChat({
 
               // Handle different stream part types with runtime type checks
               if (type === 'text') {
-                if (typeof data === 'string') {
-                  assistantMessageParts = updateOrAddTextPart(assistantMessageParts, data);
-                } else if (typeof data === 'object' && data) {
-                  const d = data as Record<string, unknown>;
-                  if (typeof d.text === 'string') {
-                    assistantMessageParts = updateOrAddTextPart(assistantMessageParts, d.text);
-                  }
+                const textValue = typeof data === 'string' ? data : (data as Record<string, unknown>)?.text;
+                if (typeof textValue === 'string') {
+                  assistantMessageParts = updateOrAddTextPart([...assistantMessageParts], textValue);
                 }
               } else if (type === 'reasoning') {
-                if (typeof data === 'string') {
-                  assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, data);
-                } else if (typeof data === 'object' && data) {
-                  const d = data as Record<string, unknown>;
-                  if (typeof d.text === 'string') {
-                    assistantMessageParts = updateOrAddReasoningPart(assistantMessageParts, d.text);
-                  }
+                const reasoningValue = typeof data === 'string' ? data : (data as Record<string, unknown>)?.text;
+                if (typeof reasoningValue === 'string') {
+                  assistantMessageParts = updateOrAddReasoningPart([...assistantMessageParts], reasoningValue);
                 }
               } else if (type === 'tool-call') {
                 if (typeof data === 'object' && data) {
@@ -193,12 +186,12 @@ export function usePraestoChat({
                   const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : generateUUID();
                   const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
                   const args = (d.args as Record<string, unknown> | undefined) ?? {};
-                  assistantMessageParts.push({
+                  assistantMessageParts = [...assistantMessageParts, {
                     type: 'tool-call',
                     toolCallId,
                     toolName,
                     args,
-                  });
+                  }];
                 }
               } else if (type === 'tool-result') {
                 if (typeof data === 'object' && data) {
@@ -206,12 +199,12 @@ export function usePraestoChat({
                   const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : generateUUID();
                   const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
                   const resultValue = d.result as unknown;
-                  assistantMessageParts.push({
+                  assistantMessageParts = [...assistantMessageParts, {
                     type: 'tool-result',
                     toolCallId,
                     toolName,
                     result: resultValue,
-                  });
+                  }];
                 }
               } else if (type === 'error') {
                 const errMsg = typeof data === 'string'
@@ -222,27 +215,55 @@ export function usePraestoChat({
                 throw new Error(String(errMsg));
               } else if (type === 'metadata') {
                 console.log('[usePraestoChat] Received metadata:', data);
-                if (typeof data === 'object' && data) {
-                  const d = data as Record<string, unknown>;
-                  if (typeof d.title === 'string' && onFinish) {
-                    // If we got a title, it's a new chat, we might want to trigger a refresh
-                  }
+              }
+
+              // Update state for EVERY line to ensure immediate streaming
+              const currentParts = [...assistantMessageParts];
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastIdx = newMessages.length - 1;
+                if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
+                  newMessages[lastIdx] = {
+                    ...newMessages[lastIdx],
+                    parts: currentParts,
+                  };
                 }
+                return newMessages;
+              });
+            }
+          }
+
+          if (readerDone) {
+            // Process any remaining content in buffer if it's a complete line
+            if (buffer.trim()) {
+              const part = StreamProtocol.parse(buffer);
+              if (part) {
+                const { type, data } = part;
+                if (type === 'text') {
+                   const textValue = typeof data === 'string' ? data : (data as Record<string, unknown>)?.text;
+                   if (typeof textValue === 'string') {
+                     assistantMessageParts = updateOrAddTextPart([...assistantMessageParts], textValue);
+                   }
+                } else if (type === 'reasoning') {
+                   const reasoningValue = typeof data === 'string' ? data : (data as Record<string, unknown>)?.text;
+                   if (typeof reasoningValue === 'string') {
+                     assistantMessageParts = updateOrAddReasoningPart([...assistantMessageParts], reasoningValue);
+                   }
+                }
+                // (Other types handled similarly if needed)
+                
+                const finalParts = [...assistantMessageParts];
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  const lastIdx = newMessages.length - 1;
+                  if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
+                    newMessages[lastIdx] = { ...newMessages[lastIdx], parts: finalParts };
+                  }
+                  return newMessages;
+                });
               }
             }
-
-            // Update the assistant message in state ONCE after processing all lines in this network chunk
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastIdx = newMessages.length - 1;
-              if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
-                newMessages[lastIdx] = {
-                  ...newMessages[lastIdx],
-                  parts: [...assistantMessageParts],
-                };
-              }
-              return newMessages;
-            });
+            break;
           }
         }
 
@@ -330,22 +351,34 @@ export function usePraestoChat({
   };
 }
 
-// Helper: Update or add a text part in the parts array
+// Helper: Update or add a text part in the parts array with a FRESH object reference
 function updateOrAddTextPart(parts: MessagePart[], text: string): MessagePart[] {
-  const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
+  const lastIdx = parts.length - 1;
+  const lastPart = lastIdx >= 0 ? parts[lastIdx] : null;
+  
   if (lastPart && lastPart.type === 'text') {
-    (lastPart as { type: 'text'; text: string }).text += text;
-    return [...parts];
+    const newParts = [...parts];
+    newParts[lastIdx] = {
+      ...lastPart,
+      text: lastPart.text + text,
+    } as MessagePart;
+    return newParts;
   }
   return [...parts, { type: 'text', text }];
 }
 
-// Helper: Update or add a reasoning part in the parts array
+// Helper: Update or add a reasoning part in the parts array with a FRESH object reference
 function updateOrAddReasoningPart(parts: MessagePart[], text: string): MessagePart[] {
-  const lastPart = parts.length > 0 ? parts[parts.length - 1] : null;
+  const lastIdx = parts.length - 1;
+  const lastPart = lastIdx >= 0 ? parts[lastIdx] : null;
+  
   if (lastPart && lastPart.type === 'reasoning') {
-    (lastPart as { type: 'reasoning'; text: string }).text += text;
-    return [...parts];
+    const newParts = [...parts];
+    newParts[lastIdx] = {
+      ...lastPart,
+      text: lastPart.text + text,
+    } as MessagePart;
+    return newParts;
   }
   return [...parts, { type: 'reasoning', text }];
 }

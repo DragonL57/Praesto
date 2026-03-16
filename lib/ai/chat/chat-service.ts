@@ -34,7 +34,15 @@ export async function handleChatRequest({
   modelId: string;
   controller: ReadableStreamDefaultController;
 }) {
-  const send = (type: StreamPartType | string, data: unknown) => controller.enqueue(StreamProtocol.encode(type as StreamPartType, data));
+  const encoder = new TextEncoder();
+  const send = (type: StreamPartType | string, data: unknown) => {
+    try {
+      const formatted = StreamProtocol.format(type as StreamPartType, data);
+      controller.enqueue(encoder.encode(formatted));
+    } catch (e) {
+      console.error('[ChatService] Error enqueuing stream part:', e);
+    }
+  };
 
   try {
     // 1. Process attachments and update the latest user message
@@ -319,11 +327,44 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
 
   for (const m of messages) {
     if (m.role === 'user' || m.role === 'system') {
-      const raw = m.parts?.filter((part) => part.type === 'text').map((part) => (part as { text: string }).text).join('\n') ?? undefined;
-      const fallback = (m as unknown as Record<string, unknown>).content;
-      const content = String(raw ?? fallback ?? '');
+      const parts = m.parts?.map((part) => {
+        if (part.type === 'text') {
+          return { type: 'text', text: (part as { text: string }).text };
+        }
+        
+        if (part.type === 'file') {
+          const f = part as { url: string; contentType?: string; filename?: string };
+          const isImage = f.contentType?.startsWith('image/') || 
+                          f.filename?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+          
+          if (isImage) {
+            return {
+              type: 'image_url',
+              image_url: { url: f.url }
+            };
+          }
+          
+          // Poe supports native file attachments via the 'file' type.
+          return {
+            type: 'file',
+            file: {
+              filename: f.filename || 'attachment',
+              url: f.url
+            }
+          };
+        }
+        
+        return null;
+      }).filter(Boolean) || [];
 
-      result.push({ role: m.role, content: content || '' });
+      if (parts.length === 1 && parts[0]?.type === 'text') {
+        result.push({ role: m.role, content: parts[0].text });
+      } else if (parts.length > 0) {
+        result.push({ role: m.role, content: parts });
+      } else {
+        const fallback = (m as unknown as Record<string, unknown>).content || '';
+        result.push({ role: m.role, content: String(fallback) });
+      }
     }
     else if (m.role === 'assistant') {
       const textParts = m.parts?.filter((p) => p.type === 'text') || [];
