@@ -131,7 +131,8 @@ export function usePraestoChat({
           throw new Error('Response body is empty');
         }
 
-        // 3. Handle the streaming response
+        // 3. Handle the streaming response manually using Web Streams API
+        // This replaces the Vercel AI SDK 'useChat' hook with a custom implementation
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let assistantMessageParts: MessagePart[] = [];
@@ -139,7 +140,7 @@ export function usePraestoChat({
 
         setStatus('streaming');
 
-        // Create the initial assistant message in UI
+        // Initialize the assistant message in the UI before streaming starts
         setMessages((prev) => [
           ...prev,
           {
@@ -150,26 +151,31 @@ export function usePraestoChat({
           },
         ]);
 
+        // Process the stream chunk by chunk
         while (true) {
           const { value, done: readerDone } = await reader.read();
           
           if (value) {
+            // Append new chunk to buffer and decode
             buffer += decoder.decode(value, { stream: true });
           }
 
+          // Split buffer by newlines as the protocol is line-based
           const lines = buffer.split('\n');
-          // Keep the last partial line in the buffer
+          // Keep the last (potentially partial) line in the buffer for the next iteration
           buffer = lines.pop() || '';
 
           if (lines.length > 0) {
             for (const line of lines) {
               if (!line.trim()) continue;
+              
+              // Parse the line using our custom StreamProtocol (prefix-based)
               const part = StreamProtocol.parse(line);
               if (!part) continue;
 
               const { type, data } = part;
 
-              // Handle different stream part types with runtime type checks
+              // Update the local parts array based on the stream part type
               if (type === 'text') {
                 const textValue = typeof data === 'string' ? data : (data as Record<string, unknown>)?.text;
                 if (typeof textValue === 'string') {
@@ -217,7 +223,8 @@ export function usePraestoChat({
                 console.log('[usePraestoChat] Received metadata:', data);
               }
 
-              // Update state for EVERY line to ensure immediate streaming
+              // CRITICAL: Update React state for EVERY line to ensure immediate UI feedback (streaming)
+              // We use a fresh array and fresh object references in updateOrAdd helpers to trigger re-renders.
               const currentParts = [...assistantMessageParts];
               setMessages((prev) => {
                 const newMessages = [...prev];
@@ -234,7 +241,7 @@ export function usePraestoChat({
           }
 
           if (readerDone) {
-            // Process any remaining content in buffer if it's a complete line
+            // Process any remaining final content in the buffer
             if (buffer.trim()) {
               const part = StreamProtocol.parse(buffer);
               if (part) {
@@ -250,7 +257,6 @@ export function usePraestoChat({
                      assistantMessageParts = updateOrAddReasoningPart([...assistantMessageParts], reasoningValue);
                    }
                 }
-                // (Other types handled similarly if needed)
                 
                 const finalParts = [...assistantMessageParts];
                 setMessages((prev) => {

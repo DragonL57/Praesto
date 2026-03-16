@@ -19,6 +19,13 @@ import type { UserTimeContext } from './types';
 /**
  * Orchestrates the entire chat process: message processing, completion, and streaming.
  */
+/**
+ * handleChatRequest
+ * The core server-side handler for chat requests.
+ * 1. Pre-processes messages and attachments.
+ * 2. Manages the LLM completion loop via OpenAI/Poe API.
+ * 3. Handles manual streaming to the client via a ReadableStream controller.
+ */
 export async function handleChatRequest({
   id,
   userId,
@@ -35,6 +42,11 @@ export async function handleChatRequest({
   controller: ReadableStreamDefaultController;
 }) {
   const encoder = new TextEncoder();
+  
+  /**
+   * Helper to send formatted data parts to the client.
+   * Uses StreamProtocol to ensure consistent prefix-based encoding.
+   */
   const send = (type: StreamPartType | string, data: unknown) => {
     try {
       const formatted = StreamProtocol.format(type as StreamPartType, data);
@@ -43,6 +55,8 @@ export async function handleChatRequest({
       console.error('[ChatService] Error enqueuing stream part:', e);
     }
   };
+
+  // ... (rest of implementation)
 
   try {
     // 1. Process attachments and update the latest user message
