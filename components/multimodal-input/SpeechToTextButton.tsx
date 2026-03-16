@@ -31,7 +31,7 @@ import type {
 import type { ChatStatus } from '@/lib/ai/types';
 
 interface SpeechToTextButtonProps {
-  // AI SDK 5.x: setInput is now managed by the parent component, not from UseChatHelpers
+  // setInput is managed by the parent component (from usePraestoChat)
   setInput: React.Dispatch<React.SetStateAction<string>>;
   status: ChatStatus;
   input?: string;

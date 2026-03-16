@@ -7,7 +7,16 @@ import {
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { inArray } from 'drizzle-orm';
-import type { UIMessage } from 'ai';
+
+// Local type for deprecated messages to avoid dependency on 'ai'
+type DeprecatedMessage = {
+  id: string;
+  chatId: string;
+  role: string;
+  content?: string;
+  createdAt?: Date;
+  parts?: Record<string, unknown>[];
+};
 
 config({
   path: '.env.local',
@@ -59,19 +68,19 @@ async function createNewTable() {
       const messages = allMessages.filter((msg) => msg.chatId === chat.id);
 
       // Group messages into sections
-      const messageSection: Array<UIMessage> = [];
-      const messageSections: Array<Array<UIMessage>> = [];
+      const messageSection: Array<DeprecatedMessage> = [];
+      const messageSections: Array<Array<DeprecatedMessage>> = [];
 
-      for (const message of messages) {
-        const { role } = message;
+      for (const msg of messages) {
+        const { role } = msg;
 
         if (role === 'user' && messageSection.length > 0) {
           messageSections.push([...messageSection]);
           messageSection.length = 0;
         }
 
-        // Cast message to Record since deprecated message schema has different type
-        messageSection.push(message as unknown as UIMessage);
+        // Use the msg directly now that we have DeprecatedMessage type
+        messageSection.push(msg as DeprecatedMessage);
       }
 
       if (messageSection.length > 0) {
@@ -118,7 +127,7 @@ async function createNewTable() {
                 ? [{ type: 'text', text: msgWithContent.content }]
                 : []);
 
-            // Cast firstAssistantMessage to access createdAt (not part of UIMessage in SDK 5.x)
+            // Cast firstAssistantMessage to access createdAt
             const firstMsgWithCreatedAt = firstAssistantMessage as unknown as {
               createdAt?: Date;
             };

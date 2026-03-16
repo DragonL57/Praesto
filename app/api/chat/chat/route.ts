@@ -38,21 +38,28 @@ export async function POST(request: Request) {
 
     // 3. Create a readable stream and delegate to the chat service
     const stream = new ReadableStream({
-      async start(controller) {
-        await handleChatRequest({
+      start(controller) {
+        // We do NOT await here so the Response can be returned immediately
+        handleChatRequest({
           id,
           userId,
           messages,
           userTimeContext,
           modelId,
           controller,
+        }).catch((err) => {
+          console.error('[Stream Error]', err);
+          controller.error(err);
         });
       },
     });
 
     return new Response(stream, {
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
         'X-Content-Type-Options': 'nosniff',
       },
     });

@@ -14,7 +14,6 @@ import { processMessageAttachments, updateMessageWithProcessedText } from './att
 import { StreamProtocol } from './stream-protocol';
 import type { StreamPartType } from './stream-protocol';
 import type { Message, MessagePart } from '@/lib/ai/types';
-import type { UIMessage } from 'ai';
 import type { UserTimeContext } from './types';
 
 /**
@@ -50,13 +49,13 @@ export async function handleChatRequest({
       .map((part) => (part as { text: string }).text)
       .join('\n');
 
-    const combinedText = await processMessageAttachments(userMessage as unknown as UIMessage);
-    updateMessageWithProcessedText(userMessage as unknown as UIMessage, combinedText, originalTypedText);
+    const combinedText = await processMessageAttachments(userMessage);
+    updateMessageWithProcessedText(userMessage, combinedText, originalTypedText);
 
     // 2. Manage Chat initialization and title generation
     const chat = await getChatById({ id });
     if (!chat) {
-      const title = await generateTitleFromUserMessage({ message: userMessage as unknown as UIMessage });
+      const title = await generateTitleFromUserMessage({ message: userMessage });
       await saveChat({ id, userId, title });
       // Send title metadata to frontend immediately so UI can update
       send('metadata', { title });

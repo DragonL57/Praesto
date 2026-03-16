@@ -1,34 +1,23 @@
 # lib/ai/
 
-Vercel AI SDK integrations, providers, and tools.
+Praesto Core AI logic, services, and tools. Fully decoupled from Vercel AI SDK.
 
-## Files
-- providers.ts: Model provider configuration
-- tools/: AI tool implementations (web-search, weather, etc.)
-- types.ts: AI-related type definitions
+## Core Components
+- `chat/`: Main chat service and streaming protocol implementation.
+- `providers.ts`: Model provider configuration (OpenAI/Poe compatible).
+- `tools/`: AI tool implementations (web-search, weather, etc.).
+- `types.ts`: AI-related type definitions and interfaces.
+- `prompts.ts`: System prompts and agent instructions.
 
 ## Conventions
 ```typescript
-// providers.ts
-import { openai } from '@ai-sdk/openai';
-import { createProvider } from 'ai';
-
-export const providers = {
-  openai: createProvider(openai('gpt-4')),
-  // ...
-};
-
-// tools/web-search.ts
-export async function webSearch(query: string) {
-  // Implementation using DuckDuckGo
-}
+// chat/chat-service.ts
+import { handleChatRequest } from './chat-service';
+// ... main orchestration logic
 ```
 
 ## Key Types
-- `UIMessage`: Chat message structure
-- `ToolInvocation`: AI tool call structure
-
-## Anti-Patterns
-- ❌ Direct fetch calls (use AI SDK)
-- ❌ Skip error handling on tool calls
-- ❌ Hardcode model names (use constants)
+- `Message`: Custom chat message structure with `parts`.
+- `MessagePart`: Discriminated union for `text`, `reasoning`, `tool-call`, `tool-result`, and `file`.
+- `ChatStatus`: `idle` | `submitted` | `streaming` | `ready` | `error`.
+- `StreamProtocol`: Custom prefix-based encoding for streaming over `ReadableStream`.

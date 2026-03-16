@@ -2,15 +2,13 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 import { Chat } from '@/components/chat';
-import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';
 import { auth } from '@/app/auth';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 
-import type { Attachment } from '@/lib/ai/types';
+import type { Message, MessagePart, MessageRole } from '@/lib/ai/types';
 import type { DBMessage } from '@/lib/db/schema';
-import type { UIMessage } from 'ai';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -38,25 +36,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     id,
   });
 
-  function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
-    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
+  function convertToMessages(messages: Array<DBMessage>): Array<Message> {
     return messages.map((message) => {
-      const originalParts = message.parts as UIMessage['parts'];
+      const originalParts = message.parts as MessagePart[];
       let processedParts = [...originalParts];
 
-      console.log(
-        'Processing message:',
-        message.id,
-        'with',
-        originalParts.length,
-        'parts',
-      );
-      console.log('Parts structure:', JSON.stringify(originalParts, null, 2));
-
       // Process text parts to extract embedded thinking content (for older messages)
-      // Also ensure tool-related parts are preserved
       if (message.role === 'assistant') {
-        const newParts: UIMessage['parts'] = [];
+        const newParts: MessagePart[] = [];
 
         originalParts.forEach((part) => {
           // Preserve tool-call and tool-result parts as-is
@@ -70,9 +57,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             return;
           }
 
-          if (part.type === 'text' && typeof part.text === 'string') {
+          if (part.type === 'text' && typeof (part as { text: string }).text === 'string') {
+            const partText = (part as { text: string }).text;
             // Check for embedded Poe API thinking format (lines starting with >)
-            const lines = part.text.split('\n');
+            const lines = partText.split('\n');
             const thinkingLines: string[] = [];
             const nonThinkingLines: string[] = [];
             let inThinkingBlock = false;
@@ -98,10 +86,6 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             if (thinkingLines.length > 0) {
               const thinkingContent = thinkingLines.join('\n').trim();
               if (thinkingContent) {
-                console.log(
-                  'Found thinking content in old message:',
-                  `${thinkingContent.substring(0, 100)}...`,
-                );
                 newParts.push({
                   type: 'reasoning',
                   text: thinkingContent,
@@ -129,24 +113,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         processedParts = newParts;
       }
 
-      const finalMessage = {
+      return {
         id: message.id,
+        role: message.role as MessageRole,
         parts: processedParts,
-        role: message.role as UIMessage['role'],
-        // Note: content will soon be deprecated in @ai-sdk/react
-        content: '',
         createdAt: message.createdAt,
-        experimental_attachments:
-          (message.attachments as Array<Attachment>) ?? [],
       };
-
-      console.log('Final message parts:', finalMessage.parts.length);
-      console.log(
-        'Final parts structure:',
-        JSON.stringify(finalMessage.parts, null, 2),
-      );
-
-      return finalMessage;
     });
   }
 
@@ -158,12 +130,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <PageTransition>
       <Chat
         id={chat.id}
-        initialMessages={convertToUIMessages(messagesFromDb)}
+        initialMessages={convertToMessages(messagesFromDb)}
         selectedChatModel={modelIdFromCookie}
         selectedVisibilityType={chat.visibility}
         isReadonly={!session?.user || session.user.id !== chat.userId}
       />
-      <DataStreamHandler id={id} />
     </PageTransition>
   );
 }
+

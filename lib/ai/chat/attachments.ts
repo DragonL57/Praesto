@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { parseOfficeAsync } from 'officeparser';
-import type { UIMessage, TextUIPart } from 'ai';
+import type { Message, MessagePart, TextPart } from '@/lib/ai/types';
 import { getFilePartsFromMessage } from './types';
 
 // Configuration for Extracted Text Formatting
@@ -15,13 +15,13 @@ const ATTACHMENT_TEXT_TRUNCATED_SUFFIX =
 const MAX_EXTRACTED_TEXT_CHARS = 100000;
 
 export async function processMessageAttachments(
-    userMessage: UIMessage,
+    userMessage: Message,
 ): Promise<string> {
     let combinedUserTextAndAttachments = '';
 
     // Get the original typed text from the user message parts
     const originalUserTypedText = userMessage.parts
-        .filter((part): part is TextUIPart => part.type === 'text')
+        .filter((part): part is TextPart => part.type === 'text')
         .map((part) => part.text)
         .join('\n');
 
@@ -53,7 +53,7 @@ export async function processMessageAttachments(
 
             const extractedText = await parseOfficeAsync(fileBuffer);
 
-            if (extractedText?.trim().length > 0) {
+            if (extractedText && extractedText.trim().length > 0) {
                 let finalText = extractedText.trim();
                 let truncationNote = '';
 
@@ -77,7 +77,7 @@ export async function processMessageAttachments(
 }
 
 export function updateMessageWithProcessedText(
-    userMessage: UIMessage,
+    userMessage: Message,
     combinedText: string,
     originalTypedText: string,
 ): void {
@@ -87,7 +87,8 @@ export function updateMessageWithProcessedText(
         );
         userMessage.parts = [
             ...nonTextParts,
-            { type: 'text', text: combinedText } as TextUIPart,
+            { type: 'text', text: combinedText } as MessagePart,
         ];
     }
 }
+

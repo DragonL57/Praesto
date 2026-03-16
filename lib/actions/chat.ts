@@ -1,6 +1,6 @@
 'use server';
 
-import type { UIMessage } from 'ai';
+import type { Message } from '@/lib/ai/types';
 import { openai } from '@/lib/ai/providers';
 import {
   deleteMessagesByChatIdAfterTimestamp,
@@ -13,7 +13,7 @@ import type { VisibilityType } from '@/components/visibility-selector';
 export async function generateTitleFromUserMessage({
   message,
 }: {
-  message: UIMessage;
+  message: Message;
 }) {
   const userContent = message.parts
     .filter((part) => part.type === 'text')

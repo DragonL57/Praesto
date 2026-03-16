@@ -136,6 +136,7 @@ export function usePraestoChat({
         const decoder = new TextDecoder();
         let assistantMessageParts: MessagePart[] = [];
         let done = false;
+        let buffer = '';
 
         setStatus('streaming');
 
@@ -154,10 +155,14 @@ export function usePraestoChat({
           const { value, done: readerDone } = await reader.read();
           done = readerDone;
           if (value) {
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            // Keep the last partial line in the buffer
+            buffer = lines.pop() || '';
 
             for (const line of lines) {
+              if (!line.trim()) continue;
               const part = StreamProtocol.parse(line);
               if (!part) continue;
 
@@ -224,22 +229,23 @@ export function usePraestoChat({
                   }
                 }
               }
-
-              // Update the assistant message in state
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastIdx = newMessages.length - 1;
-                if (newMessages[lastIdx].id === assistantMessageId) {
-                  newMessages[lastIdx] = {
-                    ...newMessages[lastIdx],
-                    parts: [...assistantMessageParts],
-                  };
-                }
-                return newMessages;
-              });
             }
+
+            // Update the assistant message in state ONCE after processing all lines in this network chunk
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              const lastIdx = newMessages.length - 1;
+              if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
+                newMessages[lastIdx] = {
+                  ...newMessages[lastIdx],
+                  parts: [...assistantMessageParts],
+                };
+              }
+              return newMessages;
+            });
           }
         }
+
 
         // 4. Wrap up
         const finalAssistantMessage: Message = {
