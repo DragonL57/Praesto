@@ -69,7 +69,7 @@ export const uploadFile = async (
   try {
     const newBlob = await upload(file.name, file, {
       access: 'public',
-      handleUploadUrl: '/api/files/upload', // Our backend route for token generation
+      handleUploadUrl: '/api/chat/files/upload', // Our backend route for token generation
     });
 
     // Map PutBlobResult to the ai.Attachment structure.

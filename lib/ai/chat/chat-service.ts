@@ -42,7 +42,7 @@ export async function handleChatRequest({
   controller: ReadableStreamDefaultController;
 }) {
   const encoder = new TextEncoder();
-  
+
   /**
    * Helper to send formatted data parts to the client.
    * Uses StreamProtocol to ensure consistent prefix-based encoding.
@@ -341,35 +341,53 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
 
   for (const m of messages) {
     if (m.role === 'user' || m.role === 'system') {
-      const parts = m.parts?.map((part) => {
+      const parts: Array<Record<string, unknown>> = [];
+
+      // Convert each message part into the OpenAI/Poe compatible format.
+      // For image attachments, we include both an image_url block + a text fallback so models
+      // that don't support multimodal inputs still have context.
+      (m.parts || []).forEach((part) => {
         if (part.type === 'text') {
-          return { type: 'text', text: (part as { text: string }).text };
+          parts.push({ type: 'text', text: (part as { text: string }).text });
+          return;
         }
-        
+
         if (part.type === 'file') {
           const f = part as { url: string; contentType?: string; filename?: string };
-          const isImage = f.contentType?.startsWith('image/') || 
-                          f.filename?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
-          
-          if (isImage) {
-            return {
-              type: 'image_url',
-              image_url: { url: f.url }
-            };
+          const isImage =
+            f.contentType?.startsWith('image/') ||
+            f.filename?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+
+          const name = f.filename || 'attachment';
+          const url = f.url || '';
+
+          // Always add a text fallback so the model can see the URL even if it doesn't
+          // understand the native multimodal blocks.
+          if (url) {
+            parts.push({
+              type: 'text',
+              text: `Attached file: ${name} ${url}`,
+            });
           }
-          
+
+          if (isImage) {
+            parts.push({
+              type: 'image_url',
+              image_url: { url },
+            });
+            return;
+          }
+
           // Poe supports native file attachments via the 'file' type.
-          return {
+          parts.push({
             type: 'file',
             file: {
-              filename: f.filename || 'attachment',
-              url: f.url
-            }
-          };
+              filename: name,
+              url,
+            },
+          });
         }
-        
-        return null;
-      }).filter(Boolean) || [];
+      });
 
       if (parts.length === 1 && parts[0]?.type === 'text') {
         result.push({ role: m.role, content: parts[0].text });

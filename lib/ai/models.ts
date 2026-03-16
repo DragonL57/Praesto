@@ -24,17 +24,6 @@ export const chatModels: ChatModel[] = [
     // Grok-4.1 doesn't require extra params for reasoning via Poe's OpenAI-compatible API
   },
   {
-    id: 'glm-5',
-    name: 'GLM-5',
-    description: 'GLM-5 model via Poe API',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-    extraParams: {
-      enable_thinking: true,
-    },
-  },
-  {
     id: 'minimax-m2.5',
     name: 'Minimax M2.5',
     description: 'Minimax M2.5 model via Poe API',
@@ -42,6 +31,36 @@ export const chatModels: ChatModel[] = [
     supportsTools: true,
     supportsThinking: true,
     // Minimax thinks by default, no extra params needed
+  },
+  {
+    id: 'kimi-k2.5',
+    name: 'Kimi K2.5',
+    description:
+      "Kimi K2.5 (Moonshot AI) visual + text inputs.",
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: true,
+    extraParams: {
+      // Default settings for Kimi K2.5
+      enable_thinking: true,
+      temperature: 0.7,
+      max_tokens: 262144,
+    },
+  },
+  {
+    id: 'deepseek-v3.2',
+    name: 'DeepSeek V3.2',
+    description:
+      'DeepSeek-V3.2 only text.',
+    provider: 'Poe',
+    supportsTools: true,
+    supportsThinking: true,
+    extraParams: {
+      // Default settings for DeepSeek-V3.2
+      enable_thinking: true,
+      temperature: 0.7,
+      max_tokens: 164000,
+    },
   },
 ];
 
