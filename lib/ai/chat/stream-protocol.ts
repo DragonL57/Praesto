@@ -3,7 +3,7 @@
  * Standardizes communication between the chat API and the frontend.
  */
 
-export type StreamPartType = 'text' | 'reasoning' | 'tool-call' | 'tool-result' | 'error' | 'metadata';
+export type StreamPartType = 'text' | 'reasoning' | 'tool-call' | 'tool-result' | 'tool-call-streaming' | 'error' | 'metadata';
 
 export interface StreamPart {
   type: StreamPartType;
@@ -16,6 +16,7 @@ export interface StreamPart {
  * 'h': Reasoning/Thinking content delta
  * '9': Tool call (sent when AI decides to use a tool)
  * 'a': Tool result (sent after tool execution completes)
+ * 's': Tool call streaming (partial arguments)
  * 'e': Error message
  * 'm': Metadata (e.g., chat title, model info)
  */
@@ -24,6 +25,7 @@ export const PROTOCOL_PREFIXES: Record<StreamPartType, string> = {
   'reasoning': 'h',
   'tool-call': '9',
   'tool-result': 'a',
+  'tool-call-streaming': 's',
   'error': 'e',
   'metadata': 'm',
 };

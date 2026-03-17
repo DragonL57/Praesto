@@ -24,6 +24,10 @@ interface MessageUserActionsProps {
   setMode: (mode: 'view' | 'edit') => void;
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
+  append: (
+    message: { role: 'user' | 'assistant'; parts: any[] },
+    options?: any
+  ) => Promise<string | null | undefined>;
   shouldShowButtons: boolean;
   isMobile: boolean;
   isRetrying: boolean;
@@ -38,7 +42,8 @@ export const MessageUserActions: React.FC<MessageUserActionsProps> = ({
   chatId,
   setMode,
   setMessages,
-  reload,
+  reload: _reload,
+  append,
   shouldShowButtons,
   isMobile,
   isRetrying,
@@ -64,23 +69,27 @@ export const MessageUserActions: React.FC<MessageUserActionsProps> = ({
   };
 
   const handleRetry = async () => {
-    if (message.role === 'user' && reload && setMessages) {
+    if (message.role === 'user' && append && setMessages) {
       setIsRetrying(true);
       try {
         // 1. Delete trailing messages from DB
         await deleteTrailingMessages({ id: message.id });
 
-        // 2. Update client-side messages state
+        // 2. Update client-side messages state: truncate to everything BEFORE this message
+        // append will then add this message back correctly
         setMessages((prevMessages) => {
           const messageIndex = prevMessages.findIndex((m) => m.id === message.id);
           if (messageIndex !== -1) {
-            return prevMessages.slice(0, messageIndex + 1);
+            return prevMessages.slice(0, messageIndex);
           }
           return prevMessages;
         });
 
-        // 3. Trigger a new generation from the AI
-        await reload();
+        // 3. Trigger a new generation by appending the same message again
+        await append({
+          role: 'user',
+          parts: message.parts,
+        });
       } catch (error) {
         console.error('Failed to retry message:', error);
         toast.error('Failed to retry. Please try again.');

@@ -29,12 +29,19 @@ export const executeSandboxCode = {
     },
     required: ['code'],
   },
-  execute: async (params?: Record<string, unknown>) => {
+  execute: async (params?: Record<string, unknown>, { abortSignal }: { abortSignal?: AbortSignal } = {}) => {
     const { code, language = 'javascript', packages = [] } = (params || {}) as { 
       code: string; 
       language?: 'javascript' | 'python';
       packages?: string[] 
     };
+
+    if (!code || typeof code !== 'string') {
+      return {
+        success: false,
+        error: 'Missing or invalid code to execute',
+      };
+    }
 
     let sandbox: Sandbox | null = null;
     const isPython = language === 'python';
@@ -45,6 +52,7 @@ export const executeSandboxCode = {
       sandbox = await Sandbox.create({
         runtime: isPython ? 'python3.13' : 'node22',
         timeout: 60_000, // 60s inactivity timeout
+        signal: abortSignal,
       });
 
       console.log(`[Tool: executeSandboxCode] Sandbox ${sandbox.sandboxId} created.`);
@@ -52,10 +60,11 @@ export const executeSandboxCode = {
       // 1. Install packages if provided
       if (packages && packages.length > 0) {
         console.log(`[Tool: executeSandboxCode] Installing packages: ${packages.join(', ')}`);
-        const installResult = await sandbox.runCommand({
-          cmd: isPython ? 'pip' : 'npm',
-          args: ['install', ...packages],
-        });
+        const installResult = await sandbox.runCommand(
+          isPython ? 'pip' : 'npm',
+          ['install', ...packages],
+          { signal: abortSignal }
+        );
         
         if (installResult.exitCode !== 0) {
           return {
@@ -69,10 +78,12 @@ export const executeSandboxCode = {
 
       // 2. Write and Run code
       console.log(`[Tool: executeSandboxCode] Running code...`);
-      const runResult = await sandbox.runCommand({
-        cmd: isPython ? 'python' : 'node',
-        args: ['-c', code].map(arg => isPython && arg === '-c' ? '-c' : isPython ? arg : arg === '-c' ? '-e' : arg),
-      });
+      const runArgs = ['-c', code].map(arg => isPython && arg === '-c' ? '-c' : isPython ? arg : arg === '-c' ? '-e' : arg);
+      const runResult = await sandbox.runCommand(
+        isPython ? 'python' : 'node',
+        runArgs,
+        { signal: abortSignal }
+      );
 
       const stdout = await runResult.stdout();
       const stderr = await runResult.stderr();
@@ -93,8 +104,12 @@ export const executeSandboxCode = {
     } finally {
       // 3. Always stop the sandbox to free resources
       if (sandbox) {
-        await sandbox.stop();
-        console.log(`[Tool: executeSandboxCode] Sandbox ${sandbox.sandboxId} stopped.`);
+        try {
+          await sandbox.stop();
+          console.log(`[Tool: executeSandboxCode] Sandbox ${sandbox.sandboxId} stopped.`);
+        } catch (stopError) {
+          console.error('[Tool: executeSandboxCode] Error stopping sandbox:', stopError);
+        }
       }
     }
   },

@@ -192,12 +192,83 @@ export function usePraestoChat({
                   const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : generateUUID();
                   const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
                   const args = (d.args as Record<string, unknown> | undefined) ?? {};
-                  assistantMessageParts = [...assistantMessageParts, {
-                    type: 'tool-call',
-                    toolCallId,
-                    toolName,
-                    args,
-                  }];
+                  
+                  // Check if we already have a streaming version of this tool call
+                  const existingIdx = assistantMessageParts.findIndex(p => p.type === 'tool-call' && (p as ToolCallPart).toolCallId === toolCallId);
+                  
+                  if (existingIdx !== -1) {
+                    const newParts = [...assistantMessageParts];
+                    newParts[existingIdx] = {
+                      ...newParts[existingIdx],
+                      state: 'input-available',
+                      args,
+                    } as MessagePart;
+                    assistantMessageParts = newParts;
+                  } else {
+                    assistantMessageParts = [...assistantMessageParts, {
+                      type: 'tool-call',
+                      toolCallId,
+                      toolName,
+                      args,
+                      state: 'input-available'
+                    } as MessagePart];
+                  }
+                }
+              } else if (type === 'tool-call-streaming') {
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  const toolCallId = typeof d.toolCallId === 'string' ? d.toolCallId : 'streaming-id';
+                  const toolName = typeof d.toolName === 'string' ? d.toolName : 'unknown';
+                  const rawArgs = typeof d.arguments === 'string' ? d.arguments : '';
+                  
+                  let parsedArgs: any = {};
+                  try {
+                    parsedArgs = JSON.parse(rawArgs);
+                  } catch {
+                    if (toolName === 'executeSandboxCode') {
+                      // Better heuristic for partial JSON streaming:
+                      // Look for "code":" and capture everything until the end of string or a non-escaped closing quote
+                      const codeStartMatch = rawArgs.match(/"code"\s*:\s*"/);
+                      if (codeStartMatch) {
+                        const startIdx = (codeStartMatch.index || 0) + codeStartMatch[0].length;
+                        let code = rawArgs.substring(startIdx);
+                        
+                        // If there's an unescaped quote further in the string, that's the end of this property
+                        const endQuoteMatch = code.match(/[^\\]"/);
+                        if (endQuoteMatch) {
+                          code = code.substring(0, (endQuoteMatch.index || 0) + 1);
+                        } else if (code.endsWith('"') && !code.endsWith('\\"')) {
+                          code = code.slice(0, -1);
+                        }
+                        
+                        parsedArgs = { 
+                          code: code.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\') 
+                        };
+                      } else {
+                        parsedArgs = { code: rawArgs }; 
+                      }
+                    }
+                  }
+
+                  const existingIdx = assistantMessageParts.findIndex(p => p.type === 'tool-call' && (p as ToolCallPart).toolCallId === toolCallId);
+                  
+                  if (existingIdx !== -1) {
+                    const newParts = [...assistantMessageParts];
+                    newParts[existingIdx] = {
+                      ...newParts[existingIdx],
+                      args: parsedArgs,
+                      state: 'input-streaming'
+                    } as MessagePart;
+                    assistantMessageParts = newParts;
+                  } else {
+                    assistantMessageParts = [...assistantMessageParts, {
+                      type: 'tool-call',
+                      toolCallId,
+                      toolName,
+                      args: parsedArgs,
+                      state: 'input-streaming'
+                    } as MessagePart];
+                  }
                 }
               } else if (type === 'tool-result') {
                 if (typeof data === 'object' && data) {

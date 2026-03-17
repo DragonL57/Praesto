@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, asc, desc, eq, gt, gte, lt, inArray, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, lt, inArray, type SQL, sql } from 'drizzle-orm';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { randomBytes } from 'node:crypto';
 import { db, client } from './index';
@@ -499,12 +499,22 @@ export async function updateChatTimestamp({ id }: { id: string }) {
 // --- Message Queries ---
 
 export async function saveMessages({
-  messages,
+  messages: messagesToSave,
 }: {
   messages: Array<DBMessage>;
 }) {
   try {
-    return await db.insert(message).values(messages);
+    return await db
+      .insert(message)
+      .values(messagesToSave)
+      .onConflictDoUpdate({
+        target: message.id,
+        set: {
+          parts: sql`EXCLUDED.parts`,
+          attachments: sql`EXCLUDED.attachments`,
+          createdAt: sql`EXCLUDED."createdAt"`,
+        },
+      });
   } catch (error) {
     console.error('Failed to save messages in database', error);
     throw error;

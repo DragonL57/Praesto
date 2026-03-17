@@ -119,16 +119,25 @@ export async function handleChatRequest({
 
     // 4. Run AI Completion loop
     const assistantId = generateUUID();
-    let finalFullContent = '';
-    let finalFullReasoning = '';
+    const uiParts: MessagePart[] = [];
+
+    const addPartToUI = (part: MessagePart) => {
+      if (part.type === 'text' || part.type === 'reasoning') {
+        const lastPart = uiParts[uiParts.length - 1];
+        if (lastPart && lastPart.type === part.type) {
+          (lastPart as { text: string }).text += (part as { text: string }).text;
+          return;
+        }
+      }
+      uiParts.push(part);
+    };
+
     type Tool = {
       description?: string;
       parameters?: Record<string, unknown> | unknown;
-      execute: (args?: Record<string, unknown>) => Promise<unknown>;
+      execute: (args?: Record<string, unknown>, options?: { abortSignal?: AbortSignal }) => Promise<unknown>;
     };
 
-    const allToolCallsForUI: Array<{ id?: string; name?: string; args?: unknown }> = [];
-    const allToolResultsForUI: Array<{ toolCallId?: string; toolName?: string; result?: unknown; args?: unknown }> = [];
     const { tools: availableTools } = await getAvailableTools();
     const toolsRegistry = availableTools as Record<string, Tool>;
 
@@ -171,16 +180,16 @@ export async function handleChatRequest({
           if (typeof deltaRec.content === 'string') {
             const text = deltaRec.content as string;
             stepContent += text;
-            finalFullContent += text;
             send('text', text);
+            addPartToUI({ type: 'text', text });
           }
 
           // Handle reasoning/thinking
           const reasoning = (typeof deltaRec.reasoning_content !== 'undefined') ? deltaRec.reasoning_content : deltaRec.thinking;
           if (typeof reasoning === 'string' && reasoning.length > 0) {
             stepReasoning += reasoning;
-            finalFullReasoning += reasoning;
             send('reasoning', reasoning);
+            addPartToUI({ type: 'reasoning', text: reasoning });
           }
 
           // Accumulate tool calls
@@ -211,6 +220,14 @@ export async function handleChatRequest({
                 const fn = tcDelta.function as Record<string, unknown>;
                 if (typeof fn.name === 'string') tc.function.name += fn.name;
                 if (typeof fn.arguments === 'string') tc.function.arguments += fn.arguments;
+
+                // Send streaming update to client for immediate UI feedback
+                send('tool-call-streaming', {
+                  index: idx,
+                  toolCallId: tc.id,
+                  toolName: tc.function.name,
+                  arguments: tc.function.arguments
+                });
               }
             }
           }
@@ -243,16 +260,33 @@ export async function handleChatRequest({
             }
 
             // Add to UI tracking
-            allToolCallsForUI.push({ id: tc.id, name: toolName, args: toolArgs });
             send('tool-call', { toolCallId: tc.id, toolName, args: toolArgs });
+            addPartToUI({
+              type: 'tool-call',
+              toolCallId: tc.id,
+              toolName,
+              args: toolArgs,
+              state: 'input-available'
+            } as MessagePart);
 
             const tool = toolsRegistry[toolName];
             if (tool && typeof tool.execute === 'function') {
               try {
-                const result = await tool.execute(toolArgs);
-                allToolResultsForUI.push({ toolCallId: tc.id, toolName, result, args: toolArgs });
-
+                // Pass abortSignal to tools so they can cancel long operations
+                const result = await tool.execute(toolArgs, { abortSignal });
                 send('tool-result', { toolCallId: tc.id, toolName, result });
+                
+                const resultObj = result as Record<string, unknown> | null;
+                const isError = (resultObj && typeof resultObj === 'object' && ('error' in resultObj || resultObj.success === false));
+
+                addPartToUI({
+                  type: 'tool-result',
+                  toolCallId: tc.id,
+                  toolName,
+                  result,
+                  args: toolArgs,
+                  state: isError ? 'output-error' : 'output-available'
+                } as MessagePart);
 
                 toolMessages.push({
                   role: 'tool',
@@ -264,9 +298,16 @@ export async function handleChatRequest({
                 console.error(`[ChatService] Error executing tool ${toolName}:`, toolError);
 
                 const errorResult = { error: 'Failed to execute tool', details: errorMessage };
-                allToolResultsForUI.push({ toolCallId: tc.id, toolName, result: errorResult, args: toolArgs });
-
                 send('tool-result', { toolCallId: tc.id, toolName, result: errorResult });
+
+                addPartToUI({
+                  type: 'tool-result',
+                  toolCallId: tc.id,
+                  toolName,
+                  result: errorResult,
+                  args: toolArgs,
+                  state: 'output-error'
+                } as MessagePart);
 
                 toolMessages.push({
                   role: 'tool',
@@ -306,38 +347,7 @@ export async function handleChatRequest({
 
     if (abortSignal?.aborted) return;
 
-    // 5. Construct and Save Assistant Message with all parts
-    const uiParts: MessagePart[] = [];
-    if (finalFullReasoning) uiParts.push({ type: 'reasoning', text: finalFullReasoning });
-    if (finalFullContent) uiParts.push({ type: 'text', text: finalFullContent });
-
-    // Map tool calls for UI persistence
-    allToolCallsForUI.forEach(tc => {
-      uiParts.push({
-        type: 'tool-call',
-        toolCallId: tc.id,
-        toolName: tc.name,
-        args: tc.args,
-        state: 'input-available'
-      } as MessagePart);
-    });
-
-    // Map tool results for UI persistence
-    allToolResultsForUI.forEach(tr => {
-      const resultObj = tr.result as Record<string, unknown> | null;
-      const isError = 
-        (resultObj && typeof resultObj === 'object' && ('error' in resultObj || resultObj.success === false));
-        
-      uiParts.push({
-        type: 'tool-result',
-        toolCallId: tr.toolCallId,
-        toolName: tr.toolName,
-        result: tr.result,
-        args: tr.args,
-        state: isError ? 'output-error' : 'output-available'
-      } as MessagePart);
-    });
-
+    // 5. Save Assistant Message with all parts in correct chronological order
     await saveMessages({
       messages: [{
         id: assistantId,
@@ -447,39 +457,40 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
       }
     }
     else if (m.role === 'assistant') {
-      const textParts = m.parts?.filter((p) => p.type === 'text') || [];
-      const content = textParts.map((p) => (p as { text?: string }).text || '').join('\n').trim();
+      let currentText = '';
+      let currentToolCalls: Array<Record<string, unknown>> = [];
 
-      const toolCallParts = m.parts?.filter(p => p.type === 'tool-call') || [];
-      const toolResultParts = m.parts?.filter(p => p.type === 'tool-result') || [];
+      const flushTurn = () => {
+        if (currentText || currentToolCalls.length > 0) {
+          result.push({
+            role: 'assistant',
+            content: currentText || '',
+            tool_calls: currentToolCalls.length > 0 ? currentToolCalls : undefined,
+          });
+          currentText = '';
+          currentToolCalls = [];
+        }
+      };
 
-      // 1. If there are tool calls, we MUST send an assistant message with tool_calls first.
-      // Many strict APIs will crash if tool results are provided without a preceding tool_call block.
-      if (toolCallParts.length > 0) {
-        const callMsg: Record<string, unknown> = {
-          role: 'assistant',
-          // Use an empty string instead of null for content. 
-          // Poe and other OpenAI proxies often return 'internal_error' if content is null 
-          // even when tool_calls is present.
-          content: '', 
-          tool_calls: toolCallParts.map((p) => {
-            const pr = p as Record<string, unknown>;
-            return {
-              id: pr.toolCallId,
-              type: 'function',
-              function: {
-                name: pr.toolName,
-                arguments: typeof pr.args === 'string' ? (pr.args as string) : JSON.stringify(pr.args || {}),
-              },
-            };
-          }),
-        };
-        result.push(callMsg);
+      for (const part of (m.parts || [])) {
+        if (part.type === 'text') {
+          currentText += (part as { text: string }).text;
+        } else if (part.type === 'tool-call') {
+          const tc = part as Record<string, unknown>;
+          currentToolCalls.push({
+            id: tc.toolCallId,
+            type: 'function',
+            function: {
+              name: tc.toolName,
+              arguments: typeof tc.args === 'string' ? tc.args : JSON.stringify(tc.args || {}),
+            },
+          });
+        } else if (part.type === 'tool-result') {
+          // If we have accumulated text or tool calls, flush them first
+          // before sending the tool result.
+          flushTurn();
 
-        // 2. Immediately follow with individual 'tool' messages for each result.
-        // The API requires a 1:1 mapping between tool_call_id and these result messages.
-        for (const p of toolResultParts) {
-          const tr = p as Record<string, unknown>;
+          const tr = part as Record<string, unknown>;
           result.push({
             role: 'tool',
             tool_call_id: tr.toolCallId,
@@ -488,22 +499,10 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
               : JSON.stringify(tr.result ?? {}),
           });
         }
-
-        // 3. Any text content in the SAME database message is treated as the answer 
-        // generated AFTER the tools were executed. We send this as a final assistant turn.
-        if (content) {
-          result.push({
-            role: 'assistant',
-            content: content,
-          });
-        }
-      } else {
-        // Simple assistant message with no tools - standard mapping.
-        result.push({
-          role: 'assistant',
-          content: content || '',
-        });
       }
+
+      // Final flush for any remaining content
+      flushTurn();
     }
     else if (m.role === 'tool') {
       // Handle any standalone tool messages if they exist
