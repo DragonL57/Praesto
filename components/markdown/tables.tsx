@@ -2,6 +2,7 @@ import type { HTMLAttributes, ReactNode, MouseEvent, TouchEvent } from 'react';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { tableStyles } from './styles';
 import './table-scrollbar-styles'; // Import scrollbar hiding styles
+import { wrapTextWithEffect } from './elements';
 
 interface TableWrapperProps {
   children: ReactNode;
@@ -243,13 +244,13 @@ export const TableHeader = ({
   ...props
 }: TableProps) => (
   <th className={tableStyles.th} style={tableStyles.thStyle} {...props}>
-    {children}
+    {wrapTextWithEffect(children)}
   </th>
 );
 
 export const TableCell = ({ children, node: _node, ...props }: TableProps) => (
   <td className={tableStyles.td} style={tableStyles.tdStyle} {...props}>
-    {children}
+    {wrapTextWithEffect(children)}
   </td>
 );
 

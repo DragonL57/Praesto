@@ -1,5 +1,6 @@
 import { createElement, type HTMLAttributes } from 'react';
 import { headingStyles } from './styles';
+import { wrapTextWithEffect } from './elements';
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -34,7 +35,7 @@ export const createHeadingComponent = (
         className: headingStyles[styleKey],
         ...props,
       },
-      children,
+      wrapTextWithEffect(children),
     );
   };
 

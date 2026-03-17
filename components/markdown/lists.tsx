@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from 'react';
 import { listStyles, textStyles } from './styles';
+import { wrapTextWithEffect } from './elements';
 
 type ListProps = HTMLAttributes<HTMLElement> & { node?: unknown };
 
@@ -21,7 +22,7 @@ export const UnorderedList = ({
 
 export const ListItem = ({ children, node: _node, ...props }: ListProps) => (
   <li className={textStyles.listItem} {...props}>
-    {children}
+    {wrapTextWithEffect(children)}
   </li>
 );
 
