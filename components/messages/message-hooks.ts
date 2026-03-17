@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react';
-import type { Message, TextPart, ReasoningPart, MessagePart } from '@/lib/ai/types';
+import type { Message, TextPart, ReasoningPart, MessagePart, ToolCallPart } from '@/lib/ai/types';
 import type {
     ReasoningContentItem,
     EnhancedMessagePart,
@@ -18,6 +18,7 @@ import {
     extractToolName,
     isToolResultAvailable,
     getToolOutput,
+    getToolCallId,
     applyToolGrouping,
 } from './message-utils';
 
@@ -30,9 +31,14 @@ interface ReasoningElementsResult {
     indicesToFilter: Set<number>;
 }
 
+interface SandboxToolArgs {
+    code: string;
+    packages?: string[];
+}
+
 /**
  * Extract and consolidate reasoning elements from message parts
- * Handles: reasoning parts, <think> tags, Poe thinking format (>), think tool, webSearch, readWebsiteContent
+ * Handles: reasoning parts, <think> tags, Poe thinking format (>), think tool, webSearch, readWebsiteContent, executeSandboxCode
  */
 export function useReasoningElements(message: Message): ReasoningElementsResult {
     return useMemo(() => {
@@ -43,6 +49,9 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
         if (!message.parts || message.parts.length === 0) {
             return { reasoningElements: elements, indicesToFilter: filterIndices };
         }
+
+        // Map to track tool calls for consolidation with results
+        const toolCallMap = new Map<string, { index: number; toolName: string; args: Record<string, unknown>; state?: string }>();
 
         message.parts.forEach((part, index) => {
             // a) Check for dedicated reasoning parts
@@ -80,10 +89,25 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                     }
                 }
             }
-            // c) Check for tool results to include in reasoning
+            // c) Track tool calls for reasoning tools
+            else if (part.type === 'tool-call') {
+                const toolCall = part as ToolCallPart & { state?: string };
+                const toolName = toolCall.toolName;
+                if (toolName === 'executeSandboxCode' || toolName === 'webSearch' || toolName === 'readWebsiteContent' || toolName === 'think') {
+                    toolCallMap.set(toolCall.toolCallId, { 
+                        index, 
+                        toolName, 
+                        args: toolCall.args as Record<string, unknown>,
+                        state: toolCall.state
+                    });
+                }
+            }
+            // d) Check for tool results to include in reasoning
             else if (isToolPart(part) && isToolResultAvailable(part)) {
                 const toolName = extractToolName(part);
                 const result = getToolOutput(part);
+                const toolCallId = getToolCallId(part);
+                const toolCallInfo = toolCallMap.get(toolCallId);
 
                 if (result && typeof result === 'object') {
                     if (toolName === 'think') {
@@ -91,6 +115,7 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                         if (typeof thought === 'string' && thought.trim()) {
                             elements.push(thought.trim());
                             filterIndices.add(index);
+                            if (toolCallInfo) filterIndices.add(toolCallInfo.index);
                         }
                     }
                     else if (toolName === 'webSearch') {
@@ -106,6 +131,7 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                         ) {
                             elements.push({ type: 'webSearch', data: searchResult as WebSearchData });
                             filterIndices.add(index);
+                            if (toolCallInfo) filterIndices.add(toolCallInfo.index);
                         }
                     }
                     else if (toolName === 'readWebsiteContent') {
@@ -123,9 +149,52 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                                 },
                             });
                             filterIndices.add(index);
+                            if (toolCallInfo) filterIndices.add(toolCallInfo.index);
+                        }
+                    }
+                    else if (toolName === 'executeSandboxCode') {
+                        const executionResult = result as {
+                            stdout?: string;
+                            stderr?: string;
+                            exitCode?: number;
+                        };
+                        if (toolCallInfo) {
+                            const args = toolCallInfo.args as unknown as SandboxToolArgs;
+                            elements.push({
+                                type: 'codeExecution',
+                                data: {
+                                    code: args.code,
+                                    packages: args.packages,
+                                    stdout: executionResult.stdout,
+                                    stderr: executionResult.stderr,
+                                    exitCode: executionResult.exitCode,
+                                    state: 'output-available',
+                                },
+                            });
+                            filterIndices.add(index);
+                            filterIndices.add(toolCallInfo.index);
                         }
                     }
                 }
+            }
+        });
+
+        // Add pending tool calls (ones without results yet)
+        toolCallMap.forEach((info, _id) => {
+            if (!filterIndices.has(info.index)) {
+                if (info.toolName === 'executeSandboxCode') {
+                    const args = info.args as unknown as SandboxToolArgs;
+                    elements.push({
+                        type: 'codeExecution',
+                        data: {
+                            code: args.code,
+                            packages: args.packages,
+                            state: info.state === 'input-streaming' ? 'input-streaming' : 'input-available',
+                        },
+                    });
+                    filterIndices.add(info.index);
+                }
+                // We could add webSearch here too if we want to show it while it's "Searching..."
             }
         });
 

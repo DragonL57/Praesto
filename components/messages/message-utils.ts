@@ -111,6 +111,7 @@ export const REASONING_TOOL_NAMES = [
     'think',
     'webSearch',
     'readWebsiteContent',
+    'executeSandboxCode',
 ] as const;
 
 /**

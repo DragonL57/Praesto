@@ -1,6 +1,6 @@
 'use client';
 
-import { SearchIcon, FileTextIcon, BrainIcon, LoaderIcon } from 'lucide-react';
+import { SearchIcon, FileTextIcon, BrainIcon, LoaderIcon, CodeIcon } from 'lucide-react';
 import {
   ChainOfThought,
   ChainOfThoughtHeader,
@@ -10,6 +10,7 @@ import {
   ChainOfThoughtSearchResult,
 } from '@/components/ai-elements/chain-of-thought';
 import { Markdown } from '../markdown';
+import { CodeSandbox } from '../code-sandbox';
 
 // Import shared types
 import type { ReasoningContentItem } from './message-types';
@@ -114,6 +115,26 @@ export function MessageReasoning({
                 description={item.data.url}
                 status={isLoading ? 'active' : 'complete'}
               />
+            );
+          }
+
+          // Code execution step
+          if (item.type === 'codeExecution') {
+            return (
+              <ChainOfThoughtStep
+                key={`code-${item.data.code.slice(0, 30)}-${index}`}
+                icon={CodeIcon}
+                label="Executing Code"
+                status={item.data.state === 'output-available' ? 'complete' : 'active'}
+              >
+                <CodeSandbox
+                  state={item.data.state || 'loading'}
+                  code={item.data.code}
+                  output={item.data.stdout}
+                  error={item.data.stderr || (item.data.exitCode !== 0 && item.data.exitCode !== undefined ? `Exit code: ${item.data.exitCode}` : undefined)}
+                  filename="sandbox.js"
+                />
+              </ChainOfThoughtStep>
             );
           }
 

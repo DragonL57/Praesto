@@ -44,10 +44,20 @@ export interface FetchedPageInfoData {
     query?: string | null;
 }
 
+export interface CodeExecutionData {
+    code: string;
+    stdout?: string;
+    stderr?: string;
+    exitCode?: number;
+    packages?: string[];
+    state?: 'input-streaming' | 'input-available' | 'output-available' | 'output-error' | 'loading';
+}
+
 export type ReasoningContentItem =
     | string
     | { type: 'webSearch'; data: WebSearchData }
-    | { type: 'fetchedPageInfo'; data: FetchedPageInfoData };
+    | { type: 'fetchedPageInfo'; data: FetchedPageInfoData }
+    | { type: 'codeExecution'; data: CodeExecutionData };
 
 export interface ReasoningDetail {
     type: string;
