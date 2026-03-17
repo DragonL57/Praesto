@@ -301,13 +301,17 @@ export async function handleChatRequest({
 
     // Map tool results for UI persistence
     allToolResultsForUI.forEach(tr => {
+      const resultObj = tr.result as Record<string, unknown> | null;
+      const isError = 
+        (resultObj && typeof resultObj === 'object' && ('error' in resultObj || resultObj.success === false));
+        
       uiParts.push({
         type: 'tool-result',
         toolCallId: tr.toolCallId,
         toolName: tr.toolName,
         result: tr.result,
         args: tr.args,
-        state: 'output-available'
+        state: isError ? 'output-error' : 'output-available'
       } as MessagePart);
     });
 

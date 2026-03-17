@@ -7,6 +7,7 @@ import React from 'react';
 import cx from 'classnames';
 import { Weather } from '../weather';
 import { Calendar } from '../calendar';
+import { CodeSandbox } from '../code-sandbox';
 import type { EnhancedMessagePart } from './message-types';
 import {
   extractToolName,
@@ -16,12 +17,30 @@ import {
   getToolOutput,
   isToolResultAvailable,
 } from './message-utils';
+import type { ToolCallPart } from '@/lib/ai/types';
+
+interface ExecuteSandboxCodeArgs {
+  code: string;
+  packages?: string[];
+  filename?: string;
+  language?: string;
+}
+
+interface ExecuteSandboxCodeResult {
+  success: boolean;
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+  error?: string;
+  sandboxId?: string;
+}
 
 interface ToolCallSkeletonProps {
   toolName: string;
   toolCallId: string;
   toolIndex?: number;
   messageId: string;
+  part?: EnhancedMessagePart;
 }
 
 /**
@@ -32,8 +51,22 @@ export const ToolCallSkeleton: React.FC<ToolCallSkeletonProps> = ({
   toolCallId,
   toolIndex,
   messageId,
+  part,
 }) => {
   const key = `call_${messageId}_${toolCallId}${typeof toolIndex === 'number' && toolIndex >= 0 ? `_${toolIndex}` : ''}`;
+
+  if (toolName === 'executeSandboxCode') {
+    const args = (part as unknown as ToolCallPart)?.args as ExecuteSandboxCodeArgs;
+    return (
+      <CodeSandbox
+        key={key}
+        state="input-streaming"
+        code={args?.code || ""}
+        filename={args?.filename || "script.js"}
+        language={args?.language || "javascript"}
+      />
+    );
+  }
 
   return (
     <div
@@ -54,12 +87,13 @@ export const ToolCallSkeleton: React.FC<ToolCallSkeletonProps> = ({
 interface ToolResultProps {
   part: EnhancedMessagePart;
   messageId: string;
+  allParts?: EnhancedMessagePart[];
 }
 
 /**
  * Renders a single tool result (standalone)
  */
-export const ToolResult: React.FC<ToolResultProps> = ({ part, messageId }) => {
+export const ToolResult: React.FC<ToolResultProps> = ({ part, messageId, allParts = [] }) => {
   if (!isToolPart(part)) return null;
 
   const toolName = extractToolName(part);
@@ -69,6 +103,25 @@ export const ToolResult: React.FC<ToolResultProps> = ({ part, messageId }) => {
     typeof part.toolIndex === 'number' && part.toolIndex >= 0
       ? `_${part.toolIndex}`
       : '';
+
+  if (toolName === 'executeSandboxCode') {
+    // Find the corresponding tool call part to get the code
+    const callPart = allParts.find(p => p.type === 'tool-call' && (p as ToolCallPart).toolCallId === toolCallId) as ToolCallPart | undefined;
+    const args = callPart?.args as ExecuteSandboxCodeArgs | undefined;
+    const res = result as ExecuteSandboxCodeResult;
+    
+    return (
+      <CodeSandbox
+        key={`call_${messageId}_${toolCallId}${toolIndex}`}
+        state={res?.success === false ? "output-error" : "output-available"}
+        code={args?.code || ""}
+        output={res?.stdout || ""}
+        error={res?.stderr || res?.error || ""}
+        filename={args?.filename || "script.js"}
+        language={args?.language || "javascript"}
+      />
+    );
+  }
 
   return (
     <div

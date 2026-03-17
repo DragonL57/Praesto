@@ -6,7 +6,7 @@
  * Without AI SDK dependency
  */
 
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useState, useMemo } from 'react';
 import equal from 'fast-deep-equal';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -18,7 +18,7 @@ import type {
   PurePreviewMessageProps,
   PreviewMessageProps,
 } from './message-types';
-import type { TextPart, ToolCallPart } from '@/lib/ai/types';
+import type { TextPart } from '@/lib/ai/types';
 
 // Import hooks
 import { useReasoningElements, useProcessedParts } from './message-hooks';
@@ -30,6 +30,7 @@ import {
   isTextPart,
   isToolResultAvailable,
   isReasoningTool,
+  getToolCallId,
 } from './message-utils';
 
 // Import sub-components
@@ -39,7 +40,7 @@ import { MessageEditor } from './message-editor';
 import { MessageContent } from './message-content';
 import { MessageAttachments } from './message-attachments';
 import { MessageUserActions } from './message-user-actions';
-import { ToolCallSkeleton } from './message-tools';
+import { ToolCallSkeleton, ToolResult } from './message-tools';
 import { SuggestedActions } from '../suggested-actions';
 
 // ============================================================================
@@ -70,6 +71,17 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const { reasoningElements, indicesToFilter } =
       useReasoningElements(message);
     const processedParts = useProcessedParts(message, indicesToFilter);
+
+    // Filter out 'input-available' parts if corresponding 'output-available' exists
+    const toolResultIds = useMemo(() => {
+      const ids = new Set<string>();
+      processedParts.forEach(p => {
+        if (isToolPart(p) && isToolResultAvailable(p)) {
+          ids.add(getToolCallId(p));
+        }
+      });
+      return ids;
+    }, [processedParts]);
 
     // Effect to handle button visibility
     useEffect(() => {
@@ -222,24 +234,41 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 }
               }
 
-              // Render tool call skeletons (input-available state)
+              // Render tool parts
               if (isToolPart(part)) {
-                const state = (part as unknown as { state?: unknown }).state;
-                if (typeof state === 'string' && state === 'input-available') {
-                  const toolPart = part as ToolCallPart;
-                  const toolName = extractToolName(part);
-                  const toolCallId = toolPart.toolCallId || '';
+                const toolName = extractToolName(part);
+                const toolCallId = getToolCallId(part);
 
-                  // Skip reasoning tools
-                  if (isReasoningTool(toolName)) return null;
+                // Skip reasoning tools
+                if (isReasoningTool(toolName)) return null;
 
-                  const rawToolIndex = (
-                    part as unknown as { toolIndex?: unknown }
-                  ).toolIndex;
-                  const toolIndex =
-                    typeof rawToolIndex === 'number' && rawToolIndex >= 0
-                      ? rawToolIndex
-                      : undefined;
+                const rawToolIndex = (
+                  part as unknown as { toolIndex?: unknown }
+                ).toolIndex;
+                const toolIndex =
+                  typeof rawToolIndex === 'number' && rawToolIndex >= 0
+                    ? rawToolIndex
+                    : undefined;
+
+                if (isToolResultAvailable(part)) {
+                  return (
+                    <ToolResult
+                      key={key}
+                      part={part}
+                      messageId={message.id}
+                      allParts={processedParts}
+                    />
+                  );
+                } else {
+                  // Check if this input part should be hidden (because output is available)
+                  const state = (part as unknown as { state?: unknown }).state;
+                  if (
+                    typeof state === 'string' &&
+                    state === 'input-available' &&
+                    toolResultIds.has(toolCallId)
+                  ) {
+                    return null;
+                  }
 
                   return (
                     <ToolCallSkeleton
@@ -248,6 +277,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       toolCallId={toolCallId}
                       toolIndex={toolIndex}
                       messageId={message.id}
+                      part={part}
                     />
                   );
                 }

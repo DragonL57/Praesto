@@ -67,6 +67,7 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/blob": "^2.0.0",
     "@vercel/postgres": "^0.10.0",
+    "@vercel/sandbox": "^1.8.1",
     "@vercel/speed-insights": "^1.2.0",
     "@xyflow/react": "^12.10.0",
     "axios": "^1.8.4",

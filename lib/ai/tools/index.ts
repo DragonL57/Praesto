@@ -1,6 +1,7 @@
 import { getWeather } from './get-weather';
 import { webSearch } from './web-search';
 import { readWebsiteContent } from './read-website-content';
+import { executeSandboxCode } from './execute-sandbox-code';
 import {
   listCalendarEvents,
   createCalendarEvent,
@@ -14,6 +15,7 @@ export const allTools = {
   getWeather,
   webSearch,
   readWebsiteContent,
+  executeSandboxCode,
   listCalendarEvents,
   createCalendarEvent,
   updateCalendarEvent,
