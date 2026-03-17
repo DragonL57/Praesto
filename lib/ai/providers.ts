@@ -63,6 +63,7 @@ export async function getChatCompletionParams(
   if (modelId === 'chat-model') actualModel = 'grok-4.1-fast-reasoning';
   if (modelId === 'title-model' || modelId === 'fast-model') actualModel = 'grok-4.1-fast-non-reasoning';
 
+  // Base config with standard options
   const baseConfig: Record<string, unknown> = {
     model: actualModel,
     messages: [
@@ -76,11 +77,20 @@ export async function getChatCompletionParams(
     stream: true,
   };
 
-  // Add model-specific extra_body parameters if defined in config
+  // Process extraParams: prioritize top-level known params, put others in extra_body
   if (extraParams) {
-    baseConfig.extra_body = {
-      ...extraParams,
-    };
+    const { max_tokens, temperature, ...otherParams } = extraParams as Record<string, unknown>;
+    
+    // Override top-level params if specified in extraParams
+    if (max_tokens !== undefined) baseConfig.max_tokens = max_tokens;
+    if (temperature !== undefined) baseConfig.temperature = temperature;
+    
+    // Add remaining parameters to extra_body (standard for Poe/OpenAI extensions)
+    if (Object.keys(otherParams).length > 0) {
+      baseConfig.extra_body = {
+        ...otherParams,
+      };
+    }
   }
 
   // Use custom function calling tools for models that support them

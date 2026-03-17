@@ -42,7 +42,6 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
     extraParams: {
       // Default settings for Kimi K2.5
-      enable_thinking: true,
       temperature: 0.7,
       max_tokens: 262144,
     },
@@ -57,12 +56,18 @@ export const chatModels: ChatModel[] = [
     supportsThinking: true,
     extraParams: {
       // Default settings for DeepSeek-V3.2
-      enable_thinking: true,
       temperature: 0.7,
+      /**
+       * max_tokens: Controls the maximum length of the MODEL'S RESPONSE (output).
+       * Note: This is separate from the Context Window (164k). High values may 
+       * trigger 'internal_error' on some providers if they have lower hard limits 
+       * for single-turn generation.
+       */
       max_tokens: 164000,
     },
   },
-];
+  ];
+
 
 // Default model configuration
 const defaultModel = chatModels.find((model) => model.isDefault);

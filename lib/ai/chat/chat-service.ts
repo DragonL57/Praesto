@@ -334,7 +334,18 @@ export async function handleChatRequest({
 }
 
 /**
- * Helper to convert UI messages to the format expected by OpenAI/Poe API
+ * Helper to convert UI messages to the format expected by OpenAI/Poe API.
+ * 
+ * IMPORTANT FOR DEBUGGING:
+ * Many OpenAI-compatible providers (including Poe's proxy) are extremely strict 
+ * about the message sequence when tools are used. They expect:
+ * 1. Assistant message with 'tool_calls' (and content usually empty '')
+ * 2. Tool message with 'tool_call_id' and 'result'
+ * 3. Assistant message with the final response.
+ * 
+ * If these are bundled into a single message (common in UI state), the API 
+ * will often return a generic 'internal_error'. This function "unrolls" 
+ * bundled messages into the correct sequence.
  */
 export function convertToOpenAIMessages(messages: Message[]): Record<string, unknown>[] {
   const result: Record<string, unknown>[] = [];
@@ -402,51 +413,72 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
       const textParts = m.parts?.filter((p) => p.type === 'text') || [];
       const content = textParts.map((p) => (p as { text?: string }).text || '').join('\n').trim();
 
-      const reasoningParts = m.parts?.filter((p) => p.type === 'reasoning') || [];
-      const reasoning = reasoningParts.map((p) => (p as { text?: string }).text || '').join('\n').trim();
-
-      // Get reasoning from raw property if parts are missing (for internal recursion)
-      const finalReasoning = reasoning || (m as unknown as Record<string, unknown>).reasoning_content || (m as unknown as Record<string, unknown>).thinking;
-
       const toolCallParts = m.parts?.filter(p => p.type === 'tool-call') || [];
+      const toolResultParts = m.parts?.filter(p => p.type === 'tool-result') || [];
 
-      const assistantMsg: Record<string, unknown> = {
-        role: 'assistant',
-        content: content || null,
-      };
-
-      if (finalReasoning) {
-        // Use reasoning_content (standard) or thinking (Poe/some vendors)
-        assistantMsg.reasoning_content = finalReasoning;
-      }
-
+      // 1. If there are tool calls, we MUST send an assistant message with tool_calls first.
+      // Many strict APIs will crash if tool results are provided without a preceding tool_call block.
       if (toolCallParts.length > 0) {
-        (assistantMsg as Record<string, unknown>).tool_calls = toolCallParts.map((p) => {
-          const pr = p as Record<string, unknown>;
-          return {
-            id: pr.toolCallId,
-            type: 'function',
-            function: {
-              name: pr.toolName,
-              arguments: typeof pr.args === 'string' ? (pr.args as string) : JSON.stringify(pr.args || {}),
-            },
-          };
+        const callMsg: Record<string, unknown> = {
+          role: 'assistant',
+          // Use an empty string instead of null for content. 
+          // Poe and other OpenAI proxies often return 'internal_error' if content is null 
+          // even when tool_calls is present.
+          content: '', 
+          tool_calls: toolCallParts.map((p) => {
+            const pr = p as Record<string, unknown>;
+            return {
+              id: pr.toolCallId,
+              type: 'function',
+              function: {
+                name: pr.toolName,
+                arguments: typeof pr.args === 'string' ? (pr.args as string) : JSON.stringify(pr.args || {}),
+              },
+            };
+          }),
+        };
+        result.push(callMsg);
+
+        // 2. Immediately follow with individual 'tool' messages for each result.
+        // The API requires a 1:1 mapping between tool_call_id and these result messages.
+        for (const p of toolResultParts) {
+          const tr = p as Record<string, unknown>;
+          result.push({
+            role: 'tool',
+            tool_call_id: tr.toolCallId,
+            content: typeof tr.result === 'string'
+              ? (tr.result as string)
+              : JSON.stringify(tr.result ?? {}),
+          });
+        }
+
+        // 3. Any text content in the SAME database message is treated as the answer 
+        // generated AFTER the tools were executed. We send this as a final assistant turn.
+        if (content) {
+          result.push({
+            role: 'assistant',
+            content: content,
+          });
+        }
+      } else {
+        // Simple assistant message with no tools - standard mapping.
+        result.push({
+          role: 'assistant',
+          content: content || '',
         });
       }
-
-      result.push(assistantMsg);
     }
     else if (m.role === 'tool') {
+      // Handle any standalone tool messages if they exist
       const toolResultPart = m.parts.find(p => p.type === 'tool-result');
       if (toolResultPart && 'toolCallId' in toolResultPart) {
         const tr = toolResultPart as Record<string, unknown>;
-        const toolResult = tr.result;
         result.push({
           role: 'tool',
           tool_call_id: tr.toolCallId,
-          content: typeof toolResult === 'string'
-            ? (toolResult as string)
-            : JSON.stringify(toolResult ?? {}),
+          content: typeof tr.result === 'string'
+            ? (tr.result as string)
+            : JSON.stringify(tr.result ?? {}),
         });
       }
     }
