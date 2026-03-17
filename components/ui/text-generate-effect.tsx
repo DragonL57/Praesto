@@ -54,10 +54,10 @@ export function TextGenerateEffect({
       {...props}
     >
       {wordsArray.map((word, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: Index is used as a stable key here 
-        // because words are exclusively appended to the end of the array during streaming,
-        // and re-ordering within a single message's text block is not a standard AI behavior.
-        <React.Fragment key={`${word}-${idx}`}>
+        <React.Fragment
+          // biome-ignore lint/suspicious/noArrayIndexKey: Index is stable as tokens are only appended during streaming
+          key={`${word}-${idx}`}
+        >
           <motion.span
             className="text-generate-word inline-block"
             initial={{ 
