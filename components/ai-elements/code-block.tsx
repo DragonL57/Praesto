@@ -18,29 +18,38 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
   ({ code, language = "text", className, children, ...props }, ref) => {
     const { resolvedTheme } = useTheme();
     const [isClient, setIsClient] = React.useState(false);
+    const [currentTheme, setCurrentTheme] = React.useState(oneLight);
     
     React.useEffect(() => {
       setIsClient(true);
-    }, []);
-
-    const theme = resolvedTheme === 'dark' ? oneDark : oneLight;
+      setCurrentTheme(resolvedTheme === 'dark' ? oneDark : oneLight);
+    }, [resolvedTheme]);
 
     return (
       <div
         ref={ref}
-        className={cn("group relative overflow-hidden font-mono text-sm", className)}
+        className={cn(
+          "group relative overflow-hidden font-mono text-sm bg-zinc-100 dark:bg-zinc-900/50 rounded-md",
+          className
+        )}
         {...props}
       >
         <div className="w-full overflow-auto">
           {isClient ? (
             <SyntaxHighlighter
               language={language}
-              style={theme}
+              style={currentTheme}
               customStyle={{
                 margin: 0,
                 padding: '1rem',
                 fontSize: '0.875rem',
                 background: 'transparent',
+              }}
+              codeTagProps={{
+                style: {
+                  background: 'transparent',
+                  backgroundColor: 'transparent',
+                }
               }}
               wrapLines={true}
             >
