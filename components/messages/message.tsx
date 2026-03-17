@@ -251,7 +251,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 if (isReasoningTool(toolName)) return null;
 
                 const rawToolIndex = (
-                  part as unknown as { toolIndex?: unknown }
+                  part as EnhancedMessagePart & { toolIndex?: unknown }
                 ).toolIndex;
                 const toolIndex =
                   typeof rawToolIndex === 'number' && rawToolIndex >= 0
@@ -267,14 +267,14 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                   return (
                     <ToolResult
                       key={key}
-                      part={part}
+                      part={part as ToolResultPart}
                       messageId={message.id}
                       allParts={allParts}
                     />
                   );
                 } else {
                   // Check if this input part should be hidden (because output is available)
-                  const state = (part as unknown as { state?: unknown }).state;
+                  const state = (part as ToolCallPart & { state?: unknown }).state;
                   if (
                     typeof state === 'string' &&
                     state === 'input-available' &&
@@ -290,7 +290,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                       toolCallId={toolCallId}
                       toolIndex={toolIndex}
                       messageId={message.id}
-                      part={part}
+                      part={part as ToolCallPart}
                     />
                   );
                 }

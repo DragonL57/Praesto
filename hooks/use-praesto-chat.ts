@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import type { Message, ChatStatus, ChatRequestOptions, MessagePart } from '@/lib/ai/types';
+import type { Message, ChatStatus, ChatRequestOptions, MessagePart, ToolCallPart, ToolResultPart } from '@/lib/ai/types';
 import { generateUUID } from '@/lib/utils';
 import { StreamProtocol } from '@/lib/ai/chat/stream-protocol';
 

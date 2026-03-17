@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Message, TextPart, SetMessagesFunction } from '@/lib/ai/types';
+import type { Message, TextPart, SetMessagesFunction, MessagePart, ChatRequestOptions } from '@/lib/ai/types';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
 import { RefreshCwIcon } from 'lucide-react';
@@ -25,8 +25,8 @@ interface MessageUserActionsProps {
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
   append: (
-    message: { role: 'user' | 'assistant'; parts: any[] },
-    options?: any
+    message: { role: 'user' | 'assistant'; parts: MessagePart[] },
+    options?: ChatRequestOptions
   ) => Promise<string | null | undefined>;
   shouldShowButtons: boolean;
   isMobile: boolean;
