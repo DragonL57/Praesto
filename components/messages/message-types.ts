@@ -79,6 +79,10 @@ export type EnhancedMessagePart = MessagePart & {
     toolIndex?: number;
 };
 
+export type MergedMessagePart = 
+    | { type: 'part'; part: EnhancedMessagePart }
+    | { type: 'reasoning'; items: ReasoningContentItem[] };
+
 // ============================================================================
 // Component Props Types
 // ============================================================================

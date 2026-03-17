@@ -47,4 +47,8 @@ export {
 } from './message-utils';
 
 // Hooks
-export { useReasoningElements, useProcessedParts } from './message-hooks';
+export { 
+    useReasoningElements, 
+    useProcessedParts,
+    useOrderedMessageParts 
+} from './message-hooks';

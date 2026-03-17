@@ -47,9 +47,12 @@ export async function POST(request: Request) {
           userTimeContext,
           modelId,
           controller,
+          abortSignal: request.signal,
         }).catch((err) => {
           console.error('[Stream Error]', err);
-          controller.error(err);
+          if (controller.desiredSize !== null) {
+            controller.error(err);
+          }
         });
       },
     });

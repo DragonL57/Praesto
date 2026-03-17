@@ -33,6 +33,7 @@ export async function handleChatRequest({
   userTimeContext,
   modelId,
   controller,
+  abortSignal,
 }: {
   id: string;
   userId: string;
@@ -40,6 +41,7 @@ export async function handleChatRequest({
   userTimeContext?: UserTimeContext;
   modelId: string;
   controller: ReadableStreamDefaultController;
+  abortSignal?: AbortSignal;
 }) {
   const encoder = new TextEncoder();
 
@@ -48,11 +50,18 @@ export async function handleChatRequest({
    * Uses StreamProtocol to ensure consistent prefix-based encoding.
    */
   const send = (type: StreamPartType | string, data: unknown) => {
+    // Check if controller is still active
+    if (controller.desiredSize === null) return;
+    
     try {
       const formatted = StreamProtocol.format(type as StreamPartType, data);
       controller.enqueue(encoder.encode(formatted));
     } catch (e) {
-      console.error('[ChatService] Error enqueuing stream part:', e);
+      // If it fails with "already closed", we can just ignore it or log it minimally
+      const isClosedError = e instanceof TypeError && e.message.includes('already closed');
+      if (!isClosedError) {
+        console.error('[ChatService] Error enqueuing stream part:', e);
+      }
     }
   };
 
@@ -136,16 +145,22 @@ export async function handleChatRequest({
       const stepToolCalls: Array<ToolCallEntry | null> = [];
 
       try {
+        // If signal is already aborted, stop immediately
+        if (abortSignal?.aborted) return;
+
         const params = await getChatCompletionParams(modelId, currentMsgs, userTimeContext);
 
         // Execute completion with Poe API (OpenAI-compatible)
-        // Bind the create method so its internal `this` (client) is available at runtime
-        // CreateFn: explicit function type for the provider's streaming create method
         type CreateFn = (body: unknown) => Promise<AsyncIterable<unknown>>;
         const createFn = (openai.chat.completions.create as unknown as CreateFn).bind(openai.chat.completions) as CreateFn;
-        const responseStream = await createFn(params);
+        
+        // Pass the abort signal to the provider
+        const responseStream = await createFn({ ...params, signal: abortSignal });
 
         for await (const chunk of (responseStream as AsyncIterable<unknown>)) {
+          // Check if we should stop
+          if (abortSignal?.aborted) break;
+
           const chunkRec = chunk as Record<string, unknown>;
           const choices = chunkRec.choices as Array<Record<string, unknown>> | undefined;
           const delta = choices?.[0]?.delta as Record<string, unknown> | undefined;
@@ -201,6 +216,9 @@ export async function handleChatRequest({
           }
         }
 
+        // Stop here if aborted
+        if (abortSignal?.aborted) return;
+
         // Process accumulated tool calls
         const filteredToolCalls = stepToolCalls.filter(Boolean) as ToolCallEntry[];
         if (filteredToolCalls.length > 0) {
@@ -213,6 +231,7 @@ export async function handleChatRequest({
           }];
 
           for (const tc of filteredToolCalls) {
+            if (abortSignal?.aborted) break;
             if (!tc || !tc.function) continue;
             const toolName = tc.function.name;
             const toolArgsString = tc.function.arguments || '{}';
@@ -262,6 +281,8 @@ export async function handleChatRequest({
           await runCompletion(toolMessages);
         }
       } catch (error: unknown) {
+        if (abortSignal?.aborted) return;
+
         const err = error as unknown as Record<string, unknown> | Error | undefined;
         console.error(`[Completion Error] (Attempt ${retryCount + 1}):`, err);
 
@@ -282,6 +303,8 @@ export async function handleChatRequest({
     // Convert UI messages to the internal OpenAI format
     const openAIMessages = convertToOpenAIMessages(messages);
     await runCompletion(openAIMessages);
+
+    if (abortSignal?.aborted) return;
 
     // 5. Construct and Save Assistant Message with all parts
     const uiParts: MessagePart[] = [];
@@ -333,7 +356,17 @@ export async function handleChatRequest({
     const message = err instanceof Error ? err.message : String((err as Record<string, unknown>)?.message ?? 'An error occurred during completion');
     send('error', message);
   } finally {
-    controller.close();
+    try {
+      if (controller.desiredSize !== null) {
+        controller.close();
+      }
+    } catch (e) {
+      // Ignore "already closed" errors
+      const isClosedError = e instanceof TypeError && e.message.includes('already closed');
+      if (!isClosedError) {
+        console.error('[ChatService] Error closing stream controller:', e);
+      }
+    }
   }
 }
 

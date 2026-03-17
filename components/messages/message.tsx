@@ -17,11 +17,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type {
   PurePreviewMessageProps,
   PreviewMessageProps,
+  EnhancedMessagePart,
 } from './message-types';
 import type { TextPart } from '@/lib/ai/types';
 
 // Import hooks
-import { useReasoningElements, useProcessedParts } from './message-hooks';
+import { useOrderedMessageParts } from './message-hooks';
 
 // Import utilities
 import {
@@ -67,21 +68,19 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const [shouldShowButtons, setShouldShowButtons] = useState(false);
     const isMobile = useIsMobile();
 
-    // Extract reasoning elements and process parts using hooks
-    const { reasoningElements, indicesToFilter } =
-      useReasoningElements(message);
-    const processedParts = useProcessedParts(message, indicesToFilter);
+    // Extract ordered parts using hook
+    const orderedParts = useOrderedMessageParts(message);
 
     // Filter out 'input-available' parts if corresponding 'output-available' exists
     const toolResultIds = useMemo(() => {
       const ids = new Set<string>();
-      processedParts.forEach(p => {
-        if (isToolPart(p) && isToolResultAvailable(p)) {
-          ids.add(getToolCallId(p));
+      orderedParts.forEach(p => {
+        if (p.type === 'part' && isToolPart(p.part) && isToolResultAvailable(p.part)) {
+          ids.add(getToolCallId(p.part));
         }
       });
       return ids;
-    }, [processedParts]);
+    }, [orderedParts]);
 
     // Effect to handle button visibility
     useEffect(() => {
@@ -157,29 +156,6 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
           overflowWrap: 'break-word',
         }}
       >
-        {/* Render MessageReasoning for assistant messages */}
-        {message.role === 'assistant' &&
-          (isLoading ||
-            (reasoningElements && reasoningElements.length > 0)) && (
-            <MessageReasoning
-              content={reasoningElements || []}
-              isLoading={isLoading}
-              hasResponseStarted={processedParts.some((part) => {
-                if (isTextPart(part) && part.text.trim().length > 0) {
-                  return true;
-                }
-                if (
-                  isToolPart(part) &&
-                  isToolResultAvailable(part) &&
-                  !isReasoningTool(extractToolName(part))
-                ) {
-                  return true;
-                }
-                return false;
-              })}
-            />
-          )}
-
         <div
           className={cn(
             'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl',
@@ -198,10 +174,42 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             {/* Render attachments */}
             <MessageAttachments message={message} />
 
-            {/* Render message parts */}
-            {processedParts.map((part, index) => {
-              const key = `message-${message.id}-part-${index}`;
+            {/* Render initial thinking state if loading and no parts yet */}
+            {message.role === 'assistant' && isLoading && orderedParts.length === 0 && (
+              <MessageReasoning
+                content={[]}
+                isLoading={true}
+                hasResponseStarted={false}
+              />
+            )}
 
+            {/* Render message parts in order */}
+            {orderedParts.map((mergedPart, index) => {
+              const key = `message-${message.id}-merged-${index}`;
+
+              // Handle reasoning group
+              if (mergedPart.type === 'reasoning') {
+                const hasResponseStartedBefore = orderedParts.slice(0, index).some(p => {
+                  if (p.type === 'part') {
+                    if (isTextPart(p.part) && p.part.text.trim().length > 0) return true;
+                    if (isToolPart(p.part) && isToolResultAvailable(p.part) && !isReasoningTool(extractToolName(p.part))) return true;
+                  }
+                  return false;
+                });
+
+                return (
+                  <MessageReasoning
+                    key={key}
+                    content={mergedPart.items}
+                    isLoading={isLoading && index === orderedParts.length - 1}
+                    hasResponseStarted={hasResponseStartedBefore}
+                  />
+                );
+              }
+
+              // Handle normal message part
+              const part = mergedPart.part;
+              
               // Render text parts
               if (isTextPart(part) && part.text.trim().length > 0) {
                 const textPart = part as TextPart;
@@ -239,7 +247,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 const toolName = extractToolName(part);
                 const toolCallId = getToolCallId(part);
 
-                // Skip reasoning tools
+                // Skip reasoning tools as they are handled by reasoning type above
                 if (isReasoningTool(toolName)) return null;
 
                 const rawToolIndex = (
@@ -251,12 +259,17 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                     : undefined;
 
                 if (isToolResultAvailable(part)) {
+                  // Get all parts for ToolResult (need only the 'part' types)
+                  const allParts = orderedParts
+                    .filter(p => p.type === 'part')
+                    .map(p => (p as { type: 'part'; part: EnhancedMessagePart }).part);
+
                   return (
                     <ToolResult
                       key={key}
                       part={part}
                       messageId={message.id}
-                      allParts={processedParts}
+                      allParts={allParts}
                     />
                   );
                 } else {
