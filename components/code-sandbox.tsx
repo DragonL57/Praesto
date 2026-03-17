@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sandbox,
   SandboxContent,
@@ -41,10 +41,10 @@ export const CodeSandbox: React.FC<CodeSandboxProps> = ({
   filename = "code.js",
   language = "javascript",
 }) => {
-  const [activeTab, setActiveTab] = React.useState(error ? "output" : "code");
+  const [activeTab, setActiveTab] = useState(error ? "output" : "code");
 
   // Auto-switch to output tab when result is available or error occurs
-  React.useEffect(() => {
+  useEffect(() => {
     if (state === 'output-available' || state === 'output-error') {
       setActiveTab("output");
     }

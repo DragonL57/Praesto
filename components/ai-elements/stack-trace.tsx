@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 interface StackFrame {
   method: string;
   file: string;
-  line?: number;
-  column?: number;
+  line: number | undefined;
+  column: number | undefined;
   isInternal: boolean;
 }
 
@@ -36,13 +36,14 @@ const StackTrace = React.forwardRef<
         if (!match) return null;
 
         const file = match[2] || match[5] || "";
-        return {
+        const frame: StackFrame = {
           method: match[1] || "<anonymous>",
           file,
           line: match[3] ? parseInt(match[3], 10) : undefined,
           column: match[4] ? parseInt(match[4], 10) : undefined,
           isInternal: file.includes("node_modules") || file.startsWith("node:"),
         };
+        return frame;
       })
       .filter((f): f is StackFrame => f !== null);
 
