@@ -383,6 +383,7 @@ function PureMultimodalInput({
                 <SpeechToTextButton
                   recognitionRef={recognitionRef}
                   setInput={setInput}
+                  input={input}
                   status={status}
                 />
                 {activeStopButtonStatuses.includes(status) ? (
