@@ -124,15 +124,16 @@ export function MessageReasoning({
               <ChainOfThoughtStep
                 key={`code-${item.data.code.slice(0, 30)}-${index}`}
                 icon={CodeIcon}
-                label="Executing Code"
+                label={`Executing ${item.data.language === 'python' ? 'Python' : 'Node.js'} Code`}
                 status={item.data.state === 'output-available' ? 'complete' : 'active'}
               >
                 <CodeSandbox
                   state={item.data.state || 'loading'}
                   code={item.data.code}
+                  language={item.data.language || 'javascript'}
                   output={item.data.stdout}
                   error={item.data.stderr || (item.data.exitCode !== 0 && item.data.exitCode !== undefined ? `Exit code: ${item.data.exitCode}` : undefined)}
-                  filename="sandbox.js"
+                  filename={`sandbox.${item.data.language === 'python' ? 'py' : 'js'}`}
                 />
               </ChainOfThoughtStep>
             );

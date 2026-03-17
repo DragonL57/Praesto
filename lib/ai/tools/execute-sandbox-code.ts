@@ -3,41 +3,47 @@ import { Sandbox } from '@vercel/sandbox';
 /**
  * Vercel Sandbox Code Execution Tool
  * 
- * Safely executes untrusted Node.js code in an isolated microVM.
+ * Safely executes untrusted code in an isolated microVM.
  * Requires VERCEL_SANDBOX_TOKEN to be set in production.
  * In development, run 'vercel link' and 'vercel env pull' to authenticate.
  */
 export const executeSandboxCode = {
-  description: 'Execute Node.js code in a secure Vercel Sandbox environment. Use this for calculations, data processing, or running untrusted snippets. You can also specify npm packages to install.',
+  description: 'Execute Python or Node.js code in a secure Vercel Sandbox environment. Use this for calculations, data processing, or running untrusted snippets. You can specify the language and packages to install.',
   parameters: {
     type: 'object',
     properties: {
       code: {
         type: 'string',
-        description: 'The JavaScript/TypeScript code to execute.',
+        description: 'The code to execute.',
+      },
+      language: {
+        type: 'string',
+        enum: ['javascript', 'python'],
+        description: 'The programming language to use (javascript or python). Defaults to javascript.',
       },
       packages: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Optional list of npm packages to install (e.g., ["lodash", "axios"]).',
+        description: 'Optional list of packages to install (e.g., ["lodash", "axios"] for JS or ["requests", "pandas"] for Python).',
       },
     },
     required: ['code'],
   },
   execute: async (params?: Record<string, unknown>) => {
-    const { code, packages = [] } = (params || {}) as { 
+    const { code, language = 'javascript', packages = [] } = (params || {}) as { 
       code: string; 
+      language?: 'javascript' | 'python';
       packages?: string[] 
     };
 
     let sandbox: Sandbox | null = null;
+    const isPython = language === 'python';
 
     try {
-      console.log('[Tool: executeSandboxCode] Creating sandbox...');
+      console.log(`[Tool: executeSandboxCode] Creating sandbox for ${language}...`);
       
-      // Create an isolated VM (defaults to latest Node.js runtime)
       sandbox = await Sandbox.create({
-        runtime: 'node22',
+        runtime: isPython ? 'python3.13' : 'node22',
         timeout: 60_000, // 60s inactivity timeout
       });
 
@@ -47,7 +53,7 @@ export const executeSandboxCode = {
       if (packages && packages.length > 0) {
         console.log(`[Tool: executeSandboxCode] Installing packages: ${packages.join(', ')}`);
         const installResult = await sandbox.runCommand({
-          cmd: 'npm',
+          cmd: isPython ? 'pip' : 'npm',
           args: ['install', ...packages],
         });
         
@@ -62,11 +68,10 @@ export const executeSandboxCode = {
       }
 
       // 2. Write and Run code
-      // We use node -e for simple snippets or write to index.js for complex ones
       console.log(`[Tool: executeSandboxCode] Running code...`);
       const runResult = await sandbox.runCommand({
-        cmd: 'node',
-        args: ['-e', code],
+        cmd: isPython ? 'python' : 'node',
+        args: ['-c', code].map(arg => isPython && arg === '-c' ? '-c' : isPython ? arg : arg === '-c' ? '-e' : arg),
       });
 
       const stdout = await runResult.stdout();

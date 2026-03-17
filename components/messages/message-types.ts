@@ -46,6 +46,7 @@ export interface FetchedPageInfoData {
 
 export interface CodeExecutionData {
     code: string;
+    language?: 'javascript' | 'python';
     stdout?: string;
     stderr?: string;
     exitCode?: number;

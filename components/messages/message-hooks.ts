@@ -33,6 +33,7 @@ interface ReasoningElementsResult {
 
 interface SandboxToolArgs {
     code: string;
+    language?: 'javascript' | 'python';
     packages?: string[];
 }
 
@@ -164,6 +165,7 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                                 type: 'codeExecution',
                                 data: {
                                     code: args.code,
+                                    language: args.language,
                                     packages: args.packages,
                                     stdout: executionResult.stdout,
                                     stderr: executionResult.stderr,
@@ -188,6 +190,7 @@ export function useReasoningElements(message: Message): ReasoningElementsResult 
                         type: 'codeExecution',
                         data: {
                             code: args.code,
+                            language: args.language,
                             packages: args.packages,
                             state: info.state === 'input-streaming' ? 'input-streaming' : 'input-available',
                         },
