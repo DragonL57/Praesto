@@ -19,7 +19,7 @@ import type {
   PreviewMessageProps,
   EnhancedMessagePart,
 } from './message-types';
-import type { TextPart } from '@/lib/ai/types';
+import type { TextPart, ToolCallPart, ToolResultPart } from '@/lib/ai/types';
 
 // Import hooks
 import { useOrderedMessageParts } from './message-hooks';
