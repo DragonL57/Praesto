@@ -20,8 +20,6 @@ export const authConfig = {
       const isOnChat = nextUrl.pathname.startsWith('/chat');
       const isOnApi = nextUrl.pathname.startsWith('/api');
       const isOnAuth = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
-      const isRootPath = nextUrl.pathname === '/';
-      const isSharedChat = nextUrl.pathname.startsWith('/share/');
 
       // Determine the correct origin from headers to avoid issues with AUTH_URL in local dev
       const host = headers.get('host');

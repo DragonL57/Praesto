@@ -25,8 +25,13 @@ interface MessageUserActionsProps {
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
   append: (
-    message: { role: 'user' | 'assistant'; parts: MessagePart[] },
-    options?: ChatRequestOptions
+    message: {
+      role: 'user' | 'assistant';
+      parts: MessagePart[];
+      id?: string;
+      createdAt?: Date;
+    },
+    options?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
   shouldShowButtons: boolean;
   isMobile: boolean;
@@ -69,7 +74,7 @@ export const MessageUserActions: React.FC<MessageUserActionsProps> = ({
   };
 
   const handleRetry = async () => {
-    if (message.role === 'user' && _reload && setMessages) {
+    if (message.role === 'user') {
       setIsRetrying(true);
       try {
         // 1. Delete trailing messages from DB (this message and everything after)

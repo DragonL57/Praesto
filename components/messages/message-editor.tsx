@@ -15,15 +15,20 @@ export type MessageEditorProps = {
   setMessages: SetMessagesFunction;
   reload: ReloadFunction;
   append: (
-    message: { role: 'user' | 'assistant'; parts: MessagePart[] },
-    options?: ChatRequestOptions
+    message: {
+      role: 'user' | 'assistant';
+      parts: MessagePart[];
+      id?: string;
+      createdAt?: Date;
+    },
+    options?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
 };
 
 export function MessageEditor({
   message,
   setMode,
-  setMessages,
+  setMessages: _setMessages,
   reload: _reload,
   append,
 }: MessageEditorProps) {
