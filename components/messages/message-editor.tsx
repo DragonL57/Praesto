@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { Message, TextPart, ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
+import type { Message, TextPart, ReloadFunction, SetMessagesFunction, MessagePart, ChatRequestOptions } from '@/lib/ai/types';
+import { toast } from 'sonner';
 
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -13,13 +14,18 @@ export type MessageEditorProps = {
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
   setMessages: SetMessagesFunction;
   reload: ReloadFunction;
+  append: (
+    message: { role: 'user' | 'assistant'; parts: MessagePart[] },
+    options?: ChatRequestOptions
+  ) => Promise<string | null | undefined>;
 };
 
 export function MessageEditor({
   message,
   setMode,
   setMessages,
-  reload,
+  reload: _reload,
+  append,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -88,27 +94,33 @@ export function MessageEditor({
           onClick={async () => {
             setIsSubmitting(true);
 
-            await deleteTrailingMessages({
-              id: message.id,
-            });
+            try {
+              // 1. Delete trailing messages from DB
+              await deleteTrailingMessages({ id: message.id });
 
-            setMessages((messages) => {
-              const index = messages.findIndex((m) => m.id === message.id);
+              // 2. Update client-side messages state: truncate to everything BEFORE this message
+              // append will then add this message back with the NEW content
+              setMessages((prevMessages) => {
+                const messageIndex = prevMessages.findIndex((m) => m.id === message.id);
+                if (messageIndex !== -1) {
+                  return prevMessages.slice(0, messageIndex);
+                }
+                return prevMessages;
+              });
 
-              if (index !== -1) {
-                const updatedMessage: Message = {
-                  ...message,
-                  parts: [{ type: 'text', text: draftContent }],
-                };
+              setMode('view');
 
-                return [...messages.slice(0, index), updatedMessage];
-              }
-
-              return messages;
-            });
-
-            setMode('view');
-            reload();
+              // 3. Trigger a new generation by appending the updated message
+              await append({
+                role: 'user',
+                parts: [{ type: 'text', text: draftContent }],
+              });
+            } catch (error) {
+              console.error('Failed to submit edited message:', error);
+              toast.error('Failed to update message. Please try again.');
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
         >
           {isSubmitting ? 'Sending...' : 'Send'}

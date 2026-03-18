@@ -236,6 +236,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                         setMode={setMode}
                         setMessages={setMessages}
                         reload={reload}
+                        append={append}
                       />
                     </div>
                   );
