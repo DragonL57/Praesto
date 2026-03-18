@@ -64,6 +64,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     jwt({ token, user }) {
       // `user` is the DbUser from authorize(), only on initial sign-in
       if (user) {

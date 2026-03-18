@@ -2,7 +2,6 @@ import 'server-only';
 
 import { and, asc, desc, eq, gt, gte, lt, inArray, type SQL, sql } from 'drizzle-orm';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { randomBytes } from 'node:crypto';
 import { db, client } from './index';
 import {
   user,
@@ -84,7 +83,11 @@ export async function createUser(
 export async function createOAuthUser(email: string) {
   // Generate a secure random password for OAuth users
   // They won't use this password, but we need to store something in the password field
-  const randomPassword = randomBytes(32).toString('hex');
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  const randomPassword = Array.from(randomBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 
   try {
     // First check if the user already exists

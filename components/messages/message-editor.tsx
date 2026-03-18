@@ -98,20 +98,13 @@ export function MessageEditor({
               // 1. Delete trailing messages from DB
               await deleteTrailingMessages({ id: message.id });
 
-              // 2. Update client-side messages state: truncate to everything BEFORE this message
-              // append will then add this message back with the NEW content
-              setMessages((prevMessages) => {
-                const messageIndex = prevMessages.findIndex((m) => m.id === message.id);
-                if (messageIndex !== -1) {
-                  return prevMessages.slice(0, messageIndex);
-                }
-                return prevMessages;
-              });
-
               setMode('view');
 
-              // 3. Trigger a new generation by appending the updated message
+              // 2. Trigger a new generation by appending the updated message
+              // We pass the same ID so the hook knows to replace the old message 
+              // and truncate anything after it.
               await append({
+                id: message.id,
                 role: 'user',
                 parts: [{ type: 'text', text: draftContent }],
               });

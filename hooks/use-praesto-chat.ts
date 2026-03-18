@@ -26,6 +26,17 @@ export function usePraestoChat({
   onError,
 }: UsePraestoChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const messagesRef = useRef<Message[]>(initialMessages);
+
+  // Sync ref with state
+  const setMessagesAndRef = useCallback((update: Message[] | ((prev: Message[]) => Message[])) => {
+    setMessages((prev) => {
+      const next = typeof update === 'function' ? update(prev) : update;
+      messagesRef.current = next;
+      return next;
+    });
+  }, []);
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<ChatStatus>('ready');
@@ -72,17 +83,18 @@ export function usePraestoChat({
         createdAt: existingCreatedAt || new Date(),
       };
 
-      // 1. Update UI with user message immediately
-      // If it's an existing ID, we replace the last message, otherwise append
-      setMessages((prev) => {
-        const lastIdx = prev.findIndex(m => m.id === userMessageId);
-        if (lastIdx !== -1) {
-          const newMessages = [...prev];
-          newMessages[lastIdx] = userMessage;
-          return newMessages;
-        }
-        return [...prev, userMessage];
-      });
+      // 1. Compute the updated messages list
+      let newMessages: Message[] = [];
+      const existingIdx = messagesRef.current.findIndex(m => m.id === userMessageId);
+      if (existingIdx !== -1) {
+        // Replace and truncate
+        newMessages = [...messagesRef.current.slice(0, existingIdx), userMessage];
+      } else {
+        newMessages = [...messagesRef.current, userMessage];
+      }
+
+      // 2. Update UI with user message immediately
+      setMessagesAndRef(newMessages);
 
       setStatus('submitted');
       setIsLoading(true);
@@ -93,17 +105,8 @@ export function usePraestoChat({
 
       let result: string | null | undefined;
       try {
-        // ... (fetch logic remains same but sends updated messages)
-        const currentMessages = [...messages];
-        const existingIdx = currentMessages.findIndex(m => m.id === userMessageId);
-
-        let messagesToSend: Message[];
-        if (existingIdx !== -1) {
-          // Truncate everything after the target message
-          messagesToSend = [...currentMessages.slice(0, existingIdx), userMessage];
-        } else {
-          messagesToSend = [...currentMessages, userMessage];
-        }
+        // Use the freshly computed newMessages for the API call
+        const messagesToSend = [...newMessages];
 
         const mergedBody: Record<string, unknown> = {
           id,
@@ -141,7 +144,7 @@ export function usePraestoChat({
         setStatus('streaming');
 
         // Initialize the assistant message in the UI before streaming starts
-        setMessages((prev) => [
+        setMessagesAndRef((prev) => [
           ...prev,
           {
             id: assistantMessageId,
@@ -297,7 +300,7 @@ export function usePraestoChat({
               // CRITICAL: Update React state for EVERY line to ensure immediate UI feedback (streaming)
               // We use a fresh array and fresh object references in updateOrAdd helpers to trigger re-renders.
               const currentParts = [...assistantMessageParts];
-              setMessages((prev) => {
+              setMessagesAndRef((prev) => {
                 const newMessages = [...prev];
                 const lastIdx = newMessages.length - 1;
                 if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
@@ -330,7 +333,7 @@ export function usePraestoChat({
                 }
                 
                 const finalParts = [...assistantMessageParts];
-                setMessages((prev) => {
+                setMessagesAndRef((prev) => {
                   const newMessages = [...prev];
                   const lastIdx = newMessages.length - 1;
                   if (lastIdx >= 0 && newMessages[lastIdx].id === assistantMessageId) {
@@ -378,7 +381,7 @@ export function usePraestoChat({
       }
       return result;
     },
-    [id, messages, body, onFinish, onError]
+    [id, body, onFinish, onError, setMessagesAndRef]
   );
 
   /**
@@ -396,23 +399,21 @@ export function usePraestoChat({
    * Reload the last user message
    */
   const reload = useCallback(async () => {
-    const lastUserMessageIdx = [...messages].reverse().findIndex((m) => m.role === 'user');
+    const currentMessages = messagesRef.current;
+    const lastUserMessageIdx = [...currentMessages].reverse().findIndex((m) => m.role === 'user');
     if (lastUserMessageIdx === -1) return;
 
-    const actualIdx = messages.length - 1 - lastUserMessageIdx;
-    const lastUserMessage = messages[actualIdx];
+    const actualIdx = currentMessages.length - 1 - lastUserMessageIdx;
+    const lastUserMessage = currentMessages[actualIdx];
 
-    // Truncate the UI state to just before this message
-    // (append will handle replacing/updating the message itself)
-    setMessages((prev) => prev.slice(0, actualIdx));
-
+    // Truncate the UI state is now handled inside append when an id is provided.
     return await append({
       role: 'user',
       parts: lastUserMessage.parts,
       id: lastUserMessage.id,
       createdAt: lastUserMessage.createdAt,
     });
-  }, [messages, append]);
+  }, [append]);
 
   return {
     messages,

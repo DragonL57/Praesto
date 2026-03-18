@@ -1,6 +1,9 @@
 export const isProductionEnvironment = process.env.NODE_ENV === 'production';
 
-export const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://unitaskai.thelong.online';
+const isDev = process.env.NODE_ENV === 'development';
+export const baseUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (isDev ? 'http://localhost:3000' : 'https://unitaskai.thelong.online');
 
 export const isTestEnvironment = Boolean(
   process.env.PLAYWRIGHT_TEST_BASE_URL ||

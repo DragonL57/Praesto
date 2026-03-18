@@ -69,24 +69,16 @@ export const MessageUserActions: React.FC<MessageUserActionsProps> = ({
   };
 
   const handleRetry = async () => {
-    if (message.role === 'user' && append && setMessages) {
+    if (message.role === 'user' && _reload && setMessages) {
       setIsRetrying(true);
       try {
-        // 1. Delete trailing messages from DB
+        // 1. Delete trailing messages from DB (this message and everything after)
         await deleteTrailingMessages({ id: message.id });
 
-        // 2. Update client-side messages state: truncate to everything BEFORE this message
-        // append will then add this message back correctly
-        setMessages((prevMessages) => {
-          const messageIndex = prevMessages.findIndex((m) => m.id === message.id);
-          if (messageIndex !== -1) {
-            return prevMessages.slice(0, messageIndex);
-          }
-          return prevMessages;
-        });
-
-        // 3. Trigger a new generation by appending the same message again
+        // 2. Trigger a new generation by appending the same message again
+        // We pass the ID so the hook handles the local state truncation correctly.
         await append({
+          id: message.id,
           role: 'user',
           parts: message.parts,
         });
