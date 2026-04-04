@@ -111,7 +111,7 @@ export async function handleChatRequest({
     // 2.1 Handle Retry logic: if message exists, delete it and everything after it
     const [existingMessage] = await getMessageById({ id: userMessage.id });
     if (existingMessage) {
-      console.log(
+      console.error(
         `[ChatService] Retry detected for message ${userMessage.id}. Cleaning up trailing history.`,
       );
       await deleteMessagesByChatIdAfterTimestamp({

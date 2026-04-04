@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
+import { validateSession } from '@/lib/session-validator';
 // eslint-disable-next-line import/no-unresolved
 import { getSuggestionsByDocumentId } from '@/lib/db/queries';
 
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return new Response('Not Found', { status: 404 });
   }
 
-  const session = await auth();
+  const session = await validateSession();
 
   if (!session || !session.user) {
     return new Response('Unauthorized', { status: 401 });

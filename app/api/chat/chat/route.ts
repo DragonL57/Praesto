@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { auth } from '@/app/auth';
+import { validateSession } from '@/lib/session-validator';
 import {
   getChatById,
   updateChatTitleById,
@@ -19,14 +19,18 @@ export const maxDuration = 300;
  */
 export async function POST(request: Request) {
   try {
-    const { id, messages, userTimeContext }: {
+    const {
+      id,
+      messages,
+      userTimeContext,
+    }: {
       id: string;
       messages: Array<Message>;
       userTimeContext?: UserTimeContext;
     } = await request.json();
 
     // 1. Authenticate user
-    const session = await auth();
+    const session = await validateSession();
     const userId = session?.user?.id;
     if (!userId) {
       return new Response('Unauthorized', { status: 401 });
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'X-Accel-Buffering': 'no',
         'X-Content-Type-Options': 'nosniff',
       },
@@ -78,8 +82,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { id, title }: { id: string; title: string } = await request.json();
-    const session = await auth();
-    if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
+    const session = await validateSession();
+    if (!session?.user?.id)
+      return new Response('Unauthorized', { status: 401 });
 
     const chat = await getChatById({ id });
     if (!chat || chat.userId !== session.user.id) {
@@ -101,8 +106,9 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const session = await auth();
-    if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
+    const session = await validateSession();
+    if (!session?.user?.id)
+      return new Response('Unauthorized', { status: 401 });
 
     const userId = session.user.id;
 
@@ -114,7 +120,9 @@ export async function DELETE(request: Request) {
         startingAfter: null,
         endingBefore: null,
       });
-      await Promise.all(userChats.map((chat) => deleteChatById({ id: chat.id })));
+      await Promise.all(
+        userChats.map((chat) => deleteChatById({ id: chat.id })),
+      );
     } else {
       // Delete specific chat
       const chat = await getChatById({ id });

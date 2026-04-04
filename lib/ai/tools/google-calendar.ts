@@ -169,8 +169,8 @@ export const listCalendarEvents = {
         if (!dateStr) return dateStr;
         if (
           dateStr.endsWith('Z') ||
-          dateStr.includes('+') ||
-          dateStr.endsWith('z')
+          dateStr.endsWith('z') ||
+          /\d[+-]\d{2}:\d{2}$/.test(dateStr)
         )
           return dateStr;
         return `${dateStr}+07:00`;

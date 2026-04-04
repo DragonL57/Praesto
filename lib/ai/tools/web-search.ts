@@ -23,9 +23,6 @@ async function rateLimitedFetch(
     Math.max(now, nextAvailableTime) + MIN_REQUEST_INTERVAL_MS;
 
   if (waitTime > 0) {
-    console.log(
-      `[Rate Limit] Waiting ${waitTime}ms to avoid 429 (Brave Search Free plan limit)`,
-    );
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
@@ -251,13 +248,6 @@ export const webSearch = {
       };
     }
 
-    let logParams = `Brave Search: query='${query}', count=${count}, country=${validatedCountry}, lang=${search_lang}, safesearch=${safesearch}`;
-    if (freshness) logParams += `, freshness=${freshness}`;
-    if (offset !== undefined) logParams += `, offset=${offset}`;
-    if (result_filter) logParams += `, filter=${result_filter}`;
-    if (summary) logParams += `, summary=true`;
-    console.log(logParams);
-
     try {
       // Build query parameters
       const params = new URLSearchParams({
@@ -405,7 +395,6 @@ export const webSearch = {
 
       // Add web results
       if (data.web?.results) {
-        console.log(`Found ${data.web.results.length} web results`);
         const webResults = data.web.results.slice(0, count).map((result) => ({
           title: result.title || 'No title',
           href: result.url || '',
@@ -417,7 +406,6 @@ export const webSearch = {
 
       // Add news results if available
       if (data.news?.results && data.news.results.length > 0) {
-        console.log(`Found ${data.news.results.length} news results`);
         const newsHeader: SearchResult = {
           title: '📰 News Results',
           href: '',
@@ -435,7 +423,6 @@ export const webSearch = {
 
       // Add video results if available
       if (data.videos?.results && data.videos.results.length > 0) {
-        console.log(`Found ${data.videos.results.length} video results`);
         const videoHeader: SearchResult = {
           title: '🎥 Video Results',
           href: '',
@@ -453,9 +440,6 @@ export const webSearch = {
 
       // Add discussion/forum results if available
       if (data.discussions?.results && data.discussions.results.length > 0) {
-        console.log(
-          `Found ${data.discussions.results.length} discussion results`,
-        );
         const discussionHeader: SearchResult = {
           title: '💬 Discussions & Forums',
           href: '',
@@ -475,7 +459,6 @@ export const webSearch = {
 
       // Add FAQ results if available
       if (data.faq?.results && data.faq.results.length > 0) {
-        console.log(`Found ${data.faq.results.length} FAQ results`);
         const faqHeader: SearchResult = {
           title: '❓ Frequently Asked Questions',
           href: '',
@@ -490,10 +473,6 @@ export const webSearch = {
         }));
         allResults.push(...faqResults);
       }
-
-      console.log(
-        `Brave Search Complete: Returning ${allResults.length} total results (${resultCount} web results)`,
-      );
 
       const finalResults = {
         results: allResults,

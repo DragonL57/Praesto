@@ -1,13 +1,10 @@
 import type { NextRequest } from 'next/server';
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
-// eslint-disable-next-line import/no-unresolved
+import { validateSession } from '@/lib/session-validator';
 import { saveChat, saveMessages } from '@/lib/db/queries';
-// eslint-disable-next-line import/no-unresolved
 import { generateUUID } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
+  const session = await validateSession();
   if (!session || !session.user || !session.user.id) {
     return new Response('Unauthorized', { status: 401 });
   }

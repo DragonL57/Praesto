@@ -3,7 +3,7 @@
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { revalidatePath } from 'next/cache';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import postgres from 'postgres';
 
 import { user, chat, message, document, suggestion } from '@/lib/db/schema';
@@ -93,7 +93,10 @@ export async function changeUserPassword(formData: FormData) {
     const salt = genSaltSync(10);
     const hash = hashSync(newPassword, salt);
 
-    await db.update(user).set({ password: hash }).where(eq(user.id, userId));
+    await db
+      .update(user)
+      .set({ password: hash, sessionVersion: sql`"sessionVersion" + 1` })
+      .where(eq(user.id, userId));
 
     return { success: true, message: 'Password changed successfully' };
   } catch (error) {
