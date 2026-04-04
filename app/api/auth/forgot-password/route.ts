@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       { success: true, message: 'Password reset email sent' },
       { status: 200 },
     );
-  } catch {
+  } catch (error) {
+    console.error('[API /api/auth/forgot-password] Unexpected error:', error);
     return NextResponse.json(
       {
         success: false,

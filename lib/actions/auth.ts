@@ -213,7 +213,8 @@ export const register = async (
       message:
         'Account created! Please check your email to verify your account.',
     };
-  } catch {
+  } catch (error) {
+    console.error('[ServerAction register] Unexpected error:', error);
     return {
       status: 'failed',
       message: 'Failed to create account. Please try again later.',

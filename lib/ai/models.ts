@@ -24,9 +24,10 @@ export const chatModels: ChatModel[] = [
     // Grok-4.1 doesn't require extra params for reasoning via Poe's OpenAI-compatible API
   },
   {
-    id: 'minimax-m2.5',
-    name: 'Minimax M2.5',
-    description: 'Minimax M2.5 model via Poe API',
+    id: 'minimax-m2.7',
+    name: 'Minimax M2.7',
+    description:
+      'Versatile open-source model with high-EQ interaction and strong engineering capabilities',
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
@@ -35,10 +36,12 @@ export const chatModels: ChatModel[] = [
   {
     id: 'gemma-4-31b',
     name: 'Gemma 4 31B',
-    description: 'Gemma 4 31B model via Poe API',
+    description:
+      "Google's most capable open model with frontier-class reasoning",
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
+    extraParams: { enable_thinking: true },
   },
 ];
 
