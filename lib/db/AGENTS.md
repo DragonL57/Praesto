@@ -2,10 +2,17 @@
 
 Drizzle ORM schema, queries, and migrations for PostgreSQL.
 
-## Files
-- schema.ts: Entity definitions
-- {entity}.queries.ts: CRUD operations
-- migrations/: Auto-generated migrations
+## Purpose
+Defines database schema, provides type-safe query functions, and manages migrations.
+
+## File Structure
+```
+lib/db/
+├── schema.ts              # Entity definitions (users, chats, messages, accounts, etc.)
+├── index.ts               # Database connection export
+├── *.queries.ts           # CRUD operations by entity
+└── migrations/            # Auto-generated Drizzle migrations
+```
 
 ## Conventions
 ```typescript
@@ -36,3 +43,4 @@ pnpm db:studio    # Open Drizzle Studio
 - ❌ Hardcode queries (use query builder)
 - ❌ Skip types on results
 - ❌ Manual migrations
+- ❌ Call DB functions in Edge runtime (postgres driver is Node.js only)

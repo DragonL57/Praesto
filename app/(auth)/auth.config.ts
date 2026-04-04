@@ -19,18 +19,34 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnChat = nextUrl.pathname.startsWith('/chat');
       const isOnApi = nextUrl.pathname.startsWith('/api');
-      const isOnAuth = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
+      const isOnAuth =
+        nextUrl.pathname.startsWith('/login') ||
+        nextUrl.pathname.startsWith('/register');
 
       // Determine the correct origin from headers to avoid issues with AUTH_URL in local dev
       const host = headers.get('host');
-      const protocol = headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+      const protocol =
+        headers.get('x-forwarded-proto') ||
+        (host?.includes('localhost') ? 'http' : 'https');
       const origin = host ? `${protocol}://${host}` : nextUrl.origin;
 
       // 1. Allow authenticated users to access chat and api
       if (isOnChat || isOnApi) {
         if (isLoggedIn) return true;
+        // API routes should return 401, not redirect
+        if (isOnApi) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
         // Construct redirect URL using the determined origin to avoid hardcoded production URLs from AUTH_URL
-        return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`, origin));
+        return Response.redirect(
+          new URL(
+            `/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`,
+            origin,
+          ),
+        );
       }
 
       // 2. Redirect logged-in users away from auth pages to chat

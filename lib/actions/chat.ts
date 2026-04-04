@@ -2,6 +2,7 @@
 
 import type { Message } from '@/lib/ai/types';
 import { openai } from '@/lib/ai/providers';
+import { titlePrompt } from '@/lib/ai/prompts';
 import {
   deleteMessagesByChatIdAfterTimestamp,
   deleteMessageById,
@@ -25,17 +26,7 @@ export async function generateTitleFromUserMessage({
     messages: [
       {
         role: 'system',
-        content: `
-    - You are a conversation title generator.
-    - Your goal is to generate a short, concise title (MAX 4 WORDS) for a conversation based on the user's first message.
-    - IF the user asks for news, headlines, or updates on current events, you MUST use the exact title: "Latest News Headlines".
-    - OTHERWISE, summarize the user's message in 4 words or less.
-    - Do not use quotes, colons, or any other punctuation.
-    - Do not output the whole message; only the short title.
-    
-    Example for news:
-    User: "Show me the latest news headlines"
-    Title: "Latest News Headlines"`,
+        content: titlePrompt,
       },
       {
         role: 'user',

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
+import { validateSession } from '@/lib/session-validator';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
 // Define the maximum file size (e.g., 25MB)
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
       request,
       onBeforeGenerateToken: async (_pathname /*, clientPayload */) => {
         // Check authentication
-        const session = await auth(); // Using request object might be needed if auth() depends on it
+        const session = await validateSession();
         if (!session || !session.user) {
           throw new Error('Unauthorized: User not authenticated.');
         }

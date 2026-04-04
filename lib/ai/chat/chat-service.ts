@@ -1,16 +1,23 @@
 import 'server-only';
 import { generateUUID } from '@/lib/utils';
-import { openai, getChatCompletionParams, getAvailableTools } from '@/lib/ai/providers';
+import {
+  openai,
+  getChatCompletionParams,
+  getAvailableTools,
+} from '@/lib/ai/providers';
 import {
   getChatById,
   saveChat,
   saveMessages,
   updateChatTimestamp,
   getMessageById,
-  deleteMessagesByChatIdAfterTimestamp
+  deleteMessagesByChatIdAfterTimestamp,
 } from '@/lib/db/queries';
 import { generateTitleFromUserMessage } from '@/lib/actions/chat';
-import { processMessageAttachments, updateMessageWithProcessedText } from './attachments';
+import {
+  processMessageAttachments,
+  updateMessageWithProcessedText,
+} from './attachments';
 import { StreamProtocol } from './stream-protocol';
 import type { StreamPartType } from './stream-protocol';
 import type { Message, MessagePart } from '@/lib/ai/types';
@@ -52,13 +59,14 @@ export async function handleChatRequest({
   const send = (type: StreamPartType | string, data: unknown) => {
     // Check if controller is still active
     if (controller.desiredSize === null) return;
-    
+
     try {
       const formatted = StreamProtocol.format(type as StreamPartType, data);
       controller.enqueue(encoder.encode(formatted));
     } catch (e) {
       // If it fails with "already closed", we can just ignore it or log it minimally
-      const isClosedError = e instanceof TypeError && e.message.includes('already closed');
+      const isClosedError =
+        e instanceof TypeError && e.message.includes('already closed');
       if (!isClosedError) {
         console.error('[ChatService] Error enqueuing stream part:', e);
       }
@@ -81,12 +89,18 @@ export async function handleChatRequest({
       .join('\n');
 
     const combinedText = await processMessageAttachments(userMessage);
-    updateMessageWithProcessedText(userMessage, combinedText, originalTypedText);
+    updateMessageWithProcessedText(
+      userMessage,
+      combinedText,
+      originalTypedText,
+    );
 
     // 2. Manage Chat initialization and title generation
     const chat = await getChatById({ id });
     if (!chat) {
-      const title = await generateTitleFromUserMessage({ message: userMessage });
+      const title = await generateTitleFromUserMessage({
+        message: userMessage,
+      });
       await saveChat({ id, userId, title });
       // Send title metadata to frontend immediately so UI can update
       send('metadata', { title });
@@ -97,7 +111,9 @@ export async function handleChatRequest({
     // 2.1 Handle Retry logic: if message exists, delete it and everything after it
     const [existingMessage] = await getMessageById({ id: userMessage.id });
     if (existingMessage) {
-      console.log(`[ChatService] Retry detected for message ${userMessage.id}. Cleaning up trailing history.`);
+      console.error(
+        `[ChatService] Retry detected for message ${userMessage.id}. Cleaning up trailing history.`,
+      );
       await deleteMessagesByChatIdAfterTimestamp({
         chatId: existingMessage.chatId,
         timestamp: existingMessage.createdAt,
@@ -106,14 +122,16 @@ export async function handleChatRequest({
 
     // 3. Save User Message to Database
     await saveMessages({
-      messages: [{
-        chatId: id,
-        id: userMessage.id,
-        role: 'user',
-        parts: originalParts,
-        attachments: [],
-        createdAt: new Date(),
-      }],
+      messages: [
+        {
+          chatId: id,
+          id: userMessage.id,
+          role: 'user',
+          parts: originalParts,
+          attachments: [],
+          createdAt: new Date(),
+        },
+      ],
     });
     await updateChatTimestamp({ id });
 
@@ -125,7 +143,9 @@ export async function handleChatRequest({
       if (part.type === 'text' || part.type === 'reasoning') {
         const lastPart = uiParts[uiParts.length - 1];
         if (lastPart && lastPart.type === part.type) {
-          (lastPart as { text: string }).text += (part as { text: string }).text;
+          (lastPart as { text: string }).text += (
+            part as { text: string }
+          ).text;
           return;
         }
       }
@@ -135,7 +155,10 @@ export async function handleChatRequest({
     type Tool = {
       description?: string;
       parameters?: Record<string, unknown> | unknown;
-      execute: (args?: Record<string, unknown>, options?: { abortSignal?: AbortSignal }) => Promise<unknown>;
+      execute: (
+        args?: Record<string, unknown>,
+        options?: { abortSignal?: AbortSignal },
+      ) => Promise<unknown>;
     };
 
     const { tools: availableTools } = await getAvailableTools();
@@ -148,7 +171,17 @@ export async function handleChatRequest({
       function: { name: string; arguments: string };
     };
 
-    const runCompletion = async (currentMsgs: Record<string, unknown>[], retryCount = 0): Promise<void> => {
+    // Extract user message text for dynamic context assembly
+    const latestUserText = messages
+      .filter((m) => m.role === 'user')
+      .flatMap((m) => m.parts.filter((p) => p.type === 'text'))
+      .map((p) => (p as { text: string }).text)
+      .join('\n');
+
+    const runCompletion = async (
+      currentMsgs: Record<string, unknown>[],
+      retryCount = 0,
+    ): Promise<void> => {
       let stepContent = '';
       let stepReasoning = '';
       const stepToolCalls: Array<ToolCallEntry | null> = [];
@@ -157,22 +190,36 @@ export async function handleChatRequest({
         // If signal is already aborted, stop immediately
         if (abortSignal?.aborted) return;
 
-        const params = await getChatCompletionParams(modelId, currentMsgs, userTimeContext);
+        const params = await getChatCompletionParams(
+          modelId,
+          currentMsgs,
+          userTimeContext,
+          latestUserText,
+        );
 
         // Execute completion with Poe API (OpenAI-compatible)
         type CreateFn = (body: unknown) => Promise<AsyncIterable<unknown>>;
-        const createFn = (openai.chat.completions.create as unknown as CreateFn).bind(openai.chat.completions) as CreateFn;
-        
-        // Pass the abort signal to the provider
-        const responseStream = await createFn({ ...params, signal: abortSignal });
+        const createFn = (
+          openai.chat.completions.create as unknown as CreateFn
+        ).bind(openai.chat.completions) as CreateFn;
 
-        for await (const chunk of (responseStream as AsyncIterable<unknown>)) {
+        // Pass the abort signal to the provider
+        const responseStream = await createFn({
+          ...params,
+          signal: abortSignal,
+        });
+
+        for await (const chunk of responseStream as AsyncIterable<unknown>) {
           // Check if we should stop
           if (abortSignal?.aborted) break;
 
           const chunkRec = chunk as Record<string, unknown>;
-          const choices = chunkRec.choices as Array<Record<string, unknown>> | undefined;
-          const delta = choices?.[0]?.delta as Record<string, unknown> | undefined;
+          const choices = chunkRec.choices as
+            | Array<Record<string, unknown>>
+            | undefined;
+          const delta = choices?.[0]?.delta as
+            | Record<string, unknown>
+            | undefined;
           if (!delta) continue;
 
           // Handle text content
@@ -185,7 +232,10 @@ export async function handleChatRequest({
           }
 
           // Handle reasoning/thinking
-          const reasoning = (typeof deltaRec.reasoning_content !== 'undefined') ? deltaRec.reasoning_content : deltaRec.thinking;
+          const reasoning =
+            typeof deltaRec.reasoning_content !== 'undefined'
+              ? deltaRec.reasoning_content
+              : deltaRec.thinking;
           if (typeof reasoning === 'string' && reasoning.length > 0) {
             stepReasoning += reasoning;
             send('reasoning', reasoning);
@@ -194,13 +244,17 @@ export async function handleChatRequest({
 
           // Accumulate tool calls
           if (deltaRec.tool_calls) {
-            for (const tcDeltaRaw of (deltaRec.tool_calls as Array<Record<string, unknown>>) || []) {
+            for (const tcDeltaRaw of (deltaRec.tool_calls as Array<
+              Record<string, unknown>
+            >) || []) {
               const tcDelta = tcDeltaRaw as Record<string, unknown>;
               const rawIndex = tcDelta.index as unknown;
               const idx =
                 typeof rawIndex === 'number'
                   ? rawIndex
-                  : typeof rawIndex === 'string' && rawIndex && !Number.isNaN(Number(rawIndex))
+                  : typeof rawIndex === 'string' &&
+                      rawIndex &&
+                      !Number.isNaN(Number(rawIndex))
                     ? Number(rawIndex)
                     : undefined;
               if (idx === undefined) continue;
@@ -209,7 +263,7 @@ export async function handleChatRequest({
                 stepToolCalls[idx] = {
                   id: tcDelta.id as string | undefined,
                   type: 'function',
-                  function: { name: '', arguments: '' }
+                  function: { name: '', arguments: '' },
                 };
               }
 
@@ -219,14 +273,15 @@ export async function handleChatRequest({
               if (tcDelta.function && typeof tcDelta.function === 'object') {
                 const fn = tcDelta.function as Record<string, unknown>;
                 if (typeof fn.name === 'string') tc.function.name += fn.name;
-                if (typeof fn.arguments === 'string') tc.function.arguments += fn.arguments;
+                if (typeof fn.arguments === 'string')
+                  tc.function.arguments += fn.arguments;
 
                 // Send streaming update to client for immediate UI feedback
                 send('tool-call-streaming', {
                   index: idx,
                   toolCallId: tc.id,
                   toolName: tc.function.name,
-                  arguments: tc.function.arguments
+                  arguments: tc.function.arguments,
                 });
               }
             }
@@ -237,15 +292,20 @@ export async function handleChatRequest({
         if (abortSignal?.aborted) return;
 
         // Process accumulated tool calls
-        const filteredToolCalls = stepToolCalls.filter(Boolean) as ToolCallEntry[];
+        const filteredToolCalls = stepToolCalls.filter(
+          Boolean,
+        ) as ToolCallEntry[];
         if (filteredToolCalls.length > 0) {
           // Build history for the next step
-          const toolMessages = [...currentMsgs, {
-            role: 'assistant',
-            content: stepContent || null,
-            reasoning_content: stepReasoning || undefined,
-            tool_calls: filteredToolCalls
-          }];
+          const toolMessages = [
+            ...currentMsgs,
+            {
+              role: 'assistant',
+              content: stepContent || null,
+              reasoning_content: stepReasoning || undefined,
+              tool_calls: filteredToolCalls,
+            },
+          ];
 
           for (const tc of filteredToolCalls) {
             if (abortSignal?.aborted) break;
@@ -256,7 +316,10 @@ export async function handleChatRequest({
             try {
               toolArgs = JSON.parse(toolArgsString);
             } catch {
-              console.error('[ChatService] Failed to parse tool arguments:', toolArgsString);
+              console.error(
+                '[ChatService] Failed to parse tool arguments:',
+                toolArgsString,
+              );
             }
 
             // Add to UI tracking
@@ -266,7 +329,7 @@ export async function handleChatRequest({
               toolCallId: tc.id,
               toolName,
               args: toolArgs,
-              state: 'input-available'
+              state: 'input-available',
             } as MessagePart);
 
             const tool = toolsRegistry[toolName];
@@ -275,9 +338,12 @@ export async function handleChatRequest({
                 // Pass abortSignal to tools so they can cancel long operations
                 const result = await tool.execute(toolArgs, { abortSignal });
                 send('tool-result', { toolCallId: tc.id, toolName, result });
-                
+
                 const resultObj = result as Record<string, unknown> | null;
-                const isError = (resultObj && typeof resultObj === 'object' && ('error' in resultObj || resultObj.success === false));
+                const isError =
+                  resultObj &&
+                  typeof resultObj === 'object' &&
+                  ('error' in resultObj || resultObj.success === false);
 
                 addPartToUI({
                   type: 'tool-result',
@@ -285,20 +351,36 @@ export async function handleChatRequest({
                   toolName,
                   result,
                   args: toolArgs,
-                  state: isError ? 'output-error' : 'output-available'
+                  state: isError ? 'output-error' : 'output-available',
                 } as MessagePart);
 
                 toolMessages.push({
                   role: 'tool',
                   tool_call_id: tc.id,
-                  content: typeof result === 'string' ? result : JSON.stringify(result),
+                  content:
+                    typeof result === 'string'
+                      ? result
+                      : JSON.stringify(result),
                 });
               } catch (toolError: unknown) {
-                const errorMessage = toolError instanceof Error ? toolError.message : String(toolError);
-                console.error(`[ChatService] Error executing tool ${toolName}:`, toolError);
+                const errorMessage =
+                  toolError instanceof Error
+                    ? toolError.message
+                    : String(toolError);
+                console.error(
+                  `[ChatService] Error executing tool ${toolName}:`,
+                  toolError,
+                );
 
-                const errorResult = { error: 'Failed to execute tool', details: errorMessage };
-                send('tool-result', { toolCallId: tc.id, toolName, result: errorResult });
+                const errorResult = {
+                  error: 'Failed to execute tool',
+                  details: errorMessage,
+                };
+                send('tool-result', {
+                  toolCallId: tc.id,
+                  toolName,
+                  result: errorResult,
+                });
 
                 addPartToUI({
                   type: 'tool-result',
@@ -306,7 +388,7 @@ export async function handleChatRequest({
                   toolName,
                   result: errorResult,
                   args: toolArgs,
-                  state: 'output-error'
+                  state: 'output-error',
                 } as MessagePart);
 
                 toolMessages.push({
@@ -324,15 +406,23 @@ export async function handleChatRequest({
       } catch (error: unknown) {
         if (abortSignal?.aborted) return;
 
-        const err = error as unknown as Record<string, unknown> | Error | undefined;
+        const err = error as unknown as
+          | Record<string, unknown>
+          | Error
+          | undefined;
         console.error(`[Completion Error] (Attempt ${retryCount + 1}):`, err);
 
         // Robust retry for upstream errors
         const errRec = err as Record<string, unknown> | undefined;
-        const isRetryable = !!(errRec && (String(errRec.type) === 'internal_error' || Number(errRec.status) === 500 || Number(errRec.status) === 429));
+        const isRetryable = !!(
+          errRec &&
+          (String(errRec.type) === 'internal_error' ||
+            Number(errRec.status) === 500 ||
+            Number(errRec.status) === 429)
+        );
         if (retryCount < 2 && isRetryable) {
           const delay = Math.pow(2, retryCount) * 1000;
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
 
           // Reset step progress for this attempt
           return runCompletion(currentMsgs, retryCount + 1);
@@ -349,21 +439,28 @@ export async function handleChatRequest({
 
     // 5. Save Assistant Message with all parts in correct chronological order
     await saveMessages({
-      messages: [{
-        id: assistantId,
-        chatId: id,
-        role: 'assistant',
-        parts: uiParts,
-        attachments: [],
-        createdAt: new Date(),
-      }],
+      messages: [
+        {
+          id: assistantId,
+          chatId: id,
+          role: 'assistant',
+          parts: uiParts,
+          attachments: [],
+          createdAt: new Date(),
+        },
+      ],
     });
     await updateChatTimestamp({ id });
-
   } catch (error: unknown) {
     const err = error as unknown as Record<string, unknown> | Error | undefined;
     console.error('[ChatService Final Catch]', err);
-    const message = err instanceof Error ? err.message : String((err as Record<string, unknown>)?.message ?? 'An error occurred during completion');
+    const message =
+      err instanceof Error
+        ? err.message
+        : String(
+            (err as Record<string, unknown>)?.message ??
+              'An error occurred during completion',
+          );
     send('error', message);
   } finally {
     try {
@@ -372,7 +469,8 @@ export async function handleChatRequest({
       }
     } catch (e) {
       // Ignore "already closed" errors
-      const isClosedError = e instanceof TypeError && e.message.includes('already closed');
+      const isClosedError =
+        e instanceof TypeError && e.message.includes('already closed');
       if (!isClosedError) {
         console.error('[ChatService] Error closing stream controller:', e);
       }
@@ -382,19 +480,21 @@ export async function handleChatRequest({
 
 /**
  * Helper to convert UI messages to the format expected by OpenAI/Poe API.
- * 
+ *
  * IMPORTANT FOR DEBUGGING:
- * Many OpenAI-compatible providers (including Poe's proxy) are extremely strict 
+ * Many OpenAI-compatible providers (including Poe's proxy) are extremely strict
  * about the message sequence when tools are used. They expect:
  * 1. Assistant message with 'tool_calls' (and content usually empty '')
  * 2. Tool message with 'tool_call_id' and 'result'
  * 3. Assistant message with the final response.
- * 
- * If these are bundled into a single message (common in UI state), the API 
- * will often return a generic 'internal_error'. This function "unrolls" 
+ *
+ * If these are bundled into a single message (common in UI state), the API
+ * will often return a generic 'internal_error'. This function "unrolls"
  * bundled messages into the correct sequence.
  */
-export function convertToOpenAIMessages(messages: Message[]): Record<string, unknown>[] {
+export function convertToOpenAIMessages(
+  messages: Message[],
+): Record<string, unknown>[] {
   const result: Record<string, unknown>[] = [];
 
   for (const m of messages) {
@@ -411,7 +511,11 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
         }
 
         if (part.type === 'file') {
-          const f = part as { url: string; contentType?: string; filename?: string };
+          const f = part as {
+            url: string;
+            contentType?: string;
+            filename?: string;
+          };
           const isImage =
             f.contentType?.startsWith('image/') ||
             f.filename?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
@@ -452,11 +556,11 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
       } else if (parts.length > 0) {
         result.push({ role: m.role, content: parts });
       } else {
-        const fallback = (m as unknown as Record<string, unknown>).content || '';
+        const fallback =
+          (m as unknown as Record<string, unknown>).content || '';
         result.push({ role: m.role, content: String(fallback) });
       }
-    }
-    else if (m.role === 'assistant') {
+    } else if (m.role === 'assistant') {
       let currentText = '';
       let currentToolCalls: Array<Record<string, unknown>> = [];
 
@@ -465,14 +569,15 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
           result.push({
             role: 'assistant',
             content: currentText || '',
-            tool_calls: currentToolCalls.length > 0 ? currentToolCalls : undefined,
+            tool_calls:
+              currentToolCalls.length > 0 ? currentToolCalls : undefined,
           });
           currentText = '';
           currentToolCalls = [];
         }
       };
 
-      for (const part of (m.parts || [])) {
+      for (const part of m.parts || []) {
         if (part.type === 'text') {
           currentText += (part as { text: string }).text;
         } else if (part.type === 'tool-call') {
@@ -482,7 +587,10 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
             type: 'function',
             function: {
               name: tc.toolName,
-              arguments: typeof tc.args === 'string' ? tc.args : JSON.stringify(tc.args || {}),
+              arguments:
+                typeof tc.args === 'string'
+                  ? tc.args
+                  : JSON.stringify(tc.args || {}),
             },
           });
         } else if (part.type === 'tool-result') {
@@ -494,27 +602,28 @@ export function convertToOpenAIMessages(messages: Message[]): Record<string, unk
           result.push({
             role: 'tool',
             tool_call_id: tr.toolCallId,
-            content: typeof tr.result === 'string'
-              ? (tr.result as string)
-              : JSON.stringify(tr.result ?? {}),
+            content:
+              typeof tr.result === 'string'
+                ? (tr.result as string)
+                : JSON.stringify(tr.result ?? {}),
           });
         }
       }
 
       // Final flush for any remaining content
       flushTurn();
-    }
-    else if (m.role === 'tool') {
+    } else if (m.role === 'tool') {
       // Handle any standalone tool messages if they exist
-      const toolResultPart = m.parts.find(p => p.type === 'tool-result');
+      const toolResultPart = m.parts.find((p) => p.type === 'tool-result');
       if (toolResultPart && 'toolCallId' in toolResultPart) {
         const tr = toolResultPart as Record<string, unknown>;
         result.push({
           role: 'tool',
           tool_call_id: tr.toolCallId,
-          content: typeof tr.result === 'string'
-            ? (tr.result as string)
-            : JSON.stringify(tr.result ?? {}),
+          content:
+            typeof tr.result === 'string'
+              ? (tr.result as string)
+              : JSON.stringify(tr.result ?? {}),
         });
       }
     }

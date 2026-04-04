@@ -2,6 +2,76 @@ import { google } from 'googleapis';
 import type { calendar_v3 } from 'googleapis';
 
 /**
+ * Parse a JSON string from an .env variable that may have mixed whitespace:
+ * - Literal \n (backslash-n) for structural whitespace outside strings
+ * - Actual newlines inside string values
+ * Normalizes to valid JSON that JSON.parse can handle.
+ */
+function parseEnvJson(str: string): string {
+  let result = '';
+  let inString = false;
+  let i = 0;
+
+  while (i < str.length) {
+    const char = str[i];
+
+    if (inString) {
+      if (char === '\\') {
+        const next = str[i + 1];
+        if (next === 'n' || next === 't' || next === 'r' || next === '\\') {
+          result += char + next;
+          i += 2;
+          continue;
+        }
+        if (next === '"') {
+          result += '\\"';
+          i += 2;
+          continue;
+        }
+        result += char;
+        i++;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = false;
+        result += char;
+        i++;
+        continue;
+      }
+
+      if (char.charCodeAt(0) === 10 || char.charCodeAt(0) === 13) {
+        result += '\\n';
+        i++;
+        continue;
+      }
+
+      result += char;
+      i++;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      result += char;
+      i++;
+      continue;
+    }
+
+    if (char === '\\' && str[i + 1] === 'n') {
+      result += '\n';
+      i += 2;
+      continue;
+    }
+
+    result += char;
+    i++;
+  }
+
+  return result;
+}
+
+/**
  * Google Calendar API Client
  *
  * This module provides authentication and access to the Google Calendar API.
@@ -68,7 +138,12 @@ function getServiceAccountAuth() {
     }
 
     // Parse the service account key
-    const serviceAccountKey = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY);
+    // .env values may have mixed whitespace formats:
+    // - Literal \n (backslash-n) for structural whitespace outside strings
+    // - Actual newlines inside string values like private_key
+    // We need to normalize both to valid JSON
+    const cleanedKey = parseEnvJson(GOOGLE_SERVICE_ACCOUNT_KEY);
+    const serviceAccountKey = JSON.parse(cleanedKey);
 
     const auth = new google.auth.GoogleAuth({
       credentials: serviceAccountKey,

@@ -3,7 +3,7 @@
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { revalidatePath } from 'next/cache';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import postgres from 'postgres';
 
 import { user, chat, message, document, suggestion } from '@/lib/db/schema';

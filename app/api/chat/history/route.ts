@@ -1,8 +1,6 @@
 import { headers } from 'next/headers';
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
+import { validateSession } from '@/lib/session-validator';
 import type { NextRequest } from 'next/server';
-// eslint-disable-next-line import/no-unresolved
 import { getChatsByUserId } from '@/lib/db/queries';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +20,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const session = await auth();
+  const session = await validateSession();
 
   if (!session?.user?.id) {
     return Response.json('Unauthorized!', { status: 401 });

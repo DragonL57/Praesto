@@ -1,6 +1,4 @@
-// eslint-disable-next-line import/no-unresolved
-import { auth } from '@/app/auth';
-// eslint-disable-next-line import/no-unresolved
+import { validateSession } from '@/lib/session-validator';
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
@@ -15,7 +13,7 @@ export async function GET(request: Request) {
     return new Response('Missing id', { status: 400 });
   }
 
-  const session = await auth();
+  const session = await validateSession();
 
   if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
@@ -44,7 +42,7 @@ export async function POST(request: Request) {
     return new Response('Missing id', { status: 400 });
   }
 
-  const session = await auth();
+  const session = await validateSession();
 
   if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
@@ -90,7 +88,7 @@ export async function DELETE(request: Request) {
     return new Response('Missing timestamp', { status: 400 });
   }
 
-  const session = await auth();
+  const session = await validateSession();
 
   if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
