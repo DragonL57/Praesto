@@ -60,11 +60,6 @@ export async function rateLimitEdge(
   const cookieName = `rl_${limitKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
   const cookieData = request.cookies.get(cookieName)?.value;
 
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) {
-    throw new Error('NEXTAUTH_SECRET is required for rate limiting');
-  }
-
   let counter = 0;
   let isValid = false;
 
@@ -73,7 +68,7 @@ export async function rateLimitEdge(
       const [storedWindow, storedCount, signature] = cookieData.split('|');
       const expectedSig = await createHmacSignature(
         `${storedWindow}:${storedCount}`,
-        secret,
+        process.env.NEXTAUTH_SECRET || 'fallback-secret',
       );
 
       if (
