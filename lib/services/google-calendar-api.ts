@@ -37,9 +37,6 @@ const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN || '';
 // Service account credentials (alternative to OAuth)
 const GOOGLE_SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '';
 
-// Cache for the authenticated client
-let cachedCalendarClient: calendar_v3.Calendar | null = null;
-
 /**
  * Initialize OAuth2 client with credentials
  */
@@ -92,17 +89,11 @@ function getServiceAccountAuth() {
  * It supports both OAuth2 and service account authentication.
  */
 export async function getGoogleCalendarClient(): Promise<calendar_v3.Calendar> {
-  // Return cached client if available
-  if (cachedCalendarClient) {
-    return cachedCalendarClient;
-  }
-
   try {
     let authClient:
       | ReturnType<typeof getServiceAccountAuth>
       | ReturnType<typeof getOAuth2Client>;
 
-    // Prefer service account if available
     if (GOOGLE_SERVICE_ACCOUNT_KEY) {
       authClient = getServiceAccountAuth();
     } else if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
@@ -116,14 +107,11 @@ export async function getGoogleCalendarClient(): Promise<calendar_v3.Calendar> {
       );
     }
 
-    // Create calendar client
     const options = {
       version: 'v3' as const,
       auth: authClient,
     };
-    cachedCalendarClient = google.calendar(options);
-
-    return cachedCalendarClient;
+    return google.calendar(options);
   } catch (error) {
     console.error('Failed to initialize Google Calendar client:', error);
     throw error;
@@ -198,7 +186,6 @@ export async function revokeToken(token: string) {
 
   try {
     await oauth2Client.revokeToken(token);
-    cachedCalendarClient = null; // Clear cached client
   } catch (error) {
     console.error('Failed to revoke token:', error);
     throw error;
@@ -206,10 +193,8 @@ export async function revokeToken(token: string) {
 }
 
 /**
- * Clear cached calendar client
- *
- * Call this when credentials change or you want to force re-authentication.
+ * Clear cached calendar client (deprecated - no longer cached)
  */
 export function clearCalendarClientCache() {
-  cachedCalendarClient = null;
+  // No-op: calendar client is no longer cached
 }

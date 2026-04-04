@@ -45,8 +45,6 @@ export async function POST(request: NextRequest) {
     console.log(
       '[API /api/auth/forgot-password] Generated reset token for email:',
       email,
-      'Token:',
-      resetToken,
     );
 
     const result = await setPasswordResetToken(email, resetToken);

@@ -1,8 +1,8 @@
 /* eslint-disable import/no-unresolved */
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState, startTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -11,17 +11,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/toast';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { login, type LoginActionState } from '@/lib/actions/auth';
+import { login } from '@/lib/actions/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
   const [email, setEmail] = useState('');
-  const [isSuccessful, setIsSuccessful] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  // Load saved email if it exists
   useEffect(() => {
     const savedEmail = localStorage.getItem('unitaskai_remembered_email');
     if (savedEmail) {
@@ -30,72 +30,47 @@ export default function LoginPage() {
     }
   }, []);
 
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    login,
-    {
-      status: 'idle',
-    },
-  );
-
-  useEffect(() => {
-    if (state.status === 'user_not_found') {
-      toast({
-        type: 'error',
-        description:
-          state.message || 'No account found. Please register first.',
-      });
-      setIsLoading(false);
-    } else if (state.status === 'wrong_password') {
-      toast({
-        type: 'error',
-        description: state.message || 'Incorrect password. Please try again.',
-      });
-      setIsLoading(false);
-    } else if (state.status === 'failed') {
-      toast({
-        type: 'error',
-        description: state.message || 'Failed to sign in. Please try again.',
-      });
-      setIsLoading(false);
-    } else if (state.status === 'invalid_data') {
-      toast({
-        type: 'error',
-        description: state.message || 'Invalid email or password format.',
-      });
-      setIsLoading(false);
-    } else if (state.status === 'success') {
-      // Save email to localStorage if "Remember me" is checked
-      if (rememberMe) {
-        localStorage.setItem('unitaskai_remembered_email', email);
-      } else {
-        localStorage.removeItem('unitaskai_remembered_email');
-      }
-
-      setIsSuccessful(true);
-      router.refresh();
-      // Redirect to /chat after successful login
-      setTimeout(() => {
-        router.push('/chat');
-      }, 500); // Small delay to allow refresh to complete
-    }
-  }, [state.status, state.message, router, rememberMe, email]);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const emailValue = formData.get('email') as string;
     setEmail(emailValue);
 
-    // Add remember_me to the form data
-    formData.append('remember_me', rememberMe.toString());
+    if (rememberMe) {
+      localStorage.setItem('unitaskai_remembered_email', emailValue);
+    } else {
+      localStorage.removeItem('unitaskai_remembered_email');
+    }
 
-    // Wrap formAction in startTransition
-    startTransition(() => {
-      formAction(formData);
+    startTransition(async () => {
+      const result = await login({ status: 'in_progress' }, formData);
+
+      if (result.status === 'failed') {
+        toast({
+          type: 'error',
+          description: result.message || 'Failed to sign in. Please try again.',
+        });
+      } else if (result.status === 'invalid_data') {
+        toast({
+          type: 'error',
+          description: result.message || 'Invalid email or password format.',
+        });
+      } else if (result.status === 'account_locked') {
+        toast({
+          type: 'error',
+          description: result.message || 'Account is temporarily locked.',
+        });
+      } else if (result.status === 'email_not_verified') {
+        toast({
+          type: 'error',
+          description: result.message || 'Please verify your email.',
+        });
+      } else if (result.status === 'success') {
+        router.push(callbackUrl || '/chat');
+      }
     });
-  };
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
@@ -103,7 +78,7 @@ export default function LoginPage() {
         <div className="flex flex-col gap-6">
           <Card className="overflow-hidden">
             <CardContent className="grid p-0 md:grid-cols-2">
-              <form onSubmit={handleSubmit} className="p-6 md:p-8">
+              <form onSubmit={onSubmit} className="p-6 md:p-8">
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-4">
@@ -191,16 +166,8 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || isSuccessful}
-                  >
-                    {isLoading
-                      ? 'Signing in...'
-                      : isSuccessful
-                        ? 'Signed in!'
-                        : 'Login'}
+                  <Button type="submit" className="w-full" disabled={isPending}>
+                    {isPending ? 'Signing in...' : 'Login'}
                   </Button>
                   <div className="text-center text-sm">
                     Don&apos;t have an account?{' '}

@@ -45,7 +45,7 @@ export function ChangePasswordForm({ userId }: { userId: string }) {
               name="newPassword"
               placeholder="New password"
               required
-              minLength={6}
+              minLength={8}
               className="flex-1"
             />
             <SubmitButton />

@@ -33,41 +33,14 @@ export const chatModels: ChatModel[] = [
     // Minimax thinks by default, no extra params needed
   },
   {
-    id: 'kimi-k2.5',
-    name: 'Kimi K2.5',
-    description:
-      "Kimi K2.5 (Moonshot AI) visual + text inputs.",
+    id: 'gemma-4-31b',
+    name: 'Gemma 4 31B',
+    description: 'Gemma 4 31B model via Poe API',
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
-    extraParams: {
-      // Default settings for Kimi K2.5
-      temperature: 0.7,
-      max_tokens: 262144,
-    },
   },
-  {
-    id: 'deepseek-v3.2',
-    name: 'DeepSeek V3.2',
-    description:
-      'DeepSeek-V3.2 only text.',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-    extraParams: {
-      // Default settings for DeepSeek-V3.2
-      temperature: 0.7,
-      /**
-       * max_tokens: Controls the maximum length of the MODEL'S RESPONSE (output).
-       * Note: This is separate from the Context Window (164k). High values may 
-       * trigger 'internal_error' on some providers if they have lower hard limits 
-       * for single-turn generation.
-       */
-      max_tokens: 164000,
-    },
-  },
-  ];
-
+];
 
 // Default model configuration
 const defaultModel = chatModels.find((model) => model.isDefault);

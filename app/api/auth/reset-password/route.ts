@@ -5,7 +5,7 @@ import { z } from 'zod';
 // Password validation schema
 const passwordSchema = z
   .string()
-  .min(6, 'Password must be at least 6 characters long')
+  .min(8, 'Password must be at least 8 characters long')
   .max(100, 'Password is too long')
   .refine(
     (password) => /[a-z]/.test(password),

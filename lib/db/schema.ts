@@ -15,7 +15,7 @@ import {
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   email: varchar('email', { length: 64 }).notNull(),
-  password: varchar('password', { length: 64 }),
+  password: varchar('password', { length: 255 }),
   emailVerified: boolean('emailVerified').default(false),
   verificationToken: varchar('verificationToken', { length: 255 }),
   verificationTokenExpiry: timestamp('verificationTokenExpiry'),
@@ -24,6 +24,7 @@ export const user = pgTable('User', {
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
   failedLoginAttempts: integer('failedLoginAttempts').default(0),
   accountLockedUntil: timestamp('accountLockedUntil'),
+  sessionVersion: integer('sessionVersion').notNull().default(1),
 });
 
 export type User = InferSelectModel<typeof user>;

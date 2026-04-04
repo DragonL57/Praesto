@@ -1,6 +1,17 @@
 import 'server-only';
 
-import { and, asc, desc, eq, gt, gte, lt, inArray, type SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  lt,
+  inArray,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { db, client } from './index';
 import {
@@ -247,6 +258,7 @@ export async function resetPassword(
         password: hash,
         resetPasswordToken: null,
         resetPasswordTokenExpiry: null,
+        sessionVersion: sql`"sessionVersion" + 1`,
       })
       .where(eq(user.id, users[0].id));
 
