@@ -2,7 +2,7 @@
 
 import { Button } from './ui/button';
 import { memo, useEffect, useRef, useState, useCallback } from 'react';
-import { LuArrowDownToLine } from "react-icons/lu";
+import { LuArrowDownToLine } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 
 interface ScrollToBottomButtonProps {
@@ -40,7 +40,7 @@ function PureScrollToBottomButton({
     checkIfShouldShowButtonRef.current = () => {
       // Don't update visibility while the button is being clicked
       if (isClickingRef.current) return;
-      
+
       const container = containerRef.current;
       if (!container) return;
 
@@ -64,7 +64,7 @@ function PureScrollToBottomButton({
       if (isClickingRef.current) return;
       checkIfShouldShowButtonRef.current();
     };
-    
+
     // Set up scroll listener with passive option for better performance
     container.addEventListener('scroll', handleScroll, { passive: true });
 
@@ -88,45 +88,48 @@ function PureScrollToBottomButton({
   }, [isVisible]); // Only depend on isVisible
 
   // Prevent default behavior and use a more controlled scroll
-  const scrollToBottom = useCallback((e: React.MouseEvent) => {
-    // Prevent any default behavior
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Set flag to avoid scroll events during the click action
-    isClickingRef.current = true;
-    
-    // Use requestAnimationFrame for smoother scroll handling
-    requestAnimationFrame(() => {
-      if (endRef.current) {
-        // Use smooth scrolling for better UX
-        endRef.current.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'end',
-          inline: 'nearest'
-        });
-        
-        // Reset the flag after scrolling completes (approximately)
-        setTimeout(() => {
+  const scrollToBottom = useCallback(
+    (e: React.MouseEvent) => {
+      // Prevent any default behavior
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Set flag to avoid scroll events during the click action
+      isClickingRef.current = true;
+
+      // Use requestAnimationFrame for smoother scroll handling
+      requestAnimationFrame(() => {
+        if (endRef.current) {
+          // Use smooth scrolling for better UX
+          endRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end',
+            inline: 'nearest',
+          });
+
+          // Reset the flag after scrolling completes (approximately)
+          setTimeout(() => {
+            isClickingRef.current = false;
+          }, 100);
+        } else {
           isClickingRef.current = false;
-        }, 100);
-      } else {
-        isClickingRef.current = false;
-      }
-    });
-  }, [endRef]);
+        }
+      });
+    },
+    [endRef],
+  );
 
   if (!shouldRender) {
     return null;
   }
 
   return (
-    <div 
+    <div
       className={cn(
-        "fixed z-50 flex items-center px-4 pointer-events-none bottom-[70px] md:bottom-[86px]",
+        'fixed z-50 flex items-center px-4 pointer-events-none bottom-[70px] md:bottom-[86px]',
         isArtifactOpen
-          ? "left-4 justify-start"
-          : "w-full max-w-3xl left-1/2 -translate-x-1/2 justify-center"
+          ? 'left-4 justify-start'
+          : 'w-full max-w-3xl left-1/2 -translate-x-1/2 justify-center',
       )}
     >
       <Button

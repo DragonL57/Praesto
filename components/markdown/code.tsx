@@ -30,11 +30,19 @@ export const Code = ({
   // 3. Content that looks like code (has backticks, semicolons, brackets, etc.)
   const hasMultipleLines = content.includes('\n');
   const hasCodeBlockSyntax = content.includes('```') || content.includes('`');
-  const looksLikeCode = /[{}[\];()]/.test(content) || content.includes('//') || content.includes('#');
+  const looksLikeCode =
+    /[{}[\];()]/.test(content) ||
+    content.includes('//') ||
+    content.includes('#');
   const isLongContent = content.length > 50; // Longer content is likely a code block
 
   // Determine if this should be a code block vs inline code
-  const isInline = !match && !hasMultipleLines && !hasCodeBlockSyntax && !looksLikeCode && !isLongContent;
+  const isInline =
+    !match &&
+    !hasMultipleLines &&
+    !hasCodeBlockSyntax &&
+    !looksLikeCode &&
+    !isLongContent;
 
   if (isInline) {
     return <InlineCode {...props}>{children}</InlineCode>;

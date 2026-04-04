@@ -31,7 +31,7 @@ import type {
 import type { ChatStatus } from '@/lib/ai/types';
 
 interface SpeechToTextButtonProps {
-  // AI SDK 5.x: setInput is now managed by the parent component, not from UseChatHelpers
+  // setInput is managed by the parent component (from usePraestoChat)
   setInput: React.Dispatch<React.SetStateAction<string>>;
   status: ChatStatus;
   input?: string;
@@ -41,7 +41,7 @@ interface SpeechToTextButtonProps {
 function PureSpeechToTextButton({
   setInput,
   status,
-  input: _input, // Renamed to _input to indicate it's not used
+  input = '',
   recognitionRef,
 }: SpeechToTextButtonProps) {
   const [isListening, setIsListening] = useState(false);
@@ -57,12 +57,10 @@ function PureSpeechToTextButton({
   const [deviceLanguageStatus, setDeviceLanguageStatus] =
     useState<AvailabilityStatus | null>(null);
 
+  // Store the initial input value when recognition starts
+  const baseInputRef = useRef<string>('');
   // Store current transcript buffer to avoid redundant updates
   const transcriptBufferRef = useRef<string>('');
-  // Track recognition restarts for auto detection improvements
-  const recognitionAttemptsRef = useRef<number>(0);
-  // Track recognition session start time
-  const sessionStartTimeRef = useRef<number>(0);
 
   // Available languages for speech recognition - wrapped in useMemo to prevent recreation on each render
   const languages = useMemo(
@@ -122,40 +120,6 @@ function PureSpeechToTextButton({
       }
     };
   }, [recognitionRef]);
-
-  // Function to efficiently update input with new transcript
-  const updateInputWithTranscript = useCallback(
-    (transcript: string, isFinal: boolean) => {
-      // Skip update if transcript is the same (improves performance)
-      if (transcript === transcriptBufferRef.current && !isFinal) return;
-
-      // Update the buffer with new transcript
-      transcriptBufferRef.current = transcript;
-
-      setInput((currentInput) => {
-        // For a new recognition session or if current input is empty
-        if (
-          !currentInput ||
-          (!isFinal && recognitionAttemptsRef.current === 0)
-        ) {
-          return transcript;
-        }
-
-        // For appending transcripts
-        if (!transcript.toLowerCase().includes(currentInput.toLowerCase())) {
-          // Add a space if needed and the transcript is not just a continuation
-          if (currentInput.trim().length > 0 && !currentInput.endsWith(' ')) {
-            return `${currentInput} ${transcript}`;
-          }
-          return `${currentInput}${transcript}`;
-        }
-
-        // If the new transcript already contains what was there, use that
-        return transcript;
-      });
-    },
-    [setInput],
-  );
 
   // Install the language for on-device recognition if needed
   const installLanguageIfNeeded = useCallback(async () => {
@@ -263,29 +227,31 @@ function PureSpeechToTextButton({
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const lastResultIndex = event.results.length - 1;
-        const currentTranscript = event.results[lastResultIndex][0].transcript;
-        const isFinal = event.results[lastResultIndex].isFinal;
-
-        // Detect mobile vs desktop behavior based on user agent or simple detection
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-        if (isMobile) {
-          // On mobile, use only the latest interim result to avoid accumulation
-          if (isFinal) {
-            updateInputWithTranscript(currentTranscript, isFinal);
+        let interimTranscript = '';
+        let currentSessionFinal = '';
+        
+        // Accumulate both final and interim results from the whole session results array
+        // This is robust against browsers that might not behave perfectly with resultIndex
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            currentSessionFinal += event.results[i][0].transcript;
           } else {
-            // For mobile, update with only the current transcript (don't accumulate)
-            updateInputWithTranscript(currentTranscript, isFinal);
+            interimTranscript += event.results[i][0].transcript;
           }
-        } else {
-          // On desktop, accumulate all results (original behavior)
-          let fullTranscript = '';
-          for (let i = 0; i < event.results.length; i++) {
-            fullTranscript += event.results[i][0].transcript;
-          }
-          updateInputWithTranscript(fullTranscript, isFinal);
         }
+
+        const fullTranscript = currentSessionFinal + interimTranscript;
+        
+        // Skip update if transcript is the same (improves performance)
+        if (fullTranscript === transcriptBufferRef.current) return;
+        transcriptBufferRef.current = fullTranscript;
+
+        const base = baseInputRef.current;
+        const space = base.length > 0 && !base.endsWith(' ') ? ' ' : '';
+        
+        // Always replace the whole input with base + session transcript to avoid duplication
+        // This ensures that we don't accidentally append the same transcript twice
+        setInput(base + space + fullTranscript);
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -329,8 +295,8 @@ function PureSpeechToTextButton({
     languages,
     recognitionMode,
     selectedLanguage,
-    updateInputWithTranscript,
     recognitionRef,
+    setInput,
   ]);
 
   // Store the startRecognition function in the ref to break the circular dependency
@@ -351,16 +317,13 @@ function PureSpeechToTextButton({
         recognitionRef.current = null;
       }
       setIsListening(false);
-      // Reset tracking variables
-      recognitionAttemptsRef.current = 0;
-      sessionStartTimeRef.current = 0;
     } else {
       // Start fresh recognition session
+      baseInputRef.current = input || '';
       transcriptBufferRef.current = '';
-      recognitionAttemptsRef.current = 0;
       startRecognition();
     }
-  }, [isListening, speechSupported, startRecognition, recognitionRef]);
+  }, [isListening, speechSupported, startRecognition, recognitionRef, input]);
 
   if (!speechSupported) {
     return null;

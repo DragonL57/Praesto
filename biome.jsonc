@@ -37,7 +37,10 @@
           "level": "warn",
           "options": {
             "ignoreNonDom": false,
-            "allowInvalidRoles": ["none", "text"]
+            "allowInvalidRoles": [
+              "none",
+              "text"
+            ]
           }
         },
         "useSemanticElements": "off", // Rule is buggy, revisit later
@@ -74,6 +77,9 @@
       "suspicious": {
         "noExplicitAny": "off" // We trust Vercelians to use any only when necessary
       },
+      "performance": {
+        "noImgElement": "off" // Allow img elements (needed for OG image generation)
+      },
       "nursery": {}
     }
   },
@@ -102,8 +108,12 @@
     }
   },
   "css": {
-    "formatter": { "enabled": false },
-    "linter": { "enabled": false }
+    "formatter": {
+      "enabled": false
+    },
+    "linter": {
+      "enabled": false
+    }
   },
   "overrides": [
     // Playwright requires an object destructure, even if empty

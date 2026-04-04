@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut } from 'next-auth/react';
 
@@ -36,7 +36,10 @@ export function AdminTopNav({ setSidebarOpen }: AdminTopNavProps) {
           <div className="flex w-full items-center md:ml-0">
             <div className="relative w-full max-w-md">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="size-5 text-muted-foreground" aria-hidden="true" />
+                <Search
+                  className="size-5 text-muted-foreground"
+                  aria-hidden="true"
+                />
               </div>
               <Input
                 placeholder="Search..."
@@ -59,7 +62,11 @@ export function AdminTopNav({ setSidebarOpen }: AdminTopNavProps) {
           <div className="ml-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="size-9 rounded-full" size="icon">
+                <Button
+                  variant="ghost"
+                  className="size-9 rounded-full"
+                  size="icon"
+                >
                   <Avatar className="size-8">
                     <AvatarImage src="/placeholder-user.jpg" alt="Admin User" />
                     <AvatarFallback>
@@ -71,12 +78,18 @@ export function AdminTopNav({ setSidebarOpen }: AdminTopNavProps) {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
                 <DropdownMenuItem>
-                  <Link href="/admin/profile" className="flex items-center w-full">
+                  <Link
+                    href="/admin/profile"
+                    className="flex items-center w-full"
+                  >
                     Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/admin/settings" className="flex items-center w-full">
+                  <Link
+                    href="/admin/settings"
+                    className="flex items-center w-full"
+                  >
                     Settings
                   </Link>
                 </DropdownMenuItem>

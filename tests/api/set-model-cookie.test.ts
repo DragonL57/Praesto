@@ -4,7 +4,7 @@ test.describe('Set Model Cookie API', () => {
   const baseUrl = 'http://localhost:3000';
 
   test('should set model cookie successfully', async ({ request }) => {
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {
         model: 'gpt-4',
       },
@@ -15,8 +15,10 @@ test.describe('Set Model Cookie API', () => {
     expect(result).toEqual({ success: true });
   });
 
-  test('should return error for missing model parameter', async ({ request }) => {
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+  test('should return error for missing model parameter', async ({
+    request,
+  }) => {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {},
     });
 
@@ -28,7 +30,7 @@ test.describe('Set Model Cookie API', () => {
   });
 
   test('should handle invalid JSON request', async ({ request }) => {
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: 'invalid json',
       headers: {
         'Content-Type': 'application/json',
@@ -43,7 +45,7 @@ test.describe('Set Model Cookie API', () => {
   });
 
   test('should handle empty model string', async ({ request }) => {
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {
         model: '',
       },
@@ -58,14 +60,14 @@ test.describe('Set Model Cookie API', () => {
 
   test('should update existing model cookie', async ({ request }) => {
     // First set initial cookie
-    await request.post(`${baseUrl}/api/set-model-cookie`, {
+    await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {
         model: 'gpt-3.5-turbo',
       },
     });
 
     // Then update it
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {
         model: 'gpt-4',
       },
@@ -76,10 +78,12 @@ test.describe('Set Model Cookie API', () => {
     expect(result).toEqual({ success: true });
   });
 
-  test('should handle special characters in model name', async ({ request }) => {
+  test('should handle special characters in model name', async ({
+    request,
+  }) => {
     const specialModel = 'gpt-4-turbo-preview_special';
 
-    const response = await request.post(`${baseUrl}/api/set-model-cookie`, {
+    const response = await request.post(`${baseUrl}/api/public/model-cookie`, {
       data: {
         model: specialModel,
       },

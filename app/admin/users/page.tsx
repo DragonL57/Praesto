@@ -1,18 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UsersTable } from "@/components/admin/users/users-table";
-import { UserStatsCards } from "@/components/admin/users/user-stats-cards";
-import { UserFilters } from "@/components/admin/users/user-filters";
-import { Search, Plus, DownloadCloud, Upload } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UsersTable } from '@/components/admin/users/users-table';
+import { UserStatsCards } from '@/components/admin/users/user-stats-cards';
+import { UserFilters } from '@/components/admin/users/user-filters';
+import { Search, Plus, DownloadCloud, Upload } from 'lucide-react';
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
@@ -35,7 +41,7 @@ export default function UsersPage() {
 
       {/* User Statistics */}
       <UserStatsCards />
-      
+
       {/* User Management Tabs */}
       <Tabs defaultValue="all-users" className="w-full">
         <TabsList>
@@ -82,9 +88,7 @@ export default function UsersPage() {
                   />
                 </div>
               </div>
-              <CardDescription>
-                Manage active users
-              </CardDescription>
+              <CardDescription>Manage active users</CardDescription>
             </CardHeader>
             <CardContent>
               <UserFilters />
@@ -105,9 +109,7 @@ export default function UsersPage() {
                   />
                 </div>
               </div>
-              <CardDescription>
-                Manage inactive users
-              </CardDescription>
+              <CardDescription>Manage inactive users</CardDescription>
             </CardHeader>
             <CardContent>
               <UserFilters />

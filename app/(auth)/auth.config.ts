@@ -15,53 +15,30 @@ export const authConfig = {
     // while this file is also used in non-Node.js environments
   ],
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request: { nextUrl, headers } }) {
       const isLoggedIn = !!auth?.user;
-      const isRootPath = nextUrl.pathname === '/';
       const isOnChat = nextUrl.pathname.startsWith('/chat');
       const isOnApi = nextUrl.pathname.startsWith('/api');
-      const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
-      const isSharedChat = nextUrl.pathname.match(/^\/chat\/[a-zA-Z0-9-]+$/); // Match shared chat URL pattern
+      const isOnAuth = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
 
-      // Skip auth check for static assets and public files
-      const isStaticAsset = nextUrl.pathname.startsWith('/_next') ||
-        nextUrl.pathname.startsWith('/images') ||
-        nextUrl.pathname.startsWith('/fonts') ||
-        nextUrl.pathname.includes('.');
+      // Determine the correct origin from headers to avoid issues with AUTH_URL in local dev
+      const host = headers.get('host');
+      const protocol = headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+      const origin = host ? `${protocol}://${host}` : nextUrl.origin;
 
-      if (isStaticAsset) {
-        return true;
-      }
-
-      // Allow access to landing page without authentication
-      if (isRootPath) {
-        return true;
-      }
-
-      // Redirect authenticated users from login/register pages to /chat
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/chat', nextUrl as unknown as URL));
-      }
-
-      if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
-      }
-
-      // Allow access to shared chat URLs without authentication
-      if (isSharedChat) {
-        return true;
-      }
-
+      // 1. Allow authenticated users to access chat and api
       if (isOnChat || isOnApi) {
         if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        // Construct redirect URL using the determined origin to avoid hardcoded production URLs from AUTH_URL
+        return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`, origin));
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      // 2. Redirect logged-in users away from auth pages to chat
+      if (isLoggedIn && isOnAuth) {
+        return Response.redirect(new URL('/chat', origin));
       }
 
+      // 3. Allow public access to landing, auth pages, and shared content
       return true;
     },
   },

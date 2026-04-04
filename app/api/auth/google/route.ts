@@ -1,30 +1,50 @@
 import { NextResponse } from 'next/server';
-import { getAuthorizationUrl } from '@/lib/google-calendar-api';
+import { getAuthorizationUrl } from '@/lib/services/google-calendar-api';
 
-/**
- * Google Calendar OAuth Start Handler
- *
- * This route starts the OAuth 2.0 flow by redirecting to Google's consent screen.
- * Usage: /api/auth/google?action=authorize
- */
 export async function GET(request: Request) {
-    const url = new URL(request.url);
-    const action = url.searchParams.get('action');
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action');
 
-    if (action === 'authorize') {
-        try {
-            const authUrl = getAuthorizationUrl();
-            return NextResponse.redirect(authUrl);
-        } catch {
-            return NextResponse.json({
-                success: false,
-                error: 'Failed to generate authorization URL',
-            }, { status: 500 });
-        }
+  if (action === 'authorize') {
+    try {
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const state = Array.from(randomBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const authUrl = getAuthorizationUrl(state);
+
+      const response = NextResponse.redirect(authUrl);
+      response.cookies.set('google_oauth_state', state, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 600,
+        path: '/',
+        sameSite: 'lax',
+      });
+
+      return response;
+    } catch (error) {
+      console.error(
+        '[API /api/auth/google] Failed to generate authorization URL:',
+        error,
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to generate authorization URL',
+        },
+        { status: 500 },
+      );
     }
+  }
 
-    return NextResponse.json({
-        success: false,
-        error: 'Invalid action',
-    }, { status: 400 });
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Invalid action',
+    },
+    { status: 400 },
+  );
 }

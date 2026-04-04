@@ -1,260 +1,29 @@
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { google } from '@ai-sdk/google';
-import {
-  customProvider,
-  wrapLanguageModel,
-  defaultSettingsMiddleware,
-  convertToModelMessages,
-  smoothStream,
-  stepCountIs,
-  type UIMessage
-} from 'ai';
+import 'server-only';
+import OpenAI from 'openai';
 
 // Import tools and utilities
-import { getWeather } from './tools/get-weather';
-import { webSearch } from './tools/web-search';
-import { readWebsiteContent } from './tools/read-website-content';
+import { chatModels } from './models';
 import { systemPrompt } from './prompts';
-import { isProductionEnvironment } from '@/lib/constants';
+// messages are OpenAI/Poe formatted message objects
 
-// Model interface and configuration
-export interface ChatModel {
-  id: string;
-  name: string;
-  description: string;
-  provider?: string;
-  isDefault?: boolean;
-  supportsTools?: boolean;
-  supportsThinking?: boolean;
-}
-
-// Z.AI OpenAI-compatible provider for main chat
-const zaiProvider = createOpenAICompatible({
-  name: 'z-ai',
-  apiKey: process.env.ZAI_API_KEY || '',
-  baseURL: 'https://api.z.ai/api/coding/paas/v4',
-});
-
-// Poe API OpenAI-compatible provider
-const poeProvider = createOpenAICompatible({
-  name: 'poe',
+// Poe API OpenAI-compatible provider client
+export const openai = new OpenAI({
   apiKey: process.env.POE_API_KEY || '',
   baseURL: 'https://api.poe.com/v1',
 });
 
-// Enhanced Grok-4.1-fast-reasoning model
-const enhancedGrok41FastReasoningModel = wrapLanguageModel({
-  model: poeProvider.chatModel('grok-4.1-fast-reasoning'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-    }
-  })
-});
-
-const enhancedGpt5ChatModel = wrapLanguageModel({
-  model: poeProvider.chatModel('gpt-5-chat'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.7,
-    }
-  })
-});
-
-
-
-const enhancedGlmModel = wrapLanguageModel({
-  model: zaiProvider.chatModel('glm-4.7'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1.0,
-      providerOptions: {
-        'z-ai': {
-          thinking: {
-            type: 'enabled'
-          }
-        }
-      }
-    }
-  })
-});
-
-const lightWeightModel = wrapLanguageModel({
-  model: zaiProvider.chatModel('glm-4.5-air'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 0.5,
-    }
-  })
-});
-
-// Google Gemini models with thinking configuration
-
-
-const gemini3FlashModel = wrapLanguageModel({
-  model: google('gemini-3-flash-preview'),
-  middleware: defaultSettingsMiddleware({
-    settings: {
-      temperature: 1,
-      providerOptions: {
-        google: {
-          thinkingConfig: {
-            thinkingLevel: 'high', // Use 'high' for Gemini 3 models for maximum reasoning
-            includeThoughts: true, // Enable thought summaries
-          }
-        }
-      }
-    }
-  })
-});
-
-
-// Model configurations with metadata
-export const chatModels: ChatModel[] = [
-  {
-    id: 'glm-4.7',
-    name: 'GLM-4.7',
-    description: 'GLM-4.7 model from Z.AI',
-    provider: 'Z.AI',
-    isDefault: true,
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'glm-4.6v',
-    name: 'GLM-4.6V',
-    description: 'GLM-4.6V: Z.AI flagship multimodal model (128K context, native function calling, SoTA visual understanding).',
-    provider: 'Z.AI',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'grok-4.1-fast-reasoning',
-    name: 'Grok-4.1',
-    description: 'Grok-4.1 Fast Reasoning model via Poe API',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-  {
-    id: 'gpt-5-chat',
-    name: 'GPT-5 Chat',
-    description: 'GPT-5 Chat model via Poe API - supports image reading and analysis',
-    provider: 'Poe',
-    supportsTools: true,
-    supportsThinking: false,
-  },
-  // zeno-sonar-reasoning removed
-  // gemini-3-pro-preview removed
-  {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash Preview',
-    description: 'Google Gemini 3 Flash Preview - Pro-level intelligence at Flash speed',
-    provider: 'Google',
-    supportsTools: true,
-    supportsThinking: true,
-  },
-];
-
-// Default model configuration
-const defaultModel = chatModels.find(model => model.isDefault);
-export const DEFAULT_CHAT_MODEL_ID = defaultModel
-  ? defaultModel.id
-  : (chatModels.length > 0
-    ? chatModels[0].id
-    : 'glm-4.7');
-
-// Export the configured provider for the application
-// Model IDs match those defined in chatModels array above
-export const myProvider = customProvider({
-  languageModels: {
-    // Enhanced Z.AI models with middleware
-    'glm-4.7': enhancedGlmModel,
-    'glm-4.5-air': lightWeightModel,
-    'glm-4.6v': wrapLanguageModel({
-      model: zaiProvider.chatModel('glm-4.6v'),
-      middleware: defaultSettingsMiddleware({
-        settings: {
-          temperature: 0.7,
-          providerOptions: {
-            'z-ai': {
-              thinking: { type: 'enabled' }
-            }
-          }
-        }
-      })
-    }),
-
-    // Enhanced Poe models with middleware
-    'grok-4.1-fast-reasoning': enhancedGrok41FastReasoningModel,
-    'gpt-5-chat': enhancedGpt5ChatModel,
-    // zeno-sonar-reasoning removed
-
-    // Google Gemini models with middleware
-    // gemini-3-pro-preview removed
-    'gemini-3-flash-preview': gemini3FlashModel,
-
-    // Aliases for internal use (using enhanced models)
-    'chat-model': enhancedGlmModel,
-    'title-model': lightWeightModel,
-  },
-});
-
 // Helper functions for model configuration
 export function getModelConfiguration(modelId: string) {
-  const currentModel = chatModels.find(model => model.id === modelId) ||
-    chatModels.find(model => model.id === 'chat-model') ||
+  const currentModel =
+    chatModels.find((model) => model.id === modelId) ||
+    chatModels.find((model) => model.id === 'chat-model') ||
     chatModels[0];
 
   return {
     model: currentModel,
     supportsTools: currentModel?.supportsTools ?? true,
     supportsThinking: currentModel?.supportsThinking ?? true,
-  };
-}
-
-// Get provider options for a specific model
-export function getProviderOptions(supportsThinking: boolean, modelId?: string, thinkingLevel?: string) {
-  const baseOptions = {};
-
-  // Gemini 3 models use thinkingLevel
-  const isGemini3 = modelId?.includes('gemini-3');
-  const isGemini3Flash = modelId?.includes('gemini-3-flash');
-
-  // Validate thinking level based on model
-  let validatedThinkingLevel = thinkingLevel || 'high';
-  if (isGemini3Flash) {
-    // Flash supports: minimal, low, medium, high
-    if (!['minimal', 'low', 'medium', 'high'].includes(validatedThinkingLevel)) {
-      validatedThinkingLevel = 'high';
-    }
-  } else if (isGemini3) {
-    // Pro supports: low, high
-    if (!['low', 'high'].includes(validatedThinkingLevel)) {
-      validatedThinkingLevel = 'high';
-    }
-  }
-
-  return {
-    openai: baseOptions,
-    'z-ai': {
-      thinking: {
-        type: supportsThinking ? 'enabled' : 'disabled'
-      },
-      ...baseOptions
-    },
-    poe: {
-      ...baseOptions
-    },
-    google: {
-      ...(supportsThinking && isGemini3 && {
-        thinkingConfig: {
-          thinkingLevel: validatedThinkingLevel as 'minimal' | 'low' | 'medium' | 'high',
-          includeThoughts: true,
-        }
-      }),
-      ...baseOptions
-    }
+    extraParams: currentModel?.extraParams,
   };
 }
 
@@ -262,79 +31,79 @@ export function getProviderOptions(supportsThinking: boolean, modelId?: string, 
 export function getModelOptions() {
   return {
     temperature: 1,
-    maxTokens: 128000, // Set max context length to 128,000 tokens for all models
+    max_tokens: 8192, // Use a more reasonable output limit for better stability
   };
 }
 
 // Get available tools for models that support them
-export function getAvailableTools() {
-  return {
-    experimental_activeTools: [
-      'getWeather',
-      'webSearch',
-      'readWebsiteContent',
-    ] as ('getWeather' | 'webSearch' | 'readWebsiteContent')[],
-    tools: {
-      getWeather,
-      webSearch,
-      readWebsiteContent,
-    },
-  };
+export async function getAvailableTools() {
+  const { getTools } = await import('./tools');
+  return getTools();
 }
 
-// Get stream text configuration
-export function getStreamTextConfig(
+/**
+ * Get chat completion parameters for OpenAI client
+ * Restored to single-agent logic
+ */
+export async function getChatCompletionParams(
   modelId: string,
-  messages: Array<Omit<UIMessage, 'id'>>,
+  messages: Record<string, unknown>[],
   userTimeContext?: {
     date: string;
     time: string;
     dayOfWeek: string;
     timeZone: string;
-  },
-  thinkingLevel?: string
+  }
 ) {
-  const { supportsTools, supportsThinking } = getModelConfiguration(modelId);
-  const modelInstance = myProvider.languageModel(modelId);
+  const { supportsTools, extraParams } = getModelConfiguration(modelId);
   const modelOptions = getModelOptions();
-  const providerOptions = getProviderOptions(supportsThinking, modelId, thinkingLevel);
 
-  // Filter out tool parts with state 'input-available' before sending to model
-  const filteredMessages = messages.map(msg => ({
-    ...msg,
-    parts: Array.isArray(msg.parts)
-      ? msg.parts.filter(
-        (part) =>
-          !(
-            part &&
-            typeof part === 'object' &&
-            'state' in part &&
-            ((part as { state?: string }).state === 'input-available' || (part as { state?: string }).state === 'call')
-          )
-      )
-      : msg.parts,
-  }));
+  // Map modelId to actual Poe bot name if needed
+  let actualModel = modelId;
+  if (modelId === 'chat-model') actualModel = 'grok-4.1-fast-reasoning';
+  if (modelId === 'title-model' || modelId === 'fast-model') actualModel = 'grok-4.1-fast-non-reasoning';
 
-  const baseConfig = {
-    model: modelInstance,
-    system: systemPrompt({ selectedChatModel: modelId, userTimeContext }),
-    messages: convertToModelMessages(filteredMessages),
-    stopWhen: stepCountIs(10),
+  // Base config with standard options
+  const baseConfig: Record<string, unknown> = {
+    model: actualModel,
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt({ selectedChatModel: actualModel, userTimeContext }),
+      },
+      ...messages,
+    ],
     ...modelOptions,
-    providerOptions,
-    experimental_transform: smoothStream({ chunking: 'line' }),
-    experimental_telemetry: {
-      isEnabled: isProductionEnvironment,
-      functionId: 'stream-text',
-    },
+    stream: true,
   };
+
+  // Process extraParams: prioritize top-level known params, put others in extra_body
+  if (extraParams) {
+    const { max_tokens, temperature, ...otherParams } = extraParams as Record<string, unknown>;
+    
+    // Override top-level params if specified in extraParams
+    if (max_tokens !== undefined) baseConfig.max_tokens = max_tokens;
+    if (temperature !== undefined) baseConfig.temperature = temperature;
+    
+    // Add remaining parameters to extra_body (standard for Poe/OpenAI extensions)
+    if (Object.keys(otherParams).length > 0) {
+      baseConfig.extra_body = {
+        ...otherParams,
+      };
+    }
+  }
 
   // Use custom function calling tools for models that support them
   if (supportsTools) {
-    return {
-      ...baseConfig,
-      ...getAvailableTools(),
-    };
+    const { tools } = await getAvailableTools();
+    baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, unknown]) => ({
+      type: 'function',
+      function: {
+        name,
+        description: (tool as Record<string, unknown>)?.description,
+        parameters: (tool as Record<string, unknown>)?.parameters,
+      },
+    }));
   }
 
   return baseConfig;

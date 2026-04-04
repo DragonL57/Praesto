@@ -16,7 +16,6 @@ function PureWebsiteContent({
   status,
   error: _error,
 }: WebsiteContentProps) {
-
   const getFormattedUrl = (urlInput: string) => {
     return urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
   };
@@ -24,23 +23,23 @@ function PureWebsiteContent({
   const getDomainName = (urlInput: string) => {
     try {
       return new URL(getFormattedUrl(urlInput)).hostname;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_e) {
       return urlInput;
     }
   };
-  
+
   const getFaviconUrl = (domain: string) => {
     return `https://www.google.com/s2/favicons?sz=32&domain_url=${domain}`;
   };
 
   const domain = getDomainName(url);
-  let titleText = "Reading:";
-  let titleColor = "text-gray-700 dark:text-gray-300";
+  let titleText = 'Reading:';
+  let titleColor = 'text-gray-700 dark:text-gray-300';
 
   if (status === 'error') {
-    titleText = "Error reading:";
-    titleColor = "text-red-600 dark:text-red-400";
+    titleText = 'Error reading:';
+    titleColor = 'text-red-600 dark:text-red-400';
   } else if (status === 'loading') {
     // Title remains "Reading" but MessageReasoning spinner indicates loading
     // We could add (Loading...) here if desired, but main spinner should cover it.
@@ -49,12 +48,14 @@ function PureWebsiteContent({
 
   return (
     <div className="my-2 p-3 rounded-md bg-background">
-      <h3 className={cn("text-sm font-medium mb-2 flex items-center", titleColor)}>
+      <h3
+        className={cn('text-sm font-medium mb-2 flex items-center', titleColor)}
+      >
         {titleText}
         <div className="ml-1.5 flex items-center">
-          <SitePill 
-            domain={domain} 
-            faviconUrl={getFaviconUrl(domain)} 
+          <SitePill
+            domain={domain}
+            faviconUrl={getFaviconUrl(domain)}
             originalUrl={url}
           />
         </div>
@@ -70,5 +71,3 @@ function PureWebsiteContent({
 }
 
 export const WebsiteContent = memo(PureWebsiteContent);
-
-

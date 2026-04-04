@@ -15,7 +15,7 @@ import {
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   email: varchar('email', { length: 64 }).notNull(),
-  password: varchar('password', { length: 64 }),
+  password: varchar('password', { length: 255 }),
   emailVerified: boolean('emailVerified').default(false),
   verificationToken: varchar('verificationToken', { length: 255 }),
   verificationTokenExpiry: timestamp('verificationTokenExpiry'),
@@ -24,6 +24,7 @@ export const user = pgTable('User', {
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
   failedLoginAttempts: integer('failedLoginAttempts').default(0),
   accountLockedUntil: timestamp('accountLockedUntil'),
+  sessionVersion: integer('sessionVersion').notNull().default(1),
 });
 
 export type User = InferSelectModel<typeof user>;
@@ -69,48 +70,6 @@ export const message = pgTable('Message_v2', {
 });
 
 export type DBMessage = InferSelectModel<typeof message>;
-
-// DEPRECATED: The following schema is deprecated and will be removed in the future.
-// Read the migration guide at https://github.com/praesto/documentation/blob/main/docs/04-migrate-to-parts.md
-export const voteDeprecated = pgTable(
-  'Vote',
-  {
-    chatId: uuid('chatId')
-      .notNull()
-      .references(() => chat.id),
-    messageId: uuid('messageId')
-      .notNull()
-      .references(() => messageDeprecated.id),
-    isUpvoted: boolean('isUpvoted').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
-    };
-  },
-);
-
-export type VoteDeprecated = InferSelectModel<typeof voteDeprecated>;
-
-export const vote = pgTable(
-  'Vote_v2',
-  {
-    chatId: uuid('chatId')
-      .notNull()
-      .references(() => chat.id),
-    messageId: uuid('messageId')
-      .notNull()
-      .references(() => message.id),
-    isUpvoted: boolean('isUpvoted').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
-    };
-  },
-);
-
-export type Vote = InferSelectModel<typeof vote>;
 
 export const document = pgTable(
   'Document',

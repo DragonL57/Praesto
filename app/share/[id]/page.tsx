@@ -1,14 +1,12 @@
 import { notFound } from 'next/navigation';
 
-import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';
 import { SharedChat } from '@/components/shared';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 
-import type { Attachment } from '@/lib/ai/types';
+import type { Message, MessagePart, MessageRole } from '@/lib/ai/types';
 import type { DBMessage } from '@/lib/db/schema';
-import type { UIMessage } from 'ai';
 
 export const metadata = {
   title: 'Shared Conversation | UniTaskAI',
@@ -41,16 +39,12 @@ export default async function Page(props: PageProps) {
     id,
   });
 
-  function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
-    /* FIXME(@ai-sdk-upgrade-v5): The `experimental_attachments` property has been replaced with the parts array. Please manually migrate following https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0#attachments--file-parts */
+  function convertToMessages(messages: Array<DBMessage>): Array<Message> {
     return messages.map((message) => ({
       id: message.id,
-      parts: message.parts as UIMessage['parts'],
-      role: message.role as UIMessage['role'],
-      content: '',
+      parts: message.parts as MessagePart[],
+      role: message.role as MessageRole,
       createdAt: message.createdAt,
-      experimental_attachments:
-        (message.attachments as Array<Attachment>) ?? [],
     }));
   }
 
@@ -58,12 +52,12 @@ export default async function Page(props: PageProps) {
     <PageTransition>
       <SharedChat
         id={chat.id}
-        initialMessages={convertToUIMessages(messagesFromDb)}
+        initialMessages={convertToMessages(messagesFromDb)}
         selectedChatModel={DEFAULT_CHAT_MODEL_ID}
         _selectedVisibilityType="public"
         isReadonly={true}
       />
-      <DataStreamHandler id={id} />
     </PageTransition>
   );
 }
+

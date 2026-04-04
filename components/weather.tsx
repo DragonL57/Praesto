@@ -91,17 +91,17 @@ const SAMPLE = {
   timezone: 'GMT',
   timezone_abbreviation: 'GMT',
   elevation: 18,
-  current_units: { 
-    time: 'iso8601', 
-    interval: 'seconds', 
+  current_units: {
+    time: 'iso8601',
+    interval: 'seconds',
     temperature_2m: '°C',
     relative_humidity_2m: '%',
     apparent_temperature: '°C',
     wind_speed_10m: 'km/h',
   },
-  current: { 
-    time: '2024-10-07T19:30', 
-    interval: 900, 
+  current: {
+    time: '2024-10-07T19:30',
+    interval: 900,
     temperature_2m: 29.3,
     weather_code: 1,
     relative_humidity_2m: 42,
@@ -111,7 +111,11 @@ const SAMPLE = {
     wind_direction_10m: 180,
     is_day: 1,
   },
-  hourly_units: { time: 'iso8601', temperature_2m: '°C', precipitation_probability: '%' },
+  hourly_units: {
+    time: 'iso8601',
+    temperature_2m: '°C',
+    precipitation_probability: '%',
+  },
   hourly: {
     time: [
       '2024-10-07T00:00',
@@ -122,15 +126,9 @@ const SAMPLE = {
       '2024-10-07T05:00',
       '2024-10-07T06:00',
     ],
-    temperature_2m: [
-      36.6, 32.8, 29.5, 28.6, 29.2, 28.2, 27.5
-    ],
-    precipitation_probability: [
-      0, 5, 10, 15, 0, 0, 0
-    ],
-    weather_code: [
-      0, 1, 2, 3, 0, 1, 2
-    ]
+    temperature_2m: [36.6, 32.8, 29.5, 28.6, 29.2, 28.2, 27.5],
+    precipitation_probability: [0, 5, 10, 15, 0, 0, 0],
+    weather_code: [0, 1, 2, 3, 0, 1, 2],
   },
   daily_units: {
     time: 'iso8601',
@@ -170,13 +168,13 @@ const SAMPLE = {
   weather_code_interpretation: {
     current: 'Mainly clear',
     daily: [
-      'Mainly clear', 
-      'Partly cloudy', 
-      'Overcast', 
-      'Slight rain showers', 
-      'Thunderstorm'
-    ]
-  }
+      'Mainly clear',
+      'Partly cloudy',
+      'Overcast',
+      'Slight rain showers',
+      'Thunderstorm',
+    ],
+  },
 };
 
 function n(num: number): number {
@@ -184,40 +182,73 @@ function n(num: number): number {
 }
 
 // Map weather codes to appropriate icons
-function WeatherIcon({ 
-  weatherCode = 0, 
-  isDay = true, 
-  size = 24
-}: { 
+function WeatherIcon({
+  weatherCode = 0,
+  isDay = true,
+  size = 24,
+}: {
   weatherCode?: number;
-  isDay?: boolean; 
+  isDay?: boolean;
   size?: number;
 }) {
   // Weather codes from WMO (World Meteorological Organization)
   // https://open-meteo.com/en/docs
-  switch(weatherCode) {
+  switch (weatherCode) {
     case 0: // Clear sky
-      return isDay ? <Sun size={size} className="text-yellow-300" /> : <Sun size={size} className="text-indigo-100" />;
+      return isDay ? (
+        <Sun size={size} className="text-yellow-300" />
+      ) : (
+        <Sun size={size} className="text-indigo-100" />
+      );
     case 1: // Mainly clear
-      return isDay ? <CloudSun size={size} className="text-yellow-300" /> : <CloudSun size={size} className="text-indigo-100" />;
+      return isDay ? (
+        <CloudSun size={size} className="text-yellow-300" />
+      ) : (
+        <CloudSun size={size} className="text-indigo-100" />
+      );
     case 2: // Partly cloudy
-      return <Cloud size={size} className={isDay ? "text-gray-200" : "text-indigo-100"} />;
+      return (
+        <Cloud
+          size={size}
+          className={isDay ? 'text-gray-200' : 'text-indigo-100'}
+        />
+      );
     case 3: // Overcast
-      return <Cloud size={size} className={isDay ? "text-gray-400" : "text-indigo-200"} />;
+      return (
+        <Cloud
+          size={size}
+          className={isDay ? 'text-gray-400' : 'text-indigo-200'}
+        />
+      );
     case 45: // Fog
     case 48: // Depositing rime fog
-      return <CloudFog size={size} className={isDay ? "text-gray-300" : "text-indigo-200"} />;
+      return (
+        <CloudFog
+          size={size}
+          className={isDay ? 'text-gray-300' : 'text-indigo-200'}
+        />
+      );
     case 51: // Light drizzle
     case 53: // Moderate drizzle
     case 55: // Dense drizzle
-      return <CloudDrizzle size={size} className={isDay ? "text-blue-300" : "text-indigo-200"} />;
+      return (
+        <CloudDrizzle
+          size={size}
+          className={isDay ? 'text-blue-300' : 'text-indigo-200'}
+        />
+      );
     case 61: // Slight rain
     case 63: // Moderate rain
     case 65: // Heavy rain
     case 80: // Slight rain showers
     case 81: // Moderate rain showers
     case 82: // Violent rain showers
-      return <CloudRain size={size} className={isDay ? "text-blue-400" : "text-indigo-200"} />;
+      return (
+        <CloudRain
+          size={size}
+          className={isDay ? 'text-blue-400' : 'text-indigo-200'}
+        />
+      );
     case 71: // Slight snow fall
     case 73: // Moderate snow fall
     case 75: // Heavy snow fall
@@ -228,9 +259,18 @@ function WeatherIcon({
     case 95: // Thunderstorm
     case 96: // Thunderstorm with slight hail
     case 99: // Thunderstorm with heavy hail
-      return <CloudLightning size={size} className={isDay ? "text-yellow-400" : "text-indigo-100"} />;
+      return (
+        <CloudLightning
+          size={size}
+          className={isDay ? 'text-yellow-400' : 'text-indigo-100'}
+        />
+      );
     default:
-      return isDay ? <Sun size={size} className="text-yellow-300" /> : <Sun size={size} className="text-indigo-100" />;
+      return isDay ? (
+        <Sun size={size} className="text-yellow-300" />
+      ) : (
+        <Sun size={size} className="text-indigo-100" />
+      );
   }
 }
 
@@ -244,13 +284,16 @@ export function Weather({
 }: {
   weatherAtLocation?: WeatherAtLocation;
 }) {
-  const currentHigh = weatherAtLocation.daily?.temperature_2m_max?.[0] || 
+  const currentHigh =
+    weatherAtLocation.daily?.temperature_2m_max?.[0] ||
     Math.max(...weatherAtLocation.hourly.temperature_2m.slice(0, 24));
-    
-  const currentLow = weatherAtLocation.daily?.temperature_2m_min?.[0] || 
+
+  const currentLow =
+    weatherAtLocation.daily?.temperature_2m_min?.[0] ||
     Math.min(...weatherAtLocation.hourly.temperature_2m.slice(0, 24));
 
-  const isDay = weatherAtLocation.current?.is_day === 1 || 
+  const isDay =
+    weatherAtLocation.current?.is_day === 1 ||
     isWithinInterval(new Date(weatherAtLocation.current.time), {
       start: new Date(weatherAtLocation.daily.sunrise[0]),
       end: new Date(weatherAtLocation.daily.sunset[0]),
@@ -286,20 +329,23 @@ export function Weather({
     currentTimeIndex,
     currentTimeIndex + hoursToShow,
   );
-  const displayWeatherCodes = weatherAtLocation.hourly.weather_code?.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow,
-  ) || Array(hoursToShow).fill(1);
-  const displayPrecipProbs = weatherAtLocation.hourly.precipitation_probability?.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow,
-  ) || Array(hoursToShow).fill(0);
+  const displayWeatherCodes =
+    weatherAtLocation.hourly.weather_code?.slice(
+      currentTimeIndex,
+      currentTimeIndex + hoursToShow,
+    ) || Array(hoursToShow).fill(1);
+  const displayPrecipProbs =
+    weatherAtLocation.hourly.precipitation_probability?.slice(
+      currentTimeIndex,
+      currentTimeIndex + hoursToShow,
+    ) || Array(hoursToShow).fill(0);
 
   // Current weather description
-  const currentWeatherDescription = weatherAtLocation.weather_code_interpretation?.current || 
+  const currentWeatherDescription =
+    weatherAtLocation.weather_code_interpretation?.current ||
     getWeatherDescription(weatherAtLocation.current.weather_code || 0);
 
-  const cardBackgroundClass = isDay 
+  const cardBackgroundClass = isDay
     ? 'bg-gradient-to-br from-blue-400 to-blue-500'
     : 'bg-gradient-to-br from-indigo-900 to-indigo-800';
 
@@ -307,37 +353,58 @@ export function Weather({
     <div
       className={cx(
         'flex flex-col gap-4 rounded-2xl p-5 shadow-lg w-full border border-opacity-20',
-        cardBackgroundClass
+        cardBackgroundClass,
       )}
     >
       {/* Location and current weather section */}
       <div className="flex flex-row justify-between items-center pb-2 border-b border-white/20">
         <div className="flex flex-col">
           <div className="text-blue-100 font-medium">
-            {formatLocationName(weatherAtLocation.latitude, weatherAtLocation.longitude)}
+            {formatLocationName(
+              weatherAtLocation.latitude,
+              weatherAtLocation.longitude,
+            )}
           </div>
           <div className="text-blue-50 text-sm">
-            {format(new Date(weatherAtLocation.current.time), 'EEEE, MMM d, h:mm a')}
+            {format(
+              new Date(weatherAtLocation.current.time),
+              'EEEE, MMM d, h:mm a',
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full">
-          <WeatherIcon weatherCode={weatherAtLocation.current.weather_code} isDay={isDay} size={16} />
-          <span className="text-blue-50 text-sm">{currentWeatherDescription}</span>
+          <WeatherIcon
+            weatherCode={weatherAtLocation.current.weather_code}
+            isDay={isDay}
+            size={16}
+          />
+          <span className="text-blue-50 text-sm">
+            {currentWeatherDescription}
+          </span>
         </div>
       </div>
 
       {/* Temperature and conditions */}
       <div className="flex flex-row justify-between items-center">
         <div className="flex flex-row items-center gap-4">
-          <WeatherIcon weatherCode={weatherAtLocation.current.weather_code} isDay={isDay} size={48} />
+          <WeatherIcon
+            weatherCode={weatherAtLocation.current.weather_code}
+            isDay={isDay}
+            size={48}
+          />
           <div className="flex flex-col">
             <div className="text-4xl font-semibold text-white">
               {n(weatherAtLocation.current.temperature_2m)}
               {weatherAtLocation.current_units.temperature_2m}
             </div>
             <div className="text-blue-100 text-sm">
-              Feels like: {n(weatherAtLocation.current.apparent_temperature || weatherAtLocation.current.temperature_2m)}
-              {weatherAtLocation.current_units.apparent_temperature || weatherAtLocation.current_units.temperature_2m}
+              Feels like:{' '}
+              {n(
+                weatherAtLocation.current.apparent_temperature ||
+                  weatherAtLocation.current.temperature_2m,
+              )}
+              {weatherAtLocation.current_units.apparent_temperature ||
+                weatherAtLocation.current_units.temperature_2m}
             </div>
           </div>
         </div>
@@ -346,12 +413,13 @@ export function Weather({
           <div className="font-medium">{`H: ${n(currentHigh)}° L: ${n(currentLow)}°`}</div>
           {weatherAtLocation.current.relative_humidity_2m && (
             <div className="flex gap-1 items-center">
-              <Droplets size={12} /> {weatherAtLocation.current.relative_humidity_2m}%
+              <Droplets size={12} />{' '}
+              {weatherAtLocation.current.relative_humidity_2m}%
             </div>
           )}
           {weatherAtLocation.current.wind_speed_10m && (
             <div className="flex gap-1 items-center">
-              <Wind size={12} /> {weatherAtLocation.current.wind_speed_10m} 
+              <Wind size={12} /> {weatherAtLocation.current.wind_speed_10m}
               {weatherAtLocation.current_units.wind_speed_10m}
             </div>
           )}
@@ -360,17 +428,22 @@ export function Weather({
 
       {/* Hourly forecast */}
       <div className="bg-white/10 p-3 rounded-xl">
-        <h3 className="text-blue-50 text-sm font-medium mb-2">Next {hoursToShow} Hours</h3>
+        <h3 className="text-blue-50 text-sm font-medium mb-2">
+          Next {hoursToShow} Hours
+        </h3>
         <div className="flex flex-row justify-between">
           {displayTimes.map((time, index) => (
-            <div key={time} className="flex flex-col items-center gap-1 p-1 rounded-lg">
+            <div
+              key={time}
+              className="flex flex-col items-center gap-1 p-1 rounded-lg"
+            >
               <div className="text-blue-100 text-xs font-medium">
                 {format(new Date(time), 'ha')}
               </div>
-              <WeatherIcon 
-                weatherCode={displayWeatherCodes[index]} 
-                isDay={isDay} 
-                size={20} 
+              <WeatherIcon
+                weatherCode={displayWeatherCodes[index]}
+                isDay={isDay}
+                size={20}
               />
               <div className="text-blue-50 text-sm font-medium">
                 {n(displayTemperatures[index])}°
@@ -389,42 +462,59 @@ export function Weather({
       {/* Daily forecast */}
       {weatherAtLocation.daily && (
         <div className="bg-white/10 p-3 rounded-xl">
-          <h3 className="text-blue-50 text-sm font-medium mb-2">Next {daysToShow} Days</h3>
+          <h3 className="text-blue-50 text-sm font-medium mb-2">
+            Next {daysToShow} Days
+          </h3>
           <div className="flex flex-col gap-2">
-            {weatherAtLocation.daily.time.slice(0, daysToShow).map((day, index) => (
-              <div key={day} className="flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2 min-w-[90px]">
-                  <WeatherIcon 
-                    weatherCode={weatherAtLocation.daily.weather_code?.[index] || 0} 
-                    size={20} 
-                    isDay={true} 
-                  />
-                  <div className="text-blue-50 font-medium">
-                    {index === 0 ? 'Today' : format(new Date(day), 'EEE')}
+            {weatherAtLocation.daily.time
+              .slice(0, daysToShow)
+              .map((day, index) => (
+                <div
+                  key={day}
+                  className="flex flex-row items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 min-w-[90px]">
+                    <WeatherIcon
+                      weatherCode={
+                        weatherAtLocation.daily.weather_code?.[index] || 0
+                      }
+                      size={20}
+                      isDay={true}
+                    />
+                    <div className="text-blue-50 font-medium">
+                      {index === 0 ? 'Today' : format(new Date(day), 'EEE')}
+                    </div>
+                  </div>
+
+                  <div className="grow px-4">
+                    {weatherAtLocation.daily.precipitation_probability_max && (
+                      <div className="flex items-center gap-1">
+                        <Droplets size={12} className="text-blue-200" />
+                        <span className="text-xs text-blue-100">
+                          {
+                            weatherAtLocation.daily
+                              .precipitation_probability_max[index]
+                          }
+                          %
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-sm">
+                    <span className="text-blue-50 font-medium">
+                      {weatherAtLocation.daily.temperature_2m_max &&
+                        n(weatherAtLocation.daily.temperature_2m_max[index])}
+                      °
+                    </span>
+                    <span className="text-blue-200 ml-2">
+                      {weatherAtLocation.daily.temperature_2m_min &&
+                        n(weatherAtLocation.daily.temperature_2m_min[index])}
+                      °
+                    </span>
                   </div>
                 </div>
-                
-                <div className="grow px-4">
-                  {weatherAtLocation.daily.precipitation_probability_max && (
-                    <div className="flex items-center gap-1">
-                      <Droplets size={12} className="text-blue-200" />
-                      <span className="text-xs text-blue-100">
-                        {weatherAtLocation.daily.precipitation_probability_max[index]}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="text-sm">
-                  <span className="text-blue-50 font-medium">
-                    {weatherAtLocation.daily.temperature_2m_max && n(weatherAtLocation.daily.temperature_2m_max[index])}°
-                  </span>
-                  <span className="text-blue-200 ml-2">
-                    {weatherAtLocation.daily.temperature_2m_min && n(weatherAtLocation.daily.temperature_2m_min[index])}°
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -432,10 +522,12 @@ export function Weather({
       {/* Sunrise/sunset information */}
       <div className="flex justify-between items-center text-xs text-blue-100 pt-1">
         <div>
-          Sunrise: {format(new Date(weatherAtLocation.daily.sunrise[0]), 'h:mm a')}
+          Sunrise:{' '}
+          {format(new Date(weatherAtLocation.daily.sunrise[0]), 'h:mm a')}
         </div>
         <div>
-          Sunset: {format(new Date(weatherAtLocation.daily.sunset[0]), 'h:mm a')}
+          Sunset:{' '}
+          {format(new Date(weatherAtLocation.daily.sunset[0]), 'h:mm a')}
         </div>
       </div>
     </div>
@@ -472,8 +564,8 @@ function getWeatherDescription(weatherCode: number): string {
     86: 'Heavy snow showers',
     95: 'Thunderstorm',
     96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail'
+    99: 'Thunderstorm with heavy hail',
   };
-  
+
   return weatherCodeMeanings[weatherCode] || 'Unknown';
 }

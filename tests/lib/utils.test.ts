@@ -30,7 +30,9 @@ test.describe('Utility Functions', () => {
   test.describe('generateUUID', () => {
     test('should generate a valid UUID format', () => {
       const uuid = generateUUID();
-      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      expect(uuid).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
     });
 
     test('should generate unique UUIDs', () => {
@@ -52,12 +54,12 @@ test.describe('Utility Functions', () => {
       (global as any).window = {
         localStorage: {
           getItem: (_key: string) => JSON.stringify(['item1', 'item2']),
-          setItem: () => { },
-          removeItem: () => { },
-          clear: () => { },
+          setItem: () => {},
+          removeItem: () => {},
+          clear: () => {},
           key: () => null,
           length: 0,
-        }
+        },
       };
       const result = getLocalStorage('test-key');
       expect(result).toEqual(['item1', 'item2']);
@@ -180,7 +182,11 @@ test.describe('sanitizeResponseMessages', () => {
     const result = sanitizeResponseMessages({ messages, reasoning: undefined });
     expect(result).toHaveLength(1);
     expect(result[0].content).toHaveLength(1);
-    if (result[0].content[0] && typeof result[0].content[0] === 'object' && 'text' in result[0].content[0]) {
+    if (
+      result[0].content[0] &&
+      typeof result[0].content[0] === 'object' &&
+      'text' in result[0].content[0]
+    ) {
       expect((result[0].content[0] as any).text).toBe('Hello');
     }
   });
@@ -196,7 +202,7 @@ test.describe('sanitizeResponseMessages', () => {
 
     const result = sanitizeResponseMessages({
       messages,
-      reasoning: 'This is my reasoning'
+      reasoning: 'This is my reasoning',
     });
 
     expect(result[0].content).toHaveLength(2);
@@ -230,10 +236,11 @@ test.describe('fetcher', () => {
   test('should handle successful responses', async () => {
     // Mock fetch for successful response
     const mockFetch = {
-      fn: () => Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ data: 'success' }),
-      }),
+      fn: () =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: 'success' }),
+        }),
     };
     (global as any).fetch = mockFetch.fn;
 
@@ -244,11 +251,12 @@ test.describe('fetcher', () => {
   test('should handle error responses', async () => {
     // Mock fetch for error response
     const mockFetch = {
-      fn: () => Promise.resolve({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({ error: 'Not found' }),
-      }),
+      fn: () =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          json: () => Promise.resolve({ error: 'Not found' }),
+        }),
     };
     (global as any).fetch = mockFetch.fn;
 

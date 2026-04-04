@@ -7,9 +7,7 @@ export default function ShareLayout({
 }) {
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-dvh">
-        {children}
-      </div>
+      <div className="flex flex-col min-h-dvh">{children}</div>
     </ThemeProvider>
   );
 }

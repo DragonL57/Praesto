@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
+import { baseUrl as appBaseUrl } from '@/lib/constants';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.unitaskai.com';
+  const baseUrl = appBaseUrl;
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
   // Define the primary static routes

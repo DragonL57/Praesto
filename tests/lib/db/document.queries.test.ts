@@ -95,10 +95,12 @@ test.describe('Document Queries', () => {
       const documentId = 'test-doc-4';
       const timestamp = new Date('2023-01-01T00:00:00Z');
 
-      await expect(deleteDocumentsByIdAfterTimestamp({
-        id: documentId,
-        timestamp,
-      })).resolves.not.toThrow();
+      await expect(
+        deleteDocumentsByIdAfterTimestamp({
+          id: documentId,
+          timestamp,
+        }),
+      ).resolves.not.toThrow();
     });
 
     test('should handle cascade deletion of suggestions', async () => {
@@ -106,10 +108,12 @@ test.describe('Document Queries', () => {
       const documentId = 'test-doc-5';
       const timestamp = new Date('2023-01-01T00:00:00Z');
 
-      await expect(deleteDocumentsByIdAfterTimestamp({
-        id: documentId,
-        timestamp,
-      })).resolves.not.toThrow();
+      await expect(
+        deleteDocumentsByIdAfterTimestamp({
+          id: documentId,
+          timestamp,
+        }),
+      ).resolves.not.toThrow();
     });
   });
 

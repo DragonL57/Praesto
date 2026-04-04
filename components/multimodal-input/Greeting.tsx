@@ -11,7 +11,7 @@ export const Greeting = () => {
   useEffect(() => {
     // Only execute client-side code after component has mounted
     setMounted(true);
-    
+
     // Function to get user's first name from email
     const getUserFirstName = (email: string | null | undefined) => {
       if (!email) return '';
@@ -19,45 +19,48 @@ export const Greeting = () => {
       const namePart = email.split('@')[0];
       // Remove numbers and special chars, capitalize first letter
       const cleanName = namePart.replace(/[^a-zA-Z]/g, '');
-      return cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
+      return (
+        cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase()
+      );
     };
 
     // Get email from localStorage if available
-    const email = localStorage.getItem("unitaskai_remembered_email") || undefined;
+    const email =
+      localStorage.getItem('unitaskai_remembered_email') || undefined;
     const userName = getUserFirstName(email);
-    
+
     // Generate the greeting - all time/date logic only runs client-side
     const now = new Date();
     const hours = now.getHours();
     const dayOfWeek = now.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    
+
     // Create arrays of diverse greetings for different times of day
     const earlyMorningGreetings = [
       "You're up early!",
-      "Staying up late",
-      "Working late tonight",
-      "Night owl session",
+      'Staying up late',
+      'Working late tonight',
+      'Night owl session',
     ];
-    
+
     const morningGreetings = [
-      "Good morning",
-      "Morning",
-      "Hello bright and early",
+      'Good morning',
+      'Morning',
+      'Hello bright and early',
     ];
-    
+
     const afternoonGreetings = [
-      "Good afternoon",
-      "Afternoon",
-      "Hope your day is going well"
+      'Good afternoon',
+      'Afternoon',
+      'Hope your day is going well',
     ];
-    
+
     const eveningGreetings = [
-      "Good evening",
-      "Evening",
-      "Hope you had a good day"
+      'Good evening',
+      'Evening',
+      'Hope you had a good day',
     ];
-    
+
     // Use a deterministic approach - no randomness
     const getGreeting = (greetings: string[]) => {
       // Use day of month to select greeting instead of minutes
@@ -66,10 +69,10 @@ export const Greeting = () => {
       const index = date % greetings.length;
       return greetings[index];
     };
-    
+
     // Generate the base greeting based on time of day
     let baseGreeting = '';
-    
+
     // Early morning (midnight to 4:59 AM)
     if (hours >= 0 && hours < 5) {
       baseGreeting = getGreeting(earlyMorningGreetings);
@@ -77,18 +80,19 @@ export const Greeting = () => {
     // Morning (5 AM to 11:59 AM)
     else if (hours < 12) {
       baseGreeting = getGreeting(morningGreetings);
-      
+
       // Add weekend variant if it's a weekend - in a more natural way
       if (isWeekend) {
-        baseGreeting = hours < 9 ? 
-          `${baseGreeting} on this weekend` : 
-          `${baseGreeting} and happy weekend`;
+        baseGreeting =
+          hours < 9
+            ? `${baseGreeting} on this weekend`
+            : `${baseGreeting} and happy weekend`;
       }
     }
     // Afternoon (12 PM to 5:59 PM)
     else if (hours < 18) {
       baseGreeting = getGreeting(afternoonGreetings);
-      
+
       // Add weekend variant for weekends - in a more natural way
       if (isWeekend) {
         baseGreeting = `${baseGreeting} and happy weekend`;
@@ -97,13 +101,13 @@ export const Greeting = () => {
     // Evening (6 PM onwards)
     else {
       baseGreeting = getGreeting(eveningGreetings);
-      
+
       // Add weekend variant for weekend evenings - in a more natural way
       if (isWeekend) {
         baseGreeting = `${baseGreeting} and happy weekend`;
       }
     }
-    
+
     // Add personalization with the user's name if available
     const date = now.getDate();
     // Use day of month to determine format - even day puts name at end, odd day puts name at beginning
@@ -116,21 +120,18 @@ export const Greeting = () => {
     } else {
       setGreeting(baseGreeting);
     }
-    
   }, []);
-  
+
   // During server-side rendering, return a simple placeholder
   // Once mounted on client, show the actual greeting
   if (!mounted) {
     return (
       <div className="text-center mb-6">
-        <div className="text-3xl font-extrabold">
-          Welcome
-        </div>
+        <div className="text-3xl font-extrabold">Welcome</div>
       </div>
     );
   }
-  
+
   return (
     <div className="text-center mb-6">
       <motion.div
@@ -139,7 +140,7 @@ export const Greeting = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-normal"
       >
-        <Typewriter 
+        <Typewriter
           text={greeting}
           speed={70}
           initialDelay={300}

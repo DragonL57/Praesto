@@ -3,10 +3,10 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 
 import { Chat } from '@/components/chat';
-import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/providers';
+import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { generateUUID } from '@/lib/utils';
-import { DataStreamHandler } from '@/components/data-stream-handler';
 import { PageTransition } from '@/components/ui/page-transition';
+import { baseUrl } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'AI Chat Assistant | UniTaskAI',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
       'Engage with our AI assistant for instant help with coding, writing, and answering questions.',
   },
   alternates: {
-    canonical: 'https://www.unitaskai.com/',
+    canonical: `${baseUrl}/chat`,
   },
 };
 
@@ -65,7 +65,6 @@ export default async function Page() {
             selectedVisibilityType="private"
             isReadonly={false}
           />
-          <DataStreamHandler id={id} />
         </PageTransition>
       </>
     );
@@ -87,8 +86,8 @@ export default async function Page() {
           selectedVisibilityType="private"
           isReadonly={false}
         />
-        <DataStreamHandler id={id} />
       </PageTransition>
     </>
   );
 }
+

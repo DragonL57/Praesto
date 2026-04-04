@@ -126,7 +126,10 @@ export function useFileUploadHandler({
           (attachment) => attachment !== undefined,
         ) as Attachment[];
 
-        console.log('Successfully uploaded pasted images:', successfullyUploadedAttachments);
+        console.log(
+          'Successfully uploaded pasted images:',
+          successfullyUploadedAttachments,
+        );
 
         setAttachments((currentAttachments) => [
           ...currentAttachments,

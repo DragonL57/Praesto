@@ -1,106 +1,146 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-
-export const getWeather = tool({
+/**
+ * Weather tool configuration for OpenAI SDK
+ */
+export const getWeather = {
   description: 'Get detailed weather information for a location using Open Meteo API',
-  inputSchema: z.object({
-    latitude: z.number().describe('Latitude of the location'),
-    longitude: z.number().describe('Longitude of the location'),
-    timezone: z.string().optional().describe('Timezone (e.g., "auto", "Europe/Berlin", "America/New_York")'),
-    temperature_unit: z.enum(['celsius', 'fahrenheit']).optional().describe('Temperature unit (default: celsius)'),
-    wind_speed_unit: z.enum(['kmh', 'ms', 'mph', 'kn']).optional().describe('Wind speed unit (default: kmh)'),
-    precipitation_unit: z.enum(['mm', 'inch']).optional().describe('Precipitation unit (default: mm)'),
-    forecast_days: z.number().min(1).max(16).optional().describe('Number of forecast days (1-16, default: 7)'),
-  }),
-  execute: async ({
-    latitude,
-    longitude,
-    timezone = 'auto',
-    temperature_unit = 'celsius',
-    wind_speed_unit = 'kmh',
-    precipitation_unit = 'mm',
-    forecast_days = 7
-  }) => {
+  parameters: {
+    type: 'object',
+    properties: {
+      latitude: { type: 'number', description: 'Latitude of the location' },
+      longitude: { type: 'number', description: 'Longitude of the location' },
+      timezone: {
+        type: 'string',
+        description: 'Timezone (e.g., "auto", "Europe/Berlin", "America/New_York")',
+        default: 'auto',
+      },
+      temperature_unit: {
+        type: 'string',
+        enum: ['celsius', 'fahrenheit'],
+        description: 'Temperature unit (default: celsius)',
+      },
+      wind_speed_unit: {
+        type: 'string',
+        enum: ['kmh', 'ms', 'mph', 'kn'],
+        description: 'Wind speed unit (default: kmh)',
+      },
+      precipitation_unit: {
+        type: 'string',
+        enum: ['mm', 'inch'],
+        description: 'Precipitation unit (default: mm)',
+      },
+      forecast_days: {
+        type: 'number',
+        minimum: 1,
+        maximum: 16,
+        description: 'Number of forecast days (1-16, default: 7)',
+      },
+    },
+    required: ['latitude', 'longitude'],
+  },
+  execute: async (params?: Record<string, unknown>) => {
+    const p: Record<string, unknown> = params ?? {};
+    const latRaw = p.latitude;
+    const lonRaw = p.longitude;
+    const timezone = typeof p.timezone === 'string' ? p.timezone : 'auto';
+    const temperature_unit = typeof p.temperature_unit === 'string' ? p.temperature_unit : 'celsius';
+    const wind_speed_unit = typeof p.wind_speed_unit === 'string' ? p.wind_speed_unit : 'kmh';
+    const precipitation_unit = typeof p.precipitation_unit === 'string' ? p.precipitation_unit : 'mm';
+    const forecast_days_raw = p.forecast_days;
+
+    const lat = Number(latRaw ?? NaN);
+    const lon = Number(lonRaw ?? NaN);
+    const fd = typeof forecast_days_raw === 'number' ? forecast_days_raw : Number(forecast_days_raw ?? 7);
     const url = new URL('https://api.open-meteo.com/v1/forecast');
 
     // Set basic parameters
-    url.searchParams.set('latitude', latitude.toString());
-    url.searchParams.set('longitude', longitude.toString());
+    url.searchParams.set('latitude', lat.toString());
+    url.searchParams.set('longitude', lon.toString());
     url.searchParams.set('timezone', timezone);
     url.searchParams.set('temperature_unit', temperature_unit);
     url.searchParams.set('wind_speed_unit', wind_speed_unit);
     url.searchParams.set('precipitation_unit', precipitation_unit);
-    url.searchParams.set('forecast_days', forecast_days.toString());
+    url.searchParams.set('forecast_days', fd.toString());
 
     // Set current weather variables - comprehensive set
-    url.searchParams.set('current', [
-      'temperature_2m',
-      'relative_humidity_2m',
-      'apparent_temperature',
-      'is_day',
-      'precipitation',
-      'rain',
-      'showers',
-      'snowfall',
-      'weather_code',
-      'cloud_cover',
-      'pressure_msl',
-      'surface_pressure',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'wind_gusts_10m'
-    ].join(','));
+    url.searchParams.set(
+      'current',
+      [
+        'temperature_2m',
+        'relative_humidity_2m',
+        'apparent_temperature',
+        'is_day',
+        'precipitation',
+        'rain',
+        'showers',
+        'snowfall',
+        'weather_code',
+        'cloud_cover',
+        'pressure_msl',
+        'surface_pressure',
+        'wind_speed_10m',
+        'wind_direction_10m',
+        'wind_gusts_10m',
+      ].join(','),
+    );
 
     // Set hourly weather variables - most important ones
-    url.searchParams.set('hourly', [
-      'temperature_2m',
-      'relative_humidity_2m',
-      'dew_point_2m',
-      'apparent_temperature',
-      'precipitation_probability',
-      'precipitation',
-      'rain',
-      'showers',
-      'snowfall',
-      'snow_depth',
-      'weather_code',
-      'cloud_cover',
-      'visibility',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'wind_gusts_10m',
-      'uv_index',
-      'uv_index_clear_sky'
-    ].join(','));
+    url.searchParams.set(
+      'hourly',
+      [
+        'temperature_2m',
+        'relative_humidity_2m',
+        'dew_point_2m',
+        'apparent_temperature',
+        'precipitation_probability',
+        'precipitation',
+        'rain',
+        'showers',
+        'snowfall',
+        'snow_depth',
+        'weather_code',
+        'cloud_cover',
+        'visibility',
+        'wind_speed_10m',
+        'wind_direction_10m',
+        'wind_gusts_10m',
+        'uv_index',
+        'uv_index_clear_sky',
+      ].join(','),
+    );
 
     // Set daily weather variables - comprehensive set
-    url.searchParams.set('daily', [
-      'weather_code',
-      'temperature_2m_max',
-      'temperature_2m_min',
-      'temperature_2m_mean',
-      'apparent_temperature_max',
-      'apparent_temperature_min',
-      'sunrise',
-      'sunset',
-      'daylight_duration',
-      'sunshine_duration',
-      'uv_index_max',
-      'uv_index_clear_sky_max',
-      'precipitation_sum',
-      'rain_sum',
-      'showers_sum',
-      'snowfall_sum',
-      'precipitation_hours',
-      'precipitation_probability_max',
-      'wind_speed_10m_max',
-      'wind_gusts_10m_max',
-      'wind_direction_10m_dominant',
-      'shortwave_radiation_sum'
-    ].join(','));
+    url.searchParams.set(
+      'daily',
+      [
+        'weather_code',
+        'temperature_2m_max',
+        'temperature_2m_min',
+        'temperature_2m_mean',
+        'apparent_temperature_max',
+        'apparent_temperature_min',
+        'sunrise',
+        'sunset',
+        'daylight_duration',
+        'sunshine_duration',
+        'uv_index_max',
+        'uv_index_clear_sky_max',
+        'precipitation_sum',
+        'rain_sum',
+        'showers_sum',
+        'snowfall_sum',
+        'precipitation_hours',
+        'precipitation_probability_max',
+        'wind_speed_10m_max',
+        'wind_gusts_10m_max',
+        'wind_direction_10m_dominant',
+        'shortwave_radiation_sum',
+      ].join(','),
+    );
 
     try {
-      console.log(`Fetching weather data for coordinates: ${latitude}, ${longitude}`);
+      console.log(
+        `Fetching weather data for coordinates: ${lat}, ${lon}`,
+      );
       const response = await fetch(url.toString());
 
       if (!response.ok) {
@@ -108,7 +148,7 @@ export const getWeather = tool({
         console.error(`Weather API error: ${response.status} - ${errorText}`);
         return {
           error: `Failed to fetch weather data: ${response.status}`,
-          message: errorText
+          message: errorText,
         };
       }
 
@@ -118,7 +158,7 @@ export const getWeather = tool({
       weatherData.weather_code_interpretation = interpretWeatherCodes(
         weatherData.current?.weather_code,
         weatherData.daily?.weather_code,
-        weatherData.hourly?.weather_code
+        weatherData.hourly?.weather_code,
       );
 
       return weatherData;
@@ -126,11 +166,11 @@ export const getWeather = tool({
       console.error('Error fetching weather data:', error);
       return {
         error: 'Failed to fetch weather data',
-        message: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
       };
     }
   },
-});
+};
 
 /**
  * Interpret WMO weather codes and provide human-readable descriptions
@@ -138,7 +178,7 @@ export const getWeather = tool({
 function interpretWeatherCodes(
   currentCode?: number,
   dailyCodes?: number[],
-  hourlyCodes?: number[]
+  hourlyCodes?: number[],
 ) {
   const weatherCodeMeanings: Record<number, string> = {
     0: 'Clear sky',
@@ -168,10 +208,9 @@ function interpretWeatherCodes(
     86: 'Heavy snow showers',
     95: 'Thunderstorm',
     96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail'
+    99: 'Thunderstorm with heavy hail',
   };
 
-  // Define a specific type for weather interpretations
   interface WeatherInterpretation {
     current?: string;
     daily?: string[];
@@ -180,19 +219,20 @@ function interpretWeatherCodes(
 
   const interpretation: WeatherInterpretation = {};
 
-  // Interpret current weather code
   if (currentCode !== undefined) {
     interpretation.current = weatherCodeMeanings[currentCode] || 'Unknown';
   }
 
-  // Interpret daily weather codes - using optional chaining
   if (dailyCodes?.length) {
-    interpretation.daily = dailyCodes.map(code => weatherCodeMeanings[code] || 'Unknown');
+    interpretation.daily = dailyCodes.map(
+      (code) => weatherCodeMeanings[code] || 'Unknown',
+    );
   }
 
-  // Interpret hourly weather codes - using optional chaining
   if (hourlyCodes?.length) {
-    interpretation.hourly = hourlyCodes.map(code => weatherCodeMeanings[code] || 'Unknown');
+    interpretation.hourly = hourlyCodes.map(
+      (code) => weatherCodeMeanings[code] || 'Unknown',
+    );
   }
 
   return interpretation;

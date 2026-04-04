@@ -15,8 +15,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
-    const page = Number.parseInt(searchParams.get('page') || '1');
-    const limit = Number.parseInt(searchParams.get('limit') || '20');
+    const page = Number.parseInt(searchParams.get('page') || '1', 10);
+    const limit = Number.parseInt(searchParams.get('limit') || '20', 10);
     const offset = (page - 1) * limit;
 
     // Subquery to get message counts per chat
@@ -24,7 +24,9 @@ export async function GET(request: Request) {
       .select({
         chatId: message.chatId,
         messageCount: count(message.id).as('messageCount'),
-        lastMessageTime: sql<string>`MAX(${message.createdAt})`.as('lastMessageTime'),
+        lastMessageTime: sql<string>`MAX(${message.createdAt})`.as(
+          'lastMessageTime',
+        ),
       })
       .from(message)
       .groupBy(message.chatId)
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
     console.error('Error fetching conversations:', error);
     return NextResponse.json(
       { error: 'Failed to fetch conversations' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

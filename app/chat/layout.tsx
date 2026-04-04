@@ -15,10 +15,10 @@ export default async function Layout({
   // Explicitly read headers and cookies first
   await headers(); // Read headers
   const cookieStore = await cookies(); // Existing cookies call
-  
+
   // Fetch session first
   const session = await auth();
-  
+
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
 
   return (

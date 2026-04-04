@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { UsersRound, ActivitySquare, BellOff, UserPlus } from "lucide-react";
+import { Card, CardContent } from '@/components/ui/card';
+import { UsersRound, ActivitySquare, BellOff, UserPlus } from 'lucide-react';
 
 export function UserStatsCards() {
   return (
@@ -12,7 +12,9 @@ export function UserStatsCards() {
             <UsersRound className="size-6 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Total Users
+            </p>
             <h3 className="text-2xl font-bold">2,853</h3>
           </div>
         </CardContent>
@@ -23,7 +25,9 @@ export function UserStatsCards() {
             <ActivitySquare className="size-6 text-green-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Active Users
+            </p>
             <h3 className="text-2xl font-bold">1,924</h3>
           </div>
         </CardContent>
@@ -34,7 +38,9 @@ export function UserStatsCards() {
             <BellOff className="size-6 text-yellow-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Inactive Users</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Inactive Users
+            </p>
             <h3 className="text-2xl font-bold">429</h3>
           </div>
         </CardContent>
@@ -45,7 +51,9 @@ export function UserStatsCards() {
             <UserPlus className="size-6 text-blue-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">New This Month</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              New This Month
+            </p>
             <h3 className="text-2xl font-bold">72</h3>
           </div>
         </CardContent>

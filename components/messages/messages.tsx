@@ -1,7 +1,5 @@
-import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { memo, useEffect, useRef, useState, useMemo } from 'react';
-import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import { AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -9,15 +7,20 @@ import type {
   SetMessagesFunction,
   AppendFunction,
   ChatStatus,
+  Message,
+  Attachment,
 } from '@/lib/ai/types';
-// Removing framer-motion for better performance
-// import { motion, AnimatePresence } from 'framer-motion';
+
+interface Suggestion {
+  title: string;
+  label: string;
+  action: string;
+}
 
 interface MessagesProps {
   chatId: string;
   status: ChatStatus;
-  votes: Array<Vote> | undefined;
-  messages: Array<UIMessage>;
+  messages: Array<Message>;
   setMessages: SetMessagesFunction;
   reload: () => Promise<string | null | undefined>;
   append: AppendFunction;
@@ -25,12 +28,17 @@ interface MessagesProps {
   isArtifactVisible: boolean;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
+  suggestions?: Suggestion[];
+  suggestionsLoading?: boolean;
+  sendMessage?: (args: {
+    text: string;
+    attachments?: Attachment[];
+  }) => Promise<void>;
 }
 
 function PureMessages({
   chatId,
   status,
-  votes,
   messages,
   setMessages,
   reload,
@@ -38,6 +46,9 @@ function PureMessages({
   isReadonly,
   messagesContainerRef: externalContainerRef,
   messagesEndRef: externalEndRef,
+  suggestions,
+  suggestionsLoading,
+  sendMessage,
 }: MessagesProps) {
   // Use external refs if provided, otherwise create our own
   const internalContainerRef = useRef<HTMLDivElement>(null);
@@ -76,18 +87,20 @@ function PureMessages({
 
   // Scroll to bottom when opening a conversation (chatId changes)
   useEffect(() => {
-    const container = containerRef.current;
+    const _container = containerRef.current;
     const end = endRef.current;
 
-    // Check if chatId has changed or if this is the first mount
     if (chatId !== prevChatIdRef.current) {
       prevChatIdRef.current = chatId;
       hasInitialScrolledRef.current = false;
     }
 
-    // Scroll to bottom when conversation loads and has messages
-    if (!hasInitialScrolledRef.current && messages.length > 0 && end && container) {
-      // Use a small delay to ensure DOM is ready
+    if (
+      !hasInitialScrolledRef.current &&
+      messages.length > 0 &&
+      end &&
+      _container
+    ) {
       const timeoutId = setTimeout(() => {
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'instant', block: 'end' });
@@ -104,14 +117,13 @@ function PureMessages({
     const container = containerRef.current;
     if (!container) return;
 
-    const SCROLL_UP_THRESHOLD = 100; // Pixels from bottom to consider "scrolled up"
+    const SCROLL_UP_THRESHOLD = 100;
     let scrollTimeout: NodeJS.Timeout | null = null;
 
     const handleScroll = () => {
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
-      // Debounce scroll event slightly to avoid excessive state updates
       scrollTimeout = setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = container;
         const distanceScrolledFromBottom =
@@ -120,7 +132,6 @@ function PureMessages({
         if (distanceScrolledFromBottom > SCROLL_UP_THRESHOLD) {
           if (!userHasScrolledUp) setUserHasScrolledUp(true);
         } else {
-          // If user is close to the bottom (e.g., within 5px), consider them "at bottom"
           if (userHasScrolledUp && distanceScrolledFromBottom < 5) {
             setUserHasScrolledUp(false);
           }
@@ -133,12 +144,12 @@ function PureMessages({
       if (scrollTimeout) clearTimeout(scrollTimeout);
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [containerRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies to re-evaluate if needed (e.g. for the if !userHasScrolledUp check)
+  }, [containerRef, userHasScrolledUp]);
 
   // Only scroll to bottom when messages are added or when streaming starts/continues
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const _container = containerRef.current;
+    if (!_container) return;
 
     const lastMessage =
       messages.length > 0 ? messages[messages.length - 1] : null;
@@ -160,7 +171,7 @@ function PureMessages({
         });
       }
       lastUserMessageIdRef.current = lastMessage.id;
-      setUserHasScrolledUp(false); // Reset user scroll state when new user message is sent
+      setUserHasScrolledUp(false);
       prevMessagesLengthRef.current = messages.length;
       isStreamingRef.current = status === 'streaming';
       return;
@@ -177,7 +188,6 @@ function PureMessages({
         (status === 'streaming' && isStreamingRef.current);
 
       if (shouldScrollToBottom && !userHasScrolledUp) {
-        // Modified condition
         requestAnimationFrame(() => {
           end.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
@@ -186,13 +196,11 @@ function PureMessages({
 
     prevMessagesLengthRef.current = messages.length;
     isStreamingRef.current = status === 'streaming';
-  }, [messages, status, containerRef, endRef, userHasScrolledUp]); // Added userHasScrolledUp to dependencies
+  }, [messages, status, containerRef, endRef, userHasScrolledUp]);
 
-  // Check if there are any visible elements that would require scrolling
   const hasVisibleContent =
     messages.length > 0 || (status === 'submitted' && messages.length > 0);
 
-  // Determine if we should use virtualization
   const shouldVirtualize = messages.length > 20;
 
   return (
@@ -208,7 +216,6 @@ function PureMessages({
     >
       <div className="flex flex-col min-w-0 gap-3 p-4 md:px-0 md:max-w-3xl md:mx-auto w-full">
         {shouldVirtualize ? (
-          // Virtualized rendering for long conversations
           <div
             style={{
               height: `${totalSize}px`,
@@ -219,6 +226,8 @@ function PureMessages({
             {virtualItems.map((virtualItem) => {
               const message = messages[virtualItem.index];
               const index = virtualItem.index;
+              const isLastAssistantMessage =
+                message.role === 'assistant' && index === messages.length - 1;
 
               return (
                 <div
@@ -241,27 +250,36 @@ function PureMessages({
                     isLoading={
                       status === 'streaming' && messages.length - 1 === index
                     }
-                    vote={
-                      votes
-                        ? votes.find((vote) => vote.messageId === message.id)
-                        : undefined
-                    }
                     setMessages={setMessages}
                     reload={wrappedReload}
                     append={append}
                     isReadonly={isReadonly}
+                    suggestions={
+                      isLastAssistantMessage && !isReadonly
+                        ? suggestions
+                        : undefined
+                    }
+                    suggestionsLoading={
+                      isLastAssistantMessage && !isReadonly
+                        ? suggestionsLoading
+                        : false
+                    }
+                    sendMessage={sendMessage}
+                    status={status}
                   />
                 </div>
               );
             })}
           </div>
         ) : (
-          // Regular rendering for short conversations
-          <>
-            {messages.map((message, index) => (
+          messages.map((message, index) => {
+            const isLastAssistantMessage =
+              message.role === 'assistant' && index === messages.length - 1;
+
+            return (
               <div
                 key={message.id}
-                data-message-id={message.id} // Add data-message-id for selection
+                data-message-id={message.id}
                 className="transition-opacity duration-300 ease-in-out"
               >
                 <PreviewMessage
@@ -270,19 +288,26 @@ function PureMessages({
                   isLoading={
                     status === 'streaming' && messages.length - 1 === index
                   }
-                  vote={
-                    votes
-                      ? votes.find((vote) => vote.messageId === message.id)
-                      : undefined
-                  }
                   setMessages={setMessages}
                   reload={wrappedReload}
                   append={append}
                   isReadonly={isReadonly}
+                  suggestions={
+                    isLastAssistantMessage && !isReadonly
+                      ? suggestions
+                      : undefined
+                  }
+                  suggestionsLoading={
+                    isLastAssistantMessage && !isReadonly
+                      ? suggestionsLoading
+                      : false
+                  }
+                  sendMessage={sendMessage}
+                  status={status}
                 />
               </div>
-            ))}
-          </>
+            );
+          })
         )}
 
         <AnimatePresence>
@@ -311,10 +336,11 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.isArtifactVisible && nextProps.isArtifactVisible) return true;
 
   if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.status && nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
+  if (prevProps.suggestionsLoading !== nextProps.suggestionsLoading)
+    return false;
+  if (!equal(prevProps.suggestions, nextProps.suggestions)) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
 
   return true;
 });

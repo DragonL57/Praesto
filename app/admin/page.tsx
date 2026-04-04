@@ -1,19 +1,25 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Overview } from "@/components/admin/dashboard/overview";
-import { RecentUsers } from "@/components/admin/dashboard/recent-users";
-import { StatusCards } from "@/components/admin/dashboard/status-cards";
-import { ModelUsage } from "@/components/admin/dashboard/model-usage";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Overview } from '@/components/admin/dashboard/overview';
+import { RecentUsers } from '@/components/admin/dashboard/recent-users';
+import { StatusCards } from '@/components/admin/dashboard/status-cards';
+import { ModelUsage } from '@/components/admin/dashboard/model-usage';
 
 export default function AdminDashboard() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-      
+
       {/* Status Cards */}
       <StatusCards />
-      
+
       {/* Usage Charts */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
@@ -39,7 +45,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Recent Users */}
       <Card>
         <CardHeader>

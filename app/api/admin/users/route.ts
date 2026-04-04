@@ -13,8 +13,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     // Removed unused status variable
-    const limit = Number.parseInt(searchParams.get('limit') || '50');
-    const offset = Number.parseInt(searchParams.get('offset') || '0');
+    const limit = Number.parseInt(searchParams.get('limit') || '50', 10);
+    const offset = Number.parseInt(searchParams.get('offset') || '0', 10);
 
     // Subquery to get message counts per user
     const userMessages = db
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       .where(
         searchQuery
           ? sql`LOWER(${user.email}) LIKE ${`%${searchQuery.toLowerCase()}%`}`
-          : sql`1=1`
+          : sql`1=1`,
       )
       .groupBy(user.id, user.email, userMessages.messageCount)
       .orderBy(desc(sql<string>`MAX(${chat.createdAt})`))
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Failed to fetch users' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

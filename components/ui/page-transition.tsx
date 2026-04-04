@@ -6,7 +6,9 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 // Create the cn function directly in this file to avoid import issues
-function cn(...inputs: (string | undefined | null | false | Record<string, boolean>)[]) {
+function cn(
+  ...inputs: (string | undefined | null | false | Record<string, boolean>)[]
+) {
   return twMerge(clsx(inputs));
 }
 

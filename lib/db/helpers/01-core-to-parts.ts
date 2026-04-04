@@ -4,12 +4,19 @@ import {
   chat,
   message,
   messageDeprecated,
-  vote,
-  voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { inArray } from 'drizzle-orm';
-import type { UIMessage } from 'ai';
+
+// Local type for deprecated messages to avoid dependency on 'ai'
+type DeprecatedMessage = {
+  id: string;
+  chatId: string;
+  role: string;
+  content?: string;
+  createdAt?: Date;
+  parts?: Record<string, unknown>[];
+};
 
 config({
   path: '.env.local',
@@ -34,12 +41,6 @@ type NewMessageInsert = {
   createdAt: Date;
 };
 
-type NewVoteInsert = {
-  messageId: string;
-  chatId: string;
-  isUpvoted: boolean;
-};
-
 async function createNewTable() {
   const chats = await db.select().from(chat);
   let processedCount = 0;
@@ -55,38 +56,31 @@ async function createNewTable() {
       .from(messageDeprecated)
       .where(inArray(messageDeprecated.chatId, chatIds));
 
-    const allVotes = await db
-      .select()
-      .from(voteDeprecated)
-      .where(inArray(voteDeprecated.chatId, chatIds));
-
     // Prepare batches for insertion
     const newMessagesToInsert: NewMessageInsert[] = [];
-    const newVotesToInsert: NewVoteInsert[] = [];
 
     // Process each chat in the batch
     for (const chat of chatBatch) {
       processedCount++;
       console.info(`Processed ${processedCount}/${chats.length} chats`);
 
-      // Filter messages and votes for this specific chat
+      // Filter messages for this specific chat
       const messages = allMessages.filter((msg) => msg.chatId === chat.id);
-      const votes = allVotes.filter((v) => v.chatId === chat.id);
 
       // Group messages into sections
-      const messageSection: Array<UIMessage> = [];
-      const messageSections: Array<Array<UIMessage>> = [];
+      const messageSection: Array<DeprecatedMessage> = [];
+      const messageSections: Array<Array<DeprecatedMessage>> = [];
 
-      for (const message of messages) {
-        const { role } = message;
+      for (const msg of messages) {
+        const { role } = msg;
 
         if (role === 'user' && messageSection.length > 0) {
           messageSections.push([...messageSection]);
           messageSection.length = 0;
         }
 
-        // Cast message to Record since deprecated message schema has different type
-        messageSection.push(message as unknown as UIMessage);
+        // Use the msg directly now that we have DeprecatedMessage type
+        messageSection.push(msg as DeprecatedMessage);
       }
 
       if (messageSection.length > 0) {
@@ -105,14 +99,16 @@ async function createNewTable() {
 
           // Add user message
           if (userMessage) {
-            const userContent = (userMessage as { content?: string }).content || '';
+            const userContent =
+              (userMessage as { content?: string }).content || '';
             projectedUISection.push({
               id: userMessage.id,
               chatId: chat.id,
               parts: [{ type: 'text', text: userContent }],
               role: 'user',
               // Use createdAt if available on the message, otherwise use current date
-              createdAt: (userMessage as { createdAt?: Date }).createdAt || new Date(),
+              createdAt:
+                (userMessage as { createdAt?: Date }).createdAt || new Date(),
               attachments: [],
             });
           }
@@ -131,7 +127,7 @@ async function createNewTable() {
                 ? [{ type: 'text', text: msgWithContent.content }]
                 : []);
 
-            // Cast firstAssistantMessage to access createdAt (not part of UIMessage in SDK 5.x)
+            // Cast firstAssistantMessage to access createdAt
             const firstMsgWithCreatedAt = firstAssistantMessage as unknown as {
               createdAt?: Date;
             };
@@ -151,17 +147,6 @@ async function createNewTable() {
           // Add messages to batch
           for (const msg of projectedUISection) {
             newMessagesToInsert.push(msg);
-
-            if (msg.role === 'assistant') {
-              const voteByMessage = votes.find((v) => v.messageId === msg.id);
-              if (voteByMessage) {
-                newVotesToInsert.push({
-                  messageId: msg.id,
-                  chatId: msg.chatId,
-                  isUpvoted: voteByMessage.isUpvoted,
-                });
-              }
-            }
           }
         } catch (error) {
           console.error(`Error processing chat ${chat.id}: ${error}`);
@@ -184,14 +169,6 @@ async function createNewTable() {
         }));
 
         await db.insert(message).values(validMessageBatch);
-      }
-    }
-
-    // Batch insert votes
-    for (let j = 0; j < newVotesToInsert.length; j += INSERT_BATCH_SIZE) {
-      const voteBatch = newVotesToInsert.slice(j, j + INSERT_BATCH_SIZE);
-      if (voteBatch.length > 0) {
-        await db.insert(vote).values(voteBatch);
       }
     }
   }

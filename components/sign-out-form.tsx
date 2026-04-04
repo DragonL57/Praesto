@@ -6,9 +6,9 @@ import { Button } from './ui/button';
 export const SignOutForm = () => {
   const handleSignOut = () => {
     // Use the same basePath that we configured in our SessionProvider
-    signOut({ 
+    signOut({
       callbackUrl: '/',
-      redirect: true
+      redirect: true,
     });
   };
 

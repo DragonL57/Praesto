@@ -2,48 +2,42 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { UIMessage } from 'ai';
+import type { Message, TextPart, ReloadFunction, SetMessagesFunction, MessagePart, ChatRequestOptions } from '@/lib/ai/types';
+import { toast } from 'sonner';
 
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import type { ReloadFunction, SetMessagesFunction } from '@/lib/ai/types';
-
-// Define proper types for message parts
-interface TextMessagePart {
-  type: 'text';
-  text: string;
-}
-
-interface ImageMessagePart {
-  type: 'image';
-  image: string;
-}
-
-// Prefix with underscore since it's not directly used yet but helps with type safety
-type _MessagePart = TextMessagePart | ImageMessagePart;
+import { deleteTrailingMessages } from '@/lib/actions/chat';
 
 export type MessageEditorProps = {
-  message: UIMessage;
+  message: Message;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
   setMessages: SetMessagesFunction;
   reload: ReloadFunction;
+  append: (
+    message: {
+      role: 'user' | 'assistant';
+      parts: MessagePart[];
+      id?: string;
+      createdAt?: Date;
+    },
+    options?: ChatRequestOptions,
+  ) => Promise<string | null | undefined>;
 };
 
 export function MessageEditor({
   message,
   setMode,
-  setMessages,
-  reload,
+  setMessages: _setMessages,
+  reload: _reload,
+  append,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // AI SDK 5.x: Extract text content from message parts (content property no longer exists)
   const extractMessageText = () => {
-    // Extract text from message parts
     if (message.parts && message.parts.length > 0) {
       return message.parts
-        .filter((part): part is TextMessagePart => part.type === 'text')
+        .filter((part): part is TextPart => part.type === 'text')
         .map((part) => part.text)
         .join('\n')
         .trim();
@@ -105,29 +99,26 @@ export function MessageEditor({
           onClick={async () => {
             setIsSubmitting(true);
 
-            await deleteTrailingMessages({
-              id: message.id,
-            });
+            try {
+              // 1. Delete trailing messages from DB
+              await deleteTrailingMessages({ id: message.id });
 
-            // @ts-expect-error todo: support UIMessage in setMessages
-            setMessages((messages) => {
-              const index = messages.findIndex((m) => m.id === message.id);
+              setMode('view');
 
-              if (index !== -1) {
-                const updatedMessage = {
-                  ...message,
-                  content: draftContent,
-                  parts: [{ type: 'text', text: draftContent }],
-                };
-
-                return [...messages.slice(0, index), updatedMessage];
-              }
-
-              return messages;
-            });
-
-            setMode('view');
-            reload();
+              // 2. Trigger a new generation by appending the updated message
+              // We pass the same ID so the hook knows to replace the old message 
+              // and truncate anything after it.
+              await append({
+                id: message.id,
+                role: 'user',
+                parts: [{ type: 'text', text: draftContent }],
+              });
+            } catch (error) {
+              console.error('Failed to submit edited message:', error);
+              toast.error('Failed to update message. Please try again.');
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
         >
           {isSubmitting ? 'Sending...' : 'Send'}

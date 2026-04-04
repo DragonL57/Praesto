@@ -4,12 +4,12 @@ import { auth } from '@/app/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-    const session = await auth();
+  const session = await auth();
 
-    // Return the session data as JSON with proper headers
-    return NextResponse.json(session, {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+  // Return the session data as JSON with proper headers
+  return NextResponse.json(session, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 }

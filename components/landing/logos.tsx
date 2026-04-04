@@ -1,13 +1,15 @@
-"use client"
+'use client';
 
-import Image from "next/image"
+import Image from 'next/image';
 
 export function Logos() {
   return (
     <section className="w-full py-12 border-y bg-muted/30">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <p className="text-sm font-medium text-muted-foreground">Trusted by innovative companies worldwide</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            Trusted by innovative companies worldwide
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16">
             {[1, 2, 3, 4, 5].map((i) => (
               <Image
@@ -23,5 +25,5 @@ export function Logos() {
         </div>
       </div>
     </section>
-  )
+  );
 }

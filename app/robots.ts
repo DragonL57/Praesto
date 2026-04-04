@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { baseUrl } from '@/lib/constants';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -43,7 +44,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/'],
       },
     ],
-    sitemap: 'https://www.unitaskai.com/sitemap.xml',
-    host: 'https://www.unitaskai.com',
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

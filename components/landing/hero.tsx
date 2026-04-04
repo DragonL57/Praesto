@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import Image from "next/image"
-import { motion } from "framer-motion"
-import { Check, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { Check, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export function Hero() {
   return (
@@ -19,15 +19,18 @@ export function Hero() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-3xl mx-auto mb-12"
         >
-          <Badge className="mb-4 rounded-full px-4 py-1.5 text-sm font-medium" variant="secondary">
+          <Badge
+            className="mb-4 rounded-full px-4 py-1.5 text-sm font-medium"
+            variant="secondary"
+          >
             AI-Powered Workspace
           </Badge>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
             Think Better, Create Faster with UniTaskAI
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Your all-in-one AI companion for content creation, code generation and data analysis. 
-            Accomplish in minutes what used to take hours.
+            Your all-in-one AI companion for content creation, code generation
+            and data analysis. Accomplish in minutes what used to take hours.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register" passHref>
@@ -37,7 +40,11 @@ export function Hero() {
               </Button>
             </Link>
             <Link href="/chat" passHref>
-              <Button size="lg" variant="outline" className="rounded-full h-12 px-8 text-base">
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-full h-12 px-8 text-base"
+              >
                 See It In Action
               </Button>
             </Link>
@@ -80,5 +87,5 @@ export function Hero() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

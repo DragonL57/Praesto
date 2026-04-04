@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -10,9 +10,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { MoreHorizontal, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/table';
+import { MoreHorizontal, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+} from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
 interface User {
@@ -56,13 +56,16 @@ export function RecentUsers() {
   }, []);
 
   // Function to determine user status based on lastActive
-  const getUserStatus = (lastActive: string | null): 'active' | 'inactive' | 'new' => {
+  const getUserStatus = (
+    lastActive: string | null,
+  ): 'active' | 'inactive' | 'new' => {
     if (!lastActive) return 'new';
-    
+
     const lastActiveDate = new Date(lastActive);
     const now = new Date();
-    const diffInDays = (now.getTime() - lastActiveDate.getTime()) / (1000 * 3600 * 24);
-    
+    const diffInDays =
+      (now.getTime() - lastActiveDate.getTime()) / (1000 * 3600 * 24);
+
     if (diffInDays < 7) return 'active';
     return 'inactive';
   };
@@ -85,7 +88,9 @@ export function RecentUsers() {
           <TableRow>
             <TableHead>User</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="hidden md:table-cell">Conversations</TableHead>
+            <TableHead className="hidden md:table-cell">
+              Conversations
+            </TableHead>
             <TableHead className="hidden md:table-cell">Last Active</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -108,7 +113,7 @@ export function RecentUsers() {
           ) : (
             users.map((user) => {
               const status = getUserStatus(user.lastActive);
-              
+
               return (
                 <TableRow key={user.id}>
                   <TableCell>
@@ -120,25 +125,31 @@ export function RecentUsers() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium leading-none">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">User ID: {user.id.substring(0, 8)}...</p>
+                        <p className="text-sm font-medium leading-none">
+                          {user.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          User ID: {user.id.substring(0, 8)}...
+                        </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={
-                        status === "active" 
-                          ? "default" 
-                          : status === "new" 
-                          ? "secondary" 
-                          : "outline"
+                        status === 'active'
+                          ? 'default'
+                          : status === 'new'
+                            ? 'secondary'
+                            : 'outline'
                       }
                     >
                       {status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{user.chatCount || 0}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {user.chatCount || 0}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {formatLastActive(user.lastActive)}
                   </TableCell>
@@ -153,13 +164,19 @@ export function RecentUsers() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem>
-                          <Link href={`/admin/users/${user.id}`} className="flex items-center w-full">
+                          <Link
+                            href={`/admin/users/${user.id}`}
+                            className="flex items-center w-full"
+                          >
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                          <Link href={`/admin/users/${user.id}/chats`} className="flex items-center w-full">
+                          <Link
+                            href={`/admin/users/${user.id}/chats`}
+                            className="flex items-center w-full"
+                          >
                             View Conversations
                           </Link>
                         </DropdownMenuItem>

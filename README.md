@@ -23,7 +23,7 @@
   - Hooks for building dynamic chat and generative user interfaces
   - Supports xAI, OpenAI, Fireworks, and other model providers
 - AI Tools for Enhanced Capabilities
-  - Web Search integration using DuckDuckGo for real-time information lookup
+  - Web Search integration using Brave Search API for real-time information lookup
   - Weather information retrieval for location-specific forecasts
   - Document creation and management for rich content generation
 - [shadcn/ui](https://ui.shadcn.com)

@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,15 +16,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, Eye, Loader2 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import Link from "next/link";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Edit, MoreHorizontal, Eye, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { DeleteUserButton } from "@/app/admin/users/delete-user-button";
+import { DeleteUserButton } from '@/app/admin/users/delete-user-button';
 
 interface UsersTableProps {
   searchQuery?: string;
@@ -39,7 +39,10 @@ interface User {
   messageCount: number | null;
 }
 
-export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) {
+export function UsersTable({
+  searchQuery = '',
+  statusFilter,
+}: UsersTableProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +59,10 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
         // Adding status would require backend support for this filter
         params.append('limit', String(pageSize));
         params.append('offset', String(page * pageSize));
-        
+
         const response = await fetch(`/api/admin/users?${params.toString()}`);
         if (!response.ok) throw new Error('Failed to fetch users');
-        
+
         const data = await response.json();
         setUsers(data.users);
         setTotalUsers(data.totalCount);
@@ -74,33 +77,36 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
   }, [searchQuery, statusFilter, page]);
 
   // Function to determine user status based on lastActive
-  const getUserStatus = (lastActive: string | null): 'active' | 'inactive' | 'new' => {
+  const getUserStatus = (
+    lastActive: string | null,
+  ): 'active' | 'inactive' | 'new' => {
     if (!lastActive) return 'new';
-    
+
     const lastActiveDate = new Date(lastActive);
     const now = new Date();
-    const diffInDays = (now.getTime() - lastActiveDate.getTime()) / (1000 * 3600 * 24);
-    
+    const diffInDays =
+      (now.getTime() - lastActiveDate.getTime()) / (1000 * 3600 * 24);
+
     if (diffInDays < 7) return 'active';
     return 'inactive';
   };
 
   // Filter users based on statusFilter if provided
-  const filteredUsers = statusFilter 
-    ? users.filter(user => getUserStatus(user.lastActive) === statusFilter)
+  const filteredUsers = statusFilter
+    ? users.filter((user) => getUserStatus(user.lastActive) === statusFilter)
     : users;
 
   const handleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map(user => user.id));
+      setSelectedUsers(filteredUsers.map((user) => user.id));
     }
   };
 
   const handleSelectUser = (userId: string) => {
     if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     } else {
       setSelectedUsers([...selectedUsers, userId]);
     }
@@ -130,16 +136,23 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
-                <Checkbox 
-                  checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                <Checkbox
+                  checked={
+                    filteredUsers.length > 0 &&
+                    selectedUsers.length === filteredUsers.length
+                  }
                   onCheckedChange={handleSelectAll}
                   aria-label="Select all users"
                 />
               </TableHead>
               <TableHead>User</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Conversations</TableHead>
-              <TableHead className="hidden md:table-cell">Last Active</TableHead>
+              <TableHead className="hidden md:table-cell">
+                Conversations
+              </TableHead>
+              <TableHead className="hidden md:table-cell">
+                Last Active
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -161,11 +174,11 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
             ) : (
               filteredUsers.map((user) => {
                 const status = getUserStatus(user.lastActive);
-                
+
                 return (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedUsers.includes(user.id)}
                         onCheckedChange={() => handleSelectUser(user.id)}
                         aria-label={`Select user ${user.email}`}
@@ -181,25 +194,31 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
                         </Avatar>
                         <div>
                           <p className="font-medium">{user.email}</p>
-                          <p className="text-xs text-muted-foreground">ID: {user.id.substring(0, 8)}...</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {user.id.substring(0, 8)}...
+                          </p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge 
+                      <Badge
                         variant={
-                          status === "active" 
-                            ? "default" 
-                            : status === "new" 
-                              ? "secondary" 
-                              : "outline"
+                          status === 'active'
+                            ? 'default'
+                            : status === 'new'
+                              ? 'secondary'
+                              : 'outline'
                         }
                       >
                         {status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{user.chatCount}</TableCell>
-                    <TableCell className="hidden md:table-cell">{formatLastActive(user.lastActive)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {user.chatCount}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {formatLastActive(user.lastActive)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -208,13 +227,19 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
                             <span className="sr-only">Open menu</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => {
-                          // Prevent auto focus which can cause unwanted close
-                          e.preventDefault();
-                        }}>
+                        <DropdownMenuContent
+                          align="end"
+                          onCloseAutoFocus={(e) => {
+                            // Prevent auto focus which can cause unwanted close
+                            e.preventDefault();
+                          }}
+                        >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem>
-                            <Link href={`/admin/users/${user.id}`} className="flex items-center w-full">
+                            <Link
+                              href={`/admin/users/${user.id}`}
+                              className="flex items-center w-full"
+                            >
                               <Eye className="mr-2 size-4" />
                               View Details
                             </Link>
@@ -224,14 +249,16 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
                             Edit User
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={(e) => {
-                            // Prevent the dropdown from closing when clicking the delete item
-                            e.preventDefault();
-                          }}>
-                            <DeleteUserButton 
-                              userId={user.id} 
-                              email={user.email} 
-                              variant="menuItem" 
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              // Prevent the dropdown from closing when clicking the delete item
+                              e.preventDefault();
+                            }}
+                          >
+                            <DeleteUserButton
+                              userId={user.id}
+                              email={user.email}
+                              variant="menuItem"
                             />
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -244,14 +271,14 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Pagination controls */}
       {pageCount > 1 && (
         <div className="flex items-center justify-end space-x-2 py-4">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.max(0, p - 1))}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
           >
             Previous
@@ -262,7 +289,7 @@ export function UsersTable({ searchQuery = '', statusFilter }: UsersTableProps) 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
             disabled={page === pageCount - 1}
           >
             Next
