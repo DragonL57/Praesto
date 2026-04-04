@@ -11,6 +11,7 @@ import { InputSkeleton, MultimodalInput } from './multimodal-input';
 import { Messages } from './messages/messages';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
+import { buildUserTimeContext } from '@/lib/ai/context';
 import { usePraestoChat } from '@/hooks/use-praesto-chat';
 
 import type { Message, Attachment, ChatStatus } from '@/lib/ai/types';
@@ -77,14 +78,7 @@ export function Chat({
     initialMessages,
     body: {
       selectedChatModel: globallySelectedModelId,
-      userTimeContext: {
-        date: new Date().toDateString(),
-        time: new Date().toTimeString().split(' ')[0],
-        dayOfWeek: new Date().toLocaleDateString('en-US', {
-          weekday: 'long',
-        }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
+      userTimeContext: buildUserTimeContext(),
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));

@@ -12,6 +12,13 @@ export const openai = new OpenAI({
   baseURL: 'https://api.poe.com/v1',
 });
 
+// Model ID to Poe bot name mapping
+const MODEL_BOT_MAP: Record<string, string> = {
+  'chat-model': 'grok-4.1-fast-reasoning',
+  'title-model': 'grok-4.1-fast-non-reasoning',
+  'fast-model': 'grok-4.1-fast-non-reasoning',
+};
+
 // Helper functions for model configuration
 export function getModelConfiguration(modelId: string) {
   const currentModel =
@@ -43,7 +50,6 @@ export async function getAvailableTools() {
 
 /**
  * Get chat completion parameters for OpenAI client
- * Restored to single-agent logic
  */
 export async function getChatCompletionParams(
   modelId: string,
@@ -53,15 +59,14 @@ export async function getChatCompletionParams(
     time: string;
     dayOfWeek: string;
     timeZone: string;
-  }
+  },
+  userMessage?: string,
 ) {
   const { supportsTools, extraParams } = getModelConfiguration(modelId);
   const modelOptions = getModelOptions();
 
-  // Map modelId to actual Poe bot name if needed
-  let actualModel = modelId;
-  if (modelId === 'chat-model') actualModel = 'grok-4.1-fast-reasoning';
-  if (modelId === 'title-model' || modelId === 'fast-model') actualModel = 'grok-4.1-fast-non-reasoning';
+  // Map modelId to actual Poe bot name
+  const actualModel = MODEL_BOT_MAP[modelId] || modelId;
 
   // Base config with standard options
   const baseConfig: Record<string, unknown> = {
@@ -69,7 +74,7 @@ export async function getChatCompletionParams(
     messages: [
       {
         role: 'system',
-        content: systemPrompt({ selectedChatModel: actualModel, userTimeContext }),
+        content: systemPrompt({ userTimeContext, userMessage }),
       },
       ...messages,
     ],
@@ -79,12 +84,15 @@ export async function getChatCompletionParams(
 
   // Process extraParams: prioritize top-level known params, put others in extra_body
   if (extraParams) {
-    const { max_tokens, temperature, ...otherParams } = extraParams as Record<string, unknown>;
-    
+    const { max_tokens, temperature, ...otherParams } = extraParams as Record<
+      string,
+      unknown
+    >;
+
     // Override top-level params if specified in extraParams
     if (max_tokens !== undefined) baseConfig.max_tokens = max_tokens;
     if (temperature !== undefined) baseConfig.temperature = temperature;
-    
+
     // Add remaining parameters to extra_body (standard for Poe/OpenAI extensions)
     if (Object.keys(otherParams).length > 0) {
       baseConfig.extra_body = {
@@ -96,14 +104,16 @@ export async function getChatCompletionParams(
   // Use custom function calling tools for models that support them
   if (supportsTools) {
     const { tools } = await getAvailableTools();
-    baseConfig.tools = Object.entries(tools).map(([name, tool]: [string, unknown]) => ({
-      type: 'function',
-      function: {
-        name,
-        description: (tool as Record<string, unknown>)?.description,
-        parameters: (tool as Record<string, unknown>)?.parameters,
-      },
-    }));
+    baseConfig.tools = Object.entries(tools).map(
+      ([name, tool]: [string, unknown]) => ({
+        type: 'function',
+        function: {
+          name,
+          description: (tool as Record<string, unknown>)?.description,
+          parameters: (tool as Record<string, unknown>)?.parameters,
+        },
+      }),
+    );
   }
 
   return baseConfig;

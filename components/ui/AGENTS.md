@@ -2,9 +2,19 @@
 
 Base shadcn/ui components using Radix UI primitives + Tailwind CSS.
 
-## Files
-- 52 components in components/ui/
-- Pattern: cva variants with class-variance-authority
+## Purpose
+Reusable, accessible UI building blocks. All components follow the cva variant pattern.
+
+## File Structure
+```
+components/ui/
+├── button.tsx
+├── input.tsx
+├── dialog.tsx
+├── dropdown-menu.tsx
+├── ... (52+ shadcn/ui components)
+└── AGENTS.md
+```
 
 ## Conventions
 ```typescript
@@ -33,3 +43,5 @@ export function Component({ className, variant, size, ...props }: Props) {
 - ❌ Inline styles (use Tailwind)
 - ❌ Skip defaultVariants
 - ❌ Forget cn() wrapper
+- ❌ Add business logic to UI components
+- ❌ Skip accessibility attributes

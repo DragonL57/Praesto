@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 
 import type { Message, ChatStatus } from '@/lib/ai/types';
+import { buildUserTimeContext } from '@/lib/ai/context';
 import { usePraestoChat } from '@/hooks/use-praesto-chat';
 import { Messages } from '../messages/messages';
 import type { VisibilityType } from '../visibility-selector';
@@ -30,14 +31,7 @@ export function SharedChat({
     initialMessages,
     body: {
       selectedChatModel: selectedChatModel,
-      userTimeContext: {
-        date: new Date().toDateString(),
-        time: new Date().toTimeString().split(' ')[0],
-        dayOfWeek: new Date().toLocaleDateString('en-US', {
-          weekday: 'long',
-        }),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
+      userTimeContext: buildUserTimeContext(),
     },
   });
 
@@ -62,4 +56,3 @@ export function SharedChat({
     </div>
   );
 }
-

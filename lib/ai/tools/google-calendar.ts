@@ -62,16 +62,19 @@ const calendarEventParameters = {
     location: { type: 'string', description: 'Location of the event' },
     startDateTime: {
       type: 'string',
-      description: 'Start date and time in ISO 8601 format (e.g., "2024-03-20T10:00:00")',
+      description:
+        'Start date and time in ISO 8601 format (e.g., "2024-03-20T10:00:00")',
     },
     endDateTime: {
       type: 'string',
-      description: 'End date and time in ISO 8601 format (e.g., "2024-03-20T11:00:00")',
+      description:
+        'End date and time in ISO 8601 format (e.g., "2024-03-20T11:00:00")',
     },
     timeZone: {
       type: 'string',
       default: 'America/New_York',
-      description: 'Time zone for the event (e.g., "America/New_York", "Europe/London")',
+      description:
+        'Time zone for the event (e.g., "America/New_York", "Europe/London")',
     },
     attendees: {
       type: 'array',
@@ -96,52 +99,54 @@ const calendarEventParameters = {
     recurrence: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Recurrence rules in RRULE format (e.g., ["RRULE:FREQ=DAILY;COUNT=10"])',
+      description:
+        'Recurrence rules in RRULE format (e.g., ["RRULE:FREQ=DAILY;COUNT=10"])',
     },
   },
 };
 
 // List events tool
 export const listCalendarEvents = {
-  description:
-    'List calendar events within a specified time range. Use this to check availability, view scheduled events, or search for specific meetings.',
+  description: 'List calendar events within a specified time range.',
   parameters: {
     type: 'object',
     properties: {
       calendarId: {
         type: 'string',
         default: process.env.GOOGLE_CALENDAR_ID || 'primary',
-        description: 'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       timeMin: {
         type: 'string',
-        description: 'Start date/time in ISO 8601 format (e.g., "2024-03-20T00:00:00Z")',
+        description:
+          'Start date/time in ISO 8601 format (e.g., "2024-03-20T00:00:00Z")',
       },
       timeMax: {
         type: 'string',
-        description: 'End date/time in ISO 8601 format (e.g., "2024-03-27T23:59:59Z")',
+        description:
+          'End date/time in ISO 8601 format (e.g., "2024-03-27T23:59:59Z")',
       },
       maxResults: {
         type: 'number',
         minimum: 1,
         maximum: 100,
         default: 10,
-        description: 'Maximum number of events to return (1-100, default: 10)',
+        description: 'Max events to return (1-100, default: 10)',
       },
       query: {
         type: 'string',
-        description: 'Free text search query to filter events',
+        description: 'Free text search to filter events',
       },
       singleEvents: {
         type: 'boolean',
         default: true,
-        description: 'Whether to expand recurring events into instances',
+        description: 'Expand recurring events into instances',
       },
       orderBy: {
         type: 'string',
         enum: ['startTime', 'updated'],
         default: 'startTime',
-        description: 'Order of events in the result',
+        description: 'Sort order',
       },
     },
     required: ['timeMin'],
@@ -158,10 +163,23 @@ export const listCalendarEvents = {
     try {
       const calendar = await getGoogleCalendarClient();
 
+      // Normalize date strings: ensure they have timezone info
+      // Default to Asia/Ho_Chi_Minh (UTC+7) if no timezone specified
+      const normalizeDate = (dateStr: string | undefined) => {
+        if (!dateStr) return dateStr;
+        if (
+          dateStr.endsWith('Z') ||
+          dateStr.includes('+') ||
+          dateStr.endsWith('z')
+        )
+          return dateStr;
+        return `${dateStr}+07:00`;
+      };
+
       const response = await calendar.events.list({
         calendarId,
-        timeMin,
-        timeMax,
+        timeMin: normalizeDate(timeMin),
+        timeMax: normalizeDate(timeMax),
         maxResults,
         q: query,
         singleEvents,
@@ -185,7 +203,10 @@ export const listCalendarEvents = {
         location: event.location,
         start: event.start?.dateTime || event.start?.date,
         end: event.end?.dateTime || event.end?.date,
-        attendees: (event.attendees?.map((a) => a?.email).filter((e): e is string => typeof e === 'string')) || [],
+        attendees:
+          event.attendees
+            ?.map((a) => a?.email)
+            .filter((e): e is string => typeof e === 'string') || [],
         status: event.status,
         htmlLink: event.htmlLink,
         colorId: event.colorId,
@@ -222,8 +243,7 @@ export const listCalendarEvents = {
 
 // Create event tool
 export const createCalendarEvent = {
-  description:
-    'Create a new calendar event. Use this to schedule meetings, appointments, reminders, or any time-blocked activities.',
+  description: 'Create a new calendar event.',
   parameters: {
     ...calendarEventParameters,
     properties: {
@@ -231,7 +251,7 @@ export const createCalendarEvent = {
       calendarId: {
         type: 'string',
         default: process.env.GOOGLE_CALENDAR_ID || 'primary',
-        description: 'Calendar ID (default: env GOOGLE_CALENDAR_ID or "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       sendUpdates: {
         type: 'string',
@@ -274,9 +294,9 @@ export const createCalendarEvent = {
         attendees: attendees?.map((email: string) => ({ email })),
         reminders: reminders
           ? {
-            useDefault: false,
-            overrides: reminders,
-          }
+              useDefault: false,
+              overrides: reminders,
+            }
           : undefined,
         colorId,
         recurrence,
@@ -321,7 +341,7 @@ export const updateCalendarEvent = {
       calendarId: {
         type: 'string',
         default: 'primary',
-        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       eventId: { type: 'string', description: 'ID of the event to update' },
       sendUpdates: {
@@ -433,7 +453,7 @@ export const deleteCalendarEvent = {
       calendarId: {
         type: 'string',
         default: 'primary',
-        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       eventId: { type: 'string', description: 'ID of the event to delete' },
       sendUpdates: {
@@ -445,7 +465,11 @@ export const deleteCalendarEvent = {
     },
     required: ['eventId'],
   },
-  execute: async ({ calendarId = 'primary', eventId, sendUpdates = 'all' }: DeleteEventParams) => {
+  execute: async ({
+    calendarId = 'primary',
+    eventId,
+    sendUpdates = 'all',
+  }: DeleteEventParams) => {
     try {
       const calendar = await getGoogleCalendarClient();
 
@@ -490,7 +514,7 @@ export const findFreeTimeSlots = {
       calendarId: {
         type: 'string',
         default: 'primary',
-        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       timeMin: {
         type: 'string',
@@ -613,7 +637,7 @@ export const getCalendarEvent = {
       calendarId: {
         type: 'string',
         default: 'primary',
-        description: 'Calendar ID (default: "primary" for the user\'s primary calendar)',
+        description: 'Calendar ID (default: primary calendar)',
       },
       eventId: { type: 'string', description: 'ID of the event to retrieve' },
     },

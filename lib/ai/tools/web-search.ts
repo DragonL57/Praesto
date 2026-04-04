@@ -7,7 +7,10 @@ let nextAvailableTime = 0;
 const MIN_REQUEST_INTERVAL_MS = 1500; // 1.5 seconds between requests for Free plan safety
 
 // Rate limiting: Ensure minimum interval between requests by reserving slots
-async function rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
+async function rateLimitedFetch(
+  url: string,
+  options: RequestInit,
+): Promise<Response> {
   const now = Date.now();
 
   // Calculate wait time based on the next available slot
@@ -16,10 +19,13 @@ async function rateLimitedFetch(url: string, options: RequestInit): Promise<Resp
 
   // Reserve the slot for this request and update the next available time
   // This ensures even simultaneous calls get sequential slots
-  nextAvailableTime = Math.max(now, nextAvailableTime) + MIN_REQUEST_INTERVAL_MS;
+  nextAvailableTime =
+    Math.max(now, nextAvailableTime) + MIN_REQUEST_INTERVAL_MS;
 
   if (waitTime > 0) {
-    console.log(`[Rate Limit] Waiting ${waitTime}ms to avoid 429 (Brave Search Free plan limit)`);
+    console.log(
+      `[Rate Limit] Waiting ${waitTime}ms to avoid 429 (Brave Search Free plan limit)`,
+    );
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
@@ -57,12 +63,87 @@ interface SearchResult {
 
 // Supported country codes for Brave Search API
 const SUPPORTED_COUNTRIES = [
-  'AR', 'AU', 'AT', 'BE', 'BR', 'CA', 'CL', 'DK', 'FI', 'FR', 'DE', 'GR', 'HK', 'IN', 'ID', 'IT', 'JP', 'KR', 'MY', 'MX', 'NL', 'NZ', 'NO', 'CN', 'PL', 'PT', 'PH', 'RU', 'SA', 'ZA', 'ES', 'SE', 'CH', 'TW', 'TR', 'GB', 'US', 'ALL'
+  'AR',
+  'AU',
+  'AT',
+  'BE',
+  'BR',
+  'CA',
+  'CL',
+  'DK',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'HK',
+  'IN',
+  'ID',
+  'IT',
+  'JP',
+  'KR',
+  'MY',
+  'MX',
+  'NL',
+  'NZ',
+  'NO',
+  'CN',
+  'PL',
+  'PT',
+  'PH',
+  'RU',
+  'SA',
+  'ZA',
+  'ES',
+  'SE',
+  'CH',
+  'TW',
+  'TR',
+  'GB',
+  'US',
+  'ALL',
 ];
 
 // Supported UI languages for Brave Search API
 const UI_LANGUAGES = [
-  'es-AR', 'en-AU', 'de-AT', 'nl-BE', 'fr-BE', 'pt-BR', 'en-CA', 'fr-CA', 'es-CL', 'da-DK', 'fi-FI', 'fr-FR', 'de-DE', 'el-GR', 'zh-HK', 'en-IN', 'en-ID', 'it-IT', 'ja-JP', 'ko-KR', 'en-MY', 'es-MX', 'nl-NL', 'en-NZ', 'no-NO', 'zh-CN', 'pl-PL', 'en-PH', 'ru-RU', 'en-ZA', 'es-ES', 'sv-SE', 'fr-CH', 'de-CH', 'zh-TW', 'tr-TR', 'en-GB', 'en-US', 'es-US'
+  'es-AR',
+  'en-AU',
+  'de-AT',
+  'nl-BE',
+  'fr-BE',
+  'pt-BR',
+  'en-CA',
+  'fr-CA',
+  'es-CL',
+  'da-DK',
+  'fi-FI',
+  'fr-FR',
+  'de-DE',
+  'el-GR',
+  'zh-HK',
+  'en-IN',
+  'en-ID',
+  'it-IT',
+  'ja-JP',
+  'ko-KR',
+  'en-MY',
+  'es-MX',
+  'nl-NL',
+  'en-NZ',
+  'no-NO',
+  'zh-CN',
+  'pl-PL',
+  'en-PH',
+  'ru-RU',
+  'en-ZA',
+  'es-ES',
+  'sv-SE',
+  'fr-CH',
+  'de-CH',
+  'zh-TW',
+  'tr-TR',
+  'en-GB',
+  'en-US',
+  'es-US',
 ];
 
 /**
@@ -70,78 +151,44 @@ const UI_LANGUAGES = [
  */
 export const webSearch = {
   description:
-    'Perform a web search using Brave Search and return the results. Supports real-time information lookup with high-quality sources, news, videos, and more.',
+    'Search the web using Brave Search. Returns results with titles, URLs, and snippets.',
   parameters: {
     type: 'object',
     properties: {
       query: {
         type: 'string',
         maxLength: 400,
-        description: 'The search query (max 400 characters, 50 words)',
+        description: 'The search query (max 400 characters)',
       },
       count: {
         type: 'number',
         minimum: 1,
         maximum: 20,
         default: 10,
-        description: 'Number of search results to return (default: 10, max: 20)',
+        description: 'Number of results to return (default: 10)',
       },
       country: {
         type: 'string',
         default: 'ALL',
-        description: 'The 2-character country code (e.g., "US", "DE", "GB"). Use "ALL" for global results. Default: "ALL".',
+        description:
+          '2-character country code (e.g., "US", "DE"). Use "ALL" for global.',
       },
       search_lang: {
         type: 'string',
         default: 'vi',
-        description: 'The 2+ character language code for search results (e.g., "en", "es", "vi"). Default: "vi".',
-      },
-      ui_lang: {
-        type: 'string',
-        description: 'UI language preference in format <language>-<country> (e.g., "en-US", "vi-VN").',
+        description:
+          'Language code for results (e.g., "en", "vi"). Default: "vi".',
       },
       safesearch: {
         type: 'string',
         enum: ['off', 'moderate', 'strict'],
         default: 'moderate',
-        description: 'Safe search filter: "off" (no filtering), "moderate" (filter explicit content), "strict" (drop all adult content). Default: "moderate".',
+        description: 'Safe search level. Default: "moderate".',
       },
       freshness: {
         type: 'string',
-        description: "Filter by freshness: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year), or date range '2024-01-01to2024-12-31'.",
-      },
-      offset: {
-        type: 'number',
-        minimum: 0,
-        maximum: 9,
-        description: 'Pagination offset (0-9). Use with count to paginate results.',
-      },
-      spellcheck: {
-        type: 'boolean',
-        default: true,
-        description: 'Whether to spellcheck the query. Modified query appears in response. Default: true.',
-      },
-      result_filter: {
-        type: 'string',
-        description: 'Comma-delimited result types to include: discussions, faq, infobox, news, query, summarizer, videos, web, locations. Example: "news,videos".',
-      },
-      text_decorations: {
-        type: 'boolean',
-        default: true,
-        description: 'Include decoration markers (highlighting) in snippets. Default: true.',
-      },
-      extra_snippets: {
-        type: 'boolean',
-        description: 'Get up to 5 additional alternative excerpts per result. Requires premium plan.',
-      },
-      summary: {
-        type: 'boolean',
-        description: 'Enable summary key generation in results. Required for summarizer. Requires premium plan.',
-      },
-      units: {
-        type: 'string',
-        enum: ['metric', 'imperial'],
-        description: 'Measurement units: "metric" (standardized) or "imperial" (British system). Auto-detected from country if not provided.',
+        description:
+          "Filter by freshness: 'pd' (past day), 'pw' (past week), 'pm' (past month), 'py' (past year).",
       },
     },
     required: ['query'],
@@ -180,13 +227,17 @@ export const webSearch = {
     units?: string;
   }) => {
     // Validate country code - Brave Search only supports specific countries
-    const validatedCountry = SUPPORTED_COUNTRIES.includes(country?.toUpperCase())
+    const validatedCountry = SUPPORTED_COUNTRIES.includes(
+      country?.toUpperCase(),
+    )
       ? country.toUpperCase()
       : 'ALL';
 
     // Check if API key is configured
     if (!BRAVE_API_KEY) {
-      console.error('[Brave Search] Missing BRAVE_API_KEY environment variable');
+      console.error(
+        '[Brave Search] Missing BRAVE_API_KEY environment variable',
+      );
       return {
         results: [
           {
@@ -221,13 +272,16 @@ export const webSearch = {
 
       // Add optional parameters
       if (ui_lang) {
-        const validatedUiLang = UI_LANGUAGES.includes(ui_lang) ? ui_lang : 'en-US';
+        const validatedUiLang = UI_LANGUAGES.includes(ui_lang)
+          ? ui_lang
+          : 'en-US';
         params.append('ui_lang', validatedUiLang);
       }
       if (freshness) params.append('freshness', freshness);
       if (offset !== undefined) params.append('offset', offset.toString());
       if (result_filter) params.append('result_filter', result_filter);
-      if (extra_snippets) params.append('extra_snippets', extra_snippets.toString());
+      if (extra_snippets)
+        params.append('extra_snippets', extra_snippets.toString());
       if (summary) params.append('summary', summary.toString());
       if (units) params.append('units', units);
 
@@ -237,7 +291,7 @@ export const webSearch = {
         {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Accept-Encoding': 'gzip',
             'X-Subscription-Token': BRAVE_API_KEY,
           },
@@ -253,12 +307,11 @@ export const webSearch = {
         if (response.status === 422) {
           errorDetail += ` (Unprocessable Entity - ${errorBody})`;
         } else if (response.status === 401 || response.status === 403) {
-          errorDetail += ' (Authentication failed - verify BRAVE_API_KEY is valid)';
+          errorDetail +=
+            ' (Authentication failed - verify BRAVE_API_KEY is valid)';
         }
 
-        throw new Error(
-          `Brave Search API error: ${errorDetail}`,
-        );
+        throw new Error(`Brave Search API error: ${errorDetail}`);
       }
 
       interface BraveWebResult {
@@ -400,7 +453,9 @@ export const webSearch = {
 
       // Add discussion/forum results if available
       if (data.discussions?.results && data.discussions.results.length > 0) {
-        console.log(`Found ${data.discussions.results.length} discussion results`);
+        console.log(
+          `Found ${data.discussions.results.length} discussion results`,
+        );
         const discussionHeader: SearchResult = {
           title: '💬 Discussions & Forums',
           href: '',
@@ -408,11 +463,13 @@ export const webSearch = {
         };
         allResults.push(discussionHeader);
 
-        const discussionResults = data.discussions.results.slice(0, 3).map((result) => ({
-          title: result.data?.title || 'Forum Discussion',
-          href: '',
-          body: `[${result.data?.forum_name || 'Forum'}] ${result.data?.question || result.data?.top_comment || 'No details'} ${result.data?.num_answers ? `(${result.data.num_answers} answers)` : ''}`,
-        }));
+        const discussionResults = data.discussions.results
+          .slice(0, 3)
+          .map((result) => ({
+            title: result.data?.title || 'Forum Discussion',
+            href: '',
+            body: `[${result.data?.forum_name || 'Forum'}] ${result.data?.question || result.data?.top_comment || 'No details'} ${result.data?.num_answers ? `(${result.data.num_answers} answers)` : ''}`,
+          }));
         allResults.push(...discussionResults);
       }
 
