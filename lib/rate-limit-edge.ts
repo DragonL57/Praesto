@@ -78,8 +78,11 @@ export async function rateLimitEdge(
         counter = parseInt(storedCount, 10);
         isValid = true;
       }
-    } catch {
-      // Invalid cookie, reset counter
+    } catch (error) {
+      console.warn(
+        '[rateLimitEdge] Invalid or tampered rate limit cookie:',
+        error,
+      );
     }
   }
 

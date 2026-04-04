@@ -3,9 +3,9 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
-import { useLocalStorage } from 'usehooks-ts';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLocalStorage } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -72,16 +72,6 @@ export default function LoginPage() {
         toast({
           type: 'error',
           description: result.message || 'Invalid email or password format.',
-        });
-      } else if (result.status === 'account_locked') {
-        toast({
-          type: 'error',
-          description: 'Invalid email or password. Please try again.',
-        });
-      } else if (result.status === 'email_not_verified') {
-        toast({
-          type: 'error',
-          description: 'Invalid email or password. Please try again.',
         });
       } else if (result.status === 'success') {
         const safeCallback =

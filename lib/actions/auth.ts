@@ -36,14 +36,7 @@ const loginFormSchema = z.object({
 });
 
 export interface LoginActionState {
-  status:
-    | 'idle'
-    | 'in_progress'
-    | 'success'
-    | 'failed'
-    | 'invalid_data'
-    | 'account_locked'
-    | 'email_not_verified';
+  status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data';
   message?: string;
 }
 
@@ -58,24 +51,11 @@ function mapAuthError(error: unknown): {
         ?.message || '';
     const combined = `${msg} ${causeMsg}`;
 
-    if (combined.includes('AccountLocked')) {
-      return {
-        status: 'account_locked',
-        message:
-          'Your account is temporarily locked due to too many failed login attempts. Please try again in 15 minutes.',
-      };
-    }
-
-    if (combined.includes('EmailNotVerified')) {
-      return {
-        status: 'email_not_verified',
-        message: 'Please verify your email address before signing in.',
-      };
-    }
-
     if (
       combined.includes('CredentialsSignin') ||
-      combined.includes('CallbackRouteError')
+      combined.includes('CallbackRouteError') ||
+      combined.includes('AccountLocked') ||
+      combined.includes('EmailNotVerified')
     ) {
       return {
         status: 'failed',
@@ -123,9 +103,8 @@ export const login = async (
     await setVerificationToken(userFromDb.id, verificationToken);
     await sendVerificationEmail(email, verificationToken);
     return {
-      status: 'email_not_verified',
-      message:
-        'Your email is not verified. We sent a new verification email, please check your inbox.',
+      status: 'failed',
+      message: 'Invalid email or password. Please try again.',
     };
   }
 
@@ -133,13 +112,9 @@ export const login = async (
     userFromDb.accountLockedUntil &&
     new Date(userFromDb.accountLockedUntil) > new Date()
   ) {
-    const unlockTime = new Date(userFromDb.accountLockedUntil);
-    const minutesRemaining = Math.ceil(
-      (unlockTime.getTime() - Date.now()) / 60000,
-    );
     return {
-      status: 'account_locked',
-      message: `Your account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`,
+      status: 'failed',
+      message: 'Invalid email or password. Please try again.',
     };
   }
 
@@ -147,7 +122,7 @@ export const login = async (
     await signIn('credentials', {
       email,
       password,
-      redirectTo: '/chat',
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
