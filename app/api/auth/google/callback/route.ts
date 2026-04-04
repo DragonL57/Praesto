@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import {
@@ -5,26 +6,13 @@ import {
   getAuthorizationUrl,
 } from '@/lib/services/google-calendar-api';
 
-/**
- * Google Calendar OAuth Callback Handler
- *
- * This route handles the OAuth 2.0 callback from Google after user authorization.
- *
- * Flow:
- * 1. User visits /api/auth/google?action=authorize to start OAuth flow
- * 2. User is redirected to Google's consent screen
- * 3. After authorization, Google redirects back to this endpoint with code
- * 4. Exchange code for access and refresh tokens
- * 5. Store tokens securely (you should save to database)
- */
-
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const action = searchParams.get('action');
   const error = searchParams.get('error');
+  const returnedState = searchParams.get('state');
 
-  // Handle authorization errors
   if (error) {
     return NextResponse.json(
       {
@@ -35,11 +23,26 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Start OAuth flow - redirect to Google
   if (action === 'authorize') {
     try {
-      const authUrl = getAuthorizationUrl();
-      return NextResponse.redirect(authUrl);
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const state = Array.from(randomBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const authUrl = getAuthorizationUrl(state);
+
+      const response = NextResponse.redirect(authUrl);
+      response.cookies.set('google_oauth_state', state, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 600,
+        path: '/',
+        sameSite: 'lax',
+      });
+
+      return response;
     } catch {
       return NextResponse.json(
         {
@@ -51,7 +54,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Handle OAuth callback - exchange code for tokens
   if (!code) {
     return NextResponse.json(
       {
@@ -62,25 +64,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const cookieStore = await cookies();
+  const savedState = cookieStore.get('google_oauth_state')?.value;
+
+  if (!savedState || !returnedState || savedState !== returnedState) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Invalid state parameter. Possible CSRF attack detected.',
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     const tokens = await getTokensFromCode(code);
 
-    // TODO: Store tokens securely
-    // In production, you should:
-    // 1. Get the authenticated user's ID (from session/JWT)
-    // 2. Encrypt the tokens
-    // 3. Store them in your database associated with the user
-    //
-    // Example:
-    // await db.update(users)
-    //   .set({
-    //     googleAccessToken: encrypt(tokens.access_token),
-    //     googleRefreshToken: encrypt(tokens.refresh_token),
-    //   })
-    //   .where(eq(users.id, userId));
+    cookieStore.delete('google_oauth_state');
 
-    // For development/testing, return the tokens
-    // WARNING: Do NOT expose tokens in production!
     if (process.env.NODE_ENV === 'development') {
       return NextResponse.json({
         success: true,
@@ -98,7 +99,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // In production, redirect to success page
     return NextResponse.redirect(
       new URL('/settings?calendar=connected', request.url),
     );

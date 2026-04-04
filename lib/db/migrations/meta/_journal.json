@@ -71,6 +71,13 @@
       "when": 1766396963479,
       "tag": "0009_acoustic_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775284385789,
+      "tag": "0010_curvy_rockslide",
+      "breakpoints": true
     }
   ]
 }

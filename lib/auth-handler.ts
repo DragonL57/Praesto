@@ -15,11 +15,11 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   ...authConfig,
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // Only update session once per 24 hours (reduces auth calls)
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   providers: [
     Credentials({
@@ -40,25 +40,24 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
         const userFromDb = users[0];
 
-        // Check if the account is locked
+        if (!userFromDb.emailVerified) {
+          throw new Error('EmailNotVerified');
+        }
+
         if (await isAccountLocked(userFromDb.id)) {
-          console.log(`Login attempt for locked account: ${email}`);
-          return null;
+          throw new Error('AccountLocked');
         }
 
         const userPassword = userFromDb.password;
         if (!userPassword) return null;
-        const passwordsMatch = await compare(password, userPassword);
 
+        const passwordsMatch = await compare(password, userPassword);
         if (!passwordsMatch) {
-          // Increment failed attempts on password mismatch
           await incrementFailedLoginAttempts(userFromDb.id);
           return null;
         }
 
-        // Reset failed attempts counter on successful login
         await resetFailedLoginAttempts(userFromDb.id);
-
         return userFromDb;
       },
     }),
@@ -66,17 +65,18 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     jwt({ token, user }) {
-      // `user` is the DbUser from authorize(), only on initial sign-in
       if (user) {
-        token.id = user.id;
-        // Don't try to set emailVerified on token - keep it simple
+        const dbUser = user as DbUser;
+        token.id = dbUser.id;
+        token.sessionVersion = dbUser.sessionVersion ?? 1;
       }
-
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
+        (session.user as { sessionVersion?: number }).sessionVersion =
+          token.sessionVersion as number;
       }
       return session;
     },
