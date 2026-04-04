@@ -25,7 +25,11 @@ export async function GET(request: Request) {
       });
 
       return response;
-    } catch {
+    } catch (error) {
+      console.error(
+        '[API /api/auth/google] Failed to generate authorization URL:',
+        error,
+      );
       return NextResponse.json(
         {
           success: false,

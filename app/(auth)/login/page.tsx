@@ -3,6 +3,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,19 @@ import { toast } from '@/components/toast';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { login } from '@/lib/actions/auth';
 
+function isValidCallbackUrl(url: string): boolean {
+  if (!url) return false;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      const parsed = new URL(url);
+      return parsed.origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }
+  return url.startsWith('/');
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,14 +35,17 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [rememberedEmail, setRememberedEmail] = useLocalStorage(
+    'unitaskai_remembered_email',
+    '',
+  );
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('unitaskai_remembered_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
       setRememberMe(true);
     }
-  }, []);
+  }, [rememberedEmail]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,9 +55,9 @@ export default function LoginPage() {
     setEmail(emailValue);
 
     if (rememberMe) {
-      localStorage.setItem('unitaskai_remembered_email', emailValue);
+      setRememberedEmail(emailValue);
     } else {
-      localStorage.removeItem('unitaskai_remembered_email');
+      setRememberedEmail('');
     }
 
     startTransition(async () => {
@@ -59,15 +76,19 @@ export default function LoginPage() {
       } else if (result.status === 'account_locked') {
         toast({
           type: 'error',
-          description: result.message || 'Account is temporarily locked.',
+          description: 'Invalid email or password. Please try again.',
         });
       } else if (result.status === 'email_not_verified') {
         toast({
           type: 'error',
-          description: result.message || 'Please verify your email.',
+          description: 'Invalid email or password. Please try again.',
         });
       } else if (result.status === 'success') {
-        router.push(callbackUrl || '/chat');
+        const safeCallback =
+          callbackUrl && isValidCallbackUrl(callbackUrl)
+            ? callbackUrl
+            : '/chat';
+        router.push(safeCallback);
       }
     });
   }

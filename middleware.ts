@@ -1,11 +1,20 @@
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from './lib/auth-handler';
 import { rateLimitEdge } from './lib/rate-limit-edge';
-import type { NextRequest } from 'next/server';
+
+const PUBLIC_API_PREFIXES = ['/api/public/', '/api/cron/', '/api/auth/'];
 
 export default async function middleware(request: NextRequest) {
-  const rateLimitResponse = rateLimitEdge(request);
+  const path = request.nextUrl.pathname;
+
+  const rateLimitResponse = await rateLimitEdge(request);
   if (rateLimitResponse) {
     return rateLimitResponse;
+  }
+
+  if (PUBLIC_API_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return NextResponse.next();
   }
 
   return (

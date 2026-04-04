@@ -4,6 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 
 import {
   getUser,
+  getUserById,
   isAccountLocked,
   incrementFailedLoginAttempts,
   resetFailedLoginAttempts,
@@ -64,11 +65,17 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         const dbUser = user as DbUser;
         token.id = dbUser.id;
         token.sessionVersion = dbUser.sessionVersion ?? 1;
+      }
+      if (token.id) {
+        const dbUser = await getUserById(token.id as string);
+        if (!dbUser || dbUser.sessionVersion !== token.sessionVersion) {
+          return {} as typeof token;
+        }
       }
       return token;
     },

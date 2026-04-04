@@ -3,11 +3,14 @@
 
 import { AuthError } from 'next-auth';
 import { z } from 'zod';
-import { compare, genSaltSync, hashSync } from 'bcrypt-ts';
+import { compare } from 'bcrypt-ts';
 
 import { signIn } from '@/app/auth';
 import { createUser, getUser, setVerificationToken } from '@/lib/db/queries';
 import { generateToken, sendVerificationEmail } from '@/lib/services/email';
+
+const DUMMY_HASH =
+  '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm';
 
 const passwordSchema = z
   .string()
@@ -106,9 +109,7 @@ export const login = async (
   const users = await getUser(email);
 
   if (users.length === 0) {
-    const dummySalt = genSaltSync(10);
-    const dummyHash = hashSync('dummy-password', dummySalt);
-    await compare(password, dummyHash);
+    await compare(password, DUMMY_HASH);
     return {
       status: 'failed',
       message: 'Invalid email or password. Please try again.',
@@ -157,7 +158,6 @@ export const login = async (
       return mapAuthError(error);
     }
 
-    console.error('Login action unexpected error:', error);
     return {
       status: 'failed',
       message: 'An unexpected error occurred. Please try again.',
@@ -214,10 +214,6 @@ export const register = async (
 
     const users = await getUser(email);
     if (users.length === 0) {
-      console.error(
-        'Failed to retrieve user immediately after creation:',
-        email,
-      );
       return {
         status: 'failed',
         message: 'Failed to create account. Please try again later.',
@@ -230,10 +226,6 @@ export const register = async (
     const emailSent = await sendVerificationEmail(email, verificationToken);
 
     if (!emailSent) {
-      console.error(
-        'Failed to send verification email during registration for:',
-        email,
-      );
       return {
         status: 'verification_email_sent',
         message:
@@ -246,8 +238,7 @@ export const register = async (
       message:
         'Account created! Please check your email to verify your account.',
     };
-  } catch (error) {
-    console.error('Registration error:', error);
+  } catch {
     return {
       status: 'failed',
       message: 'Failed to create account. Please try again later.',

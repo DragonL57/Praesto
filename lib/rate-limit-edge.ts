@@ -13,7 +13,31 @@ const AUTH_ENDPOINT_LIMITS: Record<string, number> = {
   'callback/credentials:POST': 20,
 };
 
-export function rateLimitEdge(request: NextRequest): NextResponse | null {
+async function createHmacSignature(
+  data: string,
+  secret: string,
+): Promise<string> {
+  return crypto.subtle
+    .importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    )
+    .then((key) =>
+      crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)),
+    )
+    .then((buffer) =>
+      Array.from(new Uint8Array(buffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join(''),
+    );
+}
+
+export async function rateLimitEdge(
+  request: NextRequest,
+): Promise<NextResponse | null> {
   const path = request.nextUrl.pathname;
   const method = request.method;
 
@@ -25,49 +49,66 @@ export function rateLimitEdge(request: NextRequest): NextResponse | null {
 
   const maxRequests = AUTH_ENDPOINT_LIMITS[limitKey] || 100;
 
-  const ip =
+  const _ip =
     request.headers.get('x-forwarded-for')?.split(',')[0] ||
     request.headers.get('x-real-ip') ||
     'unknown';
-  const key = `${ip}:${limitKey}`;
 
   const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  const windowId = Math.floor(now / RATE_LIMIT_WINDOW_MS);
 
-  const rateLimitCookie = request.cookies.get('rl_data')?.value;
-  let requests: Array<{ key: string; timestamp: number }> = [];
+  const cookieName = `rl_${limitKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  const cookieData = request.cookies.get(cookieName)?.value;
 
-  if (rateLimitCookie) {
+  let counter = 0;
+  let isValid = false;
+
+  if (cookieData) {
     try {
-      requests = JSON.parse(decodeURIComponent(rateLimitCookie));
+      const [storedWindow, storedCount, signature] = cookieData.split('|');
+      const expectedSig = await createHmacSignature(
+        `${storedWindow}:${storedCount}`,
+        process.env.NEXTAUTH_SECRET || 'fallback-secret',
+      );
+
+      if (
+        signature === expectedSig &&
+        parseInt(storedWindow, 10) === windowId
+      ) {
+        counter = parseInt(storedCount, 10);
+        isValid = true;
+      }
     } catch {
-      requests = [];
+      // Invalid cookie, reset counter
     }
   }
 
-  requests = requests.filter((r) => r.key === key && r.timestamp > windowStart);
+  if (!isValid) {
+    counter = 0;
+  }
 
-  if (requests.length >= maxRequests) {
+  if (counter >= maxRequests) {
     return NextResponse.json(
       { success: false, message: 'Too many requests, please try again later.' },
       { status: 429 },
     );
   }
 
-  requests.push({ key, timestamp: now });
+  counter += 1;
+
+  const signature = await createHmacSignature(
+    `${windowId}:${counter}`,
+    process.env.NEXTAUTH_SECRET || 'fallback-secret',
+  );
 
   const response = NextResponse.next();
-  response.cookies.set(
-    'rl_data',
-    encodeURIComponent(JSON.stringify(requests.slice(-500))),
-    {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: COOKIE_MAX_AGE,
-      path: '/',
-      sameSite: 'lax',
-    },
-  );
+  response.cookies.set(cookieName, `${windowId}|${counter}|${signature}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: COOKIE_MAX_AGE,
+    path: '/',
+    sameSite: 'lax',
+  });
 
   return response;
 }
