@@ -34,7 +34,7 @@ export function createUITracker() {
       }
     }
 
-    // Dedup tool parts by toolCallId
+    // Dedup tool parts by toolCallId - keep both tool-call and tool-result in sequence
     if (part.type === 'tool-call' || part.type === 'tool-result') {
       const tcId = (part as Record<string, unknown>).toolCallId as
         | string
@@ -46,9 +46,14 @@ export function createUITracker() {
             (p as Record<string, unknown>).toolCallId === tcId,
         );
         if (existingIdx !== -1) {
-          if (part.type === 'tool-result') {
-            uiParts[existingIdx] = part;
+          const existing = uiParts[existingIdx];
+          // If existing is tool-call and incoming is tool-result, keep both
+          if (existing.type === 'tool-call' && part.type === 'tool-result') {
+            // Append tool-result after tool-call instead of replacing
+            uiParts.push(part);
+            return;
           }
+          // Otherwise skip (dedup)
           return;
         }
       }
@@ -193,20 +198,19 @@ export function createUITracker() {
           p.type === 'tool-call' &&
           (p as Record<string, unknown>).toolCallId === toolCallId,
       );
-      if (callIdx !== -1) {
-        uiParts[callIdx] = {
-          type: 'tool-result',
-          toolCallId,
-          toolName,
-          args: (uiParts[callIdx] as Record<string, unknown>).args || args,
-          result,
-          state:
-            result && typeof result === 'object' && 'error' in result
-              ? 'output-error'
-              : 'output-available',
-          councilAgent: agentName,
-        } as unknown as MessagePart;
-      }
+      // Append tool-result after tool-call to preserve sequence
+      uiParts.push({
+        type: 'tool-result',
+        toolCallId,
+        toolName,
+        args,
+        result,
+        state:
+          result && typeof result === 'object' && 'error' in result
+            ? 'output-error'
+            : 'output-available',
+        councilAgent: agentName,
+      } as unknown as MessagePart);
     }
   };
 

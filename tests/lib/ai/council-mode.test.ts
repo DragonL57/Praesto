@@ -144,7 +144,7 @@ test.describe('UI Tracker - Council Mode', () => {
       expect(toolCall.councilAgent).toBe('Researcher');
     });
 
-    test('should convert tool call to result on tool result event', () => {
+    test('should append tool result after tool call to preserve sequence', () => {
       const tracker = createUITracker();
 
       tracker.addCouncilToUI({
@@ -172,7 +172,11 @@ test.describe('UI Tracker - Council Mode', () => {
         true,
       );
 
-      const toolResult = tracker.uiParts[1] as Record<string, unknown>;
+      // Should have 3 parts: council-debate, tool-call, tool-result
+      expect(tracker.uiParts).toHaveLength(3);
+      const toolCall = tracker.uiParts[1] as Record<string, unknown>;
+      expect(toolCall.type).toBe('tool-call');
+      const toolResult = tracker.uiParts[2] as Record<string, unknown>;
       expect(toolResult.type).toBe('tool-result');
       expect(toolResult.state).toBe('output-available');
     });
@@ -257,6 +261,31 @@ test.describe('UI Tracker - Council Mode', () => {
       } as MessagePart);
 
       expect(tracker.uiParts).toHaveLength(1);
+    });
+
+    test('should keep both tool-call and tool-result for same toolCallId', () => {
+      const tracker = createUITracker();
+
+      tracker.addPartToUI({
+        type: 'tool-call',
+        toolCallId: 'tc-1',
+        toolName: 'web_search',
+        args: { query: 'test' },
+        state: 'input-available',
+      } as MessagePart);
+
+      tracker.addPartToUI({
+        type: 'tool-result',
+        toolCallId: 'tc-1',
+        toolName: 'web_search',
+        result: { results: [] },
+        state: 'output-available',
+      } as MessagePart);
+
+      // Should keep both parts to preserve assistant(tool_calls) -> tool(tool_call_id) sequence
+      expect(tracker.uiParts).toHaveLength(2);
+      expect(tracker.uiParts[0].type).toBe('tool-call');
+      expect(tracker.uiParts[1].type).toBe('tool-result');
     });
   });
 });
