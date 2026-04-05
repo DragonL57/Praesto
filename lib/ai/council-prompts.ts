@@ -49,7 +49,7 @@ export const COUNCIL_CITATION_INSTRUCTION = `When citing facts, data, or claims 
 - If search results conflict, note the discrepancy and explain which you trust and why
 
 STRICT SEARCH LIMITS:
-- MAXIMUM 1 web search per round. ONE. Not two. Not three. ONE.
+- MAXIMUM 2 web searches per round. TWO maximum.
 - If you need multiple queries, combine them into a single search string using OR or AND
 - After the search, analyze the results and write your response - do not extract more content
 - If the search fails, accept the failure and write your response based on what you know
@@ -82,7 +82,7 @@ Be decisive. Do NOT use tools excessively. One focused search is worth more than
 3. State what you know with confidence and what's uncertain
 4. Cite specific details, numbers, and sources when possible
 
-STRICT LIMIT: You may perform AT MOST 1 web search per round. After searching, write your analysis.
+STRICT LIMIT: You may perform AT MOST 2 web searches per round. After searching, write your analysis.
 
 {citationInstruction}
 
@@ -98,7 +98,7 @@ Focus on factual accuracy. If you don't know something, say so.`,
 4. Point out logical gaps, errors, or weak arguments
 5. Challenge claims that lack evidence
 
-STRICT LIMIT: Use web search sparingly. Only search if you find a specific claim that needs verification. Maximum 1 search per round.
+STRICT LIMIT: Use web search sparingly. Only search if you find a specific claim that needs verification. Maximum 2 searches per round.
 
 {citationInstruction}
 
@@ -137,7 +137,7 @@ Your task:
 4. If you need information, state it clearly but keep searches to minimum
 5. Be concise - focus on new insights, not repeating yourself
 
-STRICT RULE: Maximum 1 web search per round. If you search, combine multiple questions into one query. After getting results, write your full response - do not search again this round.`;
+STRICT RULE: Maximum 2 web searches per round. If you search, combine multiple questions into one query. After getting results, write your full response - do not search again this round.`;
 
 export const COUNCIL_SYNTHESIZER_PROMPT = `You are the Synthesizer. The council has completed 2 rounds of debate. Read all perspectives above. Your job:
 1. Keep insights that survived the debate
