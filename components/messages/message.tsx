@@ -13,15 +13,15 @@ import { useCopyToClipboard } from 'usehooks-ts';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Import hooks
+import { useOrderedMessageParts } from './message-hooks';
+
 // Import types
 import type {
   PurePreviewMessageProps,
   PreviewMessageProps,
 } from './message-types';
 import type { TextPart } from '@/lib/ai/types';
-
-// Import hooks
-import { useOrderedMessageParts } from './message-hooks';
 
 // Import utilities
 import { isTextPart } from './message-utils';

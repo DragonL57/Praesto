@@ -2,9 +2,6 @@
 
 import { useMemo } from 'react';
 import { BrainIcon, Loader2Icon, CheckIcon } from 'lucide-react';
-import type { Message } from '@/lib/ai/types';
-import type { MergedMessagePart } from './message-types';
-import type { ThinkingItem } from '@/lib/contexts/thinking';
 import { useThinking } from '@/lib/contexts/thinking';
 import { useOrderedMessageParts } from './message-hooks';
 import {
@@ -14,6 +11,9 @@ import {
   isReasoningTool,
   getToolCallId,
 } from './message-utils';
+import type { Message } from '@/lib/ai/types';
+import type { MergedMessagePart } from './message-types';
+import type { ThinkingItem } from '@/lib/contexts/thinking';
 
 function buildThinkingItems(
   message: Message,

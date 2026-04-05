@@ -5,6 +5,15 @@
  */
 
 import { useMemo } from 'react';
+import {
+  isToolPart,
+  extractToolName,
+  isToolResultAvailable,
+  getToolOutput,
+  getToolCallId,
+  applyToolGrouping,
+  isReasoningTool,
+} from './message-utils';
 import type {
   Message,
   TextPart,
@@ -22,15 +31,6 @@ import type {
   MergedMessagePart,
 } from './message-types';
 import type { CouncilAgent } from './CouncilDebate';
-import {
-  isToolPart,
-  extractToolName,
-  isToolResultAvailable,
-  getToolOutput,
-  getToolCallId,
-  applyToolGrouping,
-  isReasoningTool,
-} from './message-utils';
 
 // ============================================================================
 // Types & Interfaces

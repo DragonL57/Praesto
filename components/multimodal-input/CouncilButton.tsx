@@ -1,8 +1,6 @@
 'use client';
 
 import React, { memo } from 'react';
-import type { ChatStatus } from '@/lib/ai/types';
-
 import { Button } from '../ui/button';
 import {
   Tooltip,
@@ -10,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
+import type { ChatStatus } from '@/lib/ai/types';
 
 interface CouncilButtonProps {
   councilMode: boolean;
