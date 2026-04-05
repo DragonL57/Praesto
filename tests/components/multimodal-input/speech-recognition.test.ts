@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
+
 import {
   buildFullTranscript,
   createTranscriptState,
   processSpeechRecognitionResults,
 } from '@/components/multimodal-input/utils';
+
 import type {
   SpeechRecognitionEvent,
   SpeechRecognitionResultList,
