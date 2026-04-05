@@ -225,7 +225,7 @@ export async function handleChatRequest({
         },
         {
           role: 'user' as const,
-          content: `${COUNCIL_SYNTHESIZER_PROMPT}\n\nCouncil debate transcript:\n\n${debateContext}`,
+          content: `${COUNCIL_SYNTHESIZER_PROMPT}\n\nUser question: ${userQuestion}\n\nCouncil debate transcript:\n\n${debateContext}`,
         },
       ];
 
