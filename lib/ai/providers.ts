@@ -13,7 +13,7 @@ export const openai = new OpenAI({
 });
 
 // Model ID to Poe bot name mapping
-const MODEL_BOT_MAP: Record<string, string> = {
+export const MODEL_BOT_MAP: Record<string, string> = {
   'chat-model': 'grok-4.1-fast-reasoning',
   'title-model': 'grok-4.1-fast-non-reasoning',
   'fast-model': 'grok-4.1-fast-non-reasoning',

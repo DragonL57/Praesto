@@ -5,22 +5,22 @@
  */
 
 import type {
-    Message,
-    MessagePart,
-    AppendFunction,
-    SetMessagesFunction,
-    ChatStatus,
-    Attachment } from '@/lib/ai/types';
-
+  Message,
+  MessagePart,
+  AppendFunction,
+  SetMessagesFunction,
+  ChatStatus,
+  Attachment,
+} from '@/lib/ai/types';
 
 // ============================================================================
 // Suggestion Type
 // ============================================================================
 
 export interface Suggestion {
-    title: string;
-    label: string;
-    action: string;
+  title: string;
+  label: string;
+  action: string;
 }
 
 // ============================================================================
@@ -28,45 +28,50 @@ export interface Suggestion {
 // ============================================================================
 
 export interface WebSearchResult {
-    title: string;
-    href: string;
-    body: string;
+  title: string;
+  href: string;
+  body: string;
 }
 
 export interface WebSearchData {
-    results: WebSearchResult[];
-    query: string;
-    count: number;
+  results: WebSearchResult[];
+  query: string;
+  count: number;
 }
 
 export interface FetchedPageInfoData {
-    url: string;
-    query?: string | null;
+  url: string;
+  query?: string | null;
 }
 
 export interface CodeExecutionData {
-    code: string;
-    language?: 'javascript' | 'python';
-    stdout?: string;
-    stderr?: string;
-    exitCode?: number;
-    packages?: string[];
-    state?: 'input-streaming' | 'input-available' | 'output-available' | 'output-error' | 'loading';
+  code: string;
+  language?: 'javascript' | 'python';
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+  packages?: string[];
+  state?:
+    | 'input-streaming'
+    | 'input-available'
+    | 'output-available'
+    | 'output-error'
+    | 'loading';
 }
 
 export type ReasoningContentItem =
-    | string
-    | { type: 'webSearch'; data: WebSearchData }
-    | { type: 'fetchedPageInfo'; data: FetchedPageInfoData }
-    | { type: 'codeExecution'; data: CodeExecutionData };
+  | string
+  | { type: 'webSearch'; data: WebSearchData }
+  | { type: 'fetchedPageInfo'; data: FetchedPageInfoData }
+  | { type: 'codeExecution'; data: CodeExecutionData };
 
 export interface ReasoningDetail {
-    type: string;
-    text?: string;
+  type: string;
+  text?: string;
 }
 
 export interface ThinkToolResult {
-    thought?: string;
+  thought?: string;
 }
 
 // ============================================================================
@@ -74,43 +79,54 @@ export interface ThinkToolResult {
 // ============================================================================
 
 export type EnhancedMessagePart = MessagePart & {
-    connectNext?: boolean;
-    connectPrevious?: boolean;
-    toolIndex?: number;
+  connectNext?: boolean;
+  connectPrevious?: boolean;
+  toolIndex?: number;
 };
 
-export type MergedMessagePart = 
-    | { type: 'part'; part: EnhancedMessagePart }
-    | { type: 'reasoning'; items: ReasoningContentItem[] };
+import type { CouncilAgent } from './council-debate';
+
+export type MergedMessagePart =
+  | { type: 'part'; part: EnhancedMessagePart }
+  | { type: 'reasoning'; items: ReasoningContentItem[] }
+  | {
+      type: 'council-debate';
+      agents: CouncilAgent[];
+      isComplete: boolean;
+      isSynthesizing: boolean;
+    };
 
 // ============================================================================
 // Component Props Types
 // ============================================================================
 
 export interface PurePreviewMessageProps {
-    chatId: string;
-    message: Message;
-    isLoading: boolean;
-    setMessages: SetMessagesFunction;
-    reload: () => Promise<string | null | undefined>;
-    append: AppendFunction;
-    isReadonly: boolean;
-    suggestions?: Suggestion[];
-    suggestionsLoading?: boolean;
-    sendMessage?: (args: { text: string; attachments?: Attachment[] }) => Promise<void>;
-    status?: ChatStatus;
+  chatId: string;
+  message: Message;
+  isLoading: boolean;
+  setMessages: SetMessagesFunction;
+  reload: () => Promise<string | null | undefined>;
+  append: AppendFunction;
+  isReadonly: boolean;
+  suggestions?: Suggestion[];
+  suggestionsLoading?: boolean;
+  sendMessage?: (args: {
+    text: string;
+    attachments?: Attachment[];
+  }) => Promise<void>;
+  status?: ChatStatus;
 }
 
 export interface PreviewMessageProps
-    extends Omit<PurePreviewMessageProps, 'isReadonly'> {
-    isReadonly: boolean;
+  extends Omit<PurePreviewMessageProps, 'isReadonly'> {
+  isReadonly: boolean;
 }
 
 export interface MessageActionsProps {
-    chatId: string;
-    message: Message;
-    isLoading: boolean;
-    setMessages?: SetMessagesFunction;
+  chatId: string;
+  message: Message;
+  isLoading: boolean;
+  setMessages?: SetMessagesFunction;
 }
 
 // ============================================================================
@@ -118,10 +134,10 @@ export interface MessageActionsProps {
 // ============================================================================
 
 export interface ToolCallPart {
-    type: string; // 'tool-<name>' or 'tool-call'
-    toolName?: string;
-    toolCallId?: string;
-    state?: string;
-    input?: Record<string, unknown>;
-    output?: Record<string, unknown>;
+  type: string; // 'tool-<name>' or 'tool-call'
+  toolName?: string;
+  toolCallId?: string;
+  state?: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
 }

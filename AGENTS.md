@@ -57,6 +57,8 @@ pnpm test          # Playwright tests
 pnpm exec playwright test --project=chat  # Single project
 ```
 
+**IMPORTANT:** NEVER run `pnpm build` or `pnpm lint:fix` without explicit user permission. The user runs `pnpm dev` for real-time testing and build/lint commands will interrupt their workflow. Only run these commands when the user explicitly asks.
+
 ## Conventions
 
 ### Project Organization

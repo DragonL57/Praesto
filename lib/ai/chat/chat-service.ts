@@ -5,6 +5,11 @@ import {
   getChatCompletionParams,
   getAvailableTools,
 } from '@/lib/ai/providers';
+import { MODEL_BOT_MAP } from '@/lib/ai/providers';
+import {
+  COUNCIL_AGENTS,
+  COUNCIL_SYNTHESIZER_PROMPT,
+} from '@/lib/ai/council-prompts';
 import {
   getChatById,
   saveChat,
@@ -41,6 +46,7 @@ export async function handleChatRequest({
   modelId,
   controller,
   abortSignal,
+  councilMode = false,
 }: {
   id: string;
   userId: string;
@@ -49,6 +55,7 @@ export async function handleChatRequest({
   modelId: string;
   controller: ReadableStreamDefaultController;
   abortSignal?: AbortSignal;
+  councilMode?: boolean;
 }) {
   const encoder = new TextEncoder();
 
@@ -141,6 +148,16 @@ export async function handleChatRequest({
 
     const addPartToUI = (part: MessagePart) => {
       if (part.type === 'text' || part.type === 'reasoning') {
+        const councilIdx = uiParts.findIndex(
+          (p) => p.type === 'council-debate',
+        );
+        if (councilIdx !== -1) {
+          const council = uiParts[councilIdx] as Record<string, unknown>;
+          uiParts[councilIdx] = {
+            ...council,
+            isSynthesizing: false,
+          } as unknown as MessagePart;
+        }
         const lastPart = uiParts[uiParts.length - 1];
         if (lastPart && lastPart.type === part.type) {
           (lastPart as { text: string }).text += (
@@ -150,6 +167,69 @@ export async function handleChatRequest({
         }
       }
       uiParts.push(part);
+    };
+
+    const addCouncilToUI = (data: unknown) => {
+      const d = data as Record<string, unknown>;
+      const phase = typeof d.phase === 'string' ? d.phase : '';
+      const existingCouncilIdx = uiParts.findIndex(
+        (p) => p.type === 'council-debate',
+      );
+
+      if (phase === 'start') {
+        const agents = (
+          (d.agents as Array<Record<string, unknown>> | undefined) || []
+        ).map((a) => ({
+          name: typeof a.name === 'string' ? a.name : '',
+          icon: typeof a.icon === 'string' ? a.icon : '',
+          status: 'thinking' as const,
+        }));
+        uiParts.push({
+          type: 'council-debate',
+          agents,
+          isComplete: false,
+          isSynthesizing: false,
+        } as unknown as MessagePart);
+      } else if (phase === 'agent-complete') {
+        const name = typeof d.name === 'string' ? d.name : '';
+        const content = typeof d.content === 'string' ? d.content : '';
+        if (existingCouncilIdx !== -1) {
+          const existing = uiParts[existingCouncilIdx] as Record<
+            string,
+            unknown
+          >;
+          const agents = (
+            existing.agents as Array<Record<string, unknown>>
+          ).map((a) =>
+            a.name === name
+              ? {
+                  ...a,
+                  content,
+                  status:
+                    content.startsWith('[') && content.endsWith(']')
+                      ? 'error'
+                      : 'complete',
+                }
+              : a,
+          );
+          uiParts[existingCouncilIdx] = {
+            ...existing,
+            agents,
+          } as unknown as MessagePart;
+        }
+      } else if (phase === 'synthesis') {
+        if (existingCouncilIdx !== -1) {
+          const existing = uiParts[existingCouncilIdx] as Record<
+            string,
+            unknown
+          >;
+          uiParts[existingCouncilIdx] = {
+            ...existing,
+            isSynthesizing: true,
+            isComplete: true,
+          } as unknown as MessagePart;
+        }
+      }
     };
 
     type Tool = {
@@ -433,7 +513,121 @@ export async function handleChatRequest({
 
     // Convert UI messages to the internal OpenAI format
     const openAIMessages = convertToOpenAIMessages(messages);
-    await runCompletion(openAIMessages);
+
+    if (councilMode) {
+      // Council Mode: Run 4-agent debate before final answer
+      const userQuestion = latestUserText || '';
+      const conversationContext = messages
+        .slice(-6)
+        .map((m) => {
+          const role = m.role === 'user' ? 'User' : 'Assistant';
+          const text = m.parts
+            .filter((p) => p.type === 'text')
+            .map((p) => (p as { text: string }).text)
+            .join(' ');
+          return `${role}: ${text}`;
+        })
+        .join('\n');
+
+      const councilAgents = ['researcher', 'analyst', 'contrarian'] as const;
+      const councilResults: Record<string, string> = {};
+
+      // Send council start notification
+      const councilStartData = {
+        phase: 'start',
+        agents: councilAgents.map((a) => ({
+          name: COUNCIL_AGENTS[a].name,
+          icon: COUNCIL_AGENTS[a].icon,
+        })),
+      };
+      send('council-debate', councilStartData);
+      addCouncilToUI(councilStartData);
+
+      // Run each agent in parallel
+      const agentPromises = councilAgents.map(async (agentKey) => {
+        const agent = COUNCIL_AGENTS[agentKey];
+        const agentSystemPrompt = `${agent.systemPrompt}\n\nContext from conversation:\n${conversationContext}`;
+
+        try {
+          const response = await openai.chat.completions.create({
+            model: 'grok-4.1-fast-non-reasoning',
+            messages: [
+              { role: 'system', content: agentSystemPrompt },
+              { role: 'user', content: userQuestion },
+            ],
+            temperature: 1,
+            max_tokens: 4096,
+          });
+
+          const fullResponse =
+            response.choices[0].message.content?.trim() || '';
+
+          // Send agent result to client
+          const agentCompleteData = {
+            phase: 'agent-complete',
+            agent: agentKey,
+            name: agent.name,
+            icon: agent.icon,
+            content: fullResponse || `[${agent.name} returned no response]`,
+          };
+          send('council-debate', agentCompleteData);
+          addCouncilToUI(agentCompleteData);
+
+          return { agent: agentKey, content: fullResponse };
+        } catch (error) {
+          console.error(`[Council] ${agent.name} error:`, error);
+          const errorMsg = `[${agent.name} failed: ${error instanceof Error ? error.message : 'unknown error'}]`;
+          const agentErrorData = {
+            phase: 'agent-complete',
+            agent: agentKey,
+            name: agent.name,
+            icon: agent.icon,
+            content: errorMsg,
+          };
+          send('council-debate', agentErrorData);
+          addCouncilToUI(agentErrorData);
+          return { agent: agentKey, content: errorMsg };
+        }
+      });
+
+      const results = await Promise.all(agentPromises);
+      results.forEach((r) => {
+        councilResults[r.agent] = r.content;
+      });
+
+      // Captain synthesis: read all perspectives and write final answer
+      const synthesisData = {
+        phase: 'synthesis',
+        captain: COUNCIL_AGENTS.captain.name,
+        icon: COUNCIL_AGENTS.captain.icon,
+      };
+      send('council-debate', synthesisData);
+      addCouncilToUI(synthesisData);
+
+      const debateContext = councilAgents
+        .map((a) => {
+          const agent = COUNCIL_AGENTS[a];
+          return `## ${agent.icon} ${agent.name}:\n${councilResults[a] || '[No response]'}`;
+        })
+        .join('\n\n');
+
+      // Now run the final completion with synthesis
+      const synthesisOpenAIMessages = [
+        ...openAIMessages.slice(0, -1),
+        {
+          role: 'assistant' as const,
+          content: `[Council Debate Complete - ${councilAgents.map((a) => COUNCIL_AGENTS[a].name).join(', ')} have debated. Synthesizing final answer...]`,
+        },
+        {
+          role: 'user' as const,
+          content: `Synthesize the council's debate into a final answer:\n\n${debateContext}`,
+        },
+      ];
+
+      await runCompletion(synthesisOpenAIMessages);
+    } else {
+      await runCompletion(openAIMessages);
+    }
 
     if (abortSignal?.aborted) return;
 

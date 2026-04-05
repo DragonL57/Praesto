@@ -23,10 +23,12 @@ export async function POST(request: Request) {
       id,
       messages,
       userTimeContext,
+      councilMode,
     }: {
       id: string;
       messages: Array<Message>;
       userTimeContext?: UserTimeContext;
+      councilMode?: boolean;
     } = await request.json();
 
     // 1. Authenticate user
@@ -52,6 +54,7 @@ export async function POST(request: Request) {
           modelId,
           controller,
           abortSignal: request.signal,
+          councilMode,
         }).catch((err) => {
           console.error('[Stream Error]', err);
           if (controller.desiredSize !== null) {

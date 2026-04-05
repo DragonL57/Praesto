@@ -63,6 +63,9 @@ export function Chat({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
+  // State for council mode
+  const [councilMode, setCouncilMode] = useState(false);
+
   const {
     messages,
     setMessages,
@@ -79,6 +82,7 @@ export function Chat({
     body: {
       selectedChatModel: globallySelectedModelId,
       userTimeContext: buildUserTimeContext(),
+      councilMode,
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
@@ -181,6 +185,8 @@ export function Chat({
         selectedModelId={globallySelectedModelId}
         selectedVisibilityType={selectedVisibilityType}
         isReadonly={isReadonly}
+        councilMode={councilMode}
+        onCouncilModeChange={setCouncilMode}
       />
 
       <div
