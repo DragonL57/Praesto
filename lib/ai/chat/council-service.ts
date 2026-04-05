@@ -8,8 +8,8 @@ import {
   buildCouncilTimeContext,
 } from '@/lib/ai/council-prompts';
 import { generateUUID } from '@/lib/utils';
+import { COUNCIL_MODEL_ID } from '@/lib/ai/models';
 
-const COUNCIL_MODEL = 'grok-4.1-fast-non-reasoning';
 const MAX_DEBATE_ROUNDS = 2;
 
 interface ErrorWithMessage {
@@ -236,7 +236,7 @@ async function runAgentWithTools({
     if (abortSignal?.aborted) break;
 
     const params: Record<string, unknown> = {
-      model: COUNCIL_MODEL,
+      model: COUNCIL_MODEL_ID,
       messages: currentMessages,
       temperature: 1,
       max_tokens: 4096,
