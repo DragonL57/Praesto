@@ -64,6 +64,7 @@ function PureSpeechToTextButton({
 
   const baseInputRef = useRef<string>('');
   const transcriptStateRef = useRef(createTranscriptState());
+  const isProcessingRef = useRef(false);
 
   const languages = useMemo(
     () => [
@@ -327,8 +328,10 @@ function PureSpeechToTextButton({
           <Button
             data-testid="speech-to-text-button"
             className={`rounded-md mx-1 p-[7px] h-fit border border-input dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200 ${isListening ? 'bg-red-100 dark:bg-red-900' : ''}`}
+            onPointerDown={(e) => e.preventDefault()}
             onClick={(event) => {
               event.preventDefault();
+              event.stopPropagation();
               toggleListening();
             }}
             disabled={status !== 'ready'}

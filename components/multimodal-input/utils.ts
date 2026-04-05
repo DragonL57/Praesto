@@ -9,6 +9,7 @@ import type {
 interface TranscriptState {
   finalTranscript: string;
   lastResultIndex: number;
+  processedFinalTranscripts: Set<string>;
 }
 
 interface ProcessTranscriptResult {
@@ -18,7 +19,11 @@ interface ProcessTranscriptResult {
 }
 
 export function createTranscriptState(): TranscriptState {
-  return { finalTranscript: '', lastResultIndex: 0 };
+  return {
+    finalTranscript: '',
+    lastResultIndex: 0,
+    processedFinalTranscripts: new Set(),
+  };
 }
 
 export function processSpeechRecognitionResults(
@@ -30,7 +35,12 @@ export function processSpeechRecognitionResults(
   for (let i = state.lastResultIndex; i < event.results.length; i++) {
     const result = event.results[i];
     if (result.isFinal) {
-      state.finalTranscript += result[0].transcript + ' ';
+      const transcript = result[0].transcript.trim();
+      // Skip if we've already processed this exact transcript content
+      if (!state.processedFinalTranscripts.has(transcript)) {
+        state.processedFinalTranscripts.add(transcript);
+        state.finalTranscript += transcript + ' ';
+      }
       state.lastResultIndex = i + 1;
     } else {
       interimTranscript += result[0].transcript;
