@@ -1,4 +1,5 @@
 import { upload } from '@vercel/blob/client';
+
 import type { Attachment } from '@/lib/ai/types';
 import type {
   SpeechRecognitionEvent,
