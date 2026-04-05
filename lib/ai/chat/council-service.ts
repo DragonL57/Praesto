@@ -7,6 +7,7 @@ import {
   COUNCIL_TIME_INSTRUCTION,
   buildCouncilTimeContext,
 } from '@/lib/ai/council-prompts';
+import { generateUUID } from '@/lib/utils';
 
 const COUNCIL_MODEL = 'grok-4.1-fast-non-reasoning';
 const MAX_DEBATE_ROUNDS = 2;
@@ -359,7 +360,7 @@ async function runAgentWithTools({
       callbacks.send('council-tool-call', {
         agent: agentKey,
         agentName,
-        toolCallId: tc.id,
+        toolCallId: tc.id || generateUUID(),
         toolName,
         args: toolArgs,
       });
