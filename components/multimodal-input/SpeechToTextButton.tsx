@@ -93,7 +93,7 @@ function PureSpeechToTextButton({
       setSpeechSupported(false);
       return;
     }
-    if (selectedLanguage) {
+    if (selectedLanguage && selectedLanguage !== 'auto') {
       try {
         if (typeof SpeechRecognition.availableOnDevice === 'function') {
           SpeechRecognition.availableOnDevice(selectedLanguage)
@@ -120,6 +120,7 @@ function PureSpeechToTextButton({
   }, [recognitionRef]);
 
   const installLanguageIfNeeded = useCallback(async () => {
+    if (selectedLanguage === 'auto') return true;
     if (deviceLanguageStatus !== 'downloadable') return true;
     try {
       const SpeechRecognition =
@@ -184,7 +185,9 @@ function PureSpeechToTextButton({
         }
       }
 
-      recognition.lang = selectedLanguage;
+      const effectiveLang =
+        selectedLanguage === 'auto' ? 'en-US' : selectedLanguage;
+      recognition.lang = effectiveLang;
 
       recognition.onstart = () => {
         setIsListening(true);
