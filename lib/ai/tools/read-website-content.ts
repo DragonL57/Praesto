@@ -118,9 +118,10 @@ function formatErrorMessage(url: string, error: string): string {
 Error extracting content from ${new URL(url).hostname}:
 ${error}
 
+DO NOT retry this URL. The content is either blocked, paywalled, or unavailable for extraction.
 Suggestions:
-- Visit the website directly using the link
-- Try asking a specific question about the website's content
-- If you have access to the content, try copying and pasting relevant sections directly
+- Try a different source (Wikipedia, official docs, news sites work best)
+- Search for the information using web search instead
+- If you have access to the content, copy and paste relevant sections directly
   `;
 }

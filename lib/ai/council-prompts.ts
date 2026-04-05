@@ -48,7 +48,9 @@ export const COUNCIL_CITATION_INSTRUCTION = `When citing facts, data, or claims 
 - Distinguish between your knowledge and what the search returned
 - If search results conflict, note the discrepancy and explain which you trust and why
 
-**SEARCH LIMIT: Maximum 2 web searches per round. Combine queries when possible.**`;
+**SEARCH LIMIT: Maximum 2 web searches per round. Combine queries when possible.**
+
+**WEBSITE EXTRACTION: Only extract from Wikipedia, official docs, news sites, or open access sources. ResearchGate, academia.edu, and similar academic sites often block extraction - do NOT retry failed URLs.**`;
 
 export const COUNCIL_AGENTS = {
   captain: {

@@ -219,8 +219,6 @@ async function runAgentWithTools({
     const params: Record<string, unknown> = {
       model: COUNCIL_MODEL_ID,
       messages: currentMessages,
-      temperature: 1,
-      max_tokens: 4096,
       stream: true,
     };
 
