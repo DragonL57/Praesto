@@ -448,10 +448,15 @@ export function usePraestoChat({
                           const updatedAgents = councilPart.agents.map((a) => {
                             if (a.name === name) {
                               const existingRounds = a.rounds || [];
+                              const roundExists = existingRounds.some(
+                                (r) => r.round === round,
+                              );
                               return {
                                 ...a,
                                 content,
-                                rounds: [...existingRounds, { round, content }],
+                                rounds: roundExists
+                                  ? existingRounds
+                                  : [...existingRounds, { round, content }],
                                 status:
                                   content.startsWith('[') &&
                                   content.endsWith(']')

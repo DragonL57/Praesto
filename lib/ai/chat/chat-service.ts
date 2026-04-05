@@ -123,7 +123,8 @@ export async function handleChatRequest({
 
     // 4. Run AI Completion loop
     const assistantId = generateUUID();
-    const { uiParts, addPartToUI, addCouncilToUI } = createUITracker();
+    const { uiParts, addPartToUI, addCouncilToUI, addCouncilToolEvent } =
+      createUITracker();
 
     const { tools: availableTools } = await getAvailableTools();
     const toolsRegistry = availableTools as Record<
@@ -194,13 +195,22 @@ export async function handleChatRequest({
         })
         .join('\n\n');
 
+      const councilSend = (type: string, data: unknown) => {
+        send(type, data);
+        if (type === 'council-tool-call') {
+          addCouncilToolEvent(data, false);
+        } else if (type === 'council-tool-result') {
+          addCouncilToolEvent(data, true);
+        }
+      };
+
       const [debateContext] = await runCouncilDebate({
         userQuestion,
         conversationContext,
         previousCouncilSyntheses: previousCouncilSyntheses || undefined,
         toolsRegistry,
         callbacks: {
-          send,
+          send: councilSend,
           addCouncilToUI,
           addPartToUI: (part) => addPartToUI(part as MessagePart),
         },

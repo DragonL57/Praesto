@@ -3,6 +3,9 @@ import { openai } from '@/lib/ai/providers';
 import {
   COUNCIL_AGENTS,
   COUNCIL_DEBATE_ROUND_PROMPT,
+  COUNCIL_CITATION_INSTRUCTION,
+  COUNCIL_TIME_INSTRUCTION,
+  buildCouncilTimeContext,
 } from '@/lib/ai/council-prompts';
 
 const COUNCIL_MODEL = 'grok-4.1-fast-non-reasoning';
@@ -46,6 +49,18 @@ export async function runCouncilDebate({
   callbacks: CouncilCallbacks;
   abortSignal?: AbortSignal;
 }): Promise<string[]> {
+  const timeCtx = buildCouncilTimeContext();
+  const timeBlock = COUNCIL_TIME_INSTRUCTION.replace(
+    '{currentDate}',
+    timeCtx.currentDate,
+  )
+    .replace('{dayOfWeek}', timeCtx.dayOfWeek)
+    .replace('{currentTime}', timeCtx.currentTime)
+    .replace('{timeZone}', timeCtx.timeZone)
+    .replace('{sevenDayTable}', timeCtx.sevenDayTable);
+
+  const citationBlock = COUNCIL_CITATION_INSTRUCTION;
+
   const councilAgents: CouncilAgentKey[] = [
     'researcher',
     'analyst',
@@ -84,7 +99,11 @@ export async function runCouncilDebate({
       const agent = COUNCIL_AGENTS[agentKey];
       const otherAgents = councilAgents.filter((a) => a !== agentKey);
 
-      let agentSystemPrompt = `${agent.systemPrompt}\n\nContext from conversation:\n${conversationContext}`;
+      let agentSystemPrompt = agent.systemPrompt
+        .replace('{citationInstruction}', citationBlock)
+        .replace('{timeContext}', timeBlock);
+
+      agentSystemPrompt += `\n\n${timeBlock}\n\nContext from conversation:\n${conversationContext}`;
 
       if (previousCouncilSyntheses) {
         agentSystemPrompt += `\n\nPrevious council conclusions from this conversation:\n${previousCouncilSyntheses}\n\nBuild on these conclusions. Don't repeat what was already established unless the user asks for clarification.`;

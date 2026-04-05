@@ -1,3 +1,53 @@
+export interface CouncilTimeContext {
+  currentDate: string;
+  currentTime: string;
+  dayOfWeek: string;
+  timeZone: string;
+  sevenDayTable: string;
+}
+
+export function buildCouncilTimeContext(date?: Date): CouncilTimeContext {
+  const now = date || new Date();
+  const days = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+  const entries: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    entries.push(
+      `${days[d.getDay()]}: ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+    );
+  }
+  return {
+    currentDate: now.toLocaleDateString('en-CA'),
+    currentTime: now.toTimeString().split(' ')[0],
+    dayOfWeek: days[now.getDay()],
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    sevenDayTable: entries.join('\n'),
+  };
+}
+
+export const COUNCIL_TIME_INSTRUCTION = `Current date: {currentDate} ({dayOfWeek})
+Current time: {currentTime}
+Timezone: {timeZone}
+7-day reference:
+{sevenDayTable}
+
+Use this for accurate date reasoning. Never guess dates.`;
+
+export const COUNCIL_CITATION_INSTRUCTION = `When citing facts, data, or claims from search results:
+- Include the source name or URL in brackets: [source: example.com]
+- Quote key snippets verbatim when precision matters
+- Distinguish between your knowledge and what the search returned
+- If search results conflict, note the discrepancy and explain which you trust and why`;
+
 export const COUNCIL_AGENTS = {
   captain: {
     name: 'Captain',
@@ -21,6 +71,8 @@ Be decisive. Direct research efforts explicitly. If facts need verification, tel
 4. Cite specific details, numbers, and sources when possible
 5. If you need more information, say exactly what you'd search for
 
+{citationInstruction}
+
 Focus on factual accuracy. If you don't know something, say so.`,
   },
   analyst: {
@@ -33,6 +85,8 @@ Focus on factual accuracy. If you don't know something, say so.`,
 4. Point out logical gaps, errors, or weak arguments
 5. Challenge claims that lack evidence
 
+{citationInstruction}
+
 Be methodical and precise.`,
   },
   contrarian: {
@@ -44,6 +98,8 @@ Be methodical and precise.`,
 3. Identify reasons the proposed answer might be wrong
 4. Suggest counterexamples and opposing viewpoints
 5. Stress-test every claim
+
+{citationInstruction}
 
 Be constructively disagreeable. Your job is to find holes in the reasoning.`,
   },

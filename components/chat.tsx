@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useSWRConfig } from 'swr';
 import { unstable_serialize } from 'swr/infinite';
 import { useLocalStorage } from 'usehooks-ts';
@@ -9,6 +9,10 @@ import { toast } from 'sonner';
 import { ChatHeader } from '@/components/chat-header';
 import { InputSkeleton, MultimodalInput } from './multimodal-input';
 import { Messages } from './messages/messages';
+import { ThinkingSidebar } from './messages/thinking-sidebar';
+import { ThinkingProvider, useThinking } from '@/lib/contexts/thinking';
+import { buildThinkingItems } from './messages/message-thinking-trigger';
+import { useOrderedMessageParts } from './messages/message-hooks';
 import { getChatHistoryPaginationKey } from '@/components/sidebar';
 import { DEFAULT_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { buildUserTimeContext } from '@/lib/ai/context';
@@ -179,67 +183,105 @@ export function Chat({
     }
   };
   return (
-    <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
-      <ChatHeader
-        chatId={id}
-        selectedModelId={globallySelectedModelId}
-        selectedVisibilityType={selectedVisibilityType}
-        isReadonly={isReadonly}
-      />
+    <ThinkingProvider>
+      <div className="flex flex-col min-w-0 h-dvh bg-background w-full">
+        <ChatHeader
+          chatId={id}
+          selectedModelId={globallySelectedModelId}
+          selectedVisibilityType={selectedVisibilityType}
+          isReadonly={isReadonly}
+        />
 
-      <div
-        className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}
-      >
         <div
-          className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}
+          className={`flex-1 flex flex-col ${messages.length === 0 ? 'justify-center' : 'justify-between'}`}
         >
-          <Messages
-            chatId={id}
-            status={status}
-            messages={messages}
-            setMessages={setMessages}
-            reload={reload}
-            append={append}
-            isReadonly={isReadonly}
-            isArtifactVisible={false}
-            messagesContainerRef={messagesContainerRef}
-            messagesEndRef={messagesEndRef}
-            suggestions={suggestions}
-            suggestionsLoading={suggestionsLoading}
-            sendMessage={sendMessageForUI}
-          />
-        </div>
-
-        <div className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}>
-          <div className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
-            {!isReadonly && (
-              <MultimodalInput
-                chatId={id}
-                input={input}
-                setInput={setInput}
-                sendMessage={sendMessageForUI}
-                status={status}
-                stop={stop}
-                attachments={attachments}
-                setAttachments={setAttachments}
-                messages={messages}
-                setMessages={setMessages}
-                append={append}
-                messagesContainerRef={messagesContainerRef}
-                messagesEndRef={messagesEndRef}
-                councilMode={councilMode}
-                onCouncilModeChange={setCouncilMode}
-              />
-            )}
-            {isReadonly && <InputSkeleton />}
+          <div
+            className={`overflow-hidden relative w-full ${messages.length > 0 ? 'flex-1' : ''}`}
+          >
+            <Messages
+              chatId={id}
+              status={status}
+              messages={messages}
+              setMessages={setMessages}
+              reload={reload}
+              append={append}
+              isReadonly={isReadonly}
+              isArtifactVisible={false}
+              messagesContainerRef={messagesContainerRef}
+              messagesEndRef={messagesEndRef}
+              suggestions={suggestions}
+              suggestionsLoading={suggestionsLoading}
+              sendMessage={sendMessageForUI}
+            />
           </div>
-          {messages.length > 0 && (
-            <div className="text-center text-xs text-white-500 mt-0">
-              UniTaskAI can make mistake, double-check the info
+
+          <div
+            className={`shrink-0 ${messages.length === 0 ? 'pb-[15vh]' : ''}`}
+          >
+            <div className="flex flex-col mx-auto px-4 bg-background pb-0 w-full md:max-w-3xl relative">
+              {!isReadonly && (
+                <MultimodalInput
+                  chatId={id}
+                  input={input}
+                  setInput={setInput}
+                  sendMessage={sendMessageForUI}
+                  status={status}
+                  stop={stop}
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                  messages={messages}
+                  setMessages={setMessages}
+                  append={append}
+                  messagesContainerRef={messagesContainerRef}
+                  messagesEndRef={messagesEndRef}
+                  councilMode={councilMode}
+                  onCouncilModeChange={setCouncilMode}
+                />
+              )}
+              {isReadonly && <InputSkeleton />}
             </div>
-          )}
+            {messages.length > 0 && (
+              <div className="text-center text-xs text-white-500 mt-0">
+                UniTaskAI can make mistake, double-check the info
+              </div>
+            )}
+          </div>
         </div>
+        <ThinkingSidebarWrapper messages={messages} />
       </div>
-    </div>
+    </ThinkingProvider>
+  );
+}
+
+function ThinkingSidebarWrapper({ messages }: { messages: Array<Message> }) {
+  const { isSynthesizing, isOpen, close } = useThinking();
+
+  // Build items from the latest assistant message reactively
+  const latestAssistantMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') {
+        return messages[i];
+      }
+    }
+    return null;
+  }, [messages]);
+
+  const orderedParts = useOrderedMessageParts(
+    latestAssistantMessage ||
+      ({ role: 'assistant', parts: [], id: '' } as unknown as Message),
+  );
+
+  const items = useMemo(() => {
+    if (!latestAssistantMessage) return [];
+    return buildThinkingItems(latestAssistantMessage, orderedParts);
+  }, [latestAssistantMessage, orderedParts]);
+
+  if (!isOpen) return null;
+  return (
+    <ThinkingSidebar
+      items={items}
+      isSynthesizing={isSynthesizing}
+      onClose={close}
+    />
   );
 }
