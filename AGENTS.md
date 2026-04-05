@@ -255,7 +255,7 @@ This reduces per-request context by 20-30% for simple queries.
 |---|---|---|---|---|
 | `grok-4.1-fast-reasoning` | Grok-4.1 | Yes | Yes | Default model |
 | `minimax-m2.7` | Minimax M2.7 | Yes | Yes | Thinks by default |
-| `gemma-4-31b` | Gemma 4 31B | Yes | Yes | Requires `enable_thinking: true` |
+| `jailbreak-glm-5` | GLM-5 | Yes | Yes | 745B MoE, 200K context |
 
 **Model Mapping** (`lib/ai/providers.ts`):
 - `chat-model` → `grok-4.1-fast-reasoning`
@@ -291,8 +291,6 @@ vercel env pull .env.local --yes
 ### Lessons Learned
 
 - **Edge Runtime Constraint**: NextAuth's `auth()` middleware runs in Edge runtime. Calling `getUserById()` (which uses the `postgres` Node driver) inside `callbacks.jwt` crashes when invoked by middleware.
-- **Poe API Tool Calling**: `gemma-4-31b-n` (@novitaai) does NOT support tool calling despite UI claims. Use official `gemma-4-31b` (@google) instead.
-- **Poe API Quota Limits**: `gemma-4-31b` frequently hits Google's backend input token quota (`429 RESOURCE_EXHAUSTED`). Fallback to `grok-4.1-fast-reasoning` recommended.
 - **NextAuth `signIn` Redirects**: Using `redirectTo` in server action triggers server-side redirect. Use `redirect: false` + client-side `router.push` for safe post-login routing.
 - **Date-Timezone Mismatch**: AI models generate dates without timezone suffix, causing Google Calendar 400 errors. Always normalize dates in tool execution.
 

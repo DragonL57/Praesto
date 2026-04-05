@@ -34,14 +34,13 @@ export const chatModels: ChatModel[] = [
     // Minimax thinks by default, no extra params needed
   },
   {
-    id: 'gemma-4-31b',
-    name: 'Gemma 4 31B',
+    id: 'jailbreak-glm-5',
+    name: 'GLM-5',
     description:
-      "Google's most capable open model with frontier-class reasoning",
+      'Advanced model with enhanced reasoning and generation capabilities',
     provider: 'Poe',
     supportsTools: true,
     supportsThinking: true,
-    extraParams: { enable_thinking: true },
   },
 ];
 
