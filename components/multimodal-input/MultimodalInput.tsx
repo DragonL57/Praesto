@@ -142,8 +142,6 @@ function PureMultimodalInput({
       recognitionRef.current = null;
     }
 
-    console.log('Submitting form with attachments:', attachments);
-
     // Send message with attachments
     sendMessage({
       text: input,

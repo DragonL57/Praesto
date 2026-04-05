@@ -68,7 +68,7 @@ export function Chat({
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   // State for council mode
-  const [councilMode, setCouncilMode] = useState(false);
+  const [councilMode, setCouncilMode] = useState(true);
 
   const {
     messages,

@@ -20,7 +20,13 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 
-import { detectUserLanguage } from './utils';
+import {
+  buildFullTranscript,
+  createTranscriptState,
+  detectUserLanguage,
+  processSpeechRecognitionResults,
+} from './utils';
+
 import type {
   AvailabilityStatus,
   SpeechRecognition,
@@ -31,7 +37,6 @@ import type {
 import type { ChatStatus } from '@/lib/ai/types';
 
 interface SpeechToTextButtonProps {
-  // setInput is managed by the parent component (from usePraestoChat)
   setInput: React.Dispatch<React.SetStateAction<string>>;
   status: ChatStatus;
   input?: string;
@@ -57,12 +62,9 @@ function PureSpeechToTextButton({
   const [deviceLanguageStatus, setDeviceLanguageStatus] =
     useState<AvailabilityStatus | null>(null);
 
-  // Store the initial input value when recognition starts
   const baseInputRef = useRef<string>('');
-  // Store current transcript buffer to avoid redundant updates
-  const transcriptBufferRef = useRef<string>('');
+  const transcriptStateRef = useRef(createTranscriptState());
 
-  // Available languages for speech recognition - wrapped in useMemo to prevent recreation on each render
   const languages = useMemo(
     () => [
       { value: 'en-US', label: 'English (US)' },
@@ -85,7 +87,6 @@ function PureSpeechToTextButton({
     [],
   );
 
-  // Check if speech recognition is supported and check on-device language availability
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -93,13 +94,12 @@ function PureSpeechToTextButton({
       setSpeechSupported(false);
       return;
     }
-    // Only check on-device availability for the current language (no 'auto')
-    if (selectedLanguage) {
+    if (selectedLanguage && selectedLanguage !== 'auto') {
       try {
         if (typeof SpeechRecognition.availableOnDevice === 'function') {
           SpeechRecognition.availableOnDevice(selectedLanguage)
-            .then((status) => {
-              setDeviceLanguageStatus(status);
+            .then((availableStatus) => {
+              setDeviceLanguageStatus(availableStatus);
             })
             .catch((error) => {
               console.error('Error checking on-device availability:', error);
@@ -111,7 +111,6 @@ function PureSpeechToTextButton({
     }
   }, [selectedLanguage]);
 
-  // Clean up the recognition instance if component unmounts while listening
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -121,8 +120,8 @@ function PureSpeechToTextButton({
     };
   }, [recognitionRef]);
 
-  // Install the language for on-device recognition if needed
   const installLanguageIfNeeded = useCallback(async () => {
+    if (selectedLanguage === 'auto') return true;
     if (deviceLanguageStatus !== 'downloadable') return true;
     try {
       const SpeechRecognition =
@@ -156,18 +155,11 @@ function PureSpeechToTextButton({
       return true;
     } catch (error) {
       console.error('Error installing language:', error);
-      return true; // Continue anyway
+      return true;
     }
   }, [selectedLanguage, deviceLanguageStatus]);
 
-  // Define startRecognition function type to break circular dependency
-  type StartRecognitionFn = () => Promise<boolean>;
-
-  // Reference for startRecognition to break circular dependency
-  const startRecognitionRef = useRef<StartRecognitionFn | null>(null);
-
-  // Function to start the speech recognition
-  const startRecognition: StartRecognitionFn = useCallback(async () => {
+  const startRecognition = useCallback(async () => {
     try {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -176,19 +168,16 @@ function PureSpeechToTextButton({
         return false;
       }
 
-      // Try to install the language if needed
       if (deviceLanguageStatus === 'downloadable') {
         await installLanguageIfNeeded();
       }
 
       const recognition = new SpeechRecognition();
 
-      // Configure for continuous results and better performance
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.maxAlternatives = 1; // Focus on best match for performance
+      recognition.maxAlternatives = 1;
 
-      // Set recognition mode if supported by the browser
       if ('mode' in recognition) {
         try {
           recognition.mode = recognitionMode;
@@ -197,8 +186,9 @@ function PureSpeechToTextButton({
         }
       }
 
-      // Configure language
-      recognition.lang = selectedLanguage;
+      const effectiveLang =
+        selectedLanguage === 'auto' ? 'en-US' : selectedLanguage;
+      recognition.lang = effectiveLang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -206,7 +196,6 @@ function PureSpeechToTextButton({
           (lang) => lang.value === selectedLanguage,
         );
 
-        // Show different toasts based on recognition mode
         if (selectedLanguage !== 'auto') {
           if (recognitionMode === 'ondevice-only') {
             toast.info(
@@ -227,31 +216,16 @@ function PureSpeechToTextButton({
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interimTranscript = '';
-        let currentSessionFinal = '';
-        
-        // Accumulate both final and interim results from the whole session results array
-        // This is robust against browsers that might not behave perfectly with resultIndex
-        for (let i = 0; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            currentSessionFinal += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
+        const { finalTranscript, interimTranscript } =
+          processSpeechRecognitionResults(event, transcriptStateRef.current);
 
-        const fullTranscript = currentSessionFinal + interimTranscript;
-        
-        // Skip update if transcript is the same (improves performance)
-        if (fullTranscript === transcriptBufferRef.current) return;
-        transcriptBufferRef.current = fullTranscript;
+        const fullText = buildFullTranscript(
+          baseInputRef.current,
+          finalTranscript,
+          interimTranscript,
+        );
 
-        const base = baseInputRef.current;
-        const space = base.length > 0 && !base.endsWith(' ') ? ' ' : '';
-        
-        // Always replace the whole input with base + session transcript to avoid duplication
-        // This ensures that we don't accidentally append the same transcript twice
-        setInput(base + space + fullTranscript);
+        setInput(fullText);
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -271,7 +245,7 @@ function PureSpeechToTextButton({
           toast.error(
             'On-device recognition failed. Try switching to cloud recognition.',
           );
-        } else {
+        } else if (event.error !== 'aborted') {
           toast.error(`Speech recognition error: ${event.error}`);
         }
         setIsListening(false);
@@ -280,6 +254,8 @@ function PureSpeechToTextButton({
       recognition.onend = () => {
         setIsListening(false);
       };
+
+      transcriptStateRef.current = createTranscriptState();
 
       recognition.start();
       recognitionRef.current = recognition as SpeechRecognition;
@@ -299,11 +275,6 @@ function PureSpeechToTextButton({
     setInput,
   ]);
 
-  // Store the startRecognition function in the ref to break the circular dependency
-  useEffect(() => {
-    startRecognitionRef.current = startRecognition;
-  }, [startRecognition]);
-
   const toggleListening = useCallback(() => {
     if (!speechSupported) {
       toast.error('Speech recognition is not supported in your browser');
@@ -311,16 +282,14 @@ function PureSpeechToTextButton({
     }
 
     if (isListening) {
-      // Stop listening
       if (recognitionRef.current) {
         recognitionRef.current.stop();
         recognitionRef.current = null;
       }
       setIsListening(false);
     } else {
-      // Start fresh recognition session
       baseInputRef.current = input || '';
-      transcriptBufferRef.current = '';
+      transcriptStateRef.current = createTranscriptState();
       startRecognition();
     }
   }, [isListening, speechSupported, startRecognition, recognitionRef, input]);
@@ -329,7 +298,6 @@ function PureSpeechToTextButton({
     return null;
   }
 
-  // Determine button tooltip text
   const getTooltipText = () => {
     if (isListening) return 'Stop voice input';
 
