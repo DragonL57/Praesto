@@ -65,8 +65,6 @@ export function useOrderedMessageParts(message: Message): {
     }
 
     const merged: MergedMessagePart[] = [];
-
-    const merged: MergedMessagePart[] = [];
     const filterIndices = new Set<number>();
     const thinkTagRegex = /<think>([\s\S]*?)<\/think>/i;
     const thinkTagRegexForReplace = /<think>[\s\S]*?<\/think>/i;
