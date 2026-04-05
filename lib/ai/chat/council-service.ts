@@ -11,6 +11,26 @@ import {
 const COUNCIL_MODEL = 'grok-4.1-fast-non-reasoning';
 const MAX_DEBATE_ROUNDS = 2;
 
+interface ErrorWithMessage {
+  message: string;
+}
+
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
+function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+  return String(error);
+}
+
 type ToolDef = {
   description?: string;
   parameters?: unknown;
@@ -363,8 +383,7 @@ async function runAgentWithTools({
               typeof result === 'string' ? result : JSON.stringify(result),
           });
         } catch (toolError: unknown) {
-          const errorMessage =
-            toolError instanceof Error ? toolError.message : String(toolError);
+          const errorMessage = getErrorMessage(toolError);
           console.error(
             `[Council ${agentName}] Error executing tool ${toolName}:`,
             toolError,

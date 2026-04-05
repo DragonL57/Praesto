@@ -4,6 +4,26 @@ import type { MessagePart } from '@/lib/ai/types';
 import type { StreamPartType } from './stream-protocol';
 import type { UserTimeContext } from './types';
 
+interface ErrorWithMessage {
+  message: string;
+}
+
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
+function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+  return String(error);
+}
+
 type Tool = {
   description?: string;
   parameters?: Record<string, unknown> | unknown;
@@ -213,10 +233,7 @@ export function createCompletionLoop(deps: CompletionDeps) {
                   typeof result === 'string' ? result : JSON.stringify(result),
               });
             } catch (toolError: unknown) {
-              const errorMessage =
-                toolError instanceof Error
-                  ? toolError.message
-                  : String(toolError);
+              const errorMessage = getErrorMessage(toolError);
               console.error(
                 `[ChatService] Error executing tool ${toolName}:`,
                 toolError,
