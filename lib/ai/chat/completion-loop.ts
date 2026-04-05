@@ -5,20 +5,20 @@ import type { StreamPartType } from './stream-protocol';
 import type { UserTimeContext } from './types';
 import { getErrorMessage } from '@/lib/ai/error-utils';
 
-type Tool = {
+interface Tool {
   description?: string;
   parameters?: Record<string, unknown> | unknown;
   execute: (
     args?: Record<string, unknown>,
     options?: { abortSignal?: AbortSignal },
   ) => Promise<unknown>;
-};
+}
 
-type ToolCallEntry = {
+interface ToolCallEntry {
   id?: string;
   type: 'function';
   function: { name: string; arguments: string };
-};
+}
 
 interface CompletionDeps {
   send: (type: StreamPartType | string, data: unknown) => void;

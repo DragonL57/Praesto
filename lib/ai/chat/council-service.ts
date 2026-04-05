@@ -13,14 +13,14 @@ import { getErrorMessage } from '@/lib/ai/error-utils';
 
 const MAX_DEBATE_ROUNDS = 2;
 
-type ToolDef = {
+interface ToolDef {
   description?: string;
   parameters?: unknown;
   execute: (
     args?: Record<string, unknown>,
     options?: { abortSignal?: AbortSignal },
   ) => Promise<unknown>;
-};
+}
 
 type CouncilAgentKey = 'researcher' | 'analyst' | 'contrarian';
 
