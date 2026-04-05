@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import { createUITracker } from '@/lib/ai/chat/ui-tracker';
 import { buildThinkingItems } from '@/components/messages/MessageThinkingTrigger';
 import type { Message, MessagePart } from '@/lib/ai/types';
+import type {
+  MergedMessagePart,
+  ReasoningContentItem,
+} from '@/components/messages/message-types';
 
 test.describe('UI Tracker - Council Mode', () => {
   test.describe('addCouncilToUI', () => {
@@ -307,9 +311,7 @@ test.describe('buildThinkingItems', () => {
     const orderedParts = [
       {
         type: 'reasoning' as const,
-        reasoning: 'This is thinking',
-        id: 'reasoning-1',
-        status: 'complete' as const,
+        items: ['This is thinking'] as ReasoningContentItem[],
       },
     ];
 
@@ -327,13 +329,14 @@ test.describe('buildThinkingItems', () => {
 
     const orderedParts = [
       {
-        type: 'tool-call' as const,
-        toolCallId: 'tc-1',
-        toolName: 'web_search',
-        args: { query: 'test' },
-        state: 'input-available' as const,
-        id: 'tc-1',
-        status: 'complete' as const,
+        type: 'part' as const,
+        part: {
+          type: 'tool-call' as const,
+          toolCallId: 'tc-1',
+          toolName: 'web_search',
+          args: { query: 'test' },
+          state: 'input-available' as const,
+        },
       },
     ];
 
@@ -351,7 +354,7 @@ test.describe('buildThinkingItems', () => {
       parts: [],
     } as Message;
 
-    const orderedParts: Array<Record<string, unknown>> = [];
+    const orderedParts: MergedMessagePart[] = [];
 
     const items = buildThinkingItems(message, orderedParts);
     expect(items).toHaveLength(0);
@@ -375,13 +378,14 @@ test.describe('buildThinkingItems', () => {
 
     const orderedParts = [
       {
-        type: 'tool-call' as const,
-        toolCallId: 'tc-1',
-        toolName: 'web_search',
-        args: { query: 'test' },
-        state: 'input-available' as const,
-        id: 'tc-1',
-        status: 'complete' as const,
+        type: 'part' as const,
+        part: {
+          type: 'tool-call' as const,
+          toolCallId: 'tc-1',
+          toolName: 'web_search',
+          args: { query: 'test' },
+          state: 'input-available' as const,
+        },
       },
     ];
 
