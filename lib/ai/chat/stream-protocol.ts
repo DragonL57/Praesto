@@ -10,6 +10,8 @@ export type StreamPartType =
   | 'tool-result'
   | 'tool-call-streaming'
   | 'council-debate'
+  | 'council-tool-call'
+  | 'council-tool-result'
   | 'error'
   | 'metadata';
 
@@ -35,6 +37,8 @@ export const PROTOCOL_PREFIXES: Record<StreamPartType, string> = {
   'tool-result': 'a',
   'tool-call-streaming': 's',
   'council-debate': 'c',
+  'council-tool-call': 'd',
+  'council-tool-result': 'f',
   error: 'e',
   metadata: 'm',
 };

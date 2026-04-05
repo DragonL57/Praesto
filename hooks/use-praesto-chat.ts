@@ -425,6 +425,7 @@ export function usePraestoChat({
                     const name = typeof d.name === 'string' ? d.name : '';
                     const content =
                       typeof d.content === 'string' ? d.content : '';
+                    const round = typeof d.round === 'number' ? d.round : 1;
 
                     assistantMessageParts = assistantMessageParts.map(
                       (part) => {
@@ -436,23 +437,30 @@ export function usePraestoChat({
                               icon: string;
                               content?: string;
                               status: string;
+                              rounds?: Array<{
+                                round: number;
+                                content: string;
+                              }>;
                             }>;
                             isComplete: boolean;
                             isSynthesizing: boolean;
                           };
-                          const updatedAgents = councilPart.agents.map((a) =>
-                            a.name === name
-                              ? {
-                                  ...a,
-                                  content,
-                                  status:
-                                    content.startsWith('[') &&
-                                    content.endsWith(']')
-                                      ? ('error' as const)
-                                      : ('complete' as const),
-                                }
-                              : a,
-                          );
+                          const updatedAgents = councilPart.agents.map((a) => {
+                            if (a.name === name) {
+                              const existingRounds = a.rounds || [];
+                              return {
+                                ...a,
+                                content,
+                                rounds: [...existingRounds, { round, content }],
+                                status:
+                                  content.startsWith('[') &&
+                                  content.endsWith(']')
+                                    ? ('error' as const)
+                                    : ('complete' as const),
+                              };
+                            }
+                            return a;
+                          });
                           return { ...councilPart, agents: updatedAgents };
                         }
                         return part;
@@ -483,6 +491,118 @@ export function usePraestoChat({
                       },
                     );
                   }
+                }
+              } else if (type === 'council-tool-call') {
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  const agentKey = typeof d.agent === 'string' ? d.agent : '';
+                  const agentName =
+                    typeof d.agentName === 'string' ? d.agentName : '';
+                  const toolCallId =
+                    typeof d.toolCallId === 'string'
+                      ? d.toolCallId
+                      : generateUUID();
+                  const toolName =
+                    typeof d.toolName === 'string' ? d.toolName : 'unknown';
+                  const args =
+                    typeof d.args === 'object' && d.args
+                      ? (d.args as Record<string, unknown>)
+                      : {};
+
+                  assistantMessageParts = assistantMessageParts.map((part) => {
+                    if (part.type === 'council-debate') {
+                      const councilPart = part as {
+                        type: 'council-debate';
+                        agents: Array<{
+                          name: string;
+                          icon: string;
+                          content?: string;
+                          status: string;
+                          toolCalls?: Array<{
+                            toolCallId: string;
+                            toolName: string;
+                            args: Record<string, unknown>;
+                            status: string;
+                          }>;
+                        }>;
+                        isComplete: boolean;
+                        isSynthesizing: boolean;
+                      };
+                      const updatedAgents = councilPart.agents.map((a) => {
+                        if (a.name === agentName) {
+                          const existingToolCalls = a.toolCalls || [];
+                          const existingIdx = existingToolCalls.findIndex(
+                            (tc) => tc.toolCallId === toolCallId,
+                          );
+                          const newToolCall = {
+                            toolCallId,
+                            toolName,
+                            args,
+                            status: 'calling',
+                          };
+                          const updatedToolCalls =
+                            existingIdx !== -1
+                              ? existingToolCalls.map((tc, i) =>
+                                  i === existingIdx
+                                    ? { ...tc, ...newToolCall }
+                                    : tc,
+                                )
+                              : [...existingToolCalls, newToolCall];
+                          return { ...a, toolCalls: updatedToolCalls };
+                        }
+                        return a;
+                      });
+                      return { ...councilPart, agents: updatedAgents };
+                    }
+                    return part;
+                  });
+                }
+              } else if (type === 'council-tool-result') {
+                if (typeof data === 'object' && data) {
+                  const d = data as Record<string, unknown>;
+                  const agentName =
+                    typeof d.agentName === 'string' ? d.agentName : '';
+                  const toolCallId =
+                    typeof d.toolCallId === 'string' ? d.toolCallId : '';
+                  const toolName =
+                    typeof d.toolName === 'string' ? d.toolName : 'unknown';
+                  const result = d.result;
+
+                  assistantMessageParts = assistantMessageParts.map((part) => {
+                    if (part.type === 'council-debate') {
+                      const councilPart = part as {
+                        type: 'council-debate';
+                        agents: Array<{
+                          name: string;
+                          icon: string;
+                          content?: string;
+                          status: string;
+                          toolCalls?: Array<{
+                            toolCallId: string;
+                            toolName: string;
+                            args: Record<string, unknown>;
+                            status: string;
+                            result?: unknown;
+                          }>;
+                        }>;
+                        isComplete: boolean;
+                        isSynthesizing: boolean;
+                      };
+                      const updatedAgents = councilPart.agents.map((a) => {
+                        if (a.name === agentName && a.toolCalls) {
+                          const updatedToolCalls = a.toolCalls.map((tc) =>
+                            tc.toolCallId === toolCallId
+                              ? { ...tc, status: 'complete', result }
+                              : tc,
+                          );
+                          return { ...a, toolCalls: updatedToolCalls };
+                        }
+                        return a;
+                      });
+                      return { ...councilPart, agents: updatedAgents };
+                    }
+                    return part;
+                  });
                 }
               }
 
