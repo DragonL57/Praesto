@@ -286,10 +286,11 @@ export function usePraestoChat({
               } else if (type === 'tool-call-streaming') {
                 if (typeof data === 'object' && data) {
                   const d = data as Record<string, unknown>;
+                  const idx = typeof d.index === 'number' ? d.index : 0;
                   const toolCallId =
                     typeof d.toolCallId === 'string'
                       ? d.toolCallId
-                      : 'streaming-id';
+                      : `streaming-${assistantMessageId}-${idx}`;
                   const toolName =
                     typeof d.toolName === 'string' ? d.toolName : 'unknown';
                   const rawArgs =
