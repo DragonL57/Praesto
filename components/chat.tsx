@@ -185,8 +185,6 @@ export function Chat({
         selectedModelId={globallySelectedModelId}
         selectedVisibilityType={selectedVisibilityType}
         isReadonly={isReadonly}
-        councilMode={councilMode}
-        onCouncilModeChange={setCouncilMode}
       />
 
       <div
@@ -229,6 +227,8 @@ export function Chat({
                 append={append}
                 messagesContainerRef={messagesContainerRef}
                 messagesEndRef={messagesEndRef}
+                councilMode={councilMode}
+                onCouncilModeChange={setCouncilMode}
               />
             )}
             {isReadonly && <InputSkeleton />}

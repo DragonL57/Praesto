@@ -28,8 +28,6 @@ interface PureChatHeaderProps {
   selectedModelId: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
-  councilMode?: boolean;
-  onCouncilModeChange?: (enabled: boolean) => void;
 }
 
 function PureChatHeader({
@@ -37,8 +35,6 @@ function PureChatHeader({
   selectedModelId: initialSelectedModelId,
   selectedVisibilityType,
   isReadonly,
-  councilMode,
-  onCouncilModeChange,
 }: PureChatHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -91,44 +87,6 @@ function PureChatHeader({
               selectedModelId={globallySelectedModelId}
               className="shrink-0"
             />
-          )}
-
-          {!isReadonly && onCouncilModeChange && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onCouncilModeChange(!councilMode)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all shrink-0 ${
-                    councilMode
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-muted/50 text-muted-foreground border border-border hover:text-foreground'
-                  }`}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span className="hidden sm:inline">Council</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {councilMode
-                  ? 'Council Mode ON: 4 agents debate before answering'
-                  : 'Enable Council Mode for multi-agent debate'}
-              </TooltipContent>
-            </Tooltip>
           )}
 
           {!isReadonly &&
