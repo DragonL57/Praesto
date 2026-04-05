@@ -1,5 +1,66 @@
 import { upload } from '@vercel/blob/client';
 import type { Attachment } from '@/lib/ai/types';
+import type {
+  SpeechRecognitionEvent,
+  SpeechRecognitionResultList,
+} from './types';
+
+interface TranscriptState {
+  finalTranscript: string;
+  lastResultIndex: number;
+}
+
+interface ProcessTranscriptResult {
+  finalTranscript: string;
+  interimTranscript: string;
+  lastResultIndex: number;
+}
+
+export function createTranscriptState(): TranscriptState {
+  return { finalTranscript: '', lastResultIndex: 0 };
+}
+
+export function processSpeechRecognitionResults(
+  event: SpeechRecognitionEvent,
+  state: TranscriptState,
+): ProcessTranscriptResult {
+  let interimTranscript = '';
+
+  for (let i = state.lastResultIndex; i < event.results.length; i++) {
+    const result = event.results[i];
+    if (result.isFinal) {
+      state.finalTranscript += result[0].transcript + ' ';
+      state.lastResultIndex = i + 1;
+    } else {
+      interimTranscript += result[0].transcript;
+    }
+  }
+
+  return {
+    finalTranscript: state.finalTranscript,
+    interimTranscript,
+    lastResultIndex: state.lastResultIndex,
+  };
+}
+
+export function buildFullTranscript(
+  baseInput: string,
+  finalTranscript: string,
+  interimTranscript: string,
+): string {
+  const base = baseInput;
+  const space = base.length > 0 && !base.endsWith(' ') ? ' ' : '';
+  const finalText = finalTranscript.trim();
+  const fullText = finalText
+    ? base +
+      space +
+      finalText +
+      (interimTranscript ? ' ' + interimTranscript : '')
+    : interimTranscript
+      ? base + space + interimTranscript
+      : base;
+  return fullText;
+}
 
 // Utility functions for multimodal input components
 

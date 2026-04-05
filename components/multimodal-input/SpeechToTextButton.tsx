@@ -20,7 +20,12 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 
-import { detectUserLanguage } from './utils';
+import {
+  buildFullTranscript,
+  createTranscriptState,
+  detectUserLanguage,
+  processSpeechRecognitionResults,
+} from './utils';
 import type {
   AvailabilityStatus,
   SpeechRecognition,
@@ -57,8 +62,7 @@ function PureSpeechToTextButton({
     useState<AvailabilityStatus | null>(null);
 
   const baseInputRef = useRef<string>('');
-  const finalTranscriptRef = useRef<string>('');
-  const lastResultIndexRef = useRef<number>(0);
+  const transcriptStateRef = useRef(createTranscriptState());
 
   const languages = useMemo(
     () => [
@@ -208,33 +212,14 @@ function PureSpeechToTextButton({
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interimTranscript = '';
+        const { finalTranscript, interimTranscript } =
+          processSpeechRecognitionResults(event, transcriptStateRef.current);
 
-        for (
-          let i = lastResultIndexRef.current;
-          i < event.results.length;
-          i++
-        ) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            finalTranscriptRef.current += result[0].transcript + ' ';
-            lastResultIndexRef.current = i + 1;
-          } else {
-            interimTranscript += result[0].transcript;
-          }
-        }
-
-        const base = baseInputRef.current;
-        const space = base.length > 0 && !base.endsWith(' ') ? ' ' : '';
-        const finalText = finalTranscriptRef.current.trim();
-        const fullText = finalText
-          ? base +
-            space +
-            finalText +
-            (interimTranscript ? ' ' + interimTranscript : '')
-          : interimTranscript
-            ? base + space + interimTranscript
-            : base;
+        const fullText = buildFullTranscript(
+          baseInputRef.current,
+          finalTranscript,
+          interimTranscript,
+        );
 
         setInput(fullText);
       };
@@ -266,8 +251,7 @@ function PureSpeechToTextButton({
         setIsListening(false);
       };
 
-      finalTranscriptRef.current = '';
-      lastResultIndexRef.current = 0;
+      transcriptStateRef.current = createTranscriptState();
 
       recognition.start();
       recognitionRef.current = recognition as SpeechRecognition;
@@ -301,8 +285,7 @@ function PureSpeechToTextButton({
       setIsListening(false);
     } else {
       baseInputRef.current = input || '';
-      finalTranscriptRef.current = '';
-      lastResultIndexRef.current = 0;
+      transcriptStateRef.current = createTranscriptState();
       startRecognition();
     }
   }, [isListening, speechSupported, startRecognition, recognitionRef, input]);
