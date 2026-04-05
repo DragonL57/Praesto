@@ -394,7 +394,6 @@ export function usePraestoChat({
                       : 'Stream Error';
                 throw new Error(String(errMsg));
               } else if (type === 'metadata') {
-                console.log('[usePraestoChat] Received metadata:', data);
               } else if (type === 'council-debate') {
                 if (typeof data === 'object' && data) {
                   const d = data as Record<string, unknown>;
@@ -704,9 +703,7 @@ export function usePraestoChat({
             ? ((err as Record<string, unknown>).name as string)
             : undefined;
         const isAbort = name === 'AbortError';
-        if (isAbort) {
-          console.log('Fetch aborted');
-        } else {
+        if (!isAbort) {
           console.error('[usePraestoChat Error]', error);
           setStatus('error');
           const errObj =
