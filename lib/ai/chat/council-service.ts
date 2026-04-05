@@ -243,7 +243,10 @@ async function runAgentWithTools({
       ) => Promise<AsyncIterable<unknown>>
     ).bind(openai.chat.completions);
 
-    const responseStream = await createFn(params);
+    const responseStream = await createFn({
+      ...params,
+      ...(abortSignal && { signal: abortSignal }),
+    });
 
     let stepContent = '';
     const stepToolCalls: Array<AgentToolCall | null> = [];
