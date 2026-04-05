@@ -270,7 +270,7 @@ export function MessageThinkingTrigger({
   isLoading: boolean;
 }) {
   const { open } = useThinking();
-  const orderedParts = useOrderedMessageParts(message);
+  const { orderedParts } = useOrderedMessageParts(message);
 
   const thinkingItems = useMemo(
     () => buildThinkingItems(message, orderedParts),

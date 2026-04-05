@@ -60,7 +60,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const isMobile = useIsMobile();
 
     // Extract ordered parts using hook
-    const orderedParts = useOrderedMessageParts(message);
+    const { orderedParts } = useOrderedMessageParts(message);
 
     // Effect to handle button visibility
     useEffect(() => {

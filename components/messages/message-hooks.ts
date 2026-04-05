@@ -56,9 +56,15 @@ interface SandboxToolArgs {
  * This ensures that if a model sends text, then reasoning, then text, they are
  * rendered in that exact sequence.
  */
-export function useOrderedMessageParts(message: Message): MergedMessagePart[] {
+export function useOrderedMessageParts(message: Message): {
+  orderedParts: MergedMessagePart[];
+} {
   return useMemo(() => {
-    if (!message.parts || message.parts.length === 0) return [];
+    if (!message.parts || message.parts.length === 0) {
+      return { orderedParts: [] };
+    }
+
+    const merged: MergedMessagePart[] = [];
 
     const merged: MergedMessagePart[] = [];
     const filterIndices = new Set<number>();
@@ -338,7 +344,7 @@ export function useOrderedMessageParts(message: Message): MergedMessagePart[] {
 
     applyToolGrouping(partsOnly);
 
-    return merged;
+    return { orderedParts: merged };
   }, [message.parts, message.role]);
 }
 

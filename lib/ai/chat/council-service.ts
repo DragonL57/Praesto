@@ -338,10 +338,12 @@ async function runAgentWithTools({
         );
       }
 
+      const toolCallId = tc.id || generateUUID();
+
       callbacks.send('council-tool-call', {
         agent: agentKey,
         agentName,
-        toolCallId: tc.id || generateUUID(),
+        toolCallId,
         toolName,
         args: toolArgs,
       });
@@ -353,21 +355,21 @@ async function runAgentWithTools({
           callbacks.send('council-tool-result', {
             agent: agentKey,
             agentName,
-            toolCallId: tc.id,
+            toolCallId,
             toolName,
             result,
           });
 
           toolMessages.push({
             role: 'tool',
-            tool_call_id: tc.id,
+            tool_call_id: toolCallId,
             content:
               typeof result === 'string' ? result : JSON.stringify(result),
           });
         } catch (toolError: unknown) {
           const errorMessage = getErrorMessage(toolError);
           console.error(
-            `[Council ${agentName}] Error executing tool ${toolName}:`,
+            `[Council ${agentName}] Error executing tool ${toolName}]:`,
             toolError,
           );
 
@@ -378,14 +380,14 @@ async function runAgentWithTools({
           callbacks.send('council-tool-result', {
             agent: agentKey,
             agentName,
-            toolCallId: tc.id,
+            toolCallId,
             toolName,
             result: errorResult,
           });
 
           toolMessages.push({
             role: 'tool',
-            tool_call_id: tc.id,
+            tool_call_id: toolCallId,
             content: JSON.stringify(errorResult),
           });
         }

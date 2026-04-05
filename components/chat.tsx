@@ -266,7 +266,7 @@ function ThinkingSidebarWrapper({ messages }: { messages: Array<Message> }) {
     return null;
   }, [messages]);
 
-  const orderedParts = useOrderedMessageParts(
+  const { orderedParts } = useOrderedMessageParts(
     latestAssistantMessage ||
       ({ role: 'assistant', parts: [], id: '' } as unknown as Message),
   );
