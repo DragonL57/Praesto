@@ -6,42 +6,33 @@
  * Without AI SDK dependency
  */
 
-import React, { memo, useEffect, useState, useMemo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Import hooks
+import { useOrderedMessageParts } from './message-hooks';
+
 // Import types
 import type {
   PurePreviewMessageProps,
   PreviewMessageProps,
-  EnhancedMessagePart,
 } from './message-types';
-import type { TextPart, ToolCallPart, ToolResultPart } from '@/lib/ai/types';
-
-// Import hooks
-import { useOrderedMessageParts } from './message-hooks';
+import type { TextPart } from '@/lib/ai/types';
 
 // Import utilities
-import {
-  isToolPart,
-  extractToolName,
-  isTextPart,
-  isToolResultAvailable,
-  isReasoningTool,
-  getToolCallId,
-} from './message-utils';
+import { isTextPart } from './message-utils';
 
 // Import sub-components
-import { MessageReasoning } from './message-reasoning';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 import { MessageContent } from './message-content';
 import { MessageAttachments } from './message-attachments';
 import { MessageUserActions } from './message-user-actions';
-import { ToolCallSkeleton, ToolResult } from './message-tools';
+import { MessageThinkingTrigger } from './MessageThinkingTrigger';
 import { SuggestedActions } from '../suggested-actions';
 
 // ============================================================================
@@ -69,18 +60,7 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
     const isMobile = useIsMobile();
 
     // Extract ordered parts using hook
-    const orderedParts = useOrderedMessageParts(message);
-
-    // Filter out 'input-available' parts if corresponding 'output-available' exists
-    const toolResultIds = useMemo(() => {
-      const ids = new Set<string>();
-      orderedParts.forEach(p => {
-        if (p.type === 'part' && isToolPart(p.part) && isToolResultAvailable(p.part)) {
-          ids.add(getToolCallId(p.part));
-        }
-      });
-      return ids;
-    }, [orderedParts]);
+    const { orderedParts } = useOrderedMessageParts(message);
 
     // Effect to handle button visibility
     useEffect(() => {
@@ -174,42 +154,27 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
             {/* Render attachments */}
             <MessageAttachments message={message} />
 
-            {/* Render initial thinking state if loading and no parts yet */}
-            {message.role === 'assistant' && isLoading && orderedParts.length === 0 && (
-              <MessageReasoning
-                content={[]}
-                isLoading={true}
-                hasResponseStarted={false}
-              />
+            {/* Thinking trigger for assistant messages */}
+            {message.role === 'assistant' && (
+              <MessageThinkingTrigger message={message} isLoading={isLoading} />
             )}
 
-            {/* Render message parts in order */}
+            {/* Render message parts - only text now */}
             {orderedParts.map((mergedPart, index) => {
               const key = `message-${message.id}-merged-${index}`;
 
-              // Handle reasoning group
-              if (mergedPart.type === 'reasoning') {
-                const hasResponseStartedBefore = orderedParts.slice(0, index).some(p => {
-                  if (p.type === 'part') {
-                    if (isTextPart(p.part) && p.part.text.trim().length > 0) return true;
-                    if (isToolPart(p.part) && isToolResultAvailable(p.part) && !isReasoningTool(extractToolName(p.part))) return true;
-                  }
-                  return false;
-                });
-
-                return (
-                  <MessageReasoning
-                    key={key}
-                    content={mergedPart.items}
-                    isLoading={isLoading && index === orderedParts.length - 1}
-                    hasResponseStarted={hasResponseStartedBefore}
-                  />
-                );
+              // Skip reasoning, council, and tool parts - they go to sidebar
+              if (
+                mergedPart.type === 'reasoning' ||
+                mergedPart.type === 'council-debate'
+              ) {
+                return null;
               }
 
               // Handle normal message part
+              if (mergedPart.type !== 'part') return null;
               const part = mergedPart.part;
-              
+
               // Render text parts
               if (isTextPart(part) && part.text.trim().length > 0) {
                 const textPart = part as TextPart;
@@ -243,59 +208,11 @@ const PurePreviewMessage = memo<PurePreviewMessageProps>(
                 }
               }
 
-              // Render tool parts
-              if (isToolPart(part)) {
-                const toolName = extractToolName(part);
-                const toolCallId = getToolCallId(part);
-
-                // Skip reasoning tools as they are handled by reasoning type above
-                if (isReasoningTool(toolName)) return null;
-
-                const rawToolIndex = (
-                  part as EnhancedMessagePart & { toolIndex?: unknown }
-                ).toolIndex;
-                const toolIndex =
-                  typeof rawToolIndex === 'number' && rawToolIndex >= 0
-                    ? rawToolIndex
-                    : undefined;
-
-                if (isToolResultAvailable(part)) {
-                  // Get all parts for ToolResult (need only the 'part' types)
-                  const allParts = orderedParts
-                    .filter(p => p.type === 'part')
-                    .map(p => (p as { type: 'part'; part: EnhancedMessagePart }).part);
-
-                  return (
-                    <ToolResult
-                      key={key}
-                      part={part as ToolResultPart}
-                      messageId={message.id}
-                      allParts={allParts}
-                    />
-                  );
-                } else {
-                  // Check if this input part should be hidden (because output is available)
-                  const state = (part as ToolCallPart & { state?: unknown }).state;
-                  if (
-                    typeof state === 'string' &&
-                    state === 'input-available' &&
-                    toolResultIds.has(toolCallId)
-                  ) {
-                    return null;
-                  }
-
-                  return (
-                    <ToolCallSkeleton
-                      key={key}
-                      toolName={toolName}
-                      toolCallId={toolCallId}
-                      toolIndex={toolIndex}
-                      messageId={message.id}
-                      part={part as ToolCallPart}
-                    />
-                  );
-                }
+              // Skip tool parts - they go to sidebar
+              if (part.type === 'tool-call' || part.type === 'tool-result') {
+                return null;
               }
+
               return null;
             })}
 

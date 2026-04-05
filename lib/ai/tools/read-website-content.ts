@@ -1,29 +1,8 @@
+import { getErrorMessage } from '@/lib/ai/error-utils';
+
 // Tavily API configuration
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY || '';
 const TAVILY_EXTRACT_ENDPOINT = 'https://api.tavily.com/extract';
-
-// Error type definitions
-interface ErrorWithMessage {
-  message: string;
-}
-
-// Type guard for checking if an error has a message property
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-// Helper to get error message safely
-function getErrorMessage(error: unknown): string {
-  if (isErrorWithMessage(error)) {
-    return error.message;
-  }
-  return String(error);
-}
 
 /**
  * Read website content tool configuration for OpenAI SDK
@@ -40,7 +19,8 @@ export const readWebsiteContent = {
       },
       query: {
         type: 'string',
-        description: 'Optional search query to find specific content within the page',
+        description:
+          'Optional search query to find specific content within the page',
       },
     },
     required: ['url'],

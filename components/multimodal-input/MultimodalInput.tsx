@@ -11,6 +11,7 @@ import { Textarea } from '../ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 import { AttachmentsButton } from './AttachmentsButton';
+import { CouncilButton } from './CouncilButton';
 import { Greeting } from './Greeting';
 import { ImageIcon, GPSIcon, GlobeIcon } from '../icons';
 import { ScrollButton } from './ScrollButton';
@@ -20,14 +21,14 @@ import { StopButton } from './StopButton';
 import { useFileUploadHandler } from './FileUploadHandler';
 import { VirtualKeyboardHandler } from './VirtualKeyboardHandler';
 import {
+  TextareaAutoResizer,
+  resetTextareaHeight,
+} from './TextareaAutoResizer';
+import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '../ui/hover-card';
-import {
-  TextareaAutoResizer,
-  resetTextareaHeight,
-} from './TextareaAutoResizer';
 import type {
   AppendFunction,
   Attachment,
@@ -55,6 +56,8 @@ interface MultimodalInputProps {
   className?: string;
   messagesContainerRef?: React.RefObject<HTMLDivElement | null>;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
+  councilMode?: boolean;
+  onCouncilModeChange?: (enabled: boolean) => void;
 }
 
 function PureMultimodalInput({
@@ -72,6 +75,8 @@ function PureMultimodalInput({
   className,
   messagesContainerRef,
   messagesEndRef,
+  councilMode,
+  onCouncilModeChange,
 }: MultimodalInputProps) {
   // Mark append as unused with an underscore variable
   const _append = append;
@@ -370,12 +375,18 @@ function PureMultimodalInput({
             <div className="absolute inset-x-0.5 bottom-0.5 flex items-center justify-between p-1 pointer-events-none cursor-default">
               {/* Left side - Persona selector and other potential future buttons */}
               <div className="p-2 flex flex-row justify-start items-center z-10 gap-1 pointer-events-auto">
-                {/* Background element with rounded corners */}
                 <span className="absolute inset-px bg-backround  dark:bg-fore  rounded-full pointer-events-none" />
                 <AttachmentsButton
                   fileInputRef={fileInputRef}
                   status={status}
                 />
+                {onCouncilModeChange && (
+                  <CouncilButton
+                    councilMode={councilMode || false}
+                    onCouncilModeChange={onCouncilModeChange}
+                    status={status}
+                  />
+                )}
               </div>
 
               {/* Right side - speech-to-text, and send/stop buttons */}
@@ -448,6 +459,7 @@ export const MultimodalInput = memo(
     if (prevProps.input !== nextProps.input) return false;
     if (prevProps.status !== nextProps.status) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
+    if (prevProps.councilMode !== nextProps.councilMode) return false;
 
     return true;
   },

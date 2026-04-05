@@ -3,7 +3,17 @@
  * Standardizes communication between the chat API and the frontend.
  */
 
-export type StreamPartType = 'text' | 'reasoning' | 'tool-call' | 'tool-result' | 'tool-call-streaming' | 'error' | 'metadata';
+export type StreamPartType =
+  | 'text'
+  | 'reasoning'
+  | 'tool-call'
+  | 'tool-result'
+  | 'tool-call-streaming'
+  | 'council-debate'
+  | 'council-tool-call'
+  | 'council-tool-result'
+  | 'error'
+  | 'metadata';
 
 export interface StreamPart {
   type: StreamPartType;
@@ -21,21 +31,28 @@ export interface StreamPart {
  * 'm': Metadata (e.g., chat title, model info)
  */
 export const PROTOCOL_PREFIXES: Record<StreamPartType, string> = {
-  'text': '0',
-  'reasoning': 'h',
+  text: '0',
+  reasoning: 'h',
   'tool-call': '9',
   'tool-result': 'a',
   'tool-call-streaming': 's',
-  'error': 'e',
-  'metadata': 'm',
+  'council-debate': 'c',
+  'council-tool-call': 'd',
+  'council-tool-result': 'f',
+  error: 'e',
+  metadata: 'm',
 };
 
 /**
  * Reverse mapping for decoding
  */
-export const PREFIX_TO_TYPE: Record<string, StreamPartType> = Object.fromEntries(
-  Object.entries(PROTOCOL_PREFIXES).map(([type, prefix]) => [prefix, type as StreamPartType])
-);
+export const PREFIX_TO_TYPE: Record<string, StreamPartType> =
+  Object.fromEntries(
+    Object.entries(PROTOCOL_PREFIXES).map(([type, prefix]) => [
+      prefix,
+      type as StreamPartType,
+    ]),
+  );
 
 /**
  * Formats a single part of the stream for sending over the wire.
@@ -52,7 +69,10 @@ export function formatStreamPart(type: StreamPartType, data: unknown): string {
 /**
  * Helper to encode a string into a Uint8Array for the ReadableStream.
  */
-export function encodeStreamPart(type: StreamPartType, data: unknown): Uint8Array {
+export function encodeStreamPart(
+  type: StreamPartType,
+  data: unknown,
+): Uint8Array {
   const encoder = new TextEncoder();
   return encoder.encode(formatStreamPart(type, data));
 }
@@ -76,7 +96,10 @@ export function parseStreamLine(line: string): StreamPart | null {
     const data = JSON.parse(dataStr);
     return { type, data };
   } catch {
-    console.error(`[StreamProtocol] Failed to parse data for type ${type}:`, dataStr);
+    console.error(
+      `[StreamProtocol] Failed to parse data for type ${type}:`,
+      dataStr,
+    );
     return null;
   }
 }

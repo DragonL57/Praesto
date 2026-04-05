@@ -1,10 +1,13 @@
+import { getErrorMessage } from '@/lib/ai/error-utils';
+
 // Brave Search API configuration
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const BRAVE_API_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
+const FETCH_TIMEOUT_MS = 10000; // 10 second timeout per request
 
 // Global rate limiter: Track next available time slot
 let nextAvailableTime = 0;
-const MIN_REQUEST_INTERVAL_MS = 1500; // 1.5 seconds between requests for Free plan safety
+const MIN_REQUEST_INTERVAL_MS = 2000; // 2 seconds between requests for Free plan safety (1 req/sec limit)
 
 // Rate limiting: Ensure minimum interval between requests by reserving slots
 async function rateLimitedFetch(
@@ -26,30 +29,19 @@ async function rateLimitedFetch(
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
-  return fetch(url, options);
-}
+  // Add timeout to the fetch request
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-// Error type definitions
-interface ErrorWithMessage {
-  message: string;
-}
-
-// Type guard for checking if an error has a message property
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-// Safely extract error message
-function getErrorMessage(error: unknown): string {
-  if (isErrorWithMessage(error)) {
-    return error.message;
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return String(error);
 }
 
 interface SearchResult {
@@ -275,33 +267,58 @@ export const webSearch = {
       if (summary) params.append('summary', summary.toString());
       if (units) params.append('units', units);
 
-      // Make request to Brave Search API with rate limiting
-      const response = await rateLimitedFetch(
-        `${BRAVE_API_ENDPOINT}?${params.toString()}`,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Subscription-Token': BRAVE_API_KEY,
-          },
-        },
-      );
+      // Make request to Brave Search API with rate limiting and retry for 429
+      let response: Response | null = null;
+      let retries = 0;
+      const maxRetries = 2;
 
-      if (!response.ok) {
-        let errorDetail = `${response.status} ${response.statusText}`;
+      while (retries <= maxRetries) {
+        response = await rateLimitedFetch(
+          `${BRAVE_API_ENDPOINT}?${params.toString()}`,
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              'Accept-Encoding': 'gzip',
+              'X-Subscription-Token': BRAVE_API_KEY,
+            },
+          },
+        );
+
+        if (response.ok) break;
+
         const errorBody = await response.text();
         console.error(`[Brave Search Debug] Error body: ${errorBody}`);
 
+        if (response.status === 429 && retries < maxRetries) {
+          const retryAfter = response.headers.get('retry-after');
+          const waitMs = retryAfter
+            ? parseInt(retryAfter, 10) * 1000
+            : 2000 + retries * 1000;
+          console.error(
+            `[Brave Search] Rate limited, retrying in ${waitMs}ms (attempt ${retries + 1}/${maxRetries})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          retries++;
+          continue;
+        }
+
         // Add specific guidance for common HTTP errors
+        let errorDetail = `${response.status} ${response.statusText}`;
         if (response.status === 422) {
           errorDetail += ` (Unprocessable Entity - ${errorBody})`;
         } else if (response.status === 401 || response.status === 403) {
           errorDetail +=
             ' (Authentication failed - verify BRAVE_API_KEY is valid)';
+        } else if (response.status === 429) {
+          errorDetail += ' (Rate limit exceeded after retries)';
         }
 
         throw new Error(`Brave Search API error: ${errorDetail}`);
+      }
+
+      if (!response || !response.ok) {
+        throw new Error('Brave Search API error after retries');
       }
 
       interface BraveWebResult {
@@ -391,7 +408,6 @@ export const webSearch = {
 
       // Collect all results from different sections
       const allResults: SearchResult[] = [];
-      let resultCount = 0;
 
       // Add web results
       if (data.web?.results) {
@@ -401,20 +417,19 @@ export const webSearch = {
           body: result.description || 'No description available',
         }));
         allResults.push(...webResults);
-        resultCount += webResults.length;
       }
 
       // Add news results if available
       if (data.news?.results && data.news.results.length > 0) {
         const newsHeader: SearchResult = {
-          title: '📰 News Results',
+          title: '[News] Latest Articles',
           href: '',
           body: `Found ${data.news.results.length} recent news articles:`,
         };
         allResults.push(newsHeader);
 
         const newsResults = data.news.results.slice(0, 5).map((result) => ({
-          title: `${result.breaking ? '🔴 BREAKING: ' : ''}${result.title || 'No title'}`,
+          title: `${result.breaking ? '[BREAKING] ' : ''}${result.title || 'No title'}`,
           href: result.url || '',
           body: `${result.description || 'No description'} ${result.age ? `(${result.age})` : ''} ${result.source ? `[${result.source}]` : ''}`,
         }));
@@ -424,7 +439,7 @@ export const webSearch = {
       // Add video results if available
       if (data.videos?.results && data.videos.results.length > 0) {
         const videoHeader: SearchResult = {
-          title: '🎥 Video Results',
+          title: '[Videos] Related Videos',
           href: '',
           body: `Found ${data.videos.results.length} related videos:`,
         };
@@ -441,7 +456,7 @@ export const webSearch = {
       // Add discussion/forum results if available
       if (data.discussions?.results && data.discussions.results.length > 0) {
         const discussionHeader: SearchResult = {
-          title: '💬 Discussions & Forums',
+          title: '[Discussions] Forum Results',
           href: '',
           body: `Found ${data.discussions.results.length} relevant forum discussions:`,
         };
@@ -460,7 +475,7 @@ export const webSearch = {
       // Add FAQ results if available
       if (data.faq?.results && data.faq.results.length > 0) {
         const faqHeader: SearchResult = {
-          title: '❓ Frequently Asked Questions',
+          title: '[FAQ] Frequently Asked Questions',
           href: '',
           body: `Found ${data.faq.results.length} related questions:`,
         };

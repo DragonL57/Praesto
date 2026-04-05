@@ -52,3 +52,6 @@ export const DEFAULT_CHAT_MODEL_ID = defaultModel
   : chatModels.length > 0
     ? chatModels[0].id
     : 'grok-4.1-fast-reasoning';
+
+// Council mode uses non-reasoning model since agents reason via debate
+export const COUNCIL_MODEL_ID = 'grok-4.1-fast-non-reasoning';
