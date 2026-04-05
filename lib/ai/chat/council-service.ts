@@ -9,28 +9,9 @@ import {
 } from '@/lib/ai/council-prompts';
 import { generateUUID } from '@/lib/utils';
 import { COUNCIL_MODEL_ID } from '@/lib/ai/models';
+import { getErrorMessage } from '@/lib/ai/error-utils';
 
 const MAX_DEBATE_ROUNDS = 2;
-
-interface ErrorWithMessage {
-  message: string;
-}
-
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-function getErrorMessage(error: unknown): string {
-  if (isErrorWithMessage(error)) {
-    return error.message;
-  }
-  return String(error);
-}
 
 type ToolDef = {
   description?: string;

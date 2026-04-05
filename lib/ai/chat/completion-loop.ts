@@ -3,26 +3,7 @@ import { openai, getChatCompletionParams } from '@/lib/ai/providers';
 import type { MessagePart } from '@/lib/ai/types';
 import type { StreamPartType } from './stream-protocol';
 import type { UserTimeContext } from './types';
-
-interface ErrorWithMessage {
-  message: string;
-}
-
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-function getErrorMessage(error: unknown): string {
-  if (isErrorWithMessage(error)) {
-    return error.message;
-  }
-  return String(error);
-}
+import { getErrorMessage } from '@/lib/ai/error-utils';
 
 type Tool = {
   description?: string;

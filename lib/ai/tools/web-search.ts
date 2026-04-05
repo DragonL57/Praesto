@@ -1,3 +1,5 @@
+import { getErrorMessage } from '@/lib/ai/error-utils';
+
 // Brave Search API configuration
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY || '';
 const BRAVE_API_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
@@ -40,29 +42,6 @@ async function rateLimitedFetch(
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-// Error type definitions
-interface ErrorWithMessage {
-  message: string;
-}
-
-// Type guard for checking if an error has a message property
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-// Safely extract error message
-function getErrorMessage(error: unknown): string {
-  if (isErrorWithMessage(error)) {
-    return error.message;
-  }
-  return String(error);
 }
 
 interface SearchResult {
