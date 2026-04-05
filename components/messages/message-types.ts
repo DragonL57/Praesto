@@ -84,7 +84,7 @@ export type EnhancedMessagePart = MessagePart & {
   toolIndex?: number;
 };
 
-import type { CouncilAgent } from './council-debate';
+import type { CouncilAgent } from './CouncilDebate';
 
 export type MergedMessagePart =
   | { type: 'part'; part: EnhancedMessagePart }

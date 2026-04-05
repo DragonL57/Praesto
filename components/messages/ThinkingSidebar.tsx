@@ -170,6 +170,7 @@ export function ThinkingSidebar({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close thinking sidebar"
             className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <XIcon className="size-4" />

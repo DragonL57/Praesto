@@ -32,7 +32,7 @@ import { MessageEditor } from './message-editor';
 import { MessageContent } from './message-content';
 import { MessageAttachments } from './message-attachments';
 import { MessageUserActions } from './message-user-actions';
-import { MessageThinkingTrigger } from './message-thinking-trigger';
+import { MessageThinkingTrigger } from './MessageThinkingTrigger';
 import { SuggestedActions } from '../suggested-actions';
 
 // ============================================================================

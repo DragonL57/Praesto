@@ -9,7 +9,7 @@ export { Messages } from './messages';
 export { MessageActions } from './message-actions';
 export { MessageEditor } from './message-editor';
 export { MessageReasoning } from './message-reasoning';
-export { CouncilDebate } from './council-debate';
+export { CouncilDebate } from './CouncilDebate';
 
 // Sub-components
 export { MessageContent } from './message-content';
@@ -35,7 +35,7 @@ export type {
   FetchedPageInfoData,
   ThinkToolResult,
 } from './message-types';
-export type { CouncilAgent } from './council-debate';
+export type { CouncilAgent } from './CouncilDebate';
 
 // Utilities
 export {

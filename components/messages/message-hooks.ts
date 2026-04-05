@@ -21,7 +21,7 @@ import type {
   WebSearchResult,
   MergedMessagePart,
 } from './message-types';
-import type { CouncilAgent } from './council-debate';
+import type { CouncilAgent } from './CouncilDebate';
 import {
   isToolPart,
   extractToolName,
