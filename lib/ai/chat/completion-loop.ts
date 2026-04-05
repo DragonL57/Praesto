@@ -245,6 +245,31 @@ export function createCompletionLoop(deps: CompletionDeps) {
                 content: JSON.stringify(errorResult),
               });
             }
+          } else {
+            const errorResult = {
+              error: 'Unknown tool',
+              details: `Tool '${toolName}' is not available`,
+            };
+            send('tool-result', {
+              toolCallId: tc.id,
+              toolName,
+              result: errorResult,
+            });
+
+            addPartToUI({
+              type: 'tool-result',
+              toolCallId: tc.id,
+              toolName,
+              result: errorResult,
+              args: toolArgs,
+              state: 'output-error',
+            } as MessagePart);
+
+            toolMessages.push({
+              role: 'tool',
+              tool_call_id: tc.id,
+              content: JSON.stringify(errorResult),
+            });
           }
         }
 
