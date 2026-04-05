@@ -139,7 +139,10 @@ function buildThinkingItems(
                 : 'complete',
           });
         }
-      } else {
+      } else if (
+        !addedToolCallIds.has(toolCallId) &&
+        !regularToolCallIds.has(toolCallId)
+      ) {
         const state = (part as Record<string, unknown>).state as
           | string
           | undefined;
