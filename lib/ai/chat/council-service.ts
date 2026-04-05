@@ -398,6 +398,7 @@ async function runAgentWithTools({
     }
 
     currentMessages = toolMessages;
+    finalContent = stepContent;
     maxToolLoops--;
   }
 
